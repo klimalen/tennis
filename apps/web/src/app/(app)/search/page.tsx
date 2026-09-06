@@ -1,4 +1,22 @@
 import { Search, SlidersHorizontal } from 'lucide-react'
+import Link from 'next/link'
+
+function PlayerCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl p-4 flex gap-3 animate-pulse">
+      <div className="w-14 h-14 rounded-full bg-gray-200 flex-shrink-0" />
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-3.5 bg-gray-200 rounded-full w-1/3" />
+        <div className="h-3 bg-gray-100 rounded-full w-1/2" />
+        <div className="h-3 bg-gray-100 rounded-full w-2/3" />
+        <div className="flex gap-2 pt-1">
+          <div className="h-5 w-16 bg-gray-100 rounded-full" />
+          <div className="h-5 w-20 bg-gray-100 rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function SearchPage() {
   return (
@@ -23,9 +41,7 @@ export default function SearchPage() {
             <button
               key={filter}
               className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                i === 0
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                i === 0 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {filter}
@@ -34,15 +50,24 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Empty state */}
-      <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4">
-          <Search size={28} className="text-green-600" />
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+        {/* CTA banner */}
+        <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-green-800 font-medium">
+            Sign up to connect with players near you
+          </p>
+          <Link
+            href="/sign-up"
+            className="flex-shrink-0 px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition-colors"
+          >
+            Join free
+          </Link>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Find your next game</h2>
-        <p className="text-gray-500 text-sm max-w-xs">
-          Search for players to match with, open games to join, courts to book, or coaches to train with.
-        </p>
+
+        {/* Skeleton cards */}
+        {[...Array(6)].map((_, i) => (
+          <PlayerCardSkeleton key={i} />
+        ))}
       </div>
     </div>
   )
