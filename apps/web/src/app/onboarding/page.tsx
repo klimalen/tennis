@@ -364,12 +364,25 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+const SAVING_MESSAGES = [
+  '🎾 Подвозим мячики...',
+  '🏗️ Натягиваем сетку...',
+  '🌿 Подготавливаем корт...',
+  '👟 Шнуруем кеды...',
+  '☀️ Проверяем погоду...',
+  '📋 Составляем расписание...',
+  '🎯 Подбираем соперников...',
+  '🚿 Освежаем разметку...',
+  '💚 Почти готово...',
+]
+
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingMsg, setSavingMsg] = useState(SAVING_MESSAGES[0])
 
   useEffect(() => {
     async function checkAuth() {
@@ -407,11 +420,17 @@ export default function OnboardingPage() {
     }
     // Final step — save everything
     setSaving(true)
+    setSavingMsg(SAVING_MESSAGES[0])
+    let msgIndex = 0
+    const msgInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % SAVING_MESSAGES.length
+      setSavingMsg(SAVING_MESSAGES[msgIndex])
+    }, 800)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    await supabase.from('profiles').update({
+    const { error: updateError } = await supabase.from('profiles').update({
       neighborhood: data.neighborhood || null,
       skill_level_self: data.skillLevel,
       years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
@@ -426,7 +445,8 @@ export default function OnboardingPage() {
       looking_for: data.lookingFor || null,
     }).eq('id', user.id)
 
-    router.push('/search')
+    clearInterval(msgInterval)
+    if (!updateError) router.push('/search')
   }
 
   if (loading) {
@@ -481,8 +501,8 @@ export default function OnboardingPage() {
             disabled={!canProceed() || saving}
             className="w-full py-3.5 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
-            {saving ? <Loader2 size={16} className="animate-spin" /> : null}
-            {saving ? 'Saving...' : step === TOTAL_STEPS ? 'Finish setup' : 'Continue'}
+            {saving ? <Loader2 size={16} className="animate-spin flex-shrink-0" /> : null}
+            {saving ? savingMsg : step === TOTAL_STEPS ? 'Finish setup' : 'Continue'}
           </button>
           {step === TOTAL_STEPS && (
             <button
