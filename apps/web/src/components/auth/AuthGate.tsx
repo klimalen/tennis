@@ -1,9 +1,5 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 
 interface AuthGateProps {
   children: React.ReactNode
@@ -28,7 +24,6 @@ const SECTION_CONTENT = {
   },
 }
 
-// Fake skeleton rows for background blur effect
 function MockContent() {
   return (
     <div className="p-4 space-y-4 pointer-events-none select-none" aria-hidden>
@@ -46,37 +41,24 @@ function MockContent() {
   )
 }
 
-export function AuthGate({ children, section }: AuthGateProps) {
-  const [user, setUser] = useState<User | null | undefined>(undefined)
+export async function AuthGate({ children, section }: AuthGateProps) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
-  }, [])
+  if (user) return <>{children}</>
 
-  // Loading state — show nothing briefly
-  if (user === undefined) return null
-
-  // Authenticated — render actual content
-  if (user !== null) return <>{children}</>
-
-  // Not authenticated — show teaser
   const content = SECTION_CONTENT[section]
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Blurred mock content */}
       <div className="blur-sm opacity-60">
         <MockContent />
       </div>
-
-      {/* Overlay */}
       <div className="absolute inset-0 flex items-center justify-center px-6">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center max-w-sm w-full">
           <div className="text-4xl mb-4">{content.emoji}</div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">{content.title}</h2>
           <p className="text-gray-500 text-sm mb-6">{content.description}</p>
-
           <div className="space-y-3">
             <Link
               href="/sign-up"

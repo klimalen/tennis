@@ -2,7 +2,7 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { Grid3X3, Trophy, BarChart3, Settings } from 'lucide-react'
 import Link from 'next/link'
 
-export default function MePage() {
+export default async function MePage() {
   return (
     <AuthGate section="me">
       <div className="min-h-screen pb-20 md:pb-0">

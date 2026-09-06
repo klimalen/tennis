@@ -387,14 +387,21 @@ function Step5({
     const file = e.target.files?.[0] ?? null
     onChange({ avatarFile: file })
     if (file) {
-      const url = URL.createObjectURL(file)
-      setPreview(url)
+      if (preview) URL.revokeObjectURL(preview)
+      setPreview(URL.createObjectURL(file))
     } else {
+      if (preview) URL.revokeObjectURL(preview)
       setPreview(null)
     }
   }
 
+  // Revoke object URL on unmount to prevent memory leaks
   useEffect(() => {
+    return () => { if (preview) URL.revokeObjectURL(preview) }
+  }, [preview])
+
+  useEffect(() => {
+    if (!userId) return  // Wait until userId is loaded
     const username = data.username.trim()
     if (username.length < 3) { setUsernameStatus('idle'); return }
     setUsernameStatus('checking')
