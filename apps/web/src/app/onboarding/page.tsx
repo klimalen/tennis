@@ -426,6 +426,7 @@ function Step5({
           className="relative w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 hover:border-green-400 transition-colors flex items-center justify-center overflow-hidden group"
         >
           {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Avatar preview" className="w-full h-full object-cover" />
           ) : (
             <Camera size={24} className="text-gray-400 group-hover:text-green-500 transition-colors" />
