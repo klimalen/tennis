@@ -79,9 +79,10 @@ export default function SignUpPage() {
       return
     }
 
-    // If user is immediately confirmed (no email verification required)
-    const isConfirmed = signUpData.user?.confirmed_at || signUpData.session
-    if (isConfirmed) {
+    // Check actual session state — signUpData.session can be null even when confirmation is off
+    const supabaseCheck = createClient()
+    const { data: { session } } = await supabaseCheck.auth.getSession()
+    if (session) {
       router.push('/onboarding')
     } else {
       router.push('/verify-email?type=signup')
