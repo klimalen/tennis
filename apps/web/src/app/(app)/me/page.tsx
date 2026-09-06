@@ -1,5 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { Grid3X3, Trophy, BarChart3, Settings } from 'lucide-react'
+import Link from 'next/link'
 
 export default function MePage() {
   return (
@@ -8,9 +9,9 @@ export default function MePage() {
         <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-10 px-4 py-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">Me</h1>
-            <button className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <Link href="/settings" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
               <Settings size={16} className="text-gray-600" />
-            </button>
+            </Link>
           </div>
         </div>
         <div className="max-w-2xl mx-auto">
