@@ -79,8 +79,9 @@ export default function SignUpPage() {
       return
     }
 
-    // If session exists — email confirmation is disabled, go straight to onboarding
-    if (signUpData.session) {
+    // If user is immediately confirmed (no email verification required)
+    const isConfirmed = signUpData.user?.confirmed_at || signUpData.session
+    if (isConfirmed) {
       router.push('/onboarding')
     } else {
       router.push('/verify-email?type=signup')

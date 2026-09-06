@@ -3,6 +3,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Skip auth callback — middleware must not touch PKCE cookies before the route handler does
+  if (pathname.startsWith('/auth/')) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({ request })
 
   // Refresh session on every request — required for Supabase SSR auth to work correctly
