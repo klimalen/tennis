@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
-        setAll: (cookies) => {
+        setAll: (cookies: { name: string; value: string; options: Record<string, unknown> }[]) => {
           cookies.forEach(({ name, value, options }) =>
-            pendingCookies.push({ name, value, options: options as Record<string, unknown> }),
+            pendingCookies.push({ name, value, options }),
           )
         },
       },
