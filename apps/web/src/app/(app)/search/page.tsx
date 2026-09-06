@@ -1,5 +1,6 @@
 import { Search, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
 function PlayerCardSkeleton() {
   return (
@@ -18,7 +19,10 @@ function PlayerCardSkeleton() {
   )
 }
 
-export default function SearchPage() {
+export default async function SearchPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       {/* Header */}
@@ -51,18 +55,20 @@ export default function SearchPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
-        {/* CTA banner */}
-        <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-green-800 font-medium">
-            Sign up to connect with players near you
-          </p>
-          <Link
-            href="/sign-up"
-            className="flex-shrink-0 px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition-colors"
-          >
-            Join free
-          </Link>
-        </div>
+        {/* CTA banner — only for guests */}
+        {!user && (
+          <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-sm text-green-800 font-medium">
+              Sign up to connect with players near you
+            </p>
+            <Link
+              href="/sign-up"
+              className="flex-shrink-0 px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition-colors"
+            >
+              Join free
+            </Link>
+          </div>
+        )}
 
         {/* Skeleton cards */}
         {[...Array(6)].map((_, i) => (
