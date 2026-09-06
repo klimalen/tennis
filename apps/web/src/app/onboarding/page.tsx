@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -21,6 +21,8 @@ interface OnboardingData {
   maxTravelKm: number | null
   bio: string
   lookingFor: string
+  username: string
+  avatarFile: File | null
 }
 
 const INITIAL_DATA: OnboardingData = {
@@ -37,9 +39,11 @@ const INITIAL_DATA: OnboardingData = {
   maxTravelKm: 10,
   bio: '',
   lookingFor: '',
+  username: '',
+  avatarFile: null,
 }
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 5
 
 // ─── Step 1: Location ────────────────────────────────────────────────────────
 
@@ -362,6 +366,119 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
   )
 }
 
+// ─── Step 5: Avatar + Username ───────────────────────────────────────────────
+
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken'
+
+function Step5({
+  data,
+  onChange,
+  userId,
+}: {
+  data: OnboardingData
+  onChange: (d: Partial<OnboardingData>) => void
+  userId: string
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle')
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    onChange({ avatarFile: file })
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setPreview(url)
+    } else {
+      setPreview(null)
+    }
+  }
+
+  useEffect(() => {
+    const username = data.username.trim()
+    if (username.length < 3) { setUsernameStatus('idle'); return }
+    setUsernameStatus('checking')
+    const timer = setTimeout(async () => {
+      const supabase = createClient()
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .neq('id', userId)
+        .maybeSingle()
+      setUsernameStatus(existing ? 'taken' : 'available')
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [data.username, userId])
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Your profile</h2>
+        <p className="text-gray-500 text-sm">Add a photo and choose your username.</p>
+      </div>
+
+      {/* Avatar */}
+      <div className="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="relative w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 hover:border-green-400 transition-colors flex items-center justify-center overflow-hidden group"
+        >
+          {preview ? (
+            <img src={preview} alt="Avatar preview" className="w-full h-full object-cover" />
+          ) : (
+            <Camera size={24} className="text-gray-400 group-hover:text-green-500 transition-colors" />
+          )}
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+            <Camera size={20} className="text-white" />
+          </div>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <p className="text-xs text-gray-400">
+          {preview ? 'Click to change photo' : 'Upload a profile photo (optional)'}
+        </p>
+      </div>
+
+      {/* Username */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+          <input
+            type="text"
+            value={data.username}
+            onChange={(e) => onChange({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+            placeholder="your_username"
+            maxLength={20}
+            className="w-full pl-8 pr-10 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            {usernameStatus === 'checking' && <Loader2 size={16} className="animate-spin text-gray-400" />}
+            {usernameStatus === 'available' && <Check size={16} className="text-green-500" />}
+            {usernameStatus === 'taken' && <X size={16} className="text-red-500" />}
+          </div>
+        </div>
+        <div className="mt-1.5 flex justify-between items-center">
+          <p className="text-xs text-gray-400">Letters, numbers and underscores only</p>
+          {usernameStatus === 'taken' && (
+            <p className="text-xs text-red-500">Username is taken</p>
+          )}
+          {usernameStatus === 'available' && (
+            <p className="text-xs text-green-600">Available!</p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const SAVING_MESSAGES = [
@@ -383,21 +500,26 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingMsg, setSavingMsg] = useState(SAVING_MESSAGES[0])
+  const [userId, setUserId] = useState('')
 
   useEffect(() => {
     async function checkAuth() {
       const supabase = createClient()
-      // getSession reads from cookie — no network call, instant
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.replace('/sign-in'); return }
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('skill_level_self')
+        .select('skill_level_self, username')
         .eq('id', session.user.id)
         .single()
 
       if (profile?.skill_level_self) { router.replace('/search'); return }
+
+      setUserId(session.user.id)
+      if (profile?.username) {
+        setData((prev) => ({ ...prev, username: profile.username }))
+      }
       setLoading(false)
     }
     checkAuth()
@@ -411,6 +533,7 @@ export default function OnboardingPage() {
     if (step === 1) return data.city.trim().length > 0
     if (step === 2) return data.skillLevel !== null && data.playFormats.length > 0
     if (step === 3) return data.preferredDays.length > 0
+    if (step === 5) return data.username.trim().length >= 3
     return true
   }
 
@@ -433,6 +556,20 @@ export default function OnboardingPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.replace('/sign-in'); return }
 
+      // Upload avatar if selected
+      let avatarUrl: string | null = null
+      if (data.avatarFile) {
+        const ext = data.avatarFile.name.split('.').pop()
+        const path = `${session.user.id}/avatar.${ext}`
+        const { data: upload } = await supabase.storage
+          .from('avatars')
+          .upload(path, data.avatarFile, { upsert: true })
+        if (upload) {
+          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+          avatarUrl = publicUrl
+        }
+      }
+
       await supabase.from('profiles').update({
         neighborhood: data.neighborhood || null,
         skill_level_self: data.skillLevel,
@@ -446,6 +583,8 @@ export default function OnboardingPage() {
         max_travel_km: data.maxTravelKm,
         bio: data.bio || null,
         looking_for: data.lookingFor || null,
+        username: data.username.trim() || null,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       }).eq('id', session.user.id)
 
       router.push('/search')
@@ -496,6 +635,7 @@ export default function OnboardingPage() {
           {step === 2 && <Step2 data={data} onChange={updateData} />}
           {step === 3 && <Step3 data={data} onChange={updateData} />}
           {step === 4 && <Step4 data={data} onChange={updateData} />}
+          {step === 5 && <Step5 data={data} onChange={updateData} userId={userId} />}
         </div>
       </div>
 
