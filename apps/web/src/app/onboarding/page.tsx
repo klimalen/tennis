@@ -585,7 +585,7 @@ export default function OnboardingPage() {
         bio: data.bio || null,
         looking_for: data.lookingFor || null,
         username: data.username.trim() || null,
-        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+        avatar_url: avatarUrl,
       }).eq('id', session.user.id)
 
       router.push('/search')
