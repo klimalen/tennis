@@ -51,7 +51,7 @@ export function AuthGate({ children, section }: AuthGateProps) {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
   }, [])
 
   // Loading state — show nothing briefly
