@@ -57,7 +57,6 @@ function SignInForm() {
     }
 
     router.push(next)
-    router.refresh()
   }
 
   return (
