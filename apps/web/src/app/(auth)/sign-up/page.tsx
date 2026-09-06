@@ -60,7 +60,7 @@ export default function SignUpPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -79,7 +79,12 @@ export default function SignUpPage() {
       return
     }
 
-    router.push('/verify-email?type=signup')
+    // If session exists — email confirmation is disabled, go straight to onboarding
+    if (signUpData.session) {
+      router.push('/onboarding')
+    } else {
+      router.push('/verify-email?type=signup')
+    }
   }
 
   return (
