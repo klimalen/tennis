@@ -79,14 +79,7 @@ export default function SignUpPage() {
       return
     }
 
-    // Check actual session state — signUpData.session can be null even when confirmation is off
-    const supabaseCheck = createClient()
-    const { data: { session } } = await supabaseCheck.auth.getSession()
-    if (session) {
-      router.push('/onboarding')
-    } else {
-      router.push('/verify-email?type=signup')
-    }
+    router.push('/onboarding')
   }
 
   return (
