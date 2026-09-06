@@ -387,13 +387,14 @@ export default function OnboardingPage() {
   useEffect(() => {
     async function checkAuth() {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/sign-in'); return }
+      // getSession reads from cookie — no network call, instant
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.replace('/sign-in'); return }
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('skill_level_self, city_id')
-        .eq('id', user.id)
+        .select('skill_level_self')
+        .eq('id', session.user.id)
         .single()
 
       if (profile?.skill_level_self) { router.replace('/search'); return }
@@ -426,27 +427,32 @@ export default function OnboardingPage() {
       msgIndex = (msgIndex + 1) % SAVING_MESSAGES.length
       setSavingMsg(SAVING_MESSAGES[msgIndex])
     }, 800)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
 
-    const { error: updateError } = await supabase.from('profiles').update({
-      neighborhood: data.neighborhood || null,
-      skill_level_self: data.skillLevel,
-      years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
-      preferred_formats: data.playFormats,
-      play_style: data.playStyle,
-      preferred_surfaces: data.preferredSurfaces,
-      preferred_days: data.preferredDays,
-      preferred_time_start: data.preferredTimeStart,
-      preferred_time_end: data.preferredTimeEnd,
-      max_travel_km: data.maxTravelKm,
-      bio: data.bio || null,
-      looking_for: data.lookingFor || null,
-    }).eq('id', user.id)
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.replace('/sign-in'); return }
 
-    clearInterval(msgInterval)
-    if (!updateError) router.push('/search')
+      await supabase.from('profiles').update({
+        neighborhood: data.neighborhood || null,
+        skill_level_self: data.skillLevel,
+        years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
+        preferred_formats: data.playFormats,
+        play_style: data.playStyle,
+        preferred_surfaces: data.preferredSurfaces,
+        preferred_days: data.preferredDays,
+        preferred_time_start: data.preferredTimeStart,
+        preferred_time_end: data.preferredTimeEnd,
+        max_travel_km: data.maxTravelKm,
+        bio: data.bio || null,
+        looking_for: data.lookingFor || null,
+      }).eq('id', session.user.id)
+
+      router.push('/search')
+    } finally {
+      clearInterval(msgInterval)
+      setSaving(false)
+    }
   }
 
   if (loading) {
