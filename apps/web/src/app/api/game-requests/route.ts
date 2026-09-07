@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/game-requests?receiver_ids=id1,id2
-// Returns { statuses: { [receiverId]: status } } for requests sent by current user
+// Returns { statuses: { [receiverId]: status } } for requests sent by current user.
+// Users who already share a conversation are always returned as 'matched'.
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -11,15 +12,37 @@ export async function GET(request: NextRequest) {
   const ids = request.nextUrl.searchParams.get('receiver_ids')?.split(',').filter(Boolean) ?? []
   if (ids.length === 0) return NextResponse.json({ statuses: {} })
 
-  const { data } = await supabase
-    .from('game_requests')
-    .select('receiver_id, status')
-    .eq('sender_id', user.id)
-    .in('receiver_id', ids)
+  const [{ data: requests }, { data: myConvs }] = await Promise.all([
+    supabase
+      .from('game_requests')
+      .select('receiver_id, status')
+      .eq('sender_id', user.id)
+      .in('receiver_id', ids),
+    // Find all users who share a conversation with the current user
+    supabase
+      .from('conversation_participants')
+      .select('conversation_id')
+      .eq('user_id', user.id),
+  ])
 
   const statuses: Record<string, string> = {}
-  for (const row of data ?? []) {
+  for (const row of requests ?? []) {
     statuses[row.receiver_id] = row.status
+  }
+
+  // If a shared conversation exists → treat as matched regardless of request status
+  if (myConvs && myConvs.length > 0) {
+    const convIds = myConvs.map((c) => c.conversation_id)
+    const { data: sharedPartners } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .in('conversation_id', convIds)
+      .neq('user_id', user.id)
+      .in('user_id', ids)
+
+    for (const p of sharedPartners ?? []) {
+      statuses[p.user_id] = 'matched'
+    }
   }
 
   return NextResponse.json({ statuses })
