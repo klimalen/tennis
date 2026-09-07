@@ -90,7 +90,7 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
 // ─── Venue detail sheet ───────────────────────────────────────────────────────
 
 function googleMapsUrl(lat: number, lng: number, name: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&query=${lat},${lng}`
+  return `https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lng},17z`
 }
 
 function VenueSheet({
