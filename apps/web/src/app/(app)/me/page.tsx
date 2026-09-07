@@ -32,6 +32,16 @@ async function ProfileContent() {
     .eq('winner_id', user.id)
     .eq('status', 'confirmed')
 
+  // Upcoming games (creator or participant)
+  const { data: upcomingGames } = await supabase
+    .from('games')
+    .select('id, scheduled_at, format, neighborhood, status')
+    .eq('creator_id', user.id)
+    .eq('status', 'confirmed')
+    .gte('scheduled_at', new Date().toISOString())
+    .order('scheduled_at', { ascending: true })
+    .limit(5)
+
   const fullName = profile?.full_name || 'Tennis Player'
   const username = profile?.username || ''
   const avatarUrl = profile?.avatar_url || null
@@ -144,18 +154,39 @@ async function ProfileContent() {
             </div>
             <CreateSheet variant="schedule" />
           </div>
-          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] mb-1">No upcoming games</p>
-            <p className="text-xs text-[rgba(26,26,26,0.3)] font-script italic">
-              Your upcoming games and court bookings will appear here.
-            </p>
-            <Link
-              href="/search"
-              className="mt-4 px-6 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
-            >
-              Find a game
-            </Link>
-          </div>
+
+          {upcomingGames && upcomingGames.length > 0 ? (
+            <div className="pb-4">
+              {upcomingGames.map((game) => {
+                const dt = new Date(game.scheduled_at)
+                const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                const formatLabel = game.format === 'singles' ? 'Singles' : game.format === 'doubles' ? 'Doubles' : 'Mixed'
+                return (
+                  <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
+                    <div className="flex-shrink-0 w-10 text-center">
+                      <p className="font-numbers text-xl leading-none text-brand-primary">{dt.getDate()}</p>
+                      <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]">
+                        {dt.toLocaleDateString('en-GB', { month: 'short' })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#1a1a1a]">{formatLabel}</p>
+                      <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">
+                        {timeStr}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] mb-1">No upcoming games</p>
+              <p className="text-xs text-[rgba(26,26,26,0.3)] font-script italic">
+                Tap + to add your first game
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
