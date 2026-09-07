@@ -122,7 +122,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-brand-bg flex flex-col">
+        <div className="fixed inset-0 z-[100] bg-brand-bg flex flex-col">
           {/* Header */}
           <div className="flex-shrink-0 border-b border-brand-divider px-4 py-4 flex items-center justify-between">
             <span className="font-display text-2xl tracking-wide">PROPOSE GAME</span>
