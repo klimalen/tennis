@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, SlidersHorizontal, MapPin, Zap, DollarSign } from 'lucide-react'
+import { Search, SlidersHorizontal, MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -87,21 +87,178 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
   )
 }
 
+// ─── Venue detail sheet ───────────────────────────────────────────────────────
+
+function getDirectionsUrl(lat: number, lng: number, name: string): string {
+  if (typeof navigator !== 'undefined' && /iPad|iPhone|iPod|Mac/.test(navigator.userAgent)) {
+    return `https://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`
+  }
+  return `https://maps.google.com/maps?q=${lat},${lng}`
+}
+
+function VenueSheet({
+  venue,
+  userLat,
+  userLng,
+  onClose,
+}: {
+  venue: Venue
+  userLat: number
+  userLng: number
+  onClose: () => void
+}) {
+  const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
+  const zoom = 16
+  const tileSize = 256
+  // Static map: single OSM tile centered on venue
+  const mapUrl = `https://tile.openstreetmap.org/${zoom}/${
+    Math.floor(((venue.lng + 180) / 360) * Math.pow(2, zoom))
+  }/${
+    Math.floor(
+      ((1 - Math.log(Math.tan((venue.lat * Math.PI) / 180) + 1 / Math.cos((venue.lat * Math.PI) / 180)) / Math.PI) / 2) *
+        Math.pow(2, zoom),
+    )
+  }.png`
+  void tileSize
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/40 z-30"
+        onClick={onClose}
+      />
+
+      {/* Sheet */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
+        {/* Map preview */}
+        <div className="relative h-40 bg-brand-surface overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={mapUrl}
+            alt="Map"
+            className="w-full h-full object-cover"
+          />
+          {/* Center pin */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <MapPin size={28} className="text-brand-primary drop-shadow" fill="currentColor" />
+          </div>
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 bg-white/90 flex items-center justify-center shadow"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Header */}
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">
+                {venue.name}
+              </h2>
+              <span className="text-[11px] text-[rgba(26,26,26,0.45)] flex items-center gap-1 flex-shrink-0 mt-1">
+                <MapPin size={11} />
+                {formatDistance(distanceM)}
+              </span>
+            </div>
+            {venue.address && (
+              <p className="text-[12px] text-[rgba(26,26,26,0.5)] mt-1">{venue.address}</p>
+            )}
+          </div>
+
+          {/* Attributes */}
+          <div className="flex flex-wrap gap-2">
+            <SurfaceBadge surface={venue.surface} />
+            {venue.court_count != null && (
+              <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
+                {venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}
+              </span>
+            )}
+            {venue.lit && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
+                <Zap size={9} /> Floodlit
+              </span>
+            )}
+            {venue.fee === false && (
+              <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
+                Free
+              </span>
+            )}
+            {venue.fee === true && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
+                <DollarSign size={9} /> Fee
+              </span>
+            )}
+          </div>
+
+          {/* Opening hours */}
+          {venue.opening_hours && (
+            <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
+              <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
+              <span>{venue.opening_hours}</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="grid grid-cols-1 gap-2 pt-1">
+            <a
+              href={getDirectionsUrl(venue.lat, venue.lng, venue.name)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+            >
+              <Navigation size={13} />
+              Get directions
+            </a>
+            {venue.website && (
+              <a
+                href={venue.website.startsWith('http') ? venue.website : `https://${venue.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-4 py-3 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.7)] hover:bg-brand-surface transition-colors"
+              >
+                <Globe size={13} />
+                Website
+              </a>
+            )}
+            {venue.phone && (
+              <a
+                href={`tel:${venue.phone}`}
+                className="flex items-center justify-center gap-2 px-4 py-3 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.7)] hover:bg-brand-surface transition-colors"
+              >
+                <Phone size={13} />
+                {venue.phone}
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Venue card ───────────────────────────────────────────────────────────────
 
 function VenueCard({
   venue,
   userLat,
   userLng,
+  onClick,
 }: {
   venue: Venue
   userLat: number
   userLng: number
+  onClick: () => void
 }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
 
   return (
-    <div className="bg-white border border-brand-divider p-4 space-y-3">
+    <button
+      onClick={onClick}
+      className="w-full text-left bg-white border border-brand-divider p-4 space-y-3 hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
       {/* Top row: surface badge + distance */}
       <div className="flex items-center justify-between gap-2">
         <SurfaceBadge surface={venue.surface} />
@@ -153,7 +310,7 @@ function VenueCard({
           </span>
         )}
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -199,6 +356,7 @@ export function SearchClient({ user }: { user: User | null }) {
   const [suggestions, setSuggestions] = useState<NominatimPlace[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const skipAutocompleteRef = useRef(false)
 
   // Debounced autocomplete
@@ -318,6 +476,14 @@ export function SearchClient({ user }: { user: User | null }) {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
+      {selectedVenue && userCoords && (
+        <VenueSheet
+          venue={selectedVenue}
+          userLat={userCoords.lat}
+          userLng={userCoords.lng}
+          onClose={() => setSelectedVenue(null)}
+        />
+      )}
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
@@ -456,6 +622,7 @@ export function SearchClient({ user }: { user: User | null }) {
                     venue={venue}
                     userLat={userCoords.lat}
                     userLng={userCoords.lng}
+                    onClick={() => setSelectedVenue(venue)}
                   />
                 ))}
               </>
