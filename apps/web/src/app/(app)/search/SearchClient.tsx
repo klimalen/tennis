@@ -471,7 +471,7 @@ export function SearchClient({ user }: { user: User | null }) {
       },
       () => {
         setLoadingVenues(false)
-        setError('Location access denied. Try entering a city name below.')
+        // Fail silently — city search is the main flow
       },
       { timeout: 10_000 },
     )
