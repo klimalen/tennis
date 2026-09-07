@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -30,6 +30,11 @@ function nowTime() {
 
 export default function NewGamePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Pre-selected player from chat (e.g. ?invite=ID&name=Name)
+  const preselectedId = searchParams.get('invite') ?? ''
+  const preselectedName = searchParams.get('name') ?? ''
 
   const [date, setDate] = useState(today())
   const [time, setTime] = useState(nowTime())
@@ -44,9 +49,12 @@ export default function NewGamePage() {
   useEffect(() => {
     fetch('/api/connections')
       .then((r) => r.json() as Promise<{ connections: Connection[] }>)
-      .then((data) => setConnections(data.connections ?? []))
+      .then((data) => {
+        // Don't show the pre-selected person in the optional list
+        setConnections((data.connections ?? []).filter((c) => c.id !== preselectedId))
+      })
       .catch(() => {})
-  }, [])
+  }, [preselectedId])
 
   function togglePlayer(id: string) {
     setSelectedIds((prev) => {
@@ -82,21 +90,26 @@ export default function NewGamePage() {
 
     const { id: gameId } = await res.json() as { id: string }
 
-    if (selectedIds.size > 0) {
+    const allInvitees = [
+      ...(preselectedId ? [preselectedId] : []),
+      ...Array.from(selectedIds),
+    ]
+    if (allInvitees.length > 0) {
       await fetch(`/api/games/${gameId}/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ user_ids: allInvitees }),
       })
     }
 
     router.push('/me')
   }
 
+  const totalInvites = selectedIds.size + (preselectedId ? 1 : 0)
   const submitLabel = submitting
     ? 'Saving...'
-    : selectedIds.size > 0
-      ? `Save & invite ${selectedIds.size} player${selectedIds.size > 1 ? 's' : ''}`
+    : totalInvites > 0
+      ? `Save & invite ${totalInvites} player${totalInvites > 1 ? 's' : ''}`
       : 'Save game'
 
   return (
@@ -169,11 +182,24 @@ export default function NewGamePage() {
               className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
-          {/* Invite players */}
+          {/* Pre-selected player from chat */}
+          {preselectedId && preselectedName && (
+            <div>
+              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
+              <div className="flex items-center gap-2 px-3 py-2.5 border border-brand-primary bg-brand-surface">
+                <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
+                <span className="text-sm text-[#1a1a1a] flex-1">{preselectedName}</span>
+                <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
+              </div>
+            </div>
+          )}
+
+          {/* Invite more players */}
           {connections.length > 0 && (
             <div>
               <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-                Invite players <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
+                {preselectedId ? 'Add more players' : 'Invite players'}{' '}
+                <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
               </p>
               <div className="space-y-2">
                 {connections.map((c) => {

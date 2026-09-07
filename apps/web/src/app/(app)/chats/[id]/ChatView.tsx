@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } from 'lucide-react'
-import { ProposeGameSheet } from './ProposeGameSheet'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   id: string
@@ -173,6 +173,8 @@ export function ChatView({
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+
+  const router = useRouter()
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -449,7 +451,13 @@ export function ChatView({
         <div className="max-w-2xl mx-auto">
           {/* Propose game button */}
           <div className="flex mb-2">
-            <ProposeGameSheet otherUserId={otherUserId} otherName={otherName} onSent={() => scrollToBottom()} />
+            <button
+              onClick={() => router.push(`/games/new?invite=${otherUserId}&name=${encodeURIComponent(otherName)}`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors"
+            >
+              <Calendar size={12} />
+              Propose game
+            </button>
           </div>
           <div className="flex items-end gap-2">
             <textarea
