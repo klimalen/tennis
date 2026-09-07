@@ -194,7 +194,7 @@ export function SearchClient({ user }: { user: User | null }) {
     }
   }
 
-  function useMyLocation() {
+  function requestGeolocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGeocodeError('Geolocation is not supported by your browser')
       return
@@ -246,7 +246,7 @@ export function SearchClient({ user }: { user: User | null }) {
   useEffect(() => {
     if (filter !== 'courts') return
     // Auto-trigger geolocation when tab opens
-    useMyLocation()
+    requestGeolocation()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter])
 
@@ -334,7 +334,7 @@ export function SearchClient({ user }: { user: User | null }) {
               </button>
             </div>
             <button
-              onClick={useMyLocation}
+              onClick={requestGeolocation}
               disabled={loadingVenues}
               className="flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40 -mt-1"
             >
