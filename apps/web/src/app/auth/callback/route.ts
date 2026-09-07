@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(`${origin}${destination}`)
+  // Use object form of cookies.set to avoid type issues with optional 3rd argument
   pendingCookies.forEach(({ name, value, options }) => {
-    if (options) response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
-    else response.cookies.set(name, value)
+    response.cookies.set({ name, value, ...options } as Parameters<typeof response.cookies.set>[0])
   })
   return response
 }
