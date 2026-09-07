@@ -41,6 +41,19 @@ interface NominatimPlace {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Returns OSM tile URL + fractional offset (0-1) of the point within the tile */
+function osmTile(lat: number, lng: number, z = 15) {
+  const x = Math.floor(((lng + 180) / 360) * Math.pow(2, z))
+  const latRad = (lat * Math.PI) / 180
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * Math.pow(2, z),
+  )
+  const fx = ((lng + 180) / 360) * Math.pow(2, z) - x
+  const fy =
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * Math.pow(2, z) - y
+  return { url: `https://tile.openstreetmap.org/${z}/${x}/${y}.png`, fx, fy }
+}
+
 function boundingBoxClient(lat: number, lng: number, radiusKm: number) {
   const earthKm = 6371
   const deltaLat = (radiusKm / earthKm) * (180 / Math.PI)
@@ -235,7 +248,10 @@ function VenueCard({
   onClick: () => void
 }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
-  const mapThumb = `https://maps.wikimedia.org/img/osm-intl,16,${venue.lat},${venue.lng},80x80@2x.png`
+  const { url: tileUrl, fx, fy } = osmTile(venue.lat, venue.lng, 15)
+  const TILE = 256, THUMB = 80
+  const tileLeft = Math.round(THUMB / 2 - fx * TILE)
+  const tileTop = Math.round(THUMB / 2 - fy * TILE)
 
   return (
     <button
@@ -243,15 +259,19 @@ function VenueCard({
       className={`w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface ${viewed ? 'opacity-55' : ''}`}
     >
       <div className="flex gap-0">
-        {/* Map thumbnail */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={mapThumb}
-          alt=""
-          width={80}
-          height={80}
-          className="w-20 h-20 object-cover flex-shrink-0 bg-brand-surface"
-        />
+        {/* Map thumbnail — OSM tile centered on court */}
+        <div className="w-20 h-20 flex-shrink-0 overflow-hidden relative bg-brand-surface">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={tileUrl}
+            alt=""
+            style={{ position: 'absolute', width: TILE, height: TILE, left: tileLeft, top: tileTop }}
+          />
+          {/* Court marker dot */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-2.5 h-2.5 rounded-full bg-brand-primary ring-2 ring-white shadow" />
+          </div>
+        </div>
         {/* Info */}
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
