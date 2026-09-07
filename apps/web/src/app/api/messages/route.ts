@@ -24,11 +24,13 @@ export async function POST(request: Request) {
 
   if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('messages')
     .insert({ conversation_id, sender_id: user.id, body: text.trim() })
+    .select('id, created_at')
+    .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, id: data.id, created_at: data.created_at })
 }
