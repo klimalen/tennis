@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, MapPin } from 'lucide-react'
+import { PlayTogetherButton } from './PlayTogetherButton'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,8 @@ export default async function PlayerProfilePage({
 }) {
   const { username } = await params
   const supabase = await createClient()
+
+  const { data: { user: viewer } } = await supabase.auth.getUser()
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -133,10 +136,10 @@ export default async function PlayerProfilePage({
             )}
           </div>
 
-          {/* Play together button */}
-          <button className="w-full mt-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
-            Play together
-          </button>
+          {/* Play together button — only shown to other logged-in users */}
+          {viewer && viewer.id !== profile.id && (
+            <PlayTogetherButton receiverId={profile.id} />
+          )}
         </div>
 
         {/* Divider */}
