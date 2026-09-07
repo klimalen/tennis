@@ -112,6 +112,14 @@ export function ChatsClient({ userId, initialChats }: Props) {
           <Link
             key={chat.id}
             href={`/chats/${chat.id}`}
+            onClick={() => {
+              // Optimistically clear unread dot on click
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === chat.id ? { ...c, myLastReadAt: new Date().toISOString() } : c,
+                ),
+              )
+            }}
             className="flex items-center gap-4 px-4 py-4 border-b border-brand-divider hover:bg-brand-surface/50 transition-colors"
           >
             {/* Avatar */}
