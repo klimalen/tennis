@@ -97,7 +97,7 @@ export default function NewGamePage() {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen pb-32 md:pb-8">
       <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link href="/me" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
@@ -151,10 +151,10 @@ export default function NewGamePage() {
 
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              Notes <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
+              About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
             </p>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Anything to add..." rows={3} maxLength={500}
+              placeholder="What's the plan? e.g. practice, match, group training..." rows={3} maxLength={500}
               className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 

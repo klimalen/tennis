@@ -74,11 +74,11 @@ export function CreateSheet({ variant }: Props) {
 
       {/* Sheet */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-brand-bg border-t border-brand-divider transition-transform duration-300 ease-out safe-area-pb ${
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-brand-bg border-t border-brand-divider transition-transform duration-300 ease-out max-h-[90vh] flex flex-col ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="max-w-lg mx-auto px-4 pt-4 pb-6">
+        <div className="max-w-lg mx-auto w-full px-4 pt-4 pb-6 overflow-y-auto flex-1">
           {/* Handle + header */}
           <div className="flex items-center justify-between mb-5">
             <span className="font-display text-2xl tracking-wide">CREATE</span>

@@ -95,8 +95,8 @@ export function ProposeGameSheet({ otherUserId, onSent }: Props) {
       )}
 
       {/* Sheet */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-brand-bg border-t border-brand-divider transition-transform duration-300 ease-out safe-area-pb ${open ? 'translate-y-0' : 'translate-y-full'}`}>
-        <div className="max-w-lg mx-auto px-4 pt-4 pb-6">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-brand-bg border-t border-brand-divider transition-transform duration-300 ease-out max-h-[90vh] flex flex-col ${open ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="max-w-lg mx-auto w-full px-4 pt-4 pb-6 overflow-y-auto flex-1">
           <div className="flex items-center justify-between mb-5">
             <span className="font-display text-2xl tracking-wide">PROPOSE GAME</span>
             <button onClick={() => setOpen(false)} className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.4)]">

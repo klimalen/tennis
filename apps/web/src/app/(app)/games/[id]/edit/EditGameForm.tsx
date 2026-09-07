@@ -84,7 +84,7 @@ export function EditGameForm({ game }: { game: Game }) {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen pb-32 md:pb-8">
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -175,7 +175,7 @@ export function EditGameForm({ game }: { game: Game }) {
           {/* Notes */}
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              Notes <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
+              About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
             </p>
             <textarea
               value={notes}
