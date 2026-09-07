@@ -47,6 +47,9 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(`${origin}${destination}`)
-  pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2]))
+  pendingCookies.forEach(({ name, value, options }) => {
+    if (options) response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+    else response.cookies.set(name, value)
+  })
   return response
 }
