@@ -52,7 +52,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Where do you play?</h2>
-        <p className="text-gray-500 text-sm">We&apos;ll show you players and courts near you.</p>
+        <p className="text-gray-500 text-sm">We&apos;ll show you players and courts near you. All fields optional.</p>
       </div>
       <div className="space-y-4">
         <div>
@@ -139,7 +139,7 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Your tennis</h2>
-        <p className="text-gray-500 text-sm">Tell us about your game so we can find the right players for you.</p>
+        <p className="text-gray-500 text-sm">Tell us about your game so we can find the right players for you. All fields optional.</p>
       </div>
 
       {/* Years playing */}
@@ -256,7 +256,7 @@ function Step3({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1">When do you play?</h2>
-        <p className="text-gray-500 text-sm">Help us match you with players who share your schedule.</p>
+        <p className="text-gray-500 text-sm">Help us match you with players who share your schedule. All fields optional.</p>
       </div>
 
       {/* Days */}
@@ -538,9 +538,6 @@ export default function OnboardingPage() {
   }
 
   function canProceed() {
-    if (step === 1) return data.city.trim().length > 0
-    if (step === 2) return data.skillLevel !== null && data.playFormats.length > 0
-    if (step === 3) return data.preferredDays.length > 0
     if (step === 5) return data.username.trim().length >= 3
     return true
   }
