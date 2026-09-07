@@ -138,23 +138,38 @@ out center tags;`
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
-  const latParam = searchParams.get('lat')
-  const lngParam = searchParams.get('lng')
-  const radiusParam = searchParams.get('radius')
 
-  if (!latParam || !lngParam) {
-    return NextResponse.json({ error: 'lat and lng are required' }, { status: 400 })
+  // Accept either explicit bbox or lat/lng/radius
+  let south: number, west: number, north: number, east: number
+
+  const southParam = searchParams.get('south')
+  const westParam = searchParams.get('west')
+  const northParam = searchParams.get('north')
+  const eastParam = searchParams.get('east')
+
+  if (southParam && westParam && northParam && eastParam) {
+    south = parseFloat(southParam)
+    west = parseFloat(westParam)
+    north = parseFloat(northParam)
+    east = parseFloat(eastParam)
+    if ([south, west, north, east].some(isNaN)) {
+      return NextResponse.json({ error: 'Invalid bbox params' }, { status: 400 })
+    }
+  } else {
+    const latParam = searchParams.get('lat')
+    const lngParam = searchParams.get('lng')
+    const radiusParam = searchParams.get('radius')
+    if (!latParam || !lngParam) {
+      return NextResponse.json({ error: 'lat and lng are required' }, { status: 400 })
+    }
+    const lat = parseFloat(latParam)
+    const lng = parseFloat(lngParam)
+    const radiusKm = radiusParam ? parseFloat(radiusParam) : 10
+    if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
+      return NextResponse.json({ error: 'Invalid lat/lng/radius' }, { status: 400 })
+    }
+    ;({ south, west, north, east } = boundingBox(lat, lng, radiusKm))
   }
-
-  const lat = parseFloat(latParam)
-  const lng = parseFloat(lngParam)
-  const radiusKm = radiusParam ? parseFloat(radiusParam) : 10
-
-  if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
-    return NextResponse.json({ error: 'Invalid lat/lng/radius' }, { status: 400 })
-  }
-
-  const { south, west, north, east } = boundingBox(lat, lng, radiusKm)
   const supabase = await createClient()
 
   // Check if we have recent data for this area (any venue within bbox fetched in last 30 days)

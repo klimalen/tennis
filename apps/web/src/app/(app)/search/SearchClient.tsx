@@ -27,7 +27,26 @@ export interface Venue {
 
 type FilterTab = 'all' | 'players' | 'open_games' | 'courts' | 'coaches'
 
+interface NominatimPlace {
+  place_id: number
+  display_name: string
+  name: string
+  lat: string
+  lon: string
+  boundingbox: [string, string, string, string] // [south, north, west, east]
+  type?: string
+  class?: string
+  address?: { country?: string; city?: string; town?: string }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function boundingBoxClient(lat: number, lng: number, radiusKm: number) {
+  const earthKm = 6371
+  const deltaLat = (radiusKm / earthKm) * (180 / Math.PI)
+  const deltaLng = deltaLat / Math.cos((lat * Math.PI) / 180)
+  return { south: lat - deltaLat, north: lat + deltaLat, west: lng - deltaLng, east: lng + deltaLng }
+}
 
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6_371_000
@@ -176,76 +195,105 @@ export function SearchClient({ user }: { user: User | null }) {
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [cityInput, setCityInput] = useState('')
   const [cityLabel, setCityLabel] = useState<string | null>(null)
-  const [geocodeError, setGeocodeError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<NominatimPlace[]>([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
-  async function loadVenues(lat: number, lng: number) {
+  // Debounced autocomplete
+  useEffect(() => {
+    const q = cityInput.trim()
+    if (q.length < 2) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+    setLoadingSuggestions(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&featuretype=city&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en' } },
+        )
+        const results = (await res.json()) as NominatimPlace[]
+        // Prefer cities/towns/municipalities; de-duplicate by display name
+        const filtered = results.filter((r) =>
+          ['city', 'town', 'village', 'municipality', 'administrative', 'county'].includes(r.type ?? r.class ?? '')
+        )
+        setSuggestions(filtered.length ? filtered : results.slice(0, 4))
+        setShowSuggestions(true)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setLoadingSuggestions(false)
+      }
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [cityInput])
+
+  async function loadVenuesByBbox(south: number, west: number, north: number, east: number) {
     setLoadingVenues(true)
-    setGeocodeError(null)
+    setError(null)
+    setShowSuggestions(false)
     try {
-      const res = await fetch(`/api/venues?lat=${lat}&lng=${lng}&radius=10`)
+      const params = new URLSearchParams({
+        south: String(south),
+        west: String(west),
+        north: String(north),
+        east: String(east),
+      })
+      const res = await fetch(`/api/venues?${params}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = (await res.json()) as { venues: Venue[] }
       setVenues(json.venues ?? [])
     } catch (err) {
       console.error('Failed to fetch venues:', err)
       setVenues([])
+      setError('Failed to load courts. Please try again.')
     } finally {
       setLoadingVenues(false)
     }
   }
 
+  function selectSuggestion(place: NominatimPlace) {
+    setCityInput(place.name)
+    setCityLabel(place.name + (place.address?.country ? `, ${place.address.country}` : ''))
+    setSuggestions([])
+    setShowSuggestions(false)
+    // Nominatim boundingbox: [south, north, west, east]
+    const [s, n, w, e] = place.boundingbox.map(Number)
+    const lat = (s + n) / 2
+    const lng = (w + e) / 2
+    setUserCoords({ lat, lng })
+    void loadVenuesByBbox(s, w, n, e)
+  }
+
   function requestGeolocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGeocodeError('Geolocation is not supported by your browser')
+      setError('Geolocation is not supported by your browser')
       return
     }
     setLoadingVenues(true)
-    setGeocodeError(null)
+    setError(null)
+    setShowSuggestions(false)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords
         setUserCoords({ lat: latitude, lng: longitude })
         setCityLabel('your location')
-        loadVenues(latitude, longitude)
+        const { south, west, north, east } = boundingBoxClient(latitude, longitude, 10)
+        void loadVenuesByBbox(south, west, north, east)
       },
       () => {
         setLoadingVenues(false)
-        setGeocodeError('Location access denied. Try entering a city name.')
+        setError('Location access denied. Try entering a city name below.')
       },
       { timeout: 10_000 },
     )
   }
 
-  async function searchByCity() {
-    const q = cityInput.trim()
-    if (!q) return
-    setLoadingVenues(true)
-    setGeocodeError(null)
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
-        { headers: { 'Accept-Language': 'en' } },
-      )
-      const results = (await res.json()) as { lat: string; lon: string; display_name: string }[]
-      if (!results.length) {
-        setGeocodeError('City not found. Try a different name.')
-        setLoadingVenues(false)
-        return
-      }
-      const { lat, lon, display_name } = results[0]!
-      const coords = { lat: parseFloat(lat), lng: parseFloat(lon) }
-      setUserCoords(coords)
-      setCityLabel(display_name.split(',')[0] ?? display_name)
-      await loadVenues(coords.lat, coords.lng)
-    } catch {
-      setGeocodeError('Could not geocode city. Please try again.')
-      setLoadingVenues(false)
-    }
-  }
-
   useEffect(() => {
     if (filter !== 'courts') return
-    // Auto-trigger geolocation when tab opens
     requestGeolocation()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter])
@@ -253,7 +301,8 @@ export function SearchClient({ user }: { user: User | null }) {
   function handleFilterChange(value: FilterTab) {
     if (value !== 'courts') {
       setVenues([])
-      setGeocodeError(null)
+      setError(null)
+      setSuggestions([])
     }
     setFilter(value)
   }
@@ -315,24 +364,50 @@ export function SearchClient({ user }: { user: User | null }) {
         {/* Courts view */}
         {showCourts && (
           <>
-            {/* City search bar */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={cityInput}
-                onChange={(e) => setCityInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && searchByCity()}
-                placeholder="City or area..."
-                className="flex-1 bg-brand-surface border border-brand-divider px-4 py-2.5 text-sm outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.35)]"
-              />
-              <button
-                onClick={searchByCity}
-                disabled={loadingVenues || !cityInput.trim()}
-                className="px-4 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-40"
-              >
-                Search
-              </button>
+            {/* City search with autocomplete */}
+            <div className="relative">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={cityInput}
+                  onChange={(e) => { setCityInput(e.target.value); setShowSuggestions(true) }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Search city or area..."
+                  className="flex-1 bg-brand-surface border border-brand-divider px-4 py-2.5 text-sm outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.35)]"
+                />
+                {loadingSuggestions && (
+                  <div className="absolute right-16 top-1/2 -translate-y-1/2">
+                    <div className="w-3.5 h-3.5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Suggestions dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 z-20 bg-white border border-brand-divider shadow-sm mt-0.5">
+                  {suggestions.map((place) => {
+                    const country = place.address?.country
+                    const subtitle = [place.address?.city ?? place.address?.town, country]
+                      .filter(Boolean)
+                      .join(', ')
+                    return (
+                      <button
+                        key={place.place_id}
+                        onMouseDown={() => selectSuggestion(place)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-brand-surface transition-colors border-b border-brand-divider last:border-0"
+                      >
+                        <p className="text-sm text-[#1a1a1a]">{place.name}</p>
+                        {subtitle && subtitle !== place.name && (
+                          <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{subtitle}</p>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
+
             <button
               onClick={requestGeolocation}
               disabled={loadingVenues}
@@ -342,8 +417,8 @@ export function SearchClient({ user }: { user: User | null }) {
               Use my location
             </button>
 
-            {geocodeError && (
-              <p className="text-[11px] text-red-500">{geocodeError}</p>
+            {error && (
+              <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{error}</p>
             )}
 
             {loadingVenues && (
@@ -355,11 +430,9 @@ export function SearchClient({ user }: { user: User | null }) {
               </div>
             )}
 
-            {!loadingVenues && userCoords && venues.length === 0 && !geocodeError && (
+            {!loadingVenues && userCoords && venues.length === 0 && !error && (
               <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
-                <p className="text-sm text-[rgba(26,26,26,0.6)]">
-                  No courts found within 10 km
-                </p>
+                <p className="text-sm text-[rgba(26,26,26,0.6)]">No courts found in this area</p>
               </div>
             )}
 
@@ -367,7 +440,7 @@ export function SearchClient({ user }: { user: User | null }) {
               <>
                 {cityLabel && (
                   <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                    {venues.length} courts near {cityLabel}
+                    {venues.length} {venues.length === 1 ? 'court' : 'courts'} near {cityLabel}
                   </p>
                 )}
                 {venues.map((venue) => (
