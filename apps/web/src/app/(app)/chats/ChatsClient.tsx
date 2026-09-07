@@ -54,7 +54,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
             const updated = [...prev]
             updated[idx] = {
               ...updated[idx]!,
-              lastMsg: { id: msg.id, body: msg.body, created_at: msg.created_at, sender_id: msg.sender_id, type: msg.type },
+              lastMsg: { id: msg.id, body: msg.body, created_at: msg.created_at, sender_id: msg.sender_id, ...(msg.type ? { type: msg.type } : {}) },
             }
             // Bubble updated chat to top
             const [chat] = updated.splice(idx, 1)
