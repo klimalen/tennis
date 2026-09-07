@@ -118,7 +118,10 @@ out center tags;`
 
   const res = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': 'TennisApp/1.0 (tennis-finder; contact@tennisapp.com)',
+    },
     body: `data=${encodeURIComponent(query)}`,
     signal: AbortSignal.timeout(45_000),
   })
