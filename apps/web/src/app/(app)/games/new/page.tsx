@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -29,6 +29,14 @@ function nowTime() {
 }
 
 export default function NewGamePage() {
+  return (
+    <Suspense>
+      <NewGameForm />
+    </Suspense>
+  )
+}
+
+function NewGameForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
