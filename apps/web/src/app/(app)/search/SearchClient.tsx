@@ -7,6 +7,20 @@ import type { User } from '@supabase/supabase-js'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface Player {
+  id: string
+  username: string
+  full_name: string
+  avatar_url: string | null
+  skill_level_self: number | null
+  skill_level_computed: number | null
+  preferred_formats: string[]
+  play_style: string | null
+  total_matches: number
+  last_active_at: string | null
+  city_name: string | null
+}
+
 export interface Venue {
   id: string
   osm_id: string
@@ -40,6 +54,78 @@ interface NominatimPlace {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// ─── Player card ──────────────────────────────────────────────────────────────
+
+function skillLabel(level: number | null): string {
+  if (level == null) return ''
+  if (level < 2) return 'Beginner'
+  if (level < 3) return 'Casual'
+  if (level < 4) return 'Intermediate'
+  if (level < 5) return 'Club'
+  if (level < 6) return 'Advanced'
+  if (level < 7) return 'Competitive'
+  return 'Elite'
+}
+
+const FORMAT_LABELS: Record<string, string> = {
+  singles: 'Singles',
+  doubles: 'Doubles',
+  mixed_doubles: 'Mixed',
+}
+
+function PlayerCard({ player }: { player: Player }) {
+  const skill = player.skill_level_computed ?? player.skill_level_self
+  const initials = player.full_name
+    .split(' ')
+    .map((w) => w[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  return (
+    <div className="bg-white border border-brand-divider p-4 flex gap-3">
+      {/* Avatar */}
+      <div className="w-14 h-14 flex-shrink-0 bg-brand-surface-md flex items-center justify-center overflow-hidden">
+        {player.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
+        ) : (
+          <span className="font-display text-lg text-[rgba(26,26,26,0.4)]">{initials}</span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div>
+          <p className="font-medium text-[14px] text-[#1a1a1a] leading-tight">{player.full_name}</p>
+          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{player.username}</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {skill != null && (
+            <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
+              {skill.toFixed(1)} · {skillLabel(skill)}
+            </span>
+          )}
+          {player.preferred_formats.map((f) => (
+            <span key={f} className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
+              {FORMAT_LABELS[f] ?? f}
+            </span>
+          ))}
+        </div>
+
+        {(player.play_style || player.total_matches > 0) && (
+          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">
+            {player.play_style && <span className="capitalize">{player.play_style.replace('_', ' ')}</span>}
+            {player.play_style && player.total_matches > 0 && ' · '}
+            {player.total_matches > 0 && `${player.total_matches} matches`}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
 
 /** 2×2 OSM tile grid component — court always centered in the thumbnail */
 function MapThumbnail({ lat, lng }: { lat: number; lng: number }) {
@@ -364,8 +450,10 @@ const FILTER_CHIPS: { label: string; value: FilterTab }[] = [
 
 // ─── Search client ────────────────────────────────────────────────────────────
 
-export function SearchClient({ user }: { user: User | null }) {
+export function SearchClient({ user, userCityName }: { user: User | null; userCityName: string | null }) {
   const [filter, setFilter] = useState<FilterTab>('all')
+  const [players, setPlayers] = useState<Player[]>([])
+  const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [venues, setVenues] = useState<Venue[]>([])
   const [loadingVenues, setLoadingVenues] = useState(false)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -477,7 +565,22 @@ export function SearchClient({ user }: { user: User | null }) {
     )
   }
 
-  // No auto-trigger — user explicitly requests location or types a city
+  // No auto-trigger for geolocation — user explicitly requests location or types a city
+
+  // Load players when on players/all tab
+  useEffect(() => {
+    if (filter !== 'players' && filter !== 'all') return
+    if (!userCityName) return
+    setLoadingPlayers(true)
+    const params = new URLSearchParams({ city: userCityName })
+    if (user) params.set('exclude', user.id)
+    fetch(`/api/players?${params}`)
+      .then((r) => r.json())
+      .then((json: { players: Player[] }) => setPlayers(json.players ?? []))
+      .catch(() => setPlayers([]))
+      .finally(() => setLoadingPlayers(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter])
 
   function handleFilterChange(value: FilterTab) {
     if (value !== 'courts') {
@@ -650,12 +753,40 @@ export function SearchClient({ user }: { user: User | null }) {
           </>
         )}
 
-        {/* Players / default view — skeleton cards */}
+        {/* Players view */}
         {!showCourts && (
           <>
-            {[...Array(6)].map((_, i) => (
-              <PlayerCardSkeleton key={i} />
-            ))}
+            {loadingPlayers && (
+              [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)
+            )}
+
+            {!loadingPlayers && !userCityName && (
+              <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center space-y-2">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No city set</p>
+                <p className="text-sm text-[rgba(26,26,26,0.5)]">Add your city in your profile to find nearby players</p>
+                <a href="/me/edit" className="inline-block mt-2 px-5 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+                  Edit profile
+                </a>
+              </div>
+            )}
+
+            {!loadingPlayers && userCityName && players.length === 0 && (
+              <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No players found</p>
+                <p className="text-sm text-[rgba(26,26,26,0.5)]">No players in {userCityName} yet</p>
+              </div>
+            )}
+
+            {!loadingPlayers && players.length > 0 && (
+              <>
+                <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+                  {players.length} players in {userCityName}
+                </p>
+                {players.map((player) => (
+                  <PlayerCard key={player.id} player={player} />
+                ))}
+              </>
+            )}
           </>
         )}
       </div>
