@@ -104,9 +104,15 @@ export function ChatsClient({ userId, initialChats }: Props) {
       {chats.map((chat) => {
         const { other, lastMsg } = chat
         const initials = other.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-        const previewBody = lastMsg?.type === 'game_invite'
-          ? 'Confirm participation in a game'
-          : lastMsg?.body ?? ''
+        let previewBody = lastMsg?.body ?? ''
+        if (lastMsg?.type === 'game_invite') {
+          try {
+            const parsed = JSON.parse(lastMsg.body) as { updated?: boolean }
+            previewBody = parsed.updated ? 'Meeting details updated' : 'Confirm participation in a game'
+          } catch {
+            previewBody = 'Confirm participation in a game'
+          }
+        }
         const preview = lastMsg
           ? (lastMsg.sender_id === userId ? 'You: ' : '') + previewBody
           : null

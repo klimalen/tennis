@@ -89,8 +89,9 @@ function GameInviteCard({
   const [responding, setResponding] = useState(false)
 
   // Use live game data if available, fall back to snapshot in msg.body
-  let snapshot: { scheduled_at?: string; format?: string; location?: string | null } = {}
+  let snapshot: { scheduled_at?: string; format?: string; location?: string | null; updated?: boolean } = {}
   try { snapshot = JSON.parse(msg.body) as typeof snapshot } catch { /* ignore */ }
+  const isUpdate = snapshot.updated === true
 
   const source = gameDetail ?? snapshot
   const dt = source.scheduled_at ? new Date(source.scheduled_at) : null
@@ -102,7 +103,7 @@ function GameInviteCard({
   const myStatus = gameStatus?.myStatus
   const otherStatus = gameStatus?.otherStatus
 
-  const canRespond = !isMe && myStatus === 'invited'
+  const canRespond = !isMe && myStatus === 'invited' && !isUpdate
 
   async function respond(status: 'accepted' | 'declined') {
     if (!msg.game_id || responding) return
@@ -145,7 +146,9 @@ function GameInviteCard({
       {/* Header */}
       <div className={`px-3 py-2 flex items-center gap-2 ${isMe ? 'bg-brand-primary/5' : 'bg-brand-surface'}`}>
         <Calendar size={12} className="text-brand-primary flex-shrink-0" />
-        <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-brand-primary">Game proposal</span>
+        <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-brand-primary">
+          {isUpdate ? 'Meeting details updated' : 'Game proposal'}
+        </span>
       </div>
 
       {/* Details */}
