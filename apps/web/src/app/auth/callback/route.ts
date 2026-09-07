@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(`${origin}${destination}`)
-  // Use object form of cookies.set to avoid type issues with optional 3rd argument
   pendingCookies.forEach(({ name, value, options }) => {
-    response.cookies.set({ name, value, ...options } as Parameters<typeof response.cookies.set>[0])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    response.cookies.set(name, value, options as any)
   })
   return response
 }
