@@ -3,8 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { ChatInput } from './ChatInput'
-import { MessageList } from './MessageList'
+import { ChatView } from './ChatView'
 
 interface Message {
   id: string
@@ -80,17 +79,11 @@ export default async function ChatPage({
         </div>
       </div>
 
-      {/* Messages — real-time client component */}
-      <div className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 space-y-3 overflow-y-auto">
-        <MessageList
-          conversationId={id}
-          userId={user.id}
-          initialMessages={initialMessages}
-        />
-      </div>
-
-      {/* Input */}
-      <ChatInput conversationId={id} />
+      <ChatView
+        conversationId={id}
+        userId={user.id}
+        initialMessages={initialMessages}
+      />
     </div>
   )
 }
