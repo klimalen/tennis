@@ -109,7 +109,7 @@ async function fetchFromOverpass(
   north: number,
   east: number,
 ): Promise<VenueUpsert[]> {
-  const query = `[out:json][timeout:25];
+  const query = `[out:json][timeout:40];
 (
   way["leisure"="pitch"]["sport"="tennis"](${south},${west},${north},${east});
   node["leisure"="pitch"]["sport"="tennis"](${south},${west},${north},${east});
@@ -120,7 +120,7 @@ out center tags;`
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `data=${encodeURIComponent(query)}`,
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(45_000),
   })
 
   if (!res.ok) {
@@ -155,6 +155,15 @@ export async function GET(request: NextRequest) {
     if ([south, west, north, east].some(isNaN)) {
       return NextResponse.json({ error: 'Invalid bbox params' }, { status: 400 })
     }
+    // Cap bbox to ~25 km radius to avoid Overpass timeouts on large cities
+    const centerLat = (south + north) / 2
+    const centerLng = (west + east) / 2
+    const MAX_KM = 25
+    const capped = boundingBox(centerLat, centerLng, MAX_KM)
+    south = Math.max(south, capped.south)
+    north = Math.min(north, capped.north)
+    west = Math.max(west, capped.west)
+    east = Math.min(east, capped.east)
   } else {
     const latParam = searchParams.get('lat')
     const lngParam = searchParams.get('lng')
@@ -186,19 +195,26 @@ export async function GET(request: NextRequest) {
 
   const isStale = !recentCheck || recentCheck.length === 0
 
+  let overpassCount = 0
+  let overpassError: string | null = null
+
   if (isStale) {
     try {
-      const venues = await fetchFromOverpass(south, west, north, east)
-      if (venues.length > 0) {
+      const fetched = await fetchFromOverpass(south, west, north, east)
+      overpassCount = fetched.length
+      if (fetched.length > 0) {
         const { error: upsertError } = await supabase
           .from('venues')
-          .upsert(venues, { onConflict: 'osm_id', ignoreDuplicates: false })
+          .upsert(fetched, { onConflict: 'osm_id', ignoreDuplicates: false })
         if (upsertError) {
           console.error('Venues upsert error:', upsertError)
+          overpassError = upsertError.message
         }
       }
     } catch (err) {
-      console.error('Overpass fetch failed, returning cached data:', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('Overpass fetch failed:', msg)
+      overpassError = msg
     }
   }
 
@@ -214,8 +230,11 @@ export async function GET(request: NextRequest) {
 
   if (queryError) {
     console.error('Venues query error:', queryError)
-    return NextResponse.json({ venues: [] })
+    return NextResponse.json({ venues: [], _debug: { overpassError, queryError: queryError.message } })
   }
 
-  return NextResponse.json({ venues: venues ?? [] })
+  return NextResponse.json({
+    venues: venues ?? [],
+    _debug: { isStale, overpassCount, overpassError, bbox: { south, west, north, east } },
+  })
 }
