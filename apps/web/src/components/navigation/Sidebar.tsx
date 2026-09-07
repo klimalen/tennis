@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus } from 'lucide-react'
 import { NAV_ITEMS } from './nav-config'
 import { useNavBadges } from './useNavBadges'
+import { CreateSheet } from './CreateSheet'
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -57,13 +57,7 @@ export function Sidebar() {
 
       {/* Create button */}
       <div className="px-3 pb-6">
-        <Link
-          href="/create"
-          className="flex items-center justify-center gap-2 w-full py-3 bg-brand-primary text-white hover:bg-brand-primary-dark transition-colors"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          <span className="text-xs tracking-[0.2em] uppercase font-medium">New Match</span>
-        </Link>
+        <CreateSheet variant="sidebar" />
       </div>
     </aside>
   )

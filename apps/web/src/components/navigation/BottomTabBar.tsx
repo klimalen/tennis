@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus } from 'lucide-react'
 import { NAV_ITEMS } from './nav-config'
 import { useNavBadges } from './useNavBadges'
+import { CreateSheet } from './CreateSheet'
 
 export function BottomTabBar() {
   const pathname = usePathname()
@@ -53,12 +53,7 @@ export function BottomTabBar() {
 
         {/* Center + button */}
         <div className="flex flex-col items-center flex-1">
-          <Link
-            href="/create"
-            className="w-11 h-11 bg-brand-primary flex items-center justify-center shadow-lg -mt-5"
-          >
-            <Plus size={20} className="text-white" strokeWidth={2.5} />
-          </Link>
+          <CreateSheet variant="fab" />
         </div>
 
         {rightItems.map((item) => {

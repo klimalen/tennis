@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Settings, CalendarDays } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { CreateSheet } from '@/components/navigation/CreateSheet'
 
 const SKILL_LABELS: Record<number, string> = {
   1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
@@ -136,9 +137,12 @@ async function ProfileContent() {
 
         {/* Schedule section */}
         <div className="border-t border-brand-divider">
-          <div className="px-4 py-4 flex items-center gap-2">
-            <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-            <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Schedule</span>
+          <div className="px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
+              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Schedule</span>
+            </div>
+            <CreateSheet variant="schedule" />
           </div>
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] mb-1">No upcoming games</p>
