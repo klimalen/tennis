@@ -32,15 +32,40 @@ async function ProfileContent() {
     .eq('winner_id', user.id)
     .eq('status', 'confirmed')
 
-  // Upcoming games (creator or participant)
-  const { data: upcomingGames } = await supabase
+  // Games created by user
+  const { data: createdGames } = await supabase
     .from('games')
     .select('id, scheduled_at, format, neighborhood, status')
     .eq('creator_id', user.id)
     .eq('status', 'confirmed')
     .gte('scheduled_at', new Date().toISOString())
     .order('scheduled_at', { ascending: true })
-    .limit(5)
+
+  // Games where user is an accepted participant (invited by someone else)
+  const { data: acceptedParticipations } = await supabase
+    .from('game_participants')
+    .select('game_id')
+    .eq('player_id', user.id)
+    .eq('status', 'accepted')
+
+  const acceptedGameIds = (acceptedParticipations ?? []).map((r) => r.game_id as string)
+
+  const { data: invitedGames } = acceptedGameIds.length > 0
+    ? await supabase
+        .from('games')
+        .select('id, scheduled_at, format, neighborhood, status')
+        .in('id', acceptedGameIds)
+        .neq('creator_id', user.id)
+        .eq('status', 'confirmed')
+        .gte('scheduled_at', new Date().toISOString())
+    : { data: [] }
+
+  // Merge and sort
+  const now = new Date().toISOString()
+  const upcomingGames = [...(createdGames ?? []), ...(invitedGames ?? [])]
+    .filter((g) => g.scheduled_at >= now)
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+    .slice(0, 5)
 
   const fullName = profile?.full_name || 'Tennis Player'
   const username = profile?.username || ''

@@ -46,7 +46,7 @@ async function ChatsData() {
     rows.map(async (conv) => {
       const { data } = await supabase
         .from('messages')
-        .select('id, body, created_at, sender_id')
+        .select('id, body, created_at, sender_id, type')
         .eq('conversation_id', conv.id)
         .order('created_at', { ascending: false })
         .limit(1)

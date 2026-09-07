@@ -18,6 +18,7 @@ export interface ChatItem {
     body: string
     created_at: string
     sender_id: string
+    type?: string
   } | null
   myLastReadAt: string | null
 }
@@ -46,14 +47,14 @@ export function ChatsClient({ userId, initialChats }: Props) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          const msg = payload.new as { id: string; conversation_id: string; body: string; created_at: string; sender_id: string }
+          const msg = payload.new as { id: string; conversation_id: string; body: string; created_at: string; sender_id: string; type?: string }
           setChats((prev) => {
             const idx = prev.findIndex((c) => c.id === msg.conversation_id)
             if (idx === -1) return prev
             const updated = [...prev]
             updated[idx] = {
               ...updated[idx]!,
-              lastMsg: { id: msg.id, body: msg.body, created_at: msg.created_at, sender_id: msg.sender_id },
+              lastMsg: { id: msg.id, body: msg.body, created_at: msg.created_at, sender_id: msg.sender_id, type: msg.type },
             }
             // Bubble updated chat to top
             const [chat] = updated.splice(idx, 1)
@@ -103,8 +104,11 @@ export function ChatsClient({ userId, initialChats }: Props) {
       {chats.map((chat) => {
         const { other, lastMsg } = chat
         const initials = other.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+        const previewBody = lastMsg?.type === 'game_invite'
+          ? 'Confirm participation in a game'
+          : lastMsg?.body ?? ''
         const preview = lastMsg
-          ? (lastMsg.sender_id === userId ? 'You: ' : '') + lastMsg.body
+          ? (lastMsg.sender_id === userId ? 'You: ' : '') + previewBody
           : null
         const unread = hasUnread(chat, userId)
 
