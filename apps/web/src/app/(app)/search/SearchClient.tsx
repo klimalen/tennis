@@ -232,7 +232,7 @@ export function SearchClient({ user }: { user: User | null }) {
         setLoadingVenues(false)
         return
       }
-      const { lat, lon, display_name } = results[0]
+      const { lat, lon, display_name } = results[0]!
       const coords = { lat: parseFloat(lat), lng: parseFloat(lon) }
       setUserCoords(coords)
       setCityLabel(display_name.split(',')[0])
