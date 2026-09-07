@@ -9,17 +9,16 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40">
+    <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-brand-bg border-r border-brand-divider z-40">
       {/* Logo */}
-      <div className="px-6 py-6">
-        <Link href="/search" className="flex items-center gap-2">
-          <span className="text-2xl">🎾</span>
-          <span className="text-xl font-bold text-gray-900 tracking-tight">Tennis</span>
+      <div className="px-6 py-5 border-b border-brand-divider">
+        <Link href="/search" className="block">
+          <span className="font-display text-4xl leading-none tracking-wide text-brand-primary">TENNIS</span>
         </Link>
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -27,17 +26,14 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${
                 isActive
-                  ? 'bg-green-50 text-green-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-brand-surface text-brand-primary'
+                  : 'text-[rgba(26,26,26,0.5)] hover:bg-brand-surface hover:text-[#1a1a1a]'
               }`}
             >
-              <Icon
-                size={20}
-                strokeWidth={isActive ? 2.5 : 1.8}
-              />
-              <span className={`text-[15px] ${isActive ? 'font-semibold' : 'font-medium'}`}>
+              <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
+              <span className={`text-xs tracking-[0.15em] uppercase ${isActive ? 'font-semibold' : 'font-medium'}`}>
                 {item.label}
               </span>
             </Link>
@@ -49,10 +45,10 @@ export function Sidebar() {
       <div className="px-3 pb-6">
         <Link
           href="/create"
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors shadow-sm"
+          className="flex items-center justify-center gap-2 w-full py-3 bg-brand-primary text-white hover:bg-brand-primary-dark transition-colors"
         >
-          <Plus size={18} strokeWidth={2.5} />
-          Create
+          <Plus size={16} strokeWidth={2.5} />
+          <span className="text-xs tracking-[0.2em] uppercase font-medium">New Match</span>
         </Link>
       </div>
     </aside>

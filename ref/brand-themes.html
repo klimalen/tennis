@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tennis App — Brand Themes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #111;
+    }
+
+    /* ══════════════════════════════════════
+       COVER
+    ══════════════════════════════════════ */
+    .cover {
+      background: #111;
+      padding: 80px 64px;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+
+    .cover-eyebrow {
+      font-size: 10px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 24px;
+    }
+
+    .cover-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 96px;
+      line-height: 0.9;
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+
+    .cover-title .word-tennis { color: #E8748A; }
+    .cover-title .word-app   { color: #E8E1D7; }
+
+    .cover-sub {
+      font-size: 11px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 48px;
+    }
+
+    .cover-themes {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      border: 1px solid #333;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .cover-theme-pill {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .pill-morning { background: #F0EBE3; color: #555; }
+    .pill-day     { background: #FFFFFF; color: #555; }
+    .pill-night   { background: #1C1C1A; color: #888; }
+
+    /* ══════════════════════════════════════
+       THEME SECTION WRAPPER
+    ══════════════════════════════════════ */
+    .theme-section {
+      padding: 72px 64px;
+    }
+
+    .theme-section + .theme-section {
+      border-top: 1px solid;
+    }
+
+    /* ── Morning ── */
+    .theme-morning {
+      background: #F0EBE3;
+      color: #1a1a1a;
+      border-color: #d9d0c4;
+    }
+    .theme-morning .accent-primary   { color: #E8748A; }
+    .theme-morning .accent-secondary { color: #3A8A7A; }
+    .theme-morning .accent-gold      { color: #D4A017; }
+    .theme-morning .surface          { background: rgba(0,0,0,0.05); }
+    .theme-morning .surface-strong   { background: rgba(0,0,0,0.09); }
+    .theme-morning .divider          { border-color: rgba(0,0,0,0.12); }
+    .theme-morning .muted            { color: rgba(26,26,26,0.4); }
+
+    /* ── Day ── */
+    .theme-day {
+      background: #FFFFFF;
+      color: #1a1a1a;
+      border-color: #e0e0e0;
+    }
+    .theme-day .accent-primary   { color: #3A8A7A; }
+    .theme-day .accent-secondary { color: #E8748A; }
+    .theme-day .accent-gold      { color: #D4A017; }
+    .theme-day .surface          { background: #F5F2EE; }
+    .theme-day .surface-strong   { background: #EDE8E2; }
+    .theme-day .divider          { border-color: rgba(0,0,0,0.08); }
+    .theme-day .muted            { color: rgba(26,26,26,0.38); }
+
+    /* ── Night ── */
+    .theme-night {
+      background: #1C1C1A;
+      color: #E8E1D7;
+      border-color: #2e2e2b;
+    }
+    .theme-night .accent-primary   { color: #E8748A; }
+    .theme-night .accent-secondary { color: #BCD85E; }
+    .theme-night .accent-gold      { color: #D4A017; }
+    .theme-night .surface          { background: rgba(255,255,255,0.06); }
+    .theme-night .surface-strong   { background: rgba(255,255,255,0.1); }
+    .theme-night .divider          { border-color: rgba(255,255,255,0.1); }
+    .theme-night .muted            { color: rgba(232,225,215,0.35); }
+
+    /* ══════════════════════════════════════
+       THEME HEADER
+    ══════════════════════════════════════ */
+    .theme-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      margin-bottom: 56px;
+      border-bottom: 2px solid currentColor;
+    }
+
+    .theme-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 64px;
+      line-height: 1;
+      letter-spacing: 2px;
+    }
+
+    .theme-meta {
+      text-align: right;
+    }
+
+    .theme-meta-bg {
+      font-family: monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      opacity: 0.5;
+    }
+
+    .theme-meta-label {
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.35;
+      margin-top: 2px;
+    }
+
+    /* ══════════════════════════════════════
+       PALETTE BLOCK
+    ══════════════════════════════════════ */
+    .block-label {
+      font-size: 9px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      opacity: 0.4;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid currentColor;
+      opacity: 0.25;
+    }
+
+    .block {
+      margin-bottom: 56px;
+    }
+
+    .swatches {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100px;
+    }
+
+    .swatch-dot {
+      width: 100px;
+      height: 64px;
+      border-radius: 2px;
+    }
+
+    .swatch-name {
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
+    .swatch-hex {
+      font-family: monospace;
+      font-size: 9px;
+      opacity: 0.4;
+      letter-spacing: 1px;
+    }
+
+    /* ══════════════════════════════════════
+       TYPOGRAPHY BLOCK
+    ══════════════════════════════════════ */
+    .type-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .type-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 24px;
+      align-items: start;
+      padding-bottom: 32px;
+      border-bottom: 1px solid currentColor;
+      opacity-hack: 1;
+    }
+
+    .type-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .type-meta {
+      padding-top: 6px;
+    }
+
+    .type-role {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.4;
+      margin-bottom: 4px;
+    }
+
+    .type-font-name {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
+    .type-use {
+      font-size: 10px;
+      opacity: 0.35;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .sample-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 80px;
+      line-height: 0.9;
+      letter-spacing: 2px;
+    }
+
+    .sample-display-sm {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: 1px;
+      opacity: 0.45;
+      margin-top: 4px;
+    }
+
+    .sample-anton {
+      font-family: 'Anton', sans-serif;
+      font-size: 64px;
+      line-height: 1;
+    }
+
+    .sample-subtitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      font-weight: 400;
+      margin-bottom: 10px;
+    }
+
+    .sample-label-pill {
+      display: inline-block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      border: 1px solid currentColor;
+      padding: 5px 12px;
+      margin-right: 8px;
+      opacity: 0.6;
+    }
+
+    .sample-script {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 32px;
+      line-height: 1.3;
+    }
+
+    .sample-body {
+      font-family: 'Playfair Display', serif;
+      font-size: 15px;
+      line-height: 1.75;
+      max-width: 420px;
+      opacity: 0.7;
+    }
+
+    /* ══════════════════════════════════════
+       UI MOCKUP BLOCK
+    ══════════════════════════════════════ */
+    .mockup {
+      border: 1px solid currentColor;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .mock-topbar {
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid currentColor;
+    }
+
+    .mock-topbar-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
+
+    .mock-topbar-nav {
+      font-size: 8px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.35;
+    }
+
+    .mock-body {
+      padding: 32px 24px;
+    }
+
+    .mock-eyebrow {
+      font-size: 8px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.4;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mock-eyebrow::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.2;
+    }
+
+    .mock-hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 72px;
+      line-height: 0.9;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .mock-hero-script {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 18px;
+      opacity: 0.45;
+      margin-bottom: 32px;
+    }
+
+    .mock-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .mock-stat {
+      padding: 16px;
+      border-radius: 2px;
+    }
+
+    .mock-stat-label {
+      font-size: 7px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.4;
+      margin-bottom: 6px;
+    }
+
+    .mock-stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      line-height: 1;
+    }
+
+    .mock-stat-sub {
+      font-size: 9px;
+      opacity: 0.35;
+      margin-top: 2px;
+    }
+
+    .mock-btn {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      padding: 12px 24px;
+      border-radius: 2px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .mock-footer {
+      padding: 16px 24px;
+      border-top: 1px solid currentColor;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .mock-tab {
+      font-size: 8px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.3;
+    }
+
+    .mock-tab.active {
+      opacity: 1;
+    }
+
+    /* Morning-specific */
+    .theme-morning .mock-topbar,
+    .theme-morning .mock-footer { border-color: rgba(0,0,0,0.1); }
+    .theme-morning .mock-btn { background: #E8748A; color: #fff; }
+    .theme-morning .mock-stat { background: rgba(0,0,0,0.05); }
+    .theme-morning .mock-stat-value { color: #3A8A7A; }
+    .theme-morning .mock-tab.active { color: #E8748A; }
+    .theme-morning .mockup { border-color: rgba(0,0,0,0.1); }
+
+    /* Day-specific */
+    .theme-day .mock-topbar,
+    .theme-day .mock-footer { border-color: rgba(0,0,0,0.07); }
+    .theme-day .mock-btn { background: #3A8A7A; color: #fff; }
+    .theme-day .mock-stat { background: #F0EBE3; }
+    .theme-day .mock-stat-value { color: #3A8A7A; }
+    .theme-day .mock-tab.active { color: #3A8A7A; }
+    .theme-day .mockup { border-color: rgba(0,0,0,0.07); }
+
+    /* Night-specific */
+    .theme-night .mock-topbar,
+    .theme-night .mock-footer { border-color: rgba(255,255,255,0.08); }
+    .theme-night .mock-btn { background: #E8748A; color: #fff; }
+    .theme-night .mock-stat { background: rgba(255,255,255,0.06); }
+    .theme-night .mock-stat-value { color: #BCD85E; }
+    .theme-night .mock-tab.active { color: #E8748A; }
+    .theme-night .mockup { border-color: rgba(255,255,255,0.1); }
+
+    /* ══════════════════════════════════════
+       TWO-COLUMN LAYOUT
+    ══════════════════════════════════════ */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    .full-col {
+      margin-top: 56px;
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════ */
+    .page-footer {
+      background: #111;
+      padding: 32px 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #222;
+    }
+
+    .page-footer-text {
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #444;
+    }
+
+    .page-footer-stars {
+      font-size: 12px;
+      letter-spacing: 8px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ COVER ══ -->
+  <div class="cover">
+    <div class="cover-eyebrow">Brand Themes — Visual Identity</div>
+    <div class="cover-title">
+      <span class="word-tennis">TENNIS</span><br>
+      <span class="word-app">APP</span>
+    </div>
+    <div class="cover-sub">Three themes &nbsp;✦&nbsp; One identity</div>
+    <div class="cover-themes">
+      <div class="cover-theme-pill pill-morning">✦ &nbsp; Утро</div>
+      <div class="cover-theme-pill pill-day">☀ &nbsp; День</div>
+      <div class="cover-theme-pill pill-night">◗ &nbsp; Ночь</div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       THEME 1 — УТРО
+  ══════════════════════════════════════ -->
+  <div class="theme-section theme-morning">
+
+    <div class="theme-header">
+      <div class="theme-name">✦ &nbsp; Утро</div>
+      <div class="theme-meta">
+        <div class="theme-meta-bg">#F0EBE3</div>
+        <div class="theme-meta-label">Warm Linen &nbsp;—&nbsp; Background</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Left: Palette + Typography -->
+      <div>
+        <!-- Palette -->
+        <div class="block">
+          <div class="block-label">01 — Цвета</div>
+          <div class="swatches">
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#F0EBE3; border:1px solid rgba(0,0,0,0.08);"></div>
+              <div class="swatch-name">Warm Linen</div>
+              <div class="swatch-hex">#F0EBE3</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#E8748A;"></div>
+              <div class="swatch-name">Clay Pink</div>
+              <div class="swatch-hex">#E8748A</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#3A8A7A;"></div>
+              <div class="swatch-name">Teal Court</div>
+              <div class="swatch-hex">#3A8A7A</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#D4A017;"></div>
+              <div class="swatch-name">Mustard Gold</div>
+              <div class="swatch-hex">#D4A017</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#497250;"></div>
+              <div class="swatch-name">Fern Green</div>
+              <div class="swatch-hex">#497250</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.06);"></div>
+              <div class="swatch-name">Surface</div>
+              <div class="swatch-hex">rgba(0,0,0,0.05)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="block">
+          <div class="block-label">02 — Типографика</div>
+          <div class="type-rows">
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Display</div>
+                <div class="type-font-name">Bebas Neue</div>
+                <div class="type-use">Hero, заголовки, счёт</div>
+              </div>
+              <div>
+                <div class="sample-display accent-primary">SERVE</div>
+                <div class="sample-display-sm accent-secondary">PLAY TODAY</div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Label / Nav</div>
+                <div class="type-font-name">DM Sans</div>
+                <div class="type-use">Категории, навигация</div>
+              </div>
+              <div>
+                <div class="sample-subtitle accent-secondary">Tennis Padel Club</div>
+                <div>
+                  <span class="sample-label-pill">Матчи</span>
+                  <span class="sample-label-pill">Корты</span>
+                  <span class="sample-label-pill">Игроки</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Script</div>
+                <div class="type-font-name">Playfair Italic</div>
+                <div class="type-use">Tagline, подписи</div>
+              </div>
+              <div>
+                <div class="sample-script accent-gold">Depuis 1986</div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Body</div>
+                <div class="type-font-name">Playfair Display</div>
+                <div class="type-use">Описания, детали</div>
+              </div>
+              <div>
+                <div class="sample-body">Your fight, your spirit, and your resilience contribute to the energy and success of the entire team.</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Mockup -->
+      <div>
+        <div class="block-label">03 — UI Preview</div>
+        <div class="mockup">
+          <div class="mock-topbar">
+            <div class="mock-topbar-logo accent-primary">TENNIS</div>
+            <div class="mock-topbar-nav">✦ &nbsp; Утро &nbsp; ✦</div>
+          </div>
+          <div class="mock-body">
+            <div class="mock-eyebrow">✦ &nbsp; Ближайший матч</div>
+            <div class="mock-hero-title accent-primary">PLAY<br>TODAY</div>
+            <div class="mock-hero-script">Your next match awaits</div>
+            <div class="mock-stats">
+              <div class="mock-stat">
+                <div class="mock-stat-label">Победы</div>
+                <div class="mock-stat-value">24</div>
+                <div class="mock-stat-sub">из 31 матча</div>
+              </div>
+              <div class="mock-stat">
+                <div class="mock-stat-label">Рейтинг</div>
+                <div class="mock-stat-value">4.2</div>
+                <div class="mock-stat-sub">NTRP</div>
+              </div>
+              <div class="mock-stat">
+                <div class="mock-stat-label">Серия</div>
+                <div class="mock-stat-value">7</div>
+                <div class="mock-stat-sub">побед</div>
+              </div>
+            </div>
+            <div class="mock-btn">Найти матч &nbsp; →</div>
+          </div>
+          <div class="mock-footer">
+            <div class="mock-tab active">Матчи</div>
+            <div class="mock-tab">Корты</div>
+            <div class="mock-tab">Игроки</div>
+            <div class="mock-tab">Профиль</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       THEME 2 — ДЕНЬ
+  ══════════════════════════════════════ -->
+  <div class="theme-section theme-day">
+
+    <div class="theme-header">
+      <div class="theme-name">☀ &nbsp; День</div>
+      <div class="theme-meta">
+        <div class="theme-meta-bg">#FFFFFF</div>
+        <div class="theme-meta-label">Pure White &nbsp;—&nbsp; Background</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Left: Palette + Typography -->
+      <div>
+        <div class="block">
+          <div class="block-label">01 — Цвета</div>
+          <div class="swatches">
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.08);"></div>
+              <div class="swatch-name">Pure White</div>
+              <div class="swatch-hex">#FFFFFF</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#3A8A7A;"></div>
+              <div class="swatch-name">Teal Court</div>
+              <div class="swatch-hex">#3A8A7A</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#E8748A;"></div>
+              <div class="swatch-name">Clay Pink</div>
+              <div class="swatch-hex">#E8748A</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#1E3A6E;"></div>
+              <div class="swatch-name">Deep Navy</div>
+              <div class="swatch-hex">#1E3A6E</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#D4A017;"></div>
+              <div class="swatch-name">Mustard Gold</div>
+              <div class="swatch-hex">#D4A017</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#F0EBE3; border:1px solid rgba(0,0,0,0.06);"></div>
+              <div class="swatch-name">Surface</div>
+              <div class="swatch-hex">#F0EBE3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="block">
+          <div class="block-label">02 — Типографика</div>
+          <div class="type-rows">
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Display</div>
+                <div class="type-font-name">Bebas Neue</div>
+                <div class="type-use">Hero, заголовки, счёт</div>
+              </div>
+              <div>
+                <div class="sample-display accent-primary">ACE</div>
+                <div class="sample-display-sm accent-secondary">MATCH POINT</div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Numbers</div>
+                <div class="type-font-name">Anton</div>
+                <div class="type-use">Счёт, даты, цифры</div>
+              </div>
+              <div>
+                <div class="sample-anton accent-primary">6 – 4</div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Label / Nav</div>
+                <div class="type-font-name">DM Sans</div>
+                <div class="type-use">Категории, навигация</div>
+              </div>
+              <div>
+                <div class="sample-subtitle accent-primary">Your Club &nbsp;✦&nbsp; Your Game</div>
+                <div>
+                  <span class="sample-label-pill">Матчи</span>
+                  <span class="sample-label-pill">Корты</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Script</div>
+                <div class="type-font-name">Playfair Italic</div>
+                <div class="type-use">Tagline, подписи</div>
+              </div>
+              <div>
+                <div class="sample-script" style="color:#85648F;">Since 2024</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Mockup -->
+      <div>
+        <div class="block-label">03 — UI Preview</div>
+        <div class="mockup">
+          <div class="mock-topbar">
+            <div class="mock-topbar-logo accent-primary">TENNIS</div>
+            <div class="mock-topbar-nav">☀ &nbsp; День &nbsp; ☀</div>
+          </div>
+          <div class="mock-body">
+            <div class="mock-eyebrow">✦ &nbsp; Ближайший матч</div>
+            <div class="mock-hero-title accent-primary">MATCH<br>POINT</div>
+            <div class="mock-hero-script">Your next match awaits</div>
+            <div class="mock-stats">
+              <div class="mock-stat">
+                <div class="mock-stat-label">Победы</div>
+                <div class="mock-stat-value">24</div>
+                <div class="mock-stat-sub">из 31 матча</div>
+              </div>
+              <div class="mock-stat">
+                <div class="mock-stat-label">Рейтинг</div>
+                <div class="mock-stat-value">4.2</div>
+                <div class="mock-stat-sub">NTRP</div>
+              </div>
+              <div class="mock-stat">
+                <div class="mock-stat-label">Серия</div>
+                <div class="mock-stat-value">7</div>
+                <div class="mock-stat-sub">побед</div>
+              </div>
+            </div>
+            <div class="mock-btn">Найти матч &nbsp; →</div>
+          </div>
+          <div class="mock-footer">
+            <div class="mock-tab active">Матчи</div>
+            <div class="mock-tab">Корты</div>
+            <div class="mock-tab">Игроки</div>
+            <div class="mock-tab">Профиль</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════
+       THEME 3 — НОЧЬ
+  ══════════════════════════════════════ -->
+  <div class="theme-section theme-night">
+
+    <div class="theme-header">
+      <div class="theme-name">◗ &nbsp; Ночь</div>
+      <div class="theme-meta">
+        <div class="theme-meta-bg">#1C1C1A</div>
+        <div class="theme-meta-label">Deep Dark &nbsp;—&nbsp; Background</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Left: Palette + Typography -->
+      <div>
+        <div class="block">
+          <div class="block-label">01 — Цвета</div>
+          <div class="swatches">
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#1C1C1A; border:1px solid rgba(255,255,255,0.1);"></div>
+              <div class="swatch-name">Deep Dark</div>
+              <div class="swatch-hex">#1C1C1A</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#E8E1D7;"></div>
+              <div class="swatch-name">Cream Text</div>
+              <div class="swatch-hex">#E8E1D7</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#E8748A;"></div>
+              <div class="swatch-name">Clay Pink</div>
+              <div class="swatch-hex">#E8748A</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#BCD85E;"></div>
+              <div class="swatch-name">Conifer</div>
+              <div class="swatch-hex">#BCD85E</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:#D4A017;"></div>
+              <div class="swatch-name">Mustard Gold</div>
+              <div class="swatch-hex">#D4A017</div>
+            </div>
+            <div class="swatch">
+              <div class="swatch-dot" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1);"></div>
+              <div class="swatch-name">Surface</div>
+              <div class="swatch-hex">rgba(fff,0.07)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="block">
+          <div class="block-label">02 — Типографика</div>
+          <div class="type-rows">
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Display</div>
+                <div class="type-font-name">Bebas Neue</div>
+                <div class="type-use">Hero, заголовки, счёт</div>
+              </div>
+              <div>
+                <div class="sample-display accent-primary">NIGHT</div>
+                <div class="sample-display-sm accent-secondary">GAME ON</div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Numbers</div>
+                <div class="type-font-name">Anton</div>
+                <div class="type-use">Счёт, даты, цифры</div>
+              </div>
+              <div>
+                <div class="sample-anton accent-secondary">6 – 4</div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Label / Nav</div>
+                <div class="type-font-name">DM Sans</div>
+                <div class="type-use">Категории, навигация</div>
+              </div>
+              <div>
+                <div class="sample-subtitle" style="color:#E8E1D7;">Night Sessions &nbsp;✦&nbsp; Club</div>
+                <div>
+                  <span class="sample-label-pill" style="color:#E8E1D7;">Матчи</span>
+                  <span class="sample-label-pill" style="color:#E8E1D7;">Корты</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="type-row">
+              <div class="type-meta">
+                <div class="type-role">Script</div>
+                <div class="type-font-name">Playfair Italic</div>
+                <div class="type-use">Tagline, подписи</div>
+              </div>
+              <div>
+                <div class="sample-script accent-gold">Under the lights</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Mockup -->
+      <div>
+        <div class="block-label">03 — UI Preview</div>
+        <div class="mockup">
+          <div class="mock-topbar">
+            <div class="mock-topbar-logo accent-primary">TENNIS</div>
+            <div class="mock-topbar-nav">◗ &nbsp; Ночь &nbsp; ◗</div>
+          </div>
+          <div class="mock-body">
+            <div class="mock-eyebrow">✦ &nbsp; Ближайший матч</div>
+            <div class="mock-hero-title accent-primary">GAME<br>ON</div>
+            <div class="mock-hero-script" style="color:rgba(232,225,215,0.4);">Under the lights</div>
+            <div class="mock-stats">
+              <div class="mock-stat">
+                <div class="mock-stat-label">Победы</div>
+                <div class="mock-stat-value">24</div>
+                <div class="mock-stat-sub">из 31 матча</div>
+              </div>
+              <div class="mock-stat">
+                <div class="mock-stat-label">Рейтинг</div>
+                <div class="mock-stat-value">4.2</div>
+                <div class="mock-stat-sub">NTRP</div>
+              </div>
+              <div class="mock-stat">
+                <div class="mock-stat-label">Серия</div>
+                <div class="mock-stat-value">7</div>
+                <div class="mock-stat-sub">побед</div>
+              </div>
+            </div>
+            <div class="mock-btn" style="background:#E8748A; color:#fff;">Найти матч &nbsp; →</div>
+          </div>
+          <div class="mock-footer">
+            <div class="mock-tab active">Матчи</div>
+            <div class="mock-tab">Корты</div>
+            <div class="mock-tab">Игроки</div>
+            <div class="mock-tab">Профиль</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ══ PAGE FOOTER ══ -->
+  <div class="page-footer">
+    <div class="page-footer-text">Tennis App &nbsp;—&nbsp; Brand Themes 2024</div>
+    <div class="page-footer-stars">✦ ✦ ✦</div>
+  </div>
+
+</body>
+</html>

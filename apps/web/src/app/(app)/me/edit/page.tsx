@@ -149,24 +149,24 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+        <div className="w-6 h-6 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
-      <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-10 px-4 py-4">
+    <div className="min-h-screen pb-20 md:pb-0 bg-brand-bg">
+      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-            <ArrowLeft size={16} className="text-gray-600" />
+          <button onClick={() => router.back()} className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+            <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900 flex-1">Edit profile</h1>
+          <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
           <button
             onClick={handleSave}
             disabled={saving || usernameStatus === 'taken'}
-            className="px-4 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+            className="px-4 py-1.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -177,7 +177,7 @@ export default function EditProfilePage() {
         {/* Avatar */}
         <div className="flex flex-col items-center gap-3">
           <div
-            className="relative w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-200 overflow-hidden cursor-pointer"
+            className="relative w-24 h-24 rounded-full bg-brand-surface border border-brand-divider overflow-hidden cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             {displayAvatar ? (
@@ -193,7 +193,7 @@ export default function EditProfilePage() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="text-sm text-green-600 font-medium hover:underline"
+            className="text-[10px] tracking-[0.2em] uppercase text-brand-primary font-medium hover:underline"
           >
             Change photo
           </button>
@@ -211,52 +211,52 @@ export default function EditProfilePage() {
         )}
 
         {/* Fields */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-1.5">Name</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
               placeholder="Your name"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label className="block text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-1.5">Username</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.3)] text-sm">@</span>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full pl-7 pr-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
                 placeholder="username"
               />
             </div>
-            {usernameStatus === 'checking' && <p className="text-xs text-gray-400 mt-1">Checking...</p>}
-            {usernameStatus === 'available' && <p className="text-xs text-green-600 mt-1">Available</p>}
-            {usernameStatus === 'taken' && <p className="text-xs text-red-500 mt-1">Already taken</p>}
+            {usernameStatus === 'checking' && <p className="text-[10px] text-[rgba(26,26,26,0.35)] mt-1">Checking...</p>}
+            {usernameStatus === 'available' && <p className="text-[10px] text-brand-primary mt-1">Available</p>}
+            {usernameStatus === 'taken' && <p className="text-[10px] text-red-500 mt-1">Already taken</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+            <label className="block text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-1.5">Bio</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-brand-bg"
               placeholder="Tell others about yourself..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Skill level</label>
+            <label className="block text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-1.5">Skill level</label>
             <select
               value={skillLevel}
               onChange={(e) => setSkillLevel(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+              className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
             >
               <option value="">Select your level</option>
               {SKILL_OPTIONS.map((opt) => (

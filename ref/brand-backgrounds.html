@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tennis App — Background Options</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a1a;
+      font-family: 'DM Sans', sans-serif;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .page-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #666;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    /* Each variant is a full mock screen */
+    .variant {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto 64px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .variant-label {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #555;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .variant-label strong {
+      color: #aaa;
+    }
+
+    .mock {
+      padding: 48px 56px 56px;
+    }
+
+    /* ── Mock UI content ── */
+    .mock-header {
+      border-top: 2px solid currentColor;
+      border-bottom: 1px solid currentColor;
+      padding: 14px 0 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 48px;
+    }
+
+    .mock-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+
+    .mock-nav {
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    .mock-hero {
+      margin-bottom: 40px;
+    }
+
+    .mock-tag {
+      font-size: 9px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.5;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mock-tag::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.3;
+    }
+
+    .mock-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 88px;
+      line-height: 0.92;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .mock-script {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 22px;
+      opacity: 0.55;
+    }
+
+    .mock-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .mock-card {
+      border-radius: 2px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mock-card-label {
+      font-size: 8px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    .mock-card-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+
+    .mock-card-sub {
+      font-size: 10px;
+      opacity: 0.45;
+    }
+
+    .mock-stars {
+      font-size: 14px;
+      letter-spacing: 8px;
+      opacity: 0.4;
+      text-align: center;
+    }
+
+    /* ── Variants ── */
+
+    /* 1. Original Alabaster */
+    .v1 { background: #E8E1D7; color: #1a1a1a; }
+    .v1 .mock-title { color: #3A8A7A; }
+    .v1 .mock-card { background: rgba(0,0,0,0.05); }
+    .v1 .mock-card-value { color: #E8748A; }
+
+    /* 2. Lighter warm */
+    .v2 { background: #F0EBE3; color: #1a1a1a; }
+    .v2 .mock-title { color: #3A8A7A; }
+    .v2 .mock-card { background: rgba(0,0,0,0.04); }
+    .v2 .mock-card-value { color: #E8748A; }
+
+    /* 3. Almost white */
+    .v3 { background: #FAF7F2; color: #1a1a1a; }
+    .v3 .mock-title { color: #3A8A7A; }
+    .v3 .mock-card { background: rgba(0,0,0,0.03); }
+    .v3 .mock-card-value { color: #E8748A; }
+
+    /* 4. Pure white */
+    .v4 { background: #FFFFFF; color: #1a1a1a; }
+    .v4 .mock-title { color: #3A8A7A; }
+    .v4 .mock-card { background: #F5F5F5; }
+    .v4 .mock-card-value { color: #E8748A; }
+
+    /* 5. Warm clay tint */
+    .v5 { background: #EDE3D8; color: #1a1a1a; }
+    .v5 .mock-title { color: #D4622A; }
+    .v5 .mock-card { background: rgba(0,0,0,0.06); }
+    .v5 .mock-card-value { color: #3A8A7A; }
+
+    /* 6. Dark / inverted */
+    .v6 { background: #1C1C1A; color: #E8E1D7; }
+    .v6 .mock-title { color: #E8748A; }
+    .v6 .mock-card { background: rgba(255,255,255,0.06); }
+    .v6 .mock-card-value { color: #BCD85E; }
+  </style>
+</head>
+<body>
+
+  <div class="page-title">Tennis App &nbsp;✦&nbsp; Background Options</div>
+
+  <!-- 1. Original -->
+  <div class="variant">
+    <div class="variant-label">Вариант 1 &nbsp;—&nbsp; <strong>#E8E1D7</strong> &nbsp;Alabaster (оригинал из ref)</div>
+    <div class="mock v1">
+      <div class="mock-header">
+        <div class="mock-logo">TENNIS</div>
+        <div class="mock-nav">Матчи &nbsp;✦&nbsp; Игроки &nbsp;✦&nbsp; Корты</div>
+      </div>
+      <div class="mock-hero">
+        <div class="mock-tag">✦ &nbsp; Ближайший матч</div>
+        <div class="mock-title">PLAY<br>TODAY</div>
+        <div class="mock-script">Your next match awaits</div>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card">
+          <div class="mock-card-label">Победы</div>
+          <div class="mock-card-value">24</div>
+          <div class="mock-card-sub">из 31 матча</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Рейтинг</div>
+          <div class="mock-card-value">4.2</div>
+          <div class="mock-card-sub">NTRP уровень</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Серия</div>
+          <div class="mock-card-value">7</div>
+          <div class="mock-card-sub">побед подряд</div>
+        </div>
+      </div>
+      <div class="mock-stars">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- 2. Lighter warm -->
+  <div class="variant">
+    <div class="variant-label">Вариант 2 &nbsp;—&nbsp; <strong>#F0EBE3</strong> &nbsp;Чуть светлее, всё ещё тёплый</div>
+    <div class="mock v2">
+      <div class="mock-header">
+        <div class="mock-logo">TENNIS</div>
+        <div class="mock-nav">Матчи &nbsp;✦&nbsp; Игроки &nbsp;✦&nbsp; Корты</div>
+      </div>
+      <div class="mock-hero">
+        <div class="mock-tag">✦ &nbsp; Ближайший матч</div>
+        <div class="mock-title">PLAY<br>TODAY</div>
+        <div class="mock-script">Your next match awaits</div>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card">
+          <div class="mock-card-label">Победы</div>
+          <div class="mock-card-value">24</div>
+          <div class="mock-card-sub">из 31 матча</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Рейтинг</div>
+          <div class="mock-card-value">4.2</div>
+          <div class="mock-card-sub">NTRP уровень</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Серия</div>
+          <div class="mock-card-value">7</div>
+          <div class="mock-card-sub">побед подряд</div>
+        </div>
+      </div>
+      <div class="mock-stars">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- 3. Almost white -->
+  <div class="variant">
+    <div class="variant-label">Вариант 3 &nbsp;—&nbsp; <strong>#FAF7F2</strong> &nbsp;Почти белый, едва тёплый</div>
+    <div class="mock v3">
+      <div class="mock-header">
+        <div class="mock-logo">TENNIS</div>
+        <div class="mock-nav">Матчи &nbsp;✦&nbsp; Игроки &nbsp;✦&nbsp; Корты</div>
+      </div>
+      <div class="mock-hero">
+        <div class="mock-tag">✦ &nbsp; Ближайший матч</div>
+        <div class="mock-title">PLAY<br>TODAY</div>
+        <div class="mock-script">Your next match awaits</div>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card">
+          <div class="mock-card-label">Победы</div>
+          <div class="mock-card-value">24</div>
+          <div class="mock-card-sub">из 31 матча</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Рейтинг</div>
+          <div class="mock-card-value">4.2</div>
+          <div class="mock-card-sub">NTRP уровень</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Серия</div>
+          <div class="mock-card-value">7</div>
+          <div class="mock-card-sub">побед подряд</div>
+        </div>
+      </div>
+      <div class="mock-stars">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- 4. Pure white -->
+  <div class="variant">
+    <div class="variant-label">Вариант 4 &nbsp;—&nbsp; <strong>#FFFFFF</strong> &nbsp;Чистый белый (для сравнения)</div>
+    <div class="mock v4">
+      <div class="mock-header">
+        <div class="mock-logo">TENNIS</div>
+        <div class="mock-nav">Матчи &nbsp;✦&nbsp; Игроки &nbsp;✦&nbsp; Корты</div>
+      </div>
+      <div class="mock-hero">
+        <div class="mock-tag">✦ &nbsp; Ближайший матч</div>
+        <div class="mock-title">PLAY<br>TODAY</div>
+        <div class="mock-script">Your next match awaits</div>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card">
+          <div class="mock-card-label">Победы</div>
+          <div class="mock-card-value">24</div>
+          <div class="mock-card-sub">из 31 матча</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Рейтинг</div>
+          <div class="mock-card-value">4.2</div>
+          <div class="mock-card-sub">NTRP уровень</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Серия</div>
+          <div class="mock-card-value">7</div>
+          <div class="mock-card-sub">побед подряд</div>
+        </div>
+      </div>
+      <div class="mock-stars">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- 5. Warm clay tint -->
+  <div class="variant">
+    <div class="variant-label">Вариант 5 &nbsp;—&nbsp; <strong>#EDE3D8</strong> &nbsp;Тёплый clay — ближе к постеру Bandol</div>
+    <div class="mock v5">
+      <div class="mock-header">
+        <div class="mock-logo">TENNIS</div>
+        <div class="mock-nav">Матчи &nbsp;✦&nbsp; Игроки &nbsp;✦&nbsp; Корты</div>
+      </div>
+      <div class="mock-hero">
+        <div class="mock-tag">✦ &nbsp; Ближайший матч</div>
+        <div class="mock-title">PLAY<br>TODAY</div>
+        <div class="mock-script">Your next match awaits</div>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card">
+          <div class="mock-card-label">Победы</div>
+          <div class="mock-card-value">24</div>
+          <div class="mock-card-sub">из 31 матча</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Рейтинг</div>
+          <div class="mock-card-value">4.2</div>
+          <div class="mock-card-sub">NTRP уровень</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Серия</div>
+          <div class="mock-card-value">7</div>
+          <div class="mock-card-sub">побед подряд</div>
+        </div>
+      </div>
+      <div class="mock-stars">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+  <!-- 6. Dark -->
+  <div class="variant">
+    <div class="variant-label">Вариант 6 &nbsp;—&nbsp; <strong>#1C1C1A</strong> &nbsp;Тёмный (бонус — на случай если захочется)</div>
+    <div class="mock v6">
+      <div class="mock-header">
+        <div class="mock-logo">TENNIS</div>
+        <div class="mock-nav">Матчи &nbsp;✦&nbsp; Игроки &nbsp;✦&nbsp; Корты</div>
+      </div>
+      <div class="mock-hero">
+        <div class="mock-tag">✦ &nbsp; Ближайший матч</div>
+        <div class="mock-title">PLAY<br>TODAY</div>
+        <div class="mock-script">Your next match awaits</div>
+      </div>
+      <div class="mock-cards">
+        <div class="mock-card">
+          <div class="mock-card-label">Победы</div>
+          <div class="mock-card-value">24</div>
+          <div class="mock-card-sub">из 31 матча</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Рейтинг</div>
+          <div class="mock-card-value">4.2</div>
+          <div class="mock-card-sub">NTRP уровень</div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-card-label">Серия</div>
+          <div class="mock-card-value">7</div>
+          <div class="mock-card-sub">побед подряд</div>
+        </div>
+      </div>
+      <div class="mock-stars">✦ ✦ ✦</div>
+    </div>
+  </div>
+
+</body>
+</html>

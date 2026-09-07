@@ -83,15 +83,15 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Create account</h1>
-      <p className="text-gray-500 text-sm mb-6">Join the tennis community</p>
+    <div className="bg-white border border-brand-divider p-8">
+      <h1 className="font-display text-4xl tracking-wide mb-1">CREATE ACCOUNT</h1>
+      <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">Join the tennis community</p>
 
       {/* Google */}
       <button
         type="button"
         onClick={handleGoogleSignUp}
-        className="w-full flex items-center justify-center gap-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors mb-5"
+        className="w-full flex items-center justify-center gap-3 py-2.5 border border-brand-divider rounded text-sm font-medium text-gray-700 hover:bg-brand-surface transition-colors mb-5"
       >
         <GoogleIcon />
         Continue with Google
@@ -99,17 +99,17 @@ export default function SignUpPage() {
 
       <div className="relative mb-5">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-100" />
+          <div className="w-full border-t border-brand-divider" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-gray-400">or</span>
+          <span className="bg-white px-3 text-xs text-[rgba(26,26,26,0.4)]">or</span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Full name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Full name</label>
+          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Full name</label>
           <input
             type="text"
             value={fullName}
@@ -117,13 +117,13 @@ export default function SignUpPage() {
             placeholder="Alex Smith"
             required
             autoComplete="name"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
           />
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Email</label>
           <input
             type="email"
             value={email}
@@ -131,13 +131,13 @@ export default function SignUpPage() {
             placeholder="you@example.com"
             required
             autoComplete="email"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
           />
         </div>
 
         {/* Password */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Password</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
@@ -146,12 +146,12 @@ export default function SignUpPage() {
               placeholder="Min. 8 characters"
               required
               autoComplete="new-password"
-              className="w-full px-4 py-2.5 pr-10 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-2.5 pr-10 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.4)] hover:text-gray-600"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -164,21 +164,21 @@ export default function SignUpPage() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 rounded-full transition-all ${
-                      i <= strength.score ? strength.color : 'bg-gray-100'
+                    className={`h-1 flex-1 transition-all ${
+                      i <= strength.score ? strength.color : 'bg-brand-surface'
                     }`}
                   />
                 ))}
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 text-xs text-[rgba(26,26,26,0.4)]">
                   {passwordValid ? (
                     <Check size={12} className="text-green-500" />
                   ) : null}
                   <span>Min. 8 characters</span>
                 </div>
                 {strength.label && (
-                  <span className="text-xs font-medium text-gray-500">{strength.label}</span>
+                  <span className="text-xs font-medium text-[rgba(26,26,26,0.4)]">{strength.label}</span>
                 )}
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function SignUpPage() {
 
         {/* Account exists */}
         {accountExists && (
-          <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-700">
+          <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded text-sm text-amber-700">
             An account with this email already exists.{' '}
             <Link href={`/sign-in?email=${encodeURIComponent(email)}`} className="font-semibold underline">
               Sign in instead?
@@ -197,7 +197,7 @@ export default function SignUpPage() {
 
         {/* Error */}
         {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded text-sm text-red-600">
             {error}
           </div>
         )}
@@ -206,20 +206,20 @@ export default function SignUpPage() {
         <button
           type="submit"
           disabled={loading || !fullName || !email || !passwordValid}
-          className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 bg-brand-primary text-white font-medium text-[10px] tracking-[0.2em] uppercase rounded hover:bg-brand-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : null}
           {loading ? 'Creating account...' : 'Create account'}
         </button>
 
-        <p className="text-xs text-gray-400 text-center">
+        <p className="text-xs text-[rgba(26,26,26,0.4)] text-center">
           By signing up you agree to our Terms of Service and Privacy Policy.
         </p>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="text-center text-sm text-[rgba(26,26,26,0.4)] mt-6">
         Already have an account?{' '}
-        <Link href="/sign-in" className="text-green-600 font-medium hover:text-green-700">
+        <Link href="/sign-in" className="text-brand-primary font-medium hover:text-brand-primary-dark">
           Sign in
         </Link>
       </p>

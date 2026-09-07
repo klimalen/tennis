@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tennis App — Brand Palette</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Anton&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #E8E1D7;
+      font-family: 'DM Sans', sans-serif;
+      color: #1a1a1a;
+      padding: 64px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      border-top: 2px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+      padding: 20px 0 16px;
+      margin-bottom: 64px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 72px;
+      letter-spacing: 2px;
+      line-height: 1;
+      color: #1a1a1a;
+    }
+
+    .header-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 24px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    section {
+      margin-bottom: 72px;
+    }
+
+    /* ── Palette ── */
+    .palette-group {
+      margin-bottom: 32px;
+    }
+
+    .palette-group-name {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 12px;
+    }
+
+    .swatches {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      width: 120px;
+    }
+
+    .swatch-color {
+      width: 120px;
+      height: 80px;
+      border-radius: 2px;
+      margin-bottom: 8px;
+    }
+
+    .swatch-name {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .swatch-hex {
+      font-size: 10px;
+      color: #777;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+
+    /* ── Typography ── */
+    .type-row {
+      margin-bottom: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .type-row:last-child {
+      border-bottom: none;
+    }
+
+    .type-meta {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 16px;
+    }
+
+    .type-meta-item {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #999;
+    }
+
+    .type-meta-item span {
+      display: block;
+      color: #444;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .sample-display {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 96px;
+      line-height: 0.95;
+      color: #3A8A7A;
+      letter-spacing: 2px;
+    }
+
+    .sample-display-alt {
+      font-family: 'Anton', sans-serif;
+      font-size: 80px;
+      line-height: 1;
+      color: #E8748A;
+      letter-spacing: 1px;
+    }
+
+    .sample-subtitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      font-weight: 400;
+      color: #1E3A6E;
+      margin-top: 8px;
+    }
+
+    .sample-script {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 36px;
+      color: #85648F;
+      line-height: 1.3;
+    }
+
+    .sample-body {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      line-height: 1.7;
+      color: #333;
+      max-width: 480px;
+    }
+
+    .sample-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #888;
+      background: transparent;
+      border: 1px solid #bbb;
+      padding: 4px 10px;
+      display: inline-block;
+    }
+
+    /* ── Decorative elements section ── */
+    .deco-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .star {
+      font-size: 24px;
+      color: #D4A017;
+    }
+
+    .divider-sample {
+      flex: 1;
+      height: 1px;
+      background: #1a1a1a;
+      min-width: 120px;
+    }
+
+    .tag-sample {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #85648F;
+    }
+
+    /* ── Color combos ── */
+    .combos {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .combo {
+      width: 200px;
+      height: 120px;
+      border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .combo-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 2px;
+    }
+
+    .combo-sub {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1px solid #1a1a1a;
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-text {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #999;
+    }
+
+    .footer-star {
+      font-size: 16px;
+      color: #D4A017;
+      letter-spacing: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-title">TENNIS APP</div>
+    <div class="header-sub">Visual Identity &nbsp;✦&nbsp; Brand Reference</div>
+  </header>
+
+  <!-- ── PALETTE ── -->
+  <section>
+    <div class="section-label">01 — Цветовая палитра</div>
+
+    <div class="palette-group">
+      <div class="palette-group-name">Primary</div>
+      <div class="swatches">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E8748A;"></div>
+          <div class="swatch-name">Clay Pink</div>
+          <div class="swatch-hex">#E8748A</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#3A8A7A;"></div>
+          <div class="swatch-name">Teal Court</div>
+          <div class="swatch-hex">#3A8A7A</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E8E1D7; border: 1px solid #ccc;"></div>
+          <div class="swatch-name">Cream / Ivory</div>
+          <div class="swatch-hex">#E8E1D7</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-group">
+      <div class="palette-group-name">Secondary</div>
+      <div class="swatches">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#1E3A6E;"></div>
+          <div class="swatch-name">Deep Navy</div>
+          <div class="swatch-hex">#1E3A6E</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#D4A017;"></div>
+          <div class="swatch-name">Mustard Gold</div>
+          <div class="swatch-hex">#D4A017</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#D4622A;"></div>
+          <div class="swatch-name">Terracotta</div>
+          <div class="swatch-hex">#D4622A</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#497250;"></div>
+          <div class="swatch-name">Fern Green</div>
+          <div class="swatch-hex">#497250</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-group">
+      <div class="palette-group-name">Accent</div>
+      <div class="swatches">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#BCD85E;"></div>
+          <div class="swatch-name">Conifer</div>
+          <div class="swatch-hex">#BCD85E</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E8406A;"></div>
+          <div class="swatch-name">Hot Pink</div>
+          <div class="swatch-hex">#E8406A</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#85648F;"></div>
+          <div class="swatch-name">Clematis</div>
+          <div class="swatch-hex">#85648F</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#D4E040;"></div>
+          <div class="swatch-name">Tennis Yellow</div>
+          <div class="swatch-hex">#D4E040</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COLOR COMBOS ── -->
+  <section>
+    <div class="section-label">02 — Примеры цветовых сочетаний</div>
+    <div class="combos">
+      <div class="combo" style="background:#E8748A;">
+        <div class="combo-label" style="color:#E8E1D7;">MATCH</div>
+        <div class="combo-sub" style="color:#E8E1D7;">Clay + Cream</div>
+      </div>
+      <div class="combo" style="background:#3A8A7A;">
+        <div class="combo-label" style="color:#E8E1D7;">SERVE</div>
+        <div class="combo-sub" style="color:#E8E1D7;">Teal + Cream</div>
+      </div>
+      <div class="combo" style="background:#1E3A6E;">
+        <div class="combo-label" style="color:#D4E040;">ACE</div>
+        <div class="combo-sub" style="color:#D4E040;">Navy + Yellow</div>
+      </div>
+      <div class="combo" style="background:#D4A017;">
+        <div class="combo-label" style="color:#1E3A6E;">RALLY</div>
+        <div class="combo-sub" style="color:#1E3A6E;">Gold + Navy</div>
+      </div>
+      <div class="combo" style="background:#E8E1D7; border: 1px solid #ccc;">
+        <div class="combo-label" style="color:#D4622A;">GAME</div>
+        <div class="combo-sub" style="color:#3A8A7A;">Cream + Terracotta</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TYPOGRAPHY ── -->
+  <section>
+    <div class="section-label">03 — Типографика</div>
+
+    <!-- Display: Bebas Neue -->
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-meta-item">Роль<span>Display / Hero</span></div>
+        <div class="type-meta-item">Шрифт<span>Bebas Neue</span></div>
+        <div class="type-meta-item">Использование<span>Заголовки, счёт, имена</span></div>
+      </div>
+      <div class="sample-display">TENNIS</div>
+      <div class="sample-display" style="color:#E8748A; font-size: 64px;">PLAY WITH HEART</div>
+    </div>
+
+    <!-- Display: Anton -->
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-meta-item">Роль<span>Display / Alt</span></div>
+        <div class="type-meta-item">Шрифт<span>Anton</span></div>
+        <div class="type-meta-item">Использование<span>Акцент, числа, даты</span></div>
+      </div>
+      <div class="sample-display-alt">TOURNAMENT</div>
+      <div class="sample-display-alt" style="color:#1E3A6E; font-size: 56px;">20 – 30 SEPT</div>
+    </div>
+
+    <!-- Subtitle: DM Sans -->
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-meta-item">Роль<span>Subtitle / Label</span></div>
+        <div class="type-meta-item">Шрифт<span>DM Sans</span></div>
+        <div class="type-meta-item">Использование<span>Категории, навигация, лейблы</span></div>
+      </div>
+      <div class="sample-subtitle">TENNIS PADEL CLUB &nbsp;✦&nbsp; SINCE 2024</div>
+      <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <div class="sample-label">Матчи</div>
+        <div class="sample-label">Игроки</div>
+        <div class="sample-label">Корты</div>
+        <div class="sample-label">Рейтинг</div>
+      </div>
+    </div>
+
+    <!-- Script: Playfair Italic -->
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-meta-item">Роль<span>Script / Accent</span></div>
+        <div class="type-meta-item">Шрифт<span>Playfair Display Italic</span></div>
+        <div class="type-meta-item">Использование<span>Tagline, подписи, даты</span></div>
+      </div>
+      <div class="sample-script">Depuis 1986</div>
+      <div class="sample-script" style="font-size: 28px; color: #497250; margin-top: 8px;">Your next match awaits</div>
+    </div>
+
+    <!-- Body: Playfair Display -->
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-meta-item">Роль<span>Body</span></div>
+        <div class="type-meta-item">Шрифт<span>Playfair Display</span></div>
+        <div class="type-meta-item">Использование<span>Описания, статьи, детали</span></div>
+      </div>
+      <div class="sample-body">
+        It's the understanding that your fight, your spirit, and your resilience are contagious and directly contribute to the energy and ultimate success of the entire team.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── DECORATIVE ELEMENTS ── -->
+  <section>
+    <div class="section-label">04 — Декоративные элементы</div>
+    <div class="deco-row">
+      <div class="star">✦</div>
+      <div class="star">✦</div>
+      <div class="star">✦</div>
+      <div class="divider-sample"></div>
+      <div class="tag-sample">Depuis 1986</div>
+      <div class="divider-sample"></div>
+      <div class="star" style="color:#E8748A;">✦</div>
+      <div class="star" style="color:#3A8A7A;">✦</div>
+      <div class="star" style="color:#85648F;">✦</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-text">Tennis App &nbsp;—&nbsp; Brand Reference 2024</div>
+    <div class="footer-star">✦ ✦ ✦</div>
+  </footer>
+
+</body>
+</html>

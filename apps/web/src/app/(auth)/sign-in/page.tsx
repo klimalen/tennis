@@ -60,15 +60,15 @@ function SignInForm() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h1>
-      <p className="text-gray-500 text-sm mb-6">Sign in to your account</p>
+    <div className="bg-white border border-brand-divider p-8">
+      <h1 className="font-display text-4xl tracking-wide mb-1">WELCOME BACK</h1>
+      <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">Sign in to your account</p>
 
       {/* Google */}
       <button
         type="button"
         onClick={handleGoogleSignIn}
-        className="w-full flex items-center justify-center gap-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors mb-5"
+        className="w-full flex items-center justify-center gap-3 py-2.5 border border-brand-divider rounded text-sm font-medium text-gray-700 hover:bg-brand-surface transition-colors mb-5"
       >
         <GoogleIcon />
         Continue with Google
@@ -76,17 +76,17 @@ function SignInForm() {
 
       <div className="relative mb-5">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-100" />
+          <div className="w-full border-t border-brand-divider" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-gray-400">or</span>
+          <span className="bg-white px-3 text-xs text-[rgba(26,26,26,0.4)]">or</span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Email</label>
           <input
             type="email"
             value={email}
@@ -94,15 +94,15 @@ function SignInForm() {
             placeholder="you@example.com"
             required
             autoComplete="email"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
           />
         </div>
 
         {/* Password */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <Link href="/forgot-password" className="text-xs text-green-600 hover:text-green-700 font-medium">
+            <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)]">Password</label>
+            <Link href="/forgot-password" className="text-xs text-brand-primary hover:text-brand-primary-dark font-medium">
               Forgot password?
             </Link>
           </div>
@@ -114,12 +114,12 @@ function SignInForm() {
               placeholder="••••••••"
               required
               autoComplete="current-password"
-              className="w-full px-4 py-2.5 pr-10 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-2.5 pr-10 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.4)] hover:text-gray-600"
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -128,7 +128,7 @@ function SignInForm() {
 
         {/* Error */}
         {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded text-sm text-red-600">
             {error}
           </div>
         )}
@@ -137,16 +137,16 @@ function SignInForm() {
         <button
           type="submit"
           disabled={loading || !email || !password}
-          className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 bg-brand-primary text-white font-medium text-[10px] tracking-[0.2em] uppercase rounded hover:bg-brand-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : null}
           {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      <p className="text-center text-sm text-[rgba(26,26,26,0.4)] mt-6">
         Don&apos;t have an account?{' '}
-        <Link href="/sign-up" className="text-green-600 font-medium hover:text-green-700">
+        <Link href="/sign-up" className="text-brand-primary font-medium hover:text-brand-primary-dark">
           Sign up
         </Link>
       </p>
@@ -157,12 +157,12 @@ function SignInForm() {
 export default function SignInPage() {
   return (
     <Suspense fallback={
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <div className="h-8 bg-gray-100 rounded w-1/2 mb-6 animate-pulse" />
+      <div className="bg-white border border-brand-divider p-8">
+        <div className="h-8 bg-brand-surface rounded w-1/2 mb-6 animate-pulse" />
         <div className="space-y-4">
-          <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
-          <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
-          <div className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+          <div className="h-10 bg-brand-surface rounded animate-pulse" />
+          <div className="h-10 bg-brand-surface rounded animate-pulse" />
+          <div className="h-12 bg-brand-surface rounded animate-pulse" />
         </div>
       </div>
     }>
