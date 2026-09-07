@@ -173,47 +173,80 @@ export function SearchClient({ user }: { user: User | null }) {
   const [filter, setFilter] = useState<FilterTab>('all')
   const [venues, setVenues] = useState<Venue[]>([])
   const [loadingVenues, setLoadingVenues] = useState(false)
-  const [locationError, setLocationError] = useState(false)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [cityInput, setCityInput] = useState('')
+  const [cityLabel, setCityLabel] = useState<string | null>(null)
+  const [geocodeError, setGeocodeError] = useState<string | null>(null)
 
-  function fetchCourts() {
+  async function loadVenues(lat: number, lng: number) {
+    setLoadingVenues(true)
+    setGeocodeError(null)
+    try {
+      const res = await fetch(`/api/venues?lat=${lat}&lng=${lng}&radius=10`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = (await res.json()) as { venues: Venue[] }
+      setVenues(json.venues ?? [])
+    } catch (err) {
+      console.error('Failed to fetch venues:', err)
+      setVenues([])
+    } finally {
+      setLoadingVenues(false)
+    }
+  }
+
+  function useMyLocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setLocationError(true)
+      setGeocodeError('Geolocation is not supported by your browser')
       return
     }
-
     setLoadingVenues(true)
-    setLocationError(false)
-
+    setGeocodeError(null)
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
+      (pos) => {
         const { latitude, longitude } = pos.coords
         setUserCoords({ lat: latitude, lng: longitude })
-        try {
-          const res = await fetch(
-            `/api/venues?lat=${latitude}&lng=${longitude}&radius=10`,
-          )
-          if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          const json = (await res.json()) as { venues: Venue[] }
-          setVenues(json.venues ?? [])
-        } catch (err) {
-          console.error('Failed to fetch venues:', err)
-          setVenues([])
-        } finally {
-          setLoadingVenues(false)
-        }
+        setCityLabel('your location')
+        loadVenues(latitude, longitude)
       },
       () => {
-        setLocationError(true)
         setLoadingVenues(false)
+        setGeocodeError('Location access denied. Try entering a city name.')
       },
       { timeout: 10_000 },
     )
   }
 
+  async function searchByCity() {
+    const q = cityInput.trim()
+    if (!q) return
+    setLoadingVenues(true)
+    setGeocodeError(null)
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en' } },
+      )
+      const results = (await res.json()) as { lat: string; lon: string; display_name: string }[]
+      if (!results.length) {
+        setGeocodeError('City not found. Try a different name.')
+        setLoadingVenues(false)
+        return
+      }
+      const { lat, lon, display_name } = results[0]
+      const coords = { lat: parseFloat(lat), lng: parseFloat(lon) }
+      setUserCoords(coords)
+      setCityLabel(display_name.split(',')[0])
+      await loadVenues(coords.lat, coords.lng)
+    } catch {
+      setGeocodeError('Could not geocode city. Please try again.')
+      setLoadingVenues(false)
+    }
+  }
+
   useEffect(() => {
     if (filter !== 'courts') return
-    fetchCourts()
+    // Auto-trigger geolocation when tab opens
+    useMyLocation()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter])
 
@@ -282,31 +315,47 @@ export function SearchClient({ user }: { user: User | null }) {
         {/* Courts view */}
         {showCourts && (
           <>
+            {/* City search bar */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && searchByCity()}
+                placeholder="City or area..."
+                className="flex-1 bg-brand-surface border border-brand-divider px-4 py-2.5 text-sm outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.35)]"
+              />
+              <button
+                onClick={searchByCity}
+                disabled={loadingVenues || !cityInput.trim()}
+                className="px-4 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-40"
+              >
+                Search
+              </button>
+            </div>
+            <button
+              onClick={useMyLocation}
+              disabled={loadingVenues}
+              className="flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40 -mt-1"
+            >
+              <MapPin size={11} />
+              Use my location
+            </button>
+
+            {geocodeError && (
+              <p className="text-[11px] text-red-500">{geocodeError}</p>
+            )}
+
             {loadingVenues && (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
                 <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                  Finding courts near you...
+                  Finding courts{cityLabel ? ` near ${cityLabel}` : ''}...
                 </p>
               </div>
             )}
 
-            {!loadingVenues && locationError && (
-              <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center space-y-3">
-                <MapPin size={20} className="mx-auto text-[rgba(26,26,26,0.3)]" />
-                <p className="text-sm text-[rgba(26,26,26,0.6)]">
-                  Location access is needed to find nearby courts
-                </p>
-                <button
-                  onClick={fetchCourts}
-                  className="px-5 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
-                >
-                  Enable location
-                </button>
-              </div>
-            )}
-
-            {!loadingVenues && !locationError && userCoords && venues.length === 0 && (
+            {!loadingVenues && userCoords && venues.length === 0 && !geocodeError && (
               <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
                 <p className="text-sm text-[rgba(26,26,26,0.6)]">
                   No courts found within 10 km
@@ -314,18 +363,23 @@ export function SearchClient({ user }: { user: User | null }) {
               </div>
             )}
 
-            {!loadingVenues &&
-              !locationError &&
-              userCoords &&
-              venues.length > 0 &&
-              venues.map((venue) => (
-                <VenueCard
-                  key={venue.id}
-                  venue={venue}
-                  userLat={userCoords.lat}
-                  userLng={userCoords.lng}
-                />
-              ))}
+            {!loadingVenues && userCoords && venues.length > 0 && (
+              <>
+                {cityLabel && (
+                  <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+                    {venues.length} courts near {cityLabel}
+                  </p>
+                )}
+                {venues.map((venue) => (
+                  <VenueCard
+                    key={venue.id}
+                    venue={venue}
+                    userLat={userCoords.lat}
+                    userLng={userCoords.lng}
+                  />
+                ))}
+              </>
+            )}
           </>
         )}
 
