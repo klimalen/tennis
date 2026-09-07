@@ -14,6 +14,7 @@ export async function GET() {
     .eq('status', 'pending')
 
   // Conversations with unread messages (Chats badge)
+  // Fix: query builder is immutable — must chain .gt() before executing
   const { data: participations } = await supabase
     .from('conversation_participants')
     .select('conversation_id, last_read_at')
@@ -22,14 +23,14 @@ export async function GET() {
   let chatsCount = 0
   if (participations && participations.length > 0) {
     for (const p of participations) {
-      const query = supabase
+      let query = supabase
         .from('messages')
         .select('id', { count: 'exact', head: true })
         .eq('conversation_id', p.conversation_id)
         .neq('sender_id', user.id)
 
       if (p.last_read_at) {
-        query.gt('created_at', p.last_read_at)
+        query = query.gt('created_at', p.last_read_at)
       }
 
       const { count } = await query

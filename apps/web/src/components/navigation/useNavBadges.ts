@@ -36,6 +36,8 @@ export function useNavBadges(): Badges {
     const channel = supabase
       .channel(channelName.current)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetchBadges)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_requests' }, fetchBadges)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_requests' }, fetchBadges)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_participants' }, fetchBadges)
       .subscribe()
 

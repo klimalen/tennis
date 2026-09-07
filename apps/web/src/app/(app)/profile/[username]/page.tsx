@@ -60,16 +60,47 @@ export default async function PlayerProfilePage({
     .eq('winner_id', profile.id)
     .eq('status', 'confirmed')
 
-  // Check if viewer already sent a request
+  // Check request status in both directions + existing conversation
   let existingRequestStatus: string | null = null
   if (viewer && viewer.id !== profile.id) {
-    const { data: existingReq } = await supabase
+    // Request sent by viewer
+    const { data: sentReq } = await supabase
       .from('game_requests')
       .select('status')
       .eq('sender_id', viewer.id)
       .eq('receiver_id', profile.id)
       .maybeSingle()
-    existingRequestStatus = existingReq?.status ?? null
+
+    if (sentReq) {
+      existingRequestStatus = sentReq.status
+    } else {
+      // Request received from profile person (viewer accepted their request)
+      const { data: receivedReq } = await supabase
+        .from('game_requests')
+        .select('status')
+        .eq('sender_id', profile.id)
+        .eq('receiver_id', viewer.id)
+        .in('status', ['accepted', 'matched'])
+        .maybeSingle()
+      if (receivedReq) existingRequestStatus = receivedReq.status
+    }
+
+    // Final check: if there's already a conversation between them, always show matched
+    if (!existingRequestStatus || existingRequestStatus === 'pending') {
+      const { data: convParticipant } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', viewer.id)
+        .in(
+          'conversation_id',
+          supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', profile.id),
+        )
+        .maybeSingle()
+      if (convParticipant) existingRequestStatus = 'matched'
+    }
   }
 
   const rating = profile.skill_level_computed ?? profile.skill_level_self
