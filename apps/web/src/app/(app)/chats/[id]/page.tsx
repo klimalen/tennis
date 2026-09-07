@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { ChatView } from './ChatView'
 
-interface Message {
+interface RawMessage {
   id: string
   body: string
   created_at: string
   sender_id: string
+  type: string
+  game_id: string | null
 }
 
 export default async function ChatPage({
@@ -22,7 +24,6 @@ export default async function ChatPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
-  // Fetch both participants' data in one query
   const { data: participantsData } = await supabase
     .from('conversation_participants')
     .select('user_id, last_read_at, profiles ( id, full_name, username, avatar_url )')
@@ -35,22 +36,59 @@ export default async function ChatPage({
   const other = (otherParticipant as unknown as { user_id: string; last_read_at: string | null; profiles: { id: string; full_name: string; username: string; avatar_url: string | null } } | undefined)
   const otherProfile = other?.profiles ?? null
   const otherLastReadAt = other?.last_read_at ?? null
+  const otherUserId = other?.user_id ?? ''
 
-  // Initial messages
   const { data: messages } = await supabase
     .from('messages')
-    .select('id, body, created_at, sender_id')
+    .select('id, body, created_at, sender_id, type, game_id')
     .eq('conversation_id', id)
     .order('created_at', { ascending: true })
 
-  const initialMessages = (messages ?? []) as Message[]
+  const rawMessages = (messages ?? []) as RawMessage[]
+  const initialMessages = rawMessages.map((m) => ({
+    ...m,
+    type: m.type as 'text' | 'game_invite',
+    game_id: m.game_id,
+  }))
 
-  // Unread count: messages from other person after my last read
+  // Load participant statuses for all game_invite messages
+  const gameIds = rawMessages
+    .filter((m) => m.type === 'game_invite' && m.game_id)
+    .map((m) => m.game_id as string)
+
+  const initialGameStatuses: Record<string, { myStatus: 'invited' | 'accepted' | 'declined' | 'creator'; otherStatus: 'invited' | 'accepted' | 'declined' | null }> = {}
+
+  if (gameIds.length > 0) {
+    const { data: participants } = await supabase
+      .from('game_participants')
+      .select('game_id, player_id, status')
+      .in('game_id', gameIds)
+      .in('player_id', [user.id, otherUserId].filter(Boolean))
+
+    for (const gameId of gameIds) {
+      const gameParticipants = (participants ?? []).filter((p) => p.game_id === gameId)
+      const mine = gameParticipants.find((p) => p.player_id === user.id)
+      const theirs = gameParticipants.find((p) => p.player_id === otherUserId)
+
+      // Check if current user is the creator
+      const { data: game } = await supabase
+        .from('games')
+        .select('creator_id')
+        .eq('id', gameId)
+        .single()
+
+      const isCreator = game?.creator_id === user.id
+
+      initialGameStatuses[gameId] = {
+        myStatus: isCreator ? 'creator' : (mine?.status as 'invited' | 'accepted' | 'declined') ?? 'invited',
+        otherStatus: (theirs?.status as 'invited' | 'accepted' | 'declined') ?? null,
+      }
+    }
+  }
+
   const myLastReadAt = (myParticipant as unknown as { last_read_at: string | null }).last_read_at
   const unreadCount = myLastReadAt
-    ? initialMessages.filter(
-        (m) => m.sender_id !== user.id && m.created_at > myLastReadAt,
-      ).length
+    ? initialMessages.filter((m) => m.sender_id !== user.id && m.created_at > myLastReadAt).length
     : initialMessages.filter((m) => m.sender_id !== user.id).length
 
   const otherInitials = otherProfile
@@ -59,7 +97,6 @@ export default async function ChatPage({
 
   return (
     <div className="relative flex flex-col min-h-screen pb-20 md:pb-0">
-      {/* Header */}
       <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link href="/chats" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
@@ -92,9 +129,11 @@ export default async function ChatPage({
       <ChatView
         conversationId={id}
         userId={user.id}
+        otherUserId={otherUserId}
         otherName={otherProfile?.full_name ?? ''}
         initialMessages={initialMessages}
         initialOtherLastReadAt={otherLastReadAt}
+        initialGameStatuses={initialGameStatuses}
       />
     </div>
   )
