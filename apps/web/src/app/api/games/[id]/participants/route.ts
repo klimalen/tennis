@@ -18,19 +18,16 @@ export async function PATCH(
     return NextResponse.json({ error: 'status must be accepted or declined' }, { status: 400 })
   }
 
-  const { error, data } = await supabase
+  const { error } = await supabase
     .from('game_participants')
-    .update({ status, responded_at: new Date().toISOString() })
-    .eq('game_id', gameId)
-    .eq('player_id', user.id)
-    .select('player_id')
+    .upsert(
+      { game_id: gameId, player_id: user.id, status, responded_at: new Date().toISOString() },
+      { onConflict: 'game_id,player_id' },
+    )
 
   if (error) {
-    console.error('[participants PATCH] error:', error)
+    console.error('[participants PATCH] upsert error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  if (!data || data.length === 0) {
-    console.error('[participants PATCH] no row found for game', gameId, 'player', user.id)
-  }
-  return NextResponse.json({ ok: true, updated: data?.length ?? 0 })
+  return NextResponse.json({ ok: true })
 }
