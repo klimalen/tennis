@@ -11,7 +11,7 @@ export function Sidebar() {
   const badges = useNavBadges()
 
   function badge(href: string) {
-    if (href === '/feed') return badges.feed
+    if (href === '/search') return badges.search
     if (href === '/chats') return badges.chats
     return 0
   }
