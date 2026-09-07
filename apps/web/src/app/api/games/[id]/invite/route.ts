@@ -34,19 +34,8 @@ export async function POST(
     location: game.neighborhood ?? null,
   })
 
-  // Get all conversations the current user is in
-  const { data: myConvs, error: convErr } = await supabase
-    .from('conversation_participants')
-    .select('conversation_id')
-    .eq('user_id', user.id)
-
-  if (convErr) console.error('[invite] myConvs error:', convErr)
-
-  const myConvIds = (myConvs ?? []).map((c) => c.conversation_id as string)
-  console.log('[invite] myConvIds count:', myConvIds.length)
-
   for (const inviteeId of userIds) {
-    // Skip if already a participant
+    // Add as participant if not already
     const { data: existing } = await supabase
       .from('game_participants')
       .select('player_id')
@@ -61,49 +50,35 @@ export async function POST(
       if (pErr) console.error('[invite] participant insert error:', pErr)
     }
 
-    // Find shared conversation
-    if (myConvIds.length === 0) {
-      console.error('[invite] no conversations for user', user.id)
-      continue
-    }
+    // Find shared conversation via SECURITY DEFINER function (bypasses RLS)
+    const { data: convId, error: convErr } = await supabase
+      .rpc('shared_conversation_id', { other_user_id: inviteeId })
 
-    const { data: sharedConv, error: sharedErr } = await supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', inviteeId)
-      .in('conversation_id', myConvIds)
-      .maybeSingle()
-
-    if (sharedErr) console.error('[invite] sharedConv error:', sharedErr)
-
-    if (!sharedConv) {
+    if (convErr) console.error('[invite] shared_conversation_id error:', convErr)
+    if (!convId) {
       console.error('[invite] no shared conversation for invitee', inviteeId)
       continue
     }
 
-    // Check if game_invite already sent in this conversation for this game
+    // Check if game_invite already sent for this game in this conversation
     const { data: existingMsg } = await supabase
       .from('messages')
       .select('id')
-      .eq('conversation_id', sharedConv.conversation_id)
+      .eq('conversation_id', convId)
       .eq('game_id', gameId)
       .maybeSingle()
 
-    if (existingMsg) {
-      console.log('[invite] message already sent, skipping')
-      continue
-    }
+    if (existingMsg) continue
 
     // Send game_invite message
     const { error: msgErr } = await supabase.from('messages').insert({
-      conversation_id: sharedConv.conversation_id,
+      conversation_id: convId,
       sender_id: user.id,
       body: snapshot,
       type: 'game_invite',
       game_id: gameId,
     })
     if (msgErr) console.error('[invite] message insert error:', msgErr)
-    else console.log('[invite] message sent to conv', sharedConv.conversation_id)
   }
 
   return NextResponse.json({ ok: true })
