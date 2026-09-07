@@ -3,7 +3,7 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS city_name text;
 
 -- Venues: OSM-sourced public tennis facilities
 CREATE TABLE venues (
-  id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   osm_id          text UNIQUE NOT NULL,
   name            text NOT NULL,
   lat             double precision NOT NULL,
