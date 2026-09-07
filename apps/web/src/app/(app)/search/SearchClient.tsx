@@ -486,31 +486,30 @@ function IncomingRequestCard({
   const skill = sender.skill_level_computed ?? sender.skill_level_self
   const initials = sender.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
+  const SKILL_LABELS: Record<number, string> = {
+    1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
+    4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
+  }
+
   return (
-    <div className="bg-white border border-brand-primary/30 overflow-hidden">
-      <div className="px-3 py-1.5 bg-brand-primary/5 border-b border-brand-primary/20">
-        <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-brand-primary">Wants to play with you</span>
-      </div>
-      <div className="p-3 flex items-center gap-3">
-        <Link href={`/profile/${sender.username}`} className="flex-shrink-0">
-          <div className="w-12 h-12 bg-brand-surface-md flex items-center justify-center overflow-hidden">
-            {sender.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={sender.avatar_url} alt={sender.full_name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="font-display text-base text-[rgba(26,26,26,0.4)]">{initials}</span>
-            )}
-          </div>
+    <div className="px-4 py-4 border-b border-brand-divider">
+      <div className="flex items-center gap-3">
+        <Link href={`/profile/${sender.username}`} className="w-12 h-12 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+          {sender.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={sender.avatar_url} alt={sender.full_name} className="w-full h-full object-cover" />
+          ) : (
+            <span className="font-display text-lg text-[rgba(26,26,26,0.3)]">{initials}</span>
+          )}
         </Link>
         <div className="flex-1 min-w-0">
-          <Link href={`/profile/${sender.username}`}>
-            <p className="font-medium text-[14px] text-[#1a1a1a] leading-tight">{sender.full_name}</p>
-            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{sender.username}</p>
+          <Link href={`/profile/${sender.username}`} className="block font-display text-base tracking-wide leading-tight hover:text-brand-primary transition-colors">
+            {sender.full_name.toUpperCase()}
           </Link>
-          <div className="flex items-center gap-1.5 mt-1">
+          <div className="flex items-center gap-2 mt-0.5">
             {skill != null && (
-              <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
-                {skill.toFixed(1)} · {skillLabel(skill)}
+              <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
+                {SKILL_LABELS[Math.round(skill * 2) / 2] ?? skill.toFixed(1)}
               </span>
             )}
             {sender.city_name && (
@@ -519,20 +518,20 @@ function IncomingRequestCard({
           </div>
         </div>
       </div>
-      <div className="flex border-t border-brand-divider">
-        <button
-          onClick={async () => { setActing('decline'); await onDecline(req.id) }}
-          disabled={acting !== null}
-          className="flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:bg-brand-surface transition-colors border-r border-brand-divider disabled:opacity-40"
-        >
-          {acting === 'decline' ? '…' : 'Decline'}
-        </button>
+      <div className="flex gap-2 mt-3">
         <button
           onClick={async () => { setActing('accept'); await onAccept(req.id, req.sender_id) }}
           disabled={acting !== null}
-          className="flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium bg-brand-primary text-white hover:bg-brand-primary-dark transition-colors disabled:opacity-40"
+          className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50"
         >
           {acting === 'accept' ? '…' : 'Accept'}
+        </button>
+        <button
+          onClick={async () => { setActing('decline'); await onDecline(req.id) }}
+          disabled={acting !== null}
+          className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.4)] hover:text-[rgba(26,26,26,0.7)] transition-colors disabled:opacity-50"
+        >
+          {acting === 'decline' ? '…' : 'Decline'}
         </button>
       </div>
     </div>
@@ -812,9 +811,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
         {/* Incoming requests — shown on all non-courts tabs */}
         {!showCourts && incomingRequests.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-              {incomingRequests.length === 1 ? '1 request' : `${incomingRequests.length} requests`}
+          <div className="-mx-4 border-b border-brand-divider">
+            <p className="px-4 pt-3 pb-1 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">
+              Game requests
             </p>
             {incomingRequests.map((req) => (
               <IncomingRequestCard
@@ -824,7 +823,6 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 onDecline={handleDecline}
               />
             ))}
-            <div className="border-t border-brand-divider" />
           </div>
         )}
 
