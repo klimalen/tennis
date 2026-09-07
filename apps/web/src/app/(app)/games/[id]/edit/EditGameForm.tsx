@@ -94,16 +94,10 @@ export function EditGameForm({ game }: { game: Game }) {
             </Link>
             <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">EDIT GAME</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowDeleteConfirm(true)}
-              className="w-9 h-9 flex items-center justify-center text-[rgba(26,26,26,0.35)] hover:text-red-500 transition-colors">
-              <Trash2 size={16} />
-            </button>
-            <button onClick={handleSubmit} disabled={submitting}
-              className="px-4 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
-              {submitting ? '...' : 'Save'}
-            </button>
-          </div>
+          <button onClick={() => setShowDeleteConfirm(true)}
+            className="w-9 h-9 flex items-center justify-center text-[rgba(26,26,26,0.35)] hover:text-red-500 transition-colors">
+            <Trash2 size={16} />
+          </button>
         </div>
       </div>
 
@@ -159,6 +153,11 @@ export function EditGameForm({ game }: { game: Game }) {
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
+
+            <button onClick={handleSubmit} disabled={submitting}
+              className="w-full py-4 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
+              {submitting ? 'Saving...' : 'Save changes'}
+            </button>
           </form>
         </div>
 

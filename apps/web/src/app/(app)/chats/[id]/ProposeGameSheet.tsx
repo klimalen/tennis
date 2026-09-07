@@ -42,7 +42,6 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Extra participants (beyond the chat partner who is pre-selected)
   const [connections, setConnections] = useState<Connection[]>([])
   const [extraIds, setExtraIds] = useState<Set<string>>(new Set())
 
@@ -51,7 +50,6 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
     fetch('/api/connections')
       .then((r) => r.json() as Promise<{ connections: Connection[] }>)
       .then((data) => {
-        // Exclude the chat partner from the "add more" list since they're pre-selected
         setConnections((data.connections ?? []).filter((c) => c.id !== otherUserId))
       })
       .catch(() => {})
@@ -100,7 +98,6 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
     const { id: gameId } = await gameRes.json() as { id: string }
 
-    // Always invite chat partner + any extra selected players
     const allInvitees = [otherUserId, ...Array.from(extraIds)]
     await fetch(`/api/games/${gameId}/invite`, {
       method: 'POST',
@@ -125,44 +122,47 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
-      )}
+        <div className="fixed inset-0 z-50 bg-brand-bg flex flex-col">
+          {/* Header */}
+          <div className="flex-shrink-0 border-b border-brand-divider px-4 py-4 flex items-center justify-between">
+            <span className="font-display text-2xl tracking-wide">PROPOSE GAME</span>
+            <button onClick={() => setOpen(false)} className="w-9 h-9 flex items-center justify-center text-[rgba(26,26,26,0.4)]">
+              <X size={20} />
+            </button>
+          </div>
 
-      {/* Sheet: flex column so footer stays fixed at bottom of sheet */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-brand-bg border-t border-brand-divider transition-transform duration-300 ease-out max-h-[92vh] flex flex-col ${open ? 'translate-y-0' : 'translate-y-full'}`}>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-lg mx-auto w-full px-4 py-6 space-y-6">
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-lg mx-auto w-full px-4 pt-4 pb-2">
-            <div className="flex items-center justify-between mb-5">
-              <span className="font-display text-2xl tracking-wide">PROPOSE GAME</span>
-              <button onClick={() => setOpen(false)} className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.4)]">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
               {/* Date + Time */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
-                  <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required
-                    className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm focus:outline-none focus:border-brand-primary transition-colors" />
-                </div>
-                <div>
-                  <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
-                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                    className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm focus:outline-none focus:border-brand-primary transition-colors" />
+              <div>
+                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
+                    <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required
+                      className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
+                      className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                  </div>
                 </div>
               </div>
 
               {/* Format */}
               <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Format</label>
+                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
                 <div className="flex gap-2">
                   {FORMAT_OPTIONS.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                      className={`flex-1 py-2 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${format === opt.value ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)]'}`}>
+                      className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
+                        format === opt.value
+                          ? 'border-brand-primary text-brand-primary bg-brand-surface'
+                          : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                      }`}>
                       {opt.label}
                     </button>
                   ))}
@@ -171,30 +171,30 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* Where */}
               <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">
-                  Where <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-                </label>
+                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
+                  Where <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
+                </p>
                 <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
                   placeholder="Court name or address" maxLength={200}
-                  className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
+                  className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
               </div>
 
               {/* About */}
               <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">
-                  About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-                </label>
+                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
+                  About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
+                </p>
                 <textarea value={about} onChange={(e) => setAbout(e.target.value)}
-                  placeholder="Practice, match, group training..." rows={2} maxLength={500}
-                  className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+                  placeholder="Practice, match, group training..." rows={3} maxLength={500}
+                  className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
               </div>
 
-              {/* Participants */}
+              {/* Players */}
               <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-2">Players</label>
+                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
 
                 {/* Pre-selected chat partner */}
-                <div className="flex items-center gap-2 px-3 py-2 border border-brand-primary bg-brand-surface mb-2">
+                <div className="flex items-center gap-2 px-3 py-2.5 border border-brand-primary bg-brand-surface mb-2">
                   <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
                   <span className="text-sm text-[#1a1a1a] flex-1">{otherName}</span>
                   <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
@@ -203,21 +203,28 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                 {/* Extra connections */}
                 {connections.length > 0 && (
                   <div className="space-y-1.5 mt-1.5">
-                    <p className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.3)]">Add more</p>
+                    <p className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.3)] mb-2">Add more</p>
                     {connections.map((c) => {
                       const selected = extraIds.has(c.id)
                       const initials = c.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
                       return (
                         <button key={c.id} type="button" onClick={() => toggle(c.id)}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 border transition-colors text-left ${selected ? 'border-brand-primary bg-brand-surface' : 'border-brand-divider'}`}>
-                          <div className="w-8 h-8 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 border transition-colors text-left ${
+                            selected ? 'border-brand-primary bg-brand-surface' : 'border-brand-divider hover:border-[rgba(26,26,26,0.3)]'
+                          }`}>
+                          <div className="w-9 h-9 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
                             {c.avatar_url
-                              ? <Image src={c.avatar_url} alt={c.full_name} width={32} height={32} className="w-full h-full object-cover" />
-                              : <span className="font-display text-xs text-[rgba(26,26,26,0.3)]">{initials}</span>}
+                              ? <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
+                              : <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{initials}</span>}
                           </div>
-                          <span className="flex-1 text-sm text-[#1a1a1a] truncate">{c.full_name}</span>
-                          <div className={`w-4 h-4 border flex items-center justify-center flex-shrink-0 ${selected ? 'border-brand-primary bg-brand-primary' : 'border-brand-divider'}`}>
-                            {selected && <span className="text-white text-[9px] font-bold">✓</span>}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#1a1a1a] truncate">{c.full_name}</p>
+                            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{c.username}</p>
+                          </div>
+                          <div className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 transition-colors ${
+                            selected ? 'border-brand-primary bg-brand-primary' : 'border-brand-divider'
+                          }`}>
+                            {selected && <span className="text-white text-[10px] font-bold">✓</span>}
                           </div>
                         </button>
                       )
@@ -229,18 +236,26 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
               {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
           </div>
-        </div>
 
-        {/* Fixed footer inside sheet */}
-        <div className="flex-shrink-0 border-t border-brand-divider px-4 py-4">
-          <div className="max-w-lg mx-auto">
-            <button onClick={handleSubmit} disabled={submitting || !date || !time}
-              className="w-full py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
-              {submitting ? 'Sending...' : extraIds.size > 0 ? `Send to ${1 + extraIds.size} players` : 'Send proposal'}
+          {/* Fixed footer with big button */}
+          <div
+            className="flex-shrink-0 border-t border-brand-divider px-4 pt-4"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+          >
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || !date || !time}
+              className="w-full py-4 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50"
+            >
+              {submitting
+                ? 'Sending...'
+                : extraIds.size > 0
+                  ? `Send to ${1 + extraIds.size} players`
+                  : 'Send proposal'}
             </button>
           </div>
         </div>
-      </div>
+      )}
     </>
   )
 }

@@ -110,10 +110,6 @@ export default function NewGamePage() {
             </Link>
             <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">NEW GAME</span>
           </div>
-          <button onClick={handleSubmit} disabled={submitting || !date || !time}
-            className="px-4 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
-            {submitting ? '...' : 'Save'}
-          </button>
         </div>
       </div>
 
@@ -212,6 +208,11 @@ export default function NewGamePage() {
           )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <button onClick={handleSubmit} disabled={submitting || !date || !time}
+            className="w-full py-4 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
+            {submitLabel}
+          </button>
         </div>
 
     </div>
