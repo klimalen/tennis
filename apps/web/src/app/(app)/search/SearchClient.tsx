@@ -108,45 +108,27 @@ function VenueSheet({
   onClose: () => void
 }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
-  const zoom = 16
-  const tileSize = 256
-  // Static map: single OSM tile centered on venue
-  const mapUrl = `https://tile.openstreetmap.org/${zoom}/${
-    Math.floor(((venue.lng + 180) / 360) * Math.pow(2, zoom))
-  }/${
-    Math.floor(
-      ((1 - Math.log(Math.tan((venue.lat * Math.PI) / 180) + 1 / Math.cos((venue.lat * Math.PI) / 180)) / Math.PI) / 2) *
-        Math.pow(2, zoom),
-    )
-  }.png`
-  void tileSize
+  const delta = 0.008
+  const osmEmbed = `https://www.openstreetmap.org/export/embed.html?bbox=${venue.lng - delta},${venue.lat - delta},${venue.lng + delta},${venue.lat + delta}&layer=mapnik&marker=${venue.lat},${venue.lng}`
 
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 z-30"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
 
       {/* Sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
-        {/* Map preview */}
-        <div className="relative h-40 bg-brand-surface overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={mapUrl}
-            alt="Map"
-            className="w-full h-full object-cover"
+        {/* Interactive map */}
+        <div className="relative h-48 bg-brand-surface">
+          <iframe
+            src={osmEmbed}
+            className="w-full h-full border-0"
+            title={`Map of ${venue.name}`}
           />
-          {/* Center pin */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <MapPin size={28} className="text-brand-primary drop-shadow" fill="currentColor" />
-          </div>
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 bg-white/90 flex items-center justify-center shadow"
+            className="absolute top-3 right-3 w-8 h-8 bg-white/90 flex items-center justify-center shadow z-10"
           >
             <X size={16} />
           </button>
