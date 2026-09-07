@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
+import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,33 @@ interface NominatimPlace {
   type?: string
   class?: string
   address?: { country?: string; city?: string; town?: string }
+}
+
+interface OpenGameProfile {
+  id: string
+  full_name: string
+  username: string
+  avatar_url: string | null
+  skill_level_self: number | null
+  skill_level_computed: number | null
+}
+
+interface OpenGameParticipant {
+  player_id: string
+  status: string
+  profile: OpenGameProfile
+}
+
+interface OpenGame {
+  id: string
+  scheduled_at: string
+  format: string
+  neighborhood: string | null
+  notes: string | null
+  creator_id: string
+  max_players: number
+  creator: OpenGameProfile & { city_name: string | null }
+  participants: OpenGameParticipant[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -538,6 +566,236 @@ function IncomingRequestCard({
   )
 }
 
+// ─── Participant avatar stack ─────────────────────────────────────────────────
+
+function ParticipantAvatars({ participants, max = 3 }: { participants: OpenGameParticipant[]; max?: number }) {
+  const shown = participants.slice(0, max)
+  const extra = participants.length - max
+  return (
+    <div className="flex items-center -space-x-2">
+      {shown.map((p) => {
+        const initials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+        return (
+          <div key={p.player_id} className="w-7 h-7 rounded-full border-2 border-white bg-brand-surface overflow-hidden flex items-center justify-center">
+            {p.profile.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-[8px] font-medium text-[rgba(26,26,26,0.5)]">{initials}</span>
+            )}
+          </div>
+        )
+      })}
+      {extra > 0 && (
+        <div className="w-7 h-7 rounded-full border-2 border-white bg-brand-surface flex items-center justify-center">
+          <span className="text-[8px] font-medium text-[rgba(26,26,26,0.5)]">+{extra}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
+const OPEN_SKILL_LABELS: Record<number, string> = {
+  1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
+  4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
+}
+
+// ─── Open game card ───────────────────────────────────────────────────────────
+
+function OpenGameCard({ game, userId, joined, onJoin, onClick }: {
+  game: OpenGame
+  userId: string | null
+  joined: boolean
+  onJoin: (id: string) => void
+  onClick: () => void
+}) {
+  const spotsTaken = game.participants.filter((p) => p.status === 'accepted' || p.status === 'invited').length
+  const spotsLeft = game.max_players - spotsTaken
+  const isFull = spotsLeft <= 0
+  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId) : false
+  const alreadyIn = isParticipant || joined
+
+  return (
+    <button onClick={onClick} className="w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-xl tracking-wide leading-none text-[#1a1a1a]">
+              <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} /> · <LocalGameTime iso={game.scheduled_at} />
+            </p>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">{OPEN_FORMAT_LABELS[game.format] ?? game.format}</span>
+              {game.neighborhood && (
+                <span className="text-[10px] text-[rgba(26,26,26,0.45)] flex items-center gap-0.5">
+                  <MapPin size={9} />{game.neighborhood}
+                </span>
+              )}
+            </div>
+          </div>
+          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 flex-shrink-0 ${
+            isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.35)]' : 'bg-brand-primary/10 text-brand-primary'
+          }`}>
+            {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-2">
+            <ParticipantAvatars participants={game.participants} />
+            <span className="text-[10px] text-[rgba(26,26,26,0.4)]">{spotsTaken}/{game.max_players}</span>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
+            disabled={alreadyIn || isFull}
+            className={`px-4 py-1.5 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${
+              alreadyIn
+                ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
+                : isFull
+                  ? 'bg-brand-surface text-[rgba(26,26,26,0.3)] cursor-default'
+                  : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
+            }`}
+          >
+            {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
+          </button>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+// ─── Open game detail sheet ───────────────────────────────────────────────────
+
+function OpenGameSheet({ game, userId, joined, onJoin, onClose }: {
+  game: OpenGame
+  userId: string | null
+  joined: boolean
+  onJoin: (id: string) => void
+  onClose: () => void
+}) {
+  const spotsTaken = game.participants.filter((p) => p.status === 'accepted' || p.status === 'invited').length
+  const spotsLeft = game.max_players - spotsTaken
+  const isFull = spotsLeft <= 0
+  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId) : false
+  const alreadyIn = isParticipant || joined
+  const creatorSkill = game.creator.skill_level_computed ?? game.creator.skill_level_self
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">Open Game</span>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-5 pb-24 space-y-5">
+          <div>
+            <p className="font-display text-3xl tracking-wide leading-none text-[#1a1a1a]">
+              <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} />
+            </p>
+            <p className="font-display text-xl tracking-wide text-brand-primary mt-1">
+              <LocalGameTime iso={game.scheduled_at} />
+            </p>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <span className="text-[10px] tracking-[0.12em] uppercase font-medium text-[rgba(26,26,26,0.5)]">{OPEN_FORMAT_LABELS[game.format] ?? game.format}</span>
+              {game.neighborhood && (
+                <span className="text-[11px] text-[rgba(26,26,26,0.5)] flex items-center gap-1">
+                  <MapPin size={11} />{game.neighborhood}
+                </span>
+              )}
+              <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 ${
+                isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.4)]' : 'bg-brand-primary/10 text-brand-primary'
+              }`}>
+                {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+              </span>
+            </div>
+            {game.notes && (
+              <p className="mt-2 text-sm text-[rgba(26,26,26,0.55)] italic">{game.notes}</p>
+            )}
+          </div>
+
+          <div>
+            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">Organiser</p>
+            <Link href={`/profile/${game.creator.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                {game.creator.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={game.creator.avatar_url} alt={game.creator.full_name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">
+                    {game.creator.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="font-display text-base tracking-wide leading-tight">{game.creator.full_name.toUpperCase()}</p>
+                {creatorSkill != null && (
+                  <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
+                    {OPEN_SKILL_LABELS[Math.round(creatorSkill * 2) / 2] ?? creatorSkill.toFixed(1)}
+                  </span>
+                )}
+              </div>
+            </Link>
+          </div>
+
+          {game.participants.length > 0 && (
+            <div>
+              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">
+                Players · {spotsTaken}/{game.max_players}
+              </p>
+              <div className="space-y-2">
+                {game.participants.map((p) => {
+                  const pSkill = p.profile.skill_level_computed ?? p.profile.skill_level_self
+                  const pInitials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+                  return (
+                    <Link key={p.player_id} href={`/profile/${p.profile.username}`}
+                      className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                      <div className="w-9 h-9 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                        {p.profile.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{pInitials}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profile.full_name}</p>
+                        <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profile.username}</p>
+                      </div>
+                      {pSkill != null && (
+                        <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
+                          {OPEN_SKILL_LABELS[Math.round(pSkill * 2) / 2] ?? pSkill.toFixed(1)}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => { if (!alreadyIn && !isFull) onJoin(game.id) }}
+            disabled={alreadyIn || isFull}
+            className={`w-full py-4 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${
+              alreadyIn
+                ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
+                : isFull
+                  ? 'bg-brand-surface text-[rgba(26,26,26,0.3)] cursor-default'
+                  : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
+            }`}
+          >
+            {alreadyIn ? "You're in" : isFull ? 'Game is full' : 'Join game'}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Player skeleton ──────────────────────────────────────────────────────────
 
 function PlayerCardSkeleton() {
@@ -587,6 +845,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
+  const [openGames, setOpenGames] = useState<OpenGame[]>([])
+  const [loadingOpenGames, setLoadingOpenGames] = useState(false)
+  const [selectedGame, setSelectedGame] = useState<OpenGame | null>(null)
+  const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set())
   const skipAutocompleteRef = useRef(false)
 
   // Debounced autocomplete
@@ -716,13 +978,37 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter])
 
+  useEffect(() => {
+    if (filter !== 'open_games') return
+    if (!userCityName) return
+    setLoadingOpenGames(true)
+    const params = new URLSearchParams({ city: userCityName })
+    fetch(`/api/open-games?${params}`)
+      .then((r) => r.json())
+      .then((json: { games: OpenGame[] }) => setOpenGames(json.games ?? []))
+      .catch(() => setOpenGames([]))
+      .finally(() => setLoadingOpenGames(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter])
+
   function handleFilterChange(value: FilterTab) {
     if (value !== 'courts') {
       setVenues([])
       setError(null)
       setSuggestions([])
     }
+    if (value !== 'open_games') {
+      setOpenGames([])
+    }
     setFilter(value)
+  }
+
+  async function handleJoin(gameId: string) {
+    setJoinedGameIds((prev) => new Set(prev).add(gameId))
+    const res = await fetch(`/api/games/${gameId}/join`, { method: 'POST' })
+    if (!res.ok) {
+      setJoinedGameIds((prev) => { const s = new Set(prev); s.delete(gameId); return s })
+    }
   }
 
   async function handleAccept(requestId: string, senderId: string) {
@@ -757,6 +1043,15 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           userLat={userCoords.lat}
           userLng={userCoords.lng}
           onClose={() => setSelectedVenue(null)}
+        />
+      )}
+      {selectedGame && (
+        <OpenGameSheet
+          game={selectedGame}
+          userId={user?.id ?? null}
+          joined={joinedGameIds.has(selectedGame.id)}
+          onJoin={(id) => { void handleJoin(id); setSelectedGame(null) }}
+          onClose={() => setSelectedGame(null)}
         />
       )}
       {/* Header */}
@@ -810,7 +1105,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         )}
 
         {/* Incoming requests — shown on all non-courts tabs */}
-        {!showCourts && incomingRequests.length > 0 && (
+        {filter !== 'courts' && incomingRequests.length > 0 && (
           <div className="-mx-4 border-b border-brand-divider">
             <p className="px-4 pt-3 pb-1 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">
               Game requests
@@ -824,6 +1119,53 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
               />
             ))}
           </div>
+        )}
+
+        {/* Open Games view */}
+        {filter === 'open_games' && (
+          <>
+            {loadingOpenGames && (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white border border-brand-divider p-4 animate-pulse space-y-2">
+                  <div className="h-5 bg-brand-surface w-2/5 rounded" />
+                  <div className="h-3 bg-brand-surface w-1/3 rounded" />
+                  <div className="h-8 bg-brand-surface w-full rounded mt-3" />
+                </div>
+              ))
+            )}
+            {!loadingOpenGames && !userCityName && (
+              <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center space-y-2">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No city set</p>
+                <p className="text-sm text-[rgba(26,26,26,0.5)]">Add your city in your profile to find games nearby</p>
+                <a href="/me/edit" className="inline-block mt-2 px-5 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+                  Edit profile
+                </a>
+              </div>
+            )}
+            {!loadingOpenGames && userCityName && openGames.length === 0 && (
+              <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No open games</p>
+                <p className="text-sm text-[rgba(26,26,26,0.5)]">No public games in {userCityName} yet</p>
+              </div>
+            )}
+            {!loadingOpenGames && openGames.length > 0 && (
+              <>
+                <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+                  {openGames.length} game{openGames.length !== 1 ? 's' : ''} in {userCityName}
+                </p>
+                {openGames.map((game) => (
+                  <OpenGameCard
+                    key={game.id}
+                    game={game}
+                    userId={user?.id ?? null}
+                    joined={joinedGameIds.has(game.id)}
+                    onJoin={handleJoin}
+                    onClick={() => setSelectedGame(game)}
+                  />
+                ))}
+              </>
+            )}
+          </>
         )}
 
         {/* Courts view */}
@@ -927,7 +1269,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         )}
 
         {/* Players view */}
-        {!showCourts && (
+        {(filter === 'players' || filter === 'all') && (
           <>
             {loadingPlayers && (
               [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)

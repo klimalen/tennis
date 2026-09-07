@@ -59,6 +59,7 @@ function NewGameForm() {
   const [error, setError] = useState<string | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/connections')
@@ -92,6 +93,7 @@ function NewGameForm() {
         scheduled_at, format,
         location_name: location.trim() || undefined,
         notes: about.trim() || undefined,
+        is_open: isOpen,
       }),
     })
 
@@ -246,6 +248,30 @@ function NewGameForm() {
               </div>
             </div>
           )}
+
+          {/* Visibility */}
+          <div>
+            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setIsOpen(false)}
+                className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
+                  !isOpen ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                }`}>
+                Private
+              </button>
+              <button type="button" onClick={() => setIsOpen(true)}
+                className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
+                  isOpen ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                }`}>
+                Public
+              </button>
+            </div>
+            {isOpen && (
+              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
+                Anyone in your city can find and join this game
+              </p>
+            )}
+          </div>
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 

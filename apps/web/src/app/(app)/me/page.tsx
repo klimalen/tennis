@@ -36,7 +36,7 @@ async function ProfileContent() {
   // Games created by user
   const { data: createdGames } = await supabase
     .from('games')
-    .select('id, scheduled_at, format, neighborhood, status')
+    .select('id, scheduled_at, format, neighborhood, status, is_open')
     .eq('creator_id', user.id)
     .eq('status', 'confirmed')
     .gte('scheduled_at', new Date().toISOString())
@@ -54,7 +54,7 @@ async function ProfileContent() {
   const { data: invitedGames } = acceptedGameIds.length > 0
     ? await supabase
         .from('games')
-        .select('id, scheduled_at, format, neighborhood, status')
+        .select('id, scheduled_at, format, neighborhood, status, is_open')
         .in('id', acceptedGameIds)
         .neq('creator_id', user.id)
         .eq('status', 'confirmed')
@@ -194,7 +194,12 @@ async function ProfileContent() {
                       </p>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1a1a1a]">{formatLabel}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-[#1a1a1a]">{formatLabel}</p>
+                        {game.is_open && (
+                          <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">Open</span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">
                         <LocalGameTime iso={game.scheduled_at} />{game.neighborhood ? ` · ${game.neighborhood}` : ''}
                       </p>
