@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, SlidersHorizontal, MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock } from 'lucide-react'
+import { Search, SlidersHorizontal, MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -225,69 +225,70 @@ function VenueCard({
   venue,
   userLat,
   userLng,
+  viewed,
   onClick,
 }: {
   venue: Venue
   userLat: number
   userLng: number
+  viewed: boolean
   onClick: () => void
 }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
+  const mapThumb = `https://maps.wikimedia.org/img/osm-intl,16,${venue.lat},${venue.lng},80x80@2x.png`
 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-white border border-brand-divider p-4 space-y-3 hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
-      {/* Top row: surface badge + distance */}
-      <div className="flex items-center justify-between gap-2">
-        <SurfaceBadge surface={venue.surface} />
-        <span className="text-[11px] text-[rgba(26,26,26,0.45)] flex items-center gap-1 flex-shrink-0">
-          <MapPin size={11} />
-          {formatDistance(distanceM)}
-        </span>
-      </div>
-
-      {/* Name */}
-      <div>
-        <p className="font-display text-[20px] leading-none tracking-wide text-[#1a1a1a] uppercase">
-          {venue.name}
-        </p>
-        {(venue.address ?? venue.operator) && (
-          <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">
-            {venue.address ?? venue.operator}
-          </p>
-        )}
-      </div>
-
-      {/* Attribute badges */}
-      <div className="flex flex-wrap gap-1.5">
-        {venue.lit && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-            <Zap size={9} />
-            Floodlit
-          </span>
-        )}
-        {venue.access && (
-          <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-            {venue.access}
-          </span>
-        )}
-        {venue.fee === true && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-            <DollarSign size={9} />
-            Fee
-          </span>
-        )}
-        {venue.fee === false && (
-          <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-            Free
-          </span>
-        )}
-        {venue.court_count != null && (
-          <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-            {venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}
-          </span>
-        )}
+      className={`w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface ${viewed ? 'opacity-55' : ''}`}
+    >
+      <div className="flex gap-0">
+        {/* Map thumbnail */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={mapThumb}
+          alt=""
+          width={80}
+          height={80}
+          className="w-20 h-20 object-cover flex-shrink-0 bg-brand-surface"
+        />
+        {/* Info */}
+        <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
+          <div>
+            <p className="font-display text-[18px] leading-none tracking-wide text-[#1a1a1a] uppercase">
+              {venue.name}
+            </p>
+            {venue.address && (
+              <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">{venue.address}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            <span className="text-[11px] text-[rgba(26,26,26,0.4)] flex items-center gap-0.5">
+              <MapPin size={10} />{formatDistance(distanceM)}
+            </span>
+            <SurfaceBadge surface={venue.surface} />
+            {venue.lit && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">
+                <Zap size={9} />Lit
+              </span>
+            )}
+            {venue.fee === false && (
+              <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Free</span>
+            )}
+            {venue.fee === true && (
+              <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Fee</span>
+            )}
+            {venue.court_count != null && (
+              <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">
+                {venue.court_count}c
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Chevron */}
+        <div className="flex items-center pr-3 text-[rgba(26,26,26,0.2)]">
+          <ChevronRight size={14} />
+        </div>
       </div>
     </button>
   )
@@ -336,6 +337,7 @@ export function SearchClient({ user }: { user: User | null }) {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
+  const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
   const skipAutocompleteRef = useRef(false)
 
   // Debounced autocomplete
@@ -601,7 +603,11 @@ export function SearchClient({ user }: { user: User | null }) {
                     venue={venue}
                     userLat={userCoords.lat}
                     userLng={userCoords.lng}
-                    onClick={() => setSelectedVenue(venue)}
+                    viewed={viewedVenues.has(venue.id)}
+                    onClick={() => {
+                      setSelectedVenue(venue)
+                      setViewedVenues(prev => new Set(prev).add(venue.id))
+                    }}
                   />
                 ))}
               </>
