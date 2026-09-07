@@ -64,7 +64,9 @@ export function EditGameForm({
   const [notes, setNotes] = useState(game.notes ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -102,6 +104,18 @@ export function EditGameForm({
     if (!res.ok) {
       setDeleting(false)
       setShowDeleteConfirm(false)
+      return
+    }
+    router.push('/me')
+    router.refresh()
+  }
+
+  async function handleLeave() {
+    setLeaving(true)
+    const res = await fetch(`/api/games/${game.id}/leave`, { method: 'POST' })
+    if (!res.ok) {
+      setLeaving(false)
+      setShowLeaveConfirm(false)
       return
     }
     router.push('/me')
@@ -217,8 +231,37 @@ export function EditGameForm({
             className="w-full py-4 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
             {submitting ? 'Saving...' : 'Save changes'}
           </button>
+
+          {!isCreator && (
+            <button type="button" onClick={() => setShowLeaveConfirm(true)}
+              className="w-full py-3 border border-red-200 text-red-500 text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-red-50 transition-colors">
+              Leave game
+            </button>
+          )}
         </form>
       </div>
+
+      {/* Leave confirmation — participants only */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-brand-bg border border-brand-divider shadow-xl max-w-sm w-full p-6">
+            <span className="font-display text-2xl tracking-wide block mb-3">LEAVE GAME?</span>
+            <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
+              You will be removed from this game. If no players remain, the game will be cancelled automatically.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowLeaveConfirm(false)} disabled={leaving}
+                className="flex-1 py-2.5 border border-brand-divider text-sm font-medium text-[rgba(26,26,26,0.6)] hover:bg-brand-surface transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleLeave} disabled={leaving}
+                className="flex-1 py-2.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors">
+                {leaving ? 'Leaving...' : 'Leave'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation — creator only */}
       {showDeleteConfirm && (

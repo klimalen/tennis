@@ -90,6 +90,46 @@ export async function DELETE(
 
   const { id } = await params
 
+  // Verify ownership and fetch game details for notification snapshot
+  const { data: game } = await supabase
+    .from('games')
+    .select('id, scheduled_at, format, neighborhood, creator_id')
+    .eq('id', id)
+    .eq('creator_id', user.id)
+    .single()
+
+  if (!game) return NextResponse.json({ error: 'Not found or not creator' }, { status: 404 })
+
+  // Notify all other participants before deletion.
+  // We insert a game_invite message now; ON DELETE SET NULL will flip game_id → null,
+  // which the card renders as "This game has been cancelled".
+  const { data: participants } = await supabase
+    .from('game_participants')
+    .select('player_id')
+    .eq('game_id', id)
+    .neq('player_id', user.id)
+
+  const snapshot = JSON.stringify({
+    scheduled_at: game.scheduled_at,
+    format: game.format,
+    location: game.neighborhood ?? null,
+  })
+
+  for (const p of participants ?? []) {
+    const { data: convId } = await supabase
+      .rpc('shared_conversation_id', { other_user_id: p.player_id })
+    if (!convId) continue
+
+    await supabase.from('messages').insert({
+      conversation_id: convId,
+      sender_id: user.id,
+      body: snapshot,
+      type: 'game_invite',
+      game_id: id,
+    })
+  }
+
+  // Delete the game — ON DELETE SET NULL propagates to messages.game_id
   const { error } = await supabase
     .from('games')
     .delete()
