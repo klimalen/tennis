@@ -58,24 +58,27 @@ export default async function ChatPage({
 
   const initialGameStatuses: Record<string, { myStatus: 'invited' | 'accepted' | 'declined' | 'creator'; otherStatus: 'invited' | 'accepted' | 'declined' | null }> = {}
 
+  type GameDetail = { id: string; scheduled_at: string; format: string; neighborhood: string | null; creator_id: string }
+  const initialGameDetails: Record<string, GameDetail> = {}
+
   if (gameIds.length > 0) {
-    const { data: participants } = await supabase
-      .from('game_participants')
-      .select('game_id, player_id, status')
-      .in('game_id', gameIds)
-      .in('player_id', [user.id, otherUserId].filter(Boolean))
+    const [{ data: participants }, { data: games }] = await Promise.all([
+      supabase
+        .from('game_participants')
+        .select('game_id, player_id, status')
+        .in('game_id', gameIds)
+        .in('player_id', [user.id, otherUserId].filter(Boolean)),
+      supabase
+        .from('games')
+        .select('id, scheduled_at, format, neighborhood, creator_id')
+        .in('id', gameIds),
+    ])
 
     for (const gameId of gameIds) {
       const gameParticipants = (participants ?? []).filter((p) => p.game_id === gameId)
       const mine = gameParticipants.find((p) => p.player_id === user.id)
       const theirs = gameParticipants.find((p) => p.player_id === otherUserId)
-
-      // Check if current user is the creator
-      const { data: game } = await supabase
-        .from('games')
-        .select('creator_id')
-        .eq('id', gameId)
-        .single()
+      const game = (games ?? []).find((g) => g.id === gameId)
 
       const isCreator = game?.creator_id === user.id
 
@@ -83,6 +86,8 @@ export default async function ChatPage({
         myStatus: isCreator ? 'creator' : (mine?.status as 'invited' | 'accepted' | 'declined') ?? 'invited',
         otherStatus: (theirs?.status as 'invited' | 'accepted' | 'declined') ?? null,
       }
+
+      if (game) initialGameDetails[gameId] = game as GameDetail
     }
   }
 
@@ -134,6 +139,7 @@ export default async function ChatPage({
         initialMessages={initialMessages}
         initialOtherLastReadAt={otherLastReadAt}
         initialGameStatuses={initialGameStatuses}
+        initialGameDetails={initialGameDetails}
       />
     </div>
   )

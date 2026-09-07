@@ -23,6 +23,14 @@ interface GameStatus {
   otherStatus: ParticipantStatus | null
 }
 
+interface GameDetail {
+  id: string
+  scheduled_at: string
+  format: string
+  neighborhood: string | null
+  creator_id: string
+}
+
 interface Props {
   conversationId: string
   userId: string
@@ -31,6 +39,7 @@ interface Props {
   initialMessages: Message[]
   initialOtherLastReadAt: string | null
   initialGameStatuses: Record<string, GameStatus>
+  initialGameDetails: Record<string, GameDetail>
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,22 +77,27 @@ function GameInviteCard({
   msg,
   isMe,
   gameStatus,
+  gameDetail,
   onRespond,
 }: {
   msg: Message
   isMe: boolean
   gameStatus: GameStatus | undefined
+  gameDetail: GameDetail | undefined
   onRespond: (gameId: string, status: 'accepted' | 'declined') => void
 }) {
   const [responding, setResponding] = useState(false)
 
+  // Use live game data if available, fall back to snapshot in msg.body
   let snapshot: { scheduled_at?: string; format?: string; location?: string | null } = {}
   try { snapshot = JSON.parse(msg.body) as typeof snapshot } catch { /* ignore */ }
 
-  const dt = snapshot.scheduled_at ? new Date(snapshot.scheduled_at) : null
+  const source = gameDetail ?? snapshot
+  const dt = source.scheduled_at ? new Date(source.scheduled_at) : null
   const dateStr = dt ? dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : ''
   const timeStr = dt ? dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''
-  const formatLabel = snapshot.format ? (FORMAT_LABELS[snapshot.format] ?? snapshot.format) : ''
+  const formatLabel = source.format ? (FORMAT_LABELS[source.format] ?? source.format) : ''
+  const location = gameDetail ? gameDetail.neighborhood : snapshot.location
 
   const myStatus = gameStatus?.myStatus
   const otherStatus = gameStatus?.otherStatus
@@ -140,10 +154,10 @@ function GameInviteCard({
           {dateStr && timeStr ? `${dateStr} · ${timeStr}` : '—'}
         </p>
         <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{formatLabel}</p>
-        {snapshot.location && (
+        {location && (
           <p className="text-[11px] text-[rgba(26,26,26,0.45)] flex items-center gap-1">
             <MapPin size={10} />
-            {snapshot.location}
+            {location}
           </p>
         )}
       </div>
@@ -185,6 +199,7 @@ export function ChatView({
   )
   const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(initialOtherLastReadAt)
   const [gameStatuses, setGameStatuses] = useState<Record<string, GameStatus>>(initialGameStatuses)
+  const [gameDetails, setGameDetails] = useState<Record<string, GameDetail>>(initialGameDetails)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -267,6 +282,18 @@ export function ChatView({
               return { ...prev, [row.game_id]: { ...existing, otherStatus: row.status } }
             }
             return prev
+          })
+        },
+      )
+      // Game details changes (reschedule, format, location edits)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'games' },
+        (payload) => {
+          const row = payload.new as GameDetail
+          setGameDetails((prev) => {
+            if (!(row.id in prev)) return prev
+            return { ...prev, [row.id]: row }
           })
         },
       )
@@ -414,6 +441,7 @@ export function ChatView({
                       msg={msg}
                       isMe={isMe}
                       gameStatus={msg.game_id ? gameStatuses[msg.game_id] : undefined}
+                      gameDetail={msg.game_id ? gameDetails[msg.game_id] : undefined}
                       onRespond={handleGameRespond}
                     />
                   ) : (
