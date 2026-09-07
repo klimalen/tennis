@@ -41,17 +41,52 @@ interface NominatimPlace {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns OSM tile URL + fractional offset (0-1) of the point within the tile */
-function osmTile(lat: number, lng: number, z = 15) {
-  const x = Math.floor(((lng + 180) / 360) * Math.pow(2, z))
+/** 2×2 OSM tile grid component — court always centered in the thumbnail */
+function MapThumbnail({ lat, lng }: { lat: number; lng: number }) {
+  const z = 15
+  const tx = Math.floor(((lng + 180) / 360) * Math.pow(2, z))
   const latRad = (lat * Math.PI) / 180
-  const y = Math.floor(
+  const ty = Math.floor(
     ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * Math.pow(2, z),
   )
-  const fx = ((lng + 180) / 360) * Math.pow(2, z) - x
+  const fx = ((lng + 180) / 360) * Math.pow(2, z) - tx
   const fy =
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * Math.pow(2, z) - y
-  return { url: `https://tile.openstreetmap.org/${z}/${x}/${y}.png`, fx, fy }
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * Math.pow(2, z) - ty
+
+  // Pick the 2×2 block so the court falls near the center
+  const x0 = fx >= 0.5 ? tx : tx - 1
+  const y0 = fy >= 0.5 ? ty : ty - 1
+  const courtX = fx >= 0.5 ? fx * 256 : 256 + fx * 256
+  const courtY = fy >= 0.5 ? fy * 256 : 256 + fy * 256
+  const left = Math.round(40 - courtX)
+  const top = Math.round(40 - courtY)
+
+  const tiles = [
+    { x: x0, y: y0, dx: 0, dy: 0 },
+    { x: x0 + 1, y: y0, dx: 256, dy: 0 },
+    { x: x0, y: y0 + 1, dx: 0, dy: 256 },
+    { x: x0 + 1, y: y0 + 1, dx: 256, dy: 256 },
+  ]
+
+  return (
+    <div className="relative overflow-hidden bg-brand-surface flex-shrink-0" style={{ width: 80, height: 80 }}>
+      <div className="absolute" style={{ left, top, width: 512, height: 512 }}>
+        {tiles.map(({ x, y, dx, dy }) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`${x}-${y}`}
+            src={`https://tile.openstreetmap.org/${z}/${x}/${y}.png`}
+            alt=""
+            style={{ position: 'absolute', left: dx, top: dy, width: 256, height: 256 }}
+          />
+        ))}
+      </div>
+      {/* Court marker */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-2.5 h-2.5 rounded-full bg-brand-primary ring-2 ring-white shadow" />
+      </div>
+    </div>
+  )
 }
 
 function boundingBoxClient(lat: number, lng: number, radiusKm: number) {
@@ -248,10 +283,6 @@ function VenueCard({
   onClick: () => void
 }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
-  const { url: tileUrl, fx, fy } = osmTile(venue.lat, venue.lng, 15)
-  const TILE = 256, THUMB = 80
-  const tileLeft = Math.round(THUMB / 2 - fx * TILE)
-  const tileTop = Math.round(THUMB / 2 - fy * TILE)
 
   return (
     <button
@@ -259,19 +290,7 @@ function VenueCard({
       className={`w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface ${viewed ? 'opacity-55' : ''}`}
     >
       <div className="flex gap-0">
-        {/* Map thumbnail — OSM tile centered on court */}
-        <div className="w-20 h-20 flex-shrink-0 overflow-hidden relative bg-brand-surface">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={tileUrl}
-            alt=""
-            style={{ position: 'absolute', width: TILE, height: TILE, left: tileLeft, top: tileTop }}
-          />
-          {/* Court marker dot */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-2.5 h-2.5 rounded-full bg-brand-primary ring-2 ring-white shadow" />
-          </div>
-        </div>
+        <MapThumbnail lat={venue.lat} lng={venue.lng} />
         {/* Info */}
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
@@ -458,11 +477,7 @@ export function SearchClient({ user }: { user: User | null }) {
     )
   }
 
-  useEffect(() => {
-    if (filter !== 'courts') return
-    requestGeolocation()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter])
+  // No auto-trigger — user explicitly requests location or types a city
 
   function handleFilterChange(value: FilterTab) {
     if (value !== 'courts') {
