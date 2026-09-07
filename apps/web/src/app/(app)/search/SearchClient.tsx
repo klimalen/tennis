@@ -84,7 +84,7 @@ function PlayerCard({ player }: { player: Player }) {
     .toUpperCase()
 
   return (
-    <div className="bg-white border border-brand-divider p-4 flex gap-3">
+    <Link href={`/profile/${player.username}`} className="block bg-white border border-brand-divider p-4 flex gap-3 hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
       {/* Avatar */}
       <div className="w-14 h-14 flex-shrink-0 bg-brand-surface-md flex items-center justify-center overflow-hidden">
         {player.avatar_url ? (
@@ -123,7 +123,10 @@ function PlayerCard({ player }: { player: Player }) {
           </p>
         )}
       </div>
-    </div>
+      <div className="flex items-center text-[rgba(26,26,26,0.2)]">
+        <ChevronRight size={14} />
+      </div>
+    </Link>
   )
 }
 
