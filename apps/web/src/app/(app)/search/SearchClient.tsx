@@ -253,7 +253,7 @@ export function SearchClient({ user }: { user: User | null }) {
   function handleFilterChange(value: FilterTab) {
     if (value !== 'courts') {
       setVenues([])
-      setLocationError(false)
+      setGeocodeError(null)
     }
     setFilter(value)
   }
