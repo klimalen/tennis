@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 interface AuthGateProps {
   children: React.ReactNode
-  section: 'feed' | 'schedule' | 'me'
+  section: 'feed' | 'schedule' | 'me' | 'chats'
 }
 
 const SECTION_CONTENT = {
@@ -21,6 +21,11 @@ const SECTION_CONTENT = {
     emoji: '🎾',
     title: 'Build your tennis profile',
     description: 'Track your progress, showcase your stats and connect with players at your level.',
+  },
+  chats: {
+    emoji: '💬',
+    title: 'Your chats',
+    description: 'Accept game requests to start chatting with other players.',
   },
 }
 
