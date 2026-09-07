@@ -261,7 +261,8 @@ export function SearchClient({ user }: { user: User | null }) {
     setSuggestions([])
     setShowSuggestions(false)
     // Nominatim boundingbox: [south, north, west, east]
-    const [s, n, w, e] = place.boundingbox.map(Number)
+    const bb = place.boundingbox.map(Number)
+    const s = bb[0] ?? 0, n = bb[1] ?? 0, w = bb[2] ?? 0, e = bb[3] ?? 0
     const lat = (s + n) / 2
     const lng = (w + e) / 2
     setUserCoords({ lat, lng })
