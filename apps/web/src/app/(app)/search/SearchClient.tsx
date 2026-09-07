@@ -235,7 +235,7 @@ export function SearchClient({ user }: { user: User | null }) {
       const { lat, lon, display_name } = results[0]!
       const coords = { lat: parseFloat(lat), lng: parseFloat(lon) }
       setUserCoords(coords)
-      setCityLabel(display_name.split(',')[0])
+      setCityLabel(display_name.split(',')[0] ?? display_name)
       await loadVenues(coords.lat, coords.lng)
     } catch {
       setGeocodeError('Could not geocode city. Please try again.')
