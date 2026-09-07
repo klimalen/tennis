@@ -212,15 +212,15 @@ export function SearchClient({ user }: { user: User | null }) {
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&featuretype=city&addressdetails=1`,
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=7&addressdetails=1`,
           { headers: { 'Accept-Language': 'en' } },
         )
         const results = (await res.json()) as NominatimPlace[]
-        // Prefer cities/towns/municipalities; de-duplicate by display name
-        const filtered = results.filter((r) =>
-          ['city', 'town', 'village', 'municipality', 'administrative', 'county'].includes(r.type ?? r.class ?? '')
+        // Prefer place-type results (cities/towns) over streets/buildings
+        const places = results.filter((r) =>
+          r.class === 'place' || r.class === 'boundary' || r.class === 'landuse'
         )
-        setSuggestions(filtered.length ? filtered : results.slice(0, 4))
+        setSuggestions((places.length ? places : results).slice(0, 5))
         setShowSuggestions(true)
       } catch {
         setSuggestions([])
