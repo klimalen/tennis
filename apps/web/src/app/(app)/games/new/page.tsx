@@ -21,7 +21,13 @@ interface Connection {
   avatar_url: string | null
 }
 
-function today() { return new Date().toISOString().slice(0, 10) }
+function today() {
+  const dt = new Date()
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const d = String(dt.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
 function nowTime() {
   const d = new Date()
   d.setMinutes(Math.ceil(d.getMinutes() / 30) * 30, 0, 0)

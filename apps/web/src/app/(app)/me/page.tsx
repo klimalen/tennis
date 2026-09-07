@@ -4,6 +4,7 @@ import { Settings, CalendarDays, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
+import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
 const SKILL_LABELS: Record<number, string> = {
   1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
@@ -183,21 +184,19 @@ async function ProfileContent() {
           {upcomingGames && upcomingGames.length > 0 ? (
             <div className="pb-4">
               {upcomingGames.map((game) => {
-                const dt = new Date(game.scheduled_at)
-                const timeStr = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
                 const formatLabel = game.format === 'singles' ? 'Singles' : game.format === 'doubles' ? 'Doubles' : 'Mixed'
                 return (
                   <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
                     <div className="flex-shrink-0 w-10 text-center">
-                      <p className="font-numbers text-xl leading-none text-brand-primary">{dt.getDate()}</p>
+                      <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
                       <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]">
-                        {dt.toLocaleDateString('en-GB', { month: 'short' })}
+                        <LocalGameMonth iso={game.scheduled_at} />
                       </p>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#1a1a1a]">{formatLabel}</p>
                       <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">
-                        {timeStr}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
+                        <LocalGameTime iso={game.scheduled_at} />{game.neighborhood ? ` · ${game.neighborhood}` : ''}
                       </p>
                     </div>
                     <Link

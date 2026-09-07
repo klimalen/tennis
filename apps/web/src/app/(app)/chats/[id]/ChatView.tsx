@@ -193,6 +193,7 @@ export function ChatView({
   initialMessages,
   initialOtherLastReadAt,
   initialGameStatuses,
+  initialGameDetails,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(
     initialMessages.map((m) => ({ ...m, _status: 'sent' as const })),

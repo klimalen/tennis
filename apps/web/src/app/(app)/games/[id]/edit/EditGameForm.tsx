@@ -35,7 +35,11 @@ interface Participant {
 }
 
 function toDateInput(iso: string) {
-  return new Date(iso).toISOString().slice(0, 10)
+  const dt = new Date(iso)
+  const y = dt.getFullYear()
+  const m = String(dt.getMonth() + 1).padStart(2, '0')
+  const d = String(dt.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function toTimeInput(iso: string) {
