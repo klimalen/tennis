@@ -100,14 +100,20 @@ export default function NewGamePage() {
       : 'Save game'
 
   return (
-    <div className="flex flex-col min-h-screen pb-32 md:pb-0">
-      {/* Fixed header */}
-      <div className="flex-shrink-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider px-4 py-4 z-10">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/me" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
-            <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
-          </Link>
-          <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">NEW GAME</span>
+    <div className="min-h-screen pb-24 md:pb-8">
+      {/* Header with Save button */}
+      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider px-4 py-4 z-10">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/me" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+              <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
+            </Link>
+            <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">NEW GAME</span>
+          </div>
+          <button onClick={handleSubmit} disabled={submitting || !date || !time}
+            className="px-4 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
+            {submitting ? '...' : 'Save'}
+          </button>
         </div>
       </div>
 
@@ -208,15 +214,6 @@ export default function NewGamePage() {
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
 
-      {/* Submit button — fixed above tab bar on mobile, static on desktop */}
-      <div className="fixed bottom-16 left-0 right-0 md:static md:bottom-auto bg-brand-bg border-t border-brand-divider px-4 py-4 z-30">
-        <div className="max-w-2xl mx-auto">
-          <button onClick={handleSubmit} disabled={submitting || !date || !time}
-            className="w-full py-3.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {submitLabel}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
