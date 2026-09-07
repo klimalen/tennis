@@ -1,15 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Send, RotateCcw } from 'lucide-react'
+import { Send, RotateCcw, ChevronDown, Check, CheckCheck } from 'lucide-react'
 
 interface Message {
   id: string
   body: string
   created_at: string
   sender_id: string
-  // client-only fields for status tracking
   _tempId?: string
   _status?: 'sending' | 'sent' | 'error'
 }
@@ -17,46 +16,79 @@ interface Message {
 interface Props {
   conversationId: string
   userId: string
+  otherName: string
   initialMessages: Message[]
+  initialOtherLastReadAt: string | null
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatDateSeparator(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+
+  if (d.toDateString() === today.toDateString()) return 'Today'
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined })
+}
+
+function sameDay(a: string, b: string) {
+  return new Date(a).toDateString() === new Date(b).toDateString()
 }
 
 function addMessage(prev: Message[], msg: Message): Message[] {
-  if (prev.some((m) => m.id === msg.id || (msg._tempId && m._tempId === msg._tempId))) return prev
+  if (prev.some((m) => m.id === msg.id)) return prev
   return [...prev, msg]
 }
 
-function replaceTemp(prev: Message[], tempId: string, real: Message): Message[] {
-  const idx = prev.findIndex((m) => m._tempId === tempId)
-  if (idx === -1) return addMessage(prev, real)
-  const next = [...prev]
-  next[idx] = real
-  return next
-}
+// ─── Component ────────────────────────────────────────────────────────────────
 
-export function ChatView({ conversationId, userId, initialMessages }: Props) {
+export function ChatView({
+  conversationId,
+  userId,
+  otherName,
+  initialMessages,
+  initialOtherLastReadAt,
+}: Props) {
   const [messages, setMessages] = useState<Message[]>(
     initialMessages.map((m) => ({ ...m, _status: 'sent' as const })),
   )
+  const [otherLastReadAt, setOtherLastReadAt] = useState<string | null>(initialOtherLastReadAt)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
+
+  const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const supabaseRef = useRef(createClient())
+  const supabase = useRef(createClient()).current
 
-  // Scroll to bottom on new messages
+  // ── Scroll helpers ──────────────────────────────────────────────────────────
+
+  const scrollToBottom = useCallback((smooth = true) => {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' })
+    setShowScrollBtn(false)
+  }, [])
+
+  // Initial scroll — instant
+  useEffect(() => { scrollToBottom(false) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleScroll() {
+    const el = scrollRef.current
+    if (!el) return
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    setShowScrollBtn(distFromBottom > 120)
+  }
+
+  // ── Real-time ───────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // Real-time subscription + mark as read
-  useEffect(() => {
-    const supabase = supabaseRef.current
-
     // Mark as read on open
     supabase
       .from('conversation_participants')
@@ -65,29 +97,24 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
       .eq('user_id', userId)
       .then(() => {})
 
-    // postgres_changes — reliable delivery after DB write
     const channel = supabase
       .channel(`chat:${conversationId}`)
+      // New messages via postgres_changes
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           const msg = payload.new as Message
           setMessages((prev) => {
-            // If this matches a temp message (our own send), replace it
             const temp = prev.find(
               (m) => m._status === 'sending' && m.sender_id === msg.sender_id && m.body === msg.body,
             )
             const real: Message = { ...msg, _status: 'sent' }
-            if (temp?._tempId) return replaceTemp(prev, temp._tempId, real)
+            if (temp?._tempId) {
+              return prev.map((m) => m._tempId === temp._tempId ? real : m)
+            }
             return addMessage(prev, real)
           })
-          // Mark as read when incoming message arrives
           if (msg.sender_id !== userId) {
             supabase
               .from('conversation_participants')
@@ -95,21 +122,51 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
               .eq('conversation_id', conversationId)
               .eq('user_id', userId)
               .then(() => {})
+            // Auto-scroll if near bottom
+            const el = scrollRef.current
+            if (el) {
+              const dist = el.scrollHeight - el.scrollTop - el.clientHeight
+              if (dist < 200) scrollToBottom()
+            }
           }
         },
       )
-      // Broadcast — low-latency delivery for the other participant
+      // Read receipts via postgres_changes on conversation_participants
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'conversation_participants', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          const row = payload.new as { user_id: string; last_read_at: string | null }
+          if (row.user_id !== userId) {
+            setOtherLastReadAt(row.last_read_at)
+          }
+        },
+      )
+      // Broadcast — fast delivery for other participant
       .on('broadcast', { event: 'new_message' }, ({ payload }) => {
         const msg = payload as Message
-        if (msg.sender_id === userId) return // own message, already handled optimistically
+        if (msg.sender_id === userId) return
         setMessages((prev) => addMessage(prev, { ...msg, _status: 'sent' }))
+        supabase
+          .from('conversation_participants')
+          .update({ last_read_at: new Date().toISOString() })
+          .eq('conversation_id', conversationId)
+          .eq('user_id', userId)
+          .then(() => {})
+        const el = scrollRef.current
+        if (el) {
+          const dist = el.scrollHeight - el.scrollTop - el.clientHeight
+          if (dist < 200) scrollToBottom()
+        }
       })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [conversationId, userId])
+  }, [conversationId, userId, supabase, scrollToBottom])
 
-  async function sendMessage(body: string) {
+  // ── Send ────────────────────────────────────────────────────────────────────
+
+  const sendMessage = useCallback(async (body: string) => {
     const tempId = `temp-${Date.now()}-${Math.random()}`
     const optimistic: Message = {
       id: tempId,
@@ -120,6 +177,7 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
       _status: 'sending',
     }
     setMessages((prev) => [...prev, optimistic])
+    scrollToBottom()
 
     try {
       const res = await fetch('/api/messages', {
@@ -127,27 +185,22 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversation_id: conversationId, body }),
       })
-
       if (!res.ok) throw new Error('send failed')
 
       const data = await res.json() as { id: string; created_at: string }
 
-      // Broadcast to other participant for low-latency delivery
-      supabaseRef.current.channel(`chat:${conversationId}`).send({
+      // Broadcast for fast delivery
+      supabase.channel(`chat:${conversationId}`).send({
         type: 'broadcast',
         event: 'new_message',
-        payload: {
-          id: data.id,
-          body,
-          created_at: data.created_at,
-          sender_id: userId,
-        },
+        payload: { id: data.id, body, created_at: data.created_at, sender_id: userId },
       })
 
-      // Mark optimistic as sent (postgres_changes will confirm with real id)
       setMessages((prev) =>
         prev.map((m) =>
-          m._tempId === tempId ? { ...m, id: data.id, created_at: data.created_at, _status: 'sent' } : m,
+          m._tempId === tempId
+            ? { ...m, id: data.id, created_at: data.created_at, _status: 'sent' }
+            : m,
         ),
       )
     } catch {
@@ -155,7 +208,7 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
         prev.map((m) => (m._tempId === tempId ? { ...m, _status: 'error' } : m)),
       )
     }
-  }
+  }, [conversationId, userId, supabase, scrollToBottom])
 
   async function send() {
     const body = text.trim()
@@ -174,57 +227,104 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
     }
   }
 
-  // Group consecutive messages from the same sender
-  const grouped = messages.map((msg, i) => ({
-    ...msg,
-    isFirst: i === 0 || messages[i - 1]?.sender_id !== msg.sender_id,
-    isLast: i === messages.length - 1 || messages[i + 1]?.sender_id !== msg.sender_id,
-  }))
+  // ── Read receipt logic ──────────────────────────────────────────────────────
+
+  // Find the last message sent by me that the other person has read
+  const myMessages = messages.filter((m) => m.sender_id === userId && m._status === 'sent')
+  const lastReadByOtherIdx = otherLastReadAt
+    ? myMessages.reduce((best, m, i) => m.created_at <= otherLastReadAt! ? i : best, -1)
+    : -1
+  const lastReadByOtherId = lastReadByOtherIdx >= 0 ? myMessages[lastReadByOtherIdx]?.id : null
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  // Build display items with date separators
+  type DisplayItem =
+    | { type: 'date'; key: string; label: string }
+    | { type: 'message'; key: string; msg: Message; isFirst: boolean; isLast: boolean }
+
+  const items: DisplayItem[] = []
+  messages.forEach((msg, i) => {
+    const prev = messages[i - 1]
+    if (!prev || !sameDay(prev.created_at, msg.created_at)) {
+      items.push({ type: 'date', key: `date-${msg.id}`, label: formatDateSeparator(msg.created_at) })
+    }
+    const next = messages[i + 1]
+    const isFirst = !prev || prev.sender_id !== msg.sender_id || !sameDay(prev.created_at, msg.created_at)
+    const isLast = !next || next.sender_id !== msg.sender_id || !sameDay(msg.created_at, next.created_at)
+    items.push({ type: 'message', key: msg._tempId ?? msg.id, msg, isFirst, isLast })
+  })
 
   return (
     <>
-      {/* Messages */}
-      <div className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 overflow-y-auto">
-        {grouped.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="font-display text-5xl text-brand-surface-lg mb-3">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Game on — say hello!</p>
+      {/* Match context card — shown at top if no messages */}
+      {messages.length === 0 && otherName && (
+        <div className="max-w-2xl w-full mx-auto px-4 pt-6">
+          <div className="border border-brand-divider bg-brand-surface px-4 py-4 text-center">
+            <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
+              You matched with {otherName.split(' ')[0]}
+            </p>
+            <p className="text-sm text-[rgba(26,26,26,0.4)] font-script italic mt-1">
+              Say hello and arrange a game!
+            </p>
           </div>
-        ) : (
+        </div>
+      )}
+
+      {/* Messages */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 overflow-y-auto relative"
+      >
+        {items.length === 0 ? null : (
           <div className="space-y-0.5">
-            {grouped.map((msg) => {
+            {items.map((item) => {
+              if (item.type === 'date') {
+                return (
+                  <div key={item.key} className="flex items-center gap-3 py-3">
+                    <div className="flex-1 h-px bg-brand-divider" />
+                    <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.35)] font-medium">
+                      {item.label}
+                    </span>
+                    <div className="flex-1 h-px bg-brand-divider" />
+                  </div>
+                )
+              }
+
+              const { msg, isFirst, isLast } = item
               const isMe = msg.sender_id === userId
               const isError = msg._status === 'error'
               const isSending = msg._status === 'sending'
+              const isReadByOther = msg.id === lastReadByOtherId
 
               return (
                 <div
-                  key={msg._tempId ?? msg.id}
-                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${msg.isFirst ? 'mt-3' : 'mt-0.5'}`}
+                  key={item.key}
+                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isFirst ? 'mt-3' : 'mt-0.5'}`}
                 >
                   <div className={`max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
                     isMe
                       ? isError
-                        ? 'bg-red-100 text-red-700 border border-red-200'
+                        ? 'bg-red-50 text-red-700 border border-red-200'
                         : 'bg-brand-primary text-white'
                       : 'bg-brand-surface border border-brand-divider text-[rgba(26,26,26,0.8)]'
                   } ${isSending ? 'opacity-60' : ''}`}>
                     {msg.body}
                   </div>
 
-                  {/* Timestamp + status — only on last message in group */}
-                  {msg.isLast && (
-                    <div className={`flex items-center gap-1.5 mt-0.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <span className="text-[10px] text-[rgba(26,26,26,0.3)]">
-                        {formatTime(msg.created_at)}
-                      </span>
+                  {/* Timestamp + status row — only on last in group */}
+                  {isLast && (
+                    <div className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
                       {isMe && (
-                        <>
-                          {isSending && (
-                            <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sending…</span>
+                        <span className="flex items-center gap-0.5">
+                          {isSending && <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sending…</span>}
+                          {!isSending && !isError && isReadByOther && (
+                            <CheckCheck size={12} className="text-brand-primary" />
                           )}
-                          {msg._status === 'sent' && (
-                            <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sent</span>
+                          {!isSending && !isError && !isReadByOther && (
+                            <Check size={12} className="text-[rgba(26,26,26,0.3)]" />
                           )}
                           {isError && (
                             <button
@@ -238,8 +338,11 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
                               Retry
                             </button>
                           )}
-                        </>
+                        </span>
                       )}
+                      <span className="text-[10px] text-[rgba(26,26,26,0.3)]">
+                        {formatTime(msg.created_at)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -249,6 +352,18 @@ export function ChatView({ conversationId, userId, initialMessages }: Props) {
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollBtn && (
+        <div className="absolute bottom-24 right-4 md:right-8 z-10">
+          <button
+            onClick={() => scrollToBottom()}
+            className="w-9 h-9 bg-brand-primary text-white flex items-center justify-center shadow-lg hover:bg-brand-primary-dark transition-colors"
+          >
+            <ChevronDown size={18} />
+          </button>
+        </div>
+      )}
 
       {/* Input */}
       <div className="sticky bottom-20 md:bottom-0 bg-brand-bg border-t border-brand-divider px-4 py-3">
