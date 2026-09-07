@@ -29,7 +29,7 @@ export default async function SearchPage() {
       id: r.id,
       sender_id: r.sender_id,
       created_at: r.created_at,
-      sender: r.profiles as IncomingRequest['sender'],
+      sender: r.profiles as unknown as IncomingRequest['sender'],
     }))
   }
 
