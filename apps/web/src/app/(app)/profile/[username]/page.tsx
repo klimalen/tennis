@@ -87,19 +87,20 @@ export default async function PlayerProfilePage({
 
     // Final check: if there's already a conversation between them, always show matched
     if (!existingRequestStatus || existingRequestStatus === 'pending') {
-      const { data: convParticipant } = await supabase
+      const { data: profileConvs } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
-        .eq('user_id', viewer.id)
-        .in(
-          'conversation_id',
-          supabase
-            .from('conversation_participants')
-            .select('conversation_id')
-            .eq('user_id', profile.id),
-        )
-        .maybeSingle()
-      if (convParticipant) existingRequestStatus = 'matched'
+        .eq('user_id', profile.id)
+      const profileConvIds = (profileConvs ?? []).map((r) => r.conversation_id as string)
+      if (profileConvIds.length > 0) {
+        const { data: convParticipant } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', viewer.id)
+          .in('conversation_id', profileConvIds)
+          .maybeSingle()
+        if (convParticipant) existingRequestStatus = 'matched'
+      }
     }
   }
 
