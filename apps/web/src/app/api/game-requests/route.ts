@@ -1,5 +1,29 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+
+// GET /api/game-requests?receiver_ids=id1,id2
+// Returns { statuses: { [receiverId]: status } } for requests sent by current user
+export async function GET(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ statuses: {} })
+
+  const ids = request.nextUrl.searchParams.get('receiver_ids')?.split(',').filter(Boolean) ?? []
+  if (ids.length === 0) return NextResponse.json({ statuses: {} })
+
+  const { data } = await supabase
+    .from('game_requests')
+    .select('receiver_id, status')
+    .eq('sender_id', user.id)
+    .in('receiver_id', ids)
+
+  const statuses: Record<string, string> = {}
+  for (const row of data ?? []) {
+    statuses[row.receiver_id] = row.status
+  }
+
+  return NextResponse.json({ statuses })
+}
 
 // POST /api/game-requests  { receiver_id }
 export async function POST(request: Request) {

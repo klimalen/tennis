@@ -74,13 +74,15 @@ const FORMAT_LABELS: Record<string, string> = {
   mixed_doubles: 'Mixed',
 }
 
+type RequestStatus = 'none' | 'pending' | 'accepted' | 'matched' | 'declined'
+
 function PlayerCard({
   player,
-  requested,
+  status,
   onRequest,
 }: {
   player: Player
-  requested: boolean
+  status: RequestStatus
   onRequest: (id: string) => void
 }) {
   const skill = player.skill_level_computed ?? player.skill_level_self
@@ -91,72 +93,71 @@ function PlayerCard({
     .slice(0, 2)
     .toUpperCase()
 
+  const isSent = status === 'pending' || status === 'accepted' || status === 'matched'
+
   function handleRequest(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    onRequest(player.id)
+    if (!isSent) onRequest(player.id)
   }
 
+  const btnLabel = status === 'matched' || status === 'accepted' ? 'Matched' : status === 'pending' ? 'Request sent' : 'Play together'
+
   return (
-    <Link href={`/profile/${player.username}`} className="block bg-white border border-brand-divider p-4 flex gap-3 hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
-      {/* Avatar */}
-      <div className="w-14 h-14 flex-shrink-0 bg-brand-surface-md flex items-center justify-center overflow-hidden">
-        {player.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="font-display text-lg text-[rgba(26,26,26,0.4)]">{initials}</span>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div>
-          <p className="font-medium text-[14px] text-[#1a1a1a] leading-tight">{player.full_name}</p>
-          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{player.username}</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5">
-          {skill != null && (
-            <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
-              {skill.toFixed(1)} · {skillLabel(skill)}
-            </span>
-          )}
-          {player.preferred_formats.map((f) => (
-            <span key={f} className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
-              {FORMAT_LABELS[f] ?? f}
-            </span>
-          ))}
-        </div>
-
-        {(player.play_style || player.total_matches > 0) && (
-          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">
-            {player.play_style && <span className="capitalize">{player.play_style.replace('_', ' ')}</span>}
-            {player.play_style && player.total_matches > 0 && ' · '}
-            {player.total_matches > 0 && `${player.total_matches} matches`}
-          </p>
-        )}
-      </div>
-
-      {/* Quick request button */}
-      <div className="flex flex-col items-center justify-center gap-1 pl-1">
-        <button
-          onClick={handleRequest}
-          disabled={requested}
-          title={requested ? 'Request sent' : 'Play together'}
-          className={`w-8 h-8 flex items-center justify-center border transition-colors ${
-            requested
-              ? 'border-brand-primary bg-brand-primary/10 text-brand-primary cursor-default'
-              : 'border-brand-divider text-[rgba(26,26,26,0.3)] hover:border-brand-primary hover:text-brand-primary'
-          }`}
-        >
-          {requested ? (
-            <span className="text-[14px] leading-none">✓</span>
+    <Link href={`/profile/${player.username}`} className="block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
+      <div className="p-4 flex gap-3">
+        {/* Avatar */}
+        <div className="w-14 h-14 flex-shrink-0 bg-brand-surface-md flex items-center justify-center overflow-hidden">
+          {player.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-[14px] leading-none">▶</span>
+            <span className="font-display text-lg text-[rgba(26,26,26,0.4)]">{initials}</span>
           )}
-        </button>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div>
+            <p className="font-medium text-[14px] text-[#1a1a1a] leading-tight">{player.full_name}</p>
+            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{player.username}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {skill != null && (
+              <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
+                {skill.toFixed(1)} · {skillLabel(skill)}
+              </span>
+            )}
+            {player.preferred_formats.map((f) => (
+              <span key={f} className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
+                {FORMAT_LABELS[f] ?? f}
+              </span>
+            ))}
+          </div>
+
+          {(player.play_style || player.total_matches > 0) && (
+            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">
+              {player.play_style && <span className="capitalize">{player.play_style.replace('_', ' ')}</span>}
+              {player.play_style && player.total_matches > 0 && ' · '}
+              {player.total_matches > 0 && `${player.total_matches} matches`}
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* Play together button — full width, same style as profile page */}
+      <button
+        onClick={handleRequest}
+        disabled={isSent}
+        className={`w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider ${
+          isSent
+            ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
+            : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
+        }`}
+      >
+        {btnLabel}
+      </button>
     </Link>
   )
 }
@@ -488,7 +489,7 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
   const [filter, setFilter] = useState<FilterTab>('all')
   const [players, setPlayers] = useState<Player[]>([])
   const [loadingPlayers, setLoadingPlayers] = useState(false)
-  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set())
+  const [requestStatuses, setRequestStatuses] = useState<Record<string, RequestStatus>>({})
   const [venues, setVenues] = useState<Venue[]>([])
   const [loadingVenues, setLoadingVenues] = useState(false)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -611,7 +612,19 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
     if (user) params.set('exclude', user.id)
     fetch(`/api/players?${params}`)
       .then((r) => r.json())
-      .then((json: { players: Player[] }) => setPlayers(json.players ?? []))
+      .then(async (json: { players: Player[] }) => {
+        const loaded = json.players ?? []
+        setPlayers(loaded)
+        // Fetch existing request statuses for loaded players
+        if (user && loaded.length > 0) {
+          const ids = loaded.map((p) => p.id).join(',')
+          const res = await fetch(`/api/game-requests?receiver_ids=${ids}`)
+          if (res.ok) {
+            const data = await res.json() as { statuses: Record<string, string> }
+            setRequestStatuses(data.statuses as Record<string, RequestStatus>)
+          }
+        }
+      })
       .catch(() => setPlayers([]))
       .finally(() => setLoadingPlayers(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -821,9 +834,9 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
                   <PlayerCard
                     key={player.id}
                     player={player}
-                    requested={requestedIds.has(player.id)}
+                    status={requestStatuses[player.id] ?? 'none'}
                     onRequest={async (id) => {
-                      setRequestedIds((prev) => new Set([...prev, id]))
+                      setRequestStatuses((prev) => ({ ...prev, [id]: 'pending' }))
                       await fetch('/api/game-requests', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
