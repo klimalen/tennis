@@ -89,11 +89,8 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
 
 // ─── Venue detail sheet ───────────────────────────────────────────────────────
 
-function getDirectionsUrl(lat: number, lng: number, name: string): string {
-  if (typeof navigator !== 'undefined' && /iPad|iPhone|iPod|Mac/.test(navigator.userAgent)) {
-    return `https://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`
-  }
-  return `https://maps.google.com/maps?q=${lat},${lng}`
+function googleMapsUrl(lat: number, lng: number, name: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}&query=${lat},${lng}`
 }
 
 function VenueSheet({
@@ -118,20 +115,20 @@ function VenueSheet({
 
       {/* Sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
+        {/* Header strip with close button */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">Tennis Court</span>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
+            <X size={16} />
+          </button>
+        </div>
         {/* Interactive map */}
-        <div className="relative h-48 bg-brand-surface">
+        <div className="h-48 bg-brand-surface">
           <iframe
             src={osmEmbed}
             className="w-full h-full border-0"
             title={`Map of ${venue.name}`}
           />
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 bg-white/90 flex items-center justify-center shadow z-10"
-          >
-            <X size={16} />
-          </button>
         </div>
 
         <div className="p-5 space-y-4">
@@ -187,13 +184,13 @@ function VenueSheet({
           {/* Action buttons */}
           <div className="grid grid-cols-1 gap-2 pt-1">
             <a
-              href={getDirectionsUrl(venue.lat, venue.lng, venue.name)}
+              href={googleMapsUrl(venue.lat, venue.lng, venue.name)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
             >
               <Navigation size={13} />
-              Get directions
+              View on Google Maps
             </a>
             {venue.website && (
               <a
