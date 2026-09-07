@@ -35,10 +35,9 @@ export default function NewGamePage() {
   const [time, setTime] = useState(nowTime())
   const [format, setFormat] = useState<Format>('singles')
   const [location, setLocation] = useState('')
-  const [notes, setNotes] = useState('')
+  const [about, setAbout] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -57,9 +56,8 @@ export default function NewGamePage() {
     })
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!date || !time) return
+  async function handleSubmit() {
+    if (!date || !time || submitting) return
     setSubmitting(true)
     setError(null)
 
@@ -71,7 +69,7 @@ export default function NewGamePage() {
       body: JSON.stringify({
         scheduled_at, format,
         location_name: location.trim() || undefined,
-        notes: notes.trim() || undefined,
+        notes: about.trim() || undefined,
       }),
     })
 
@@ -84,7 +82,6 @@ export default function NewGamePage() {
 
     const { id: gameId } = await res.json() as { id: string }
 
-    // Invite selected players
     if (selectedIds.size > 0) {
       await fetch(`/api/games/${gameId}/invite`, {
         method: 'POST',
@@ -96,9 +93,16 @@ export default function NewGamePage() {
     router.push('/me')
   }
 
+  const submitLabel = submitting
+    ? 'Saving...'
+    : selectedIds.size > 0
+      ? `Save & invite ${selectedIds.size} player${selectedIds.size > 1 ? 's' : ''}`
+      : 'Save game'
+
   return (
-    <div className="min-h-screen pb-32 md:pb-8">
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+    <div className="flex flex-col h-screen md:min-h-screen md:h-auto md:pb-8">
+      {/* Fixed header */}
+      <div className="flex-shrink-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider px-4 py-4 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link href="/me" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
@@ -107,9 +111,11 @@ export default function NewGamePage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
+          {/* When */}
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
             <div className="grid grid-cols-2 gap-3">
@@ -126,13 +132,16 @@ export default function NewGamePage() {
             </div>
           </div>
 
+          {/* Format */}
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
             <div className="flex gap-2">
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
                   className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    format === opt.value ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                    format === opt.value
+                      ? 'border-brand-primary text-brand-primary bg-brand-surface'
+                      : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
                   }`}>
                   {opt.label}
                 </button>
@@ -140,6 +149,7 @@ export default function NewGamePage() {
             </div>
           </div>
 
+          {/* Where */}
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
               Where <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
@@ -149,12 +159,13 @@ export default function NewGamePage() {
               className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
           </div>
 
+          {/* About */}
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
               About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
             </p>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="What's the plan? e.g. practice, match, group training..." rows={3} maxLength={500}
+            <textarea value={about} onChange={(e) => setAbout(e.target.value)}
+              placeholder="Practice, match, group training..." rows={3} maxLength={500}
               className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
@@ -197,12 +208,17 @@ export default function NewGamePage() {
           )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+      </div>
 
-          <button type="submit" disabled={submitting || !date || !time}
+      {/* Fixed footer with submit button */}
+      <div className="flex-shrink-0 bg-brand-bg border-t border-brand-divider px-4 py-4 pb-safe">
+        <div className="max-w-2xl mx-auto">
+          <button onClick={handleSubmit} disabled={submitting || !date || !time}
             className="w-full py-3.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {submitting ? 'Saving...' : selectedIds.size > 0 ? `Save & invite ${selectedIds.size} player${selectedIds.size > 1 ? 's' : ''}` : 'Save game'}
+            {submitLabel}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   )
