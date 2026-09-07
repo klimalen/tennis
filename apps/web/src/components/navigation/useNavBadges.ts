@@ -9,17 +9,14 @@ interface Badges { feed: number; chats: number }
 export function useNavBadges(): Badges {
   const [badges, setBadges] = useState<Badges>({ feed: 0, chats: 0 })
   const pathname = usePathname()
+  // Unique channel name per hook instance to avoid Supabase reusing subscribed channels
+  const channelName = useRef(`nav-badges-${Math.random().toString(36).slice(2)}`)
 
   async function fetchBadges() {
     try {
       const res = await fetch('/api/nav-badges')
-      if (res.ok) {
-        const data = await res.json() as Badges
-        setBadges(data)
-      }
-    } catch {
-      // ignore
-    }
+      if (res.ok) setBadges(await res.json() as Badges)
+    } catch { /* ignore */ }
   }
 
   // Re-fetch on every navigation
@@ -33,32 +30,13 @@ export function useNavBadges(): Badges {
     return () => clearInterval(id)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Real-time: re-fetch when new messages or game requests arrive
+  // Real-time: re-fetch when new messages or read status changes
   useEffect(() => {
     const supabase = createClient()
-
     const channel = supabase
-      .channel('nav-badges')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => fetchBadges(),
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'game_requests' },
-        () => fetchBadges(),
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'game_requests' },
-        () => fetchBadges(),
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'conversation_participants' },
-        () => fetchBadges(),
-      )
+      .channel(channelName.current)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, fetchBadges)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_participants' }, fetchBadges)
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
