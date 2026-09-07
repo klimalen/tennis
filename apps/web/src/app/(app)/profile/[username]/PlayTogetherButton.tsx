@@ -3,9 +3,23 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function PlayTogetherButton({ receiverId }: { receiverId: string }) {
+type ButtonState = 'idle' | 'loading' | 'sent' | 'matched'
+
+function statusToState(status: string | null): ButtonState {
+  if (status === 'pending') return 'sent'
+  if (status === 'accepted' || status === 'matched') return 'matched'
+  return 'idle'
+}
+
+export function PlayTogetherButton({
+  receiverId,
+  existingStatus,
+}: {
+  receiverId: string
+  existingStatus: string | null
+}) {
   const router = useRouter()
-  const [state, setState] = useState<'idle' | 'loading' | 'sent' | 'matched'>('idle')
+  const [state, setState] = useState<ButtonState>(statusToState(existingStatus))
 
   async function handleClick() {
     if (state !== 'idle') return
@@ -31,17 +45,17 @@ export function PlayTogetherButton({ receiverId }: { receiverId: string }) {
     }
   }
 
-  const labels = {
+  const labels: Record<ButtonState, string> = {
     idle:    'Play together',
     loading: 'Sending…',
     sent:    'Request sent',
-    matched: 'Matched!',
+    matched: 'Matched — open chat',
   }
 
   return (
     <button
-      onClick={handleClick}
-      disabled={state !== 'idle'}
+      onClick={state === 'matched' ? () => router.push('/chats') : handleClick}
+      disabled={state === 'loading' || state === 'sent'}
       className="w-full mt-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-60 disabled:cursor-default"
     >
       {labels[state]}

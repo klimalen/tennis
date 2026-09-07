@@ -60,6 +60,18 @@ export default async function PlayerProfilePage({
     .eq('winner_id', profile.id)
     .eq('status', 'confirmed')
 
+  // Check if viewer already sent a request
+  let existingRequestStatus: string | null = null
+  if (viewer && viewer.id !== profile.id) {
+    const { data: existingReq } = await supabase
+      .from('game_requests')
+      .select('status')
+      .eq('sender_id', viewer.id)
+      .eq('receiver_id', profile.id)
+      .maybeSingle()
+    existingRequestStatus = existingReq?.status ?? null
+  }
+
   const rating = profile.skill_level_computed ?? profile.skill_level_self
   const skill = skillLevel(rating)
   const totalWins = wins ?? 0
@@ -138,7 +150,7 @@ export default async function PlayerProfilePage({
 
           {/* Play together button — only shown to other logged-in users */}
           {viewer && viewer.id !== profile.id && (
-            <PlayTogetherButton receiverId={profile.id} />
+            <PlayTogetherButton receiverId={profile.id} existingStatus={existingRequestStatus} />
           )}
         </div>
 
