@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { CityInput } from '@/components/ui/CityInput'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,12 +77,10 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
       <div className="space-y-4">
         <div>
           <FieldLabel>City</FieldLabel>
-          <input
-            type="text"
+          <CityInput
             value={data.city}
-            onChange={(e) => onChange({ city: e.target.value })}
-            placeholder="Belgrade, London, New York..."
-            className="w-full px-4 py-3 border border-brand-divider bg-brand-bg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
+            onChange={(city) => onChange({ city })}
+            placeholder="Search your city..."
           />
         </div>
         <div>

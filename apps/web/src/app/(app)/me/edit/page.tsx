@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
+import { CityInput } from '@/components/ui/CityInput'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -159,11 +160,10 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, max_travel_km, looking_for, neighborhood')
+        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, max_travel_km, looking_for, neighborhood, city_name')
         .eq('id', user.id)
         .single()
 
-      // city_id → city name lookup omitted for now (text field)
       if (p) {
         setOriginalUsername(p.username || '')
         update({
@@ -182,6 +182,7 @@ export default function EditProfilePage() {
           maxTravelKm: p.max_travel_km ?? null,
           lookingFor: p.looking_for || '',
           neighborhood: p.neighborhood || '',
+          city: p.city_name || '',
         })
       }
       setLoading(false)
@@ -257,6 +258,7 @@ export default function EditProfilePage() {
         max_travel_km: d.maxTravelKm,
         looking_for: d.lookingFor.trim() || null,
         neighborhood: d.neighborhood.trim() || null,
+        city_name: d.city.trim() || null,
       }).eq('id', userId)
 
       if (updateErr) throw updateErr
@@ -548,12 +550,10 @@ export default function EditProfilePage() {
 
         <div className="mb-4">
           <FieldLabel optional>City</FieldLabel>
-          <input
-            type="text"
+          <CityInput
             value={d.city}
-            onChange={(e) => update({ city: e.target.value })}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
-            placeholder="e.g. Belgrade, London, New York..."
+            onChange={(city) => update({ city })}
+            placeholder="Search your city..."
           />
         </div>
 
