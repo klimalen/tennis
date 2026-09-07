@@ -4,16 +4,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { ChatInput } from './ChatInput'
+import { MessageList } from './MessageList'
 
 interface Message {
   id: string
   body: string
   created_at: string
   sender_id: string
-  profiles: {
-    full_name: string
-    avatar_url: string | null
-  }
 }
 
 export default async function ChatPage({
@@ -45,14 +42,14 @@ export default async function ChatPage({
 
   const other = (others?.[0] as unknown as { profiles: { id: string; full_name: string; username: string; avatar_url: string | null } } | undefined)?.profiles ?? null
 
-  // Messages
+  // Initial messages (server-rendered)
   const { data: messages } = await supabase
     .from('messages')
-    .select('id, body, created_at, sender_id, profiles ( full_name, avatar_url )')
+    .select('id, body, created_at, sender_id')
     .eq('conversation_id', id)
     .order('created_at', { ascending: true })
 
-  const msgs = (messages ?? []) as unknown as Message[]
+  const initialMessages = (messages ?? []) as Message[]
 
   const otherInitials = other
     ? other.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -83,29 +80,13 @@ export default async function ChatPage({
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 space-y-3">
-        {msgs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="font-display text-5xl text-brand-surface-lg mb-3">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Game on — say hello!</p>
-          </div>
-        ) : (
-          msgs.map((msg) => {
-            const isMe = msg.sender_id === user.id
-            return (
-              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
-                  isMe
-                    ? 'bg-brand-primary text-white'
-                    : 'bg-brand-surface border border-brand-divider text-[rgba(26,26,26,0.8)]'
-                }`}>
-                  {msg.body}
-                </div>
-              </div>
-            )
-          })
-        )}
+      {/* Messages — real-time client component */}
+      <div className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 space-y-3 overflow-y-auto">
+        <MessageList
+          conversationId={id}
+          userId={user.id}
+          initialMessages={initialMessages}
+        />
       </div>
 
       {/* Input */}

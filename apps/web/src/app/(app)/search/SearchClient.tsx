@@ -74,7 +74,15 @@ const FORMAT_LABELS: Record<string, string> = {
   mixed_doubles: 'Mixed',
 }
 
-function PlayerCard({ player }: { player: Player }) {
+function PlayerCard({
+  player,
+  requested,
+  onRequest,
+}: {
+  player: Player
+  requested: boolean
+  onRequest: (id: string) => void
+}) {
   const skill = player.skill_level_computed ?? player.skill_level_self
   const initials = player.full_name
     .split(' ')
@@ -82,6 +90,12 @@ function PlayerCard({ player }: { player: Player }) {
     .join('')
     .slice(0, 2)
     .toUpperCase()
+
+  function handleRequest(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    onRequest(player.id)
+  }
 
   return (
     <Link href={`/profile/${player.username}`} className="block bg-white border border-brand-divider p-4 flex gap-3 hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
@@ -123,8 +137,25 @@ function PlayerCard({ player }: { player: Player }) {
           </p>
         )}
       </div>
-      <div className="flex items-center text-[rgba(26,26,26,0.2)]">
-        <ChevronRight size={14} />
+
+      {/* Quick request button */}
+      <div className="flex flex-col items-center justify-center gap-1 pl-1">
+        <button
+          onClick={handleRequest}
+          disabled={requested}
+          title={requested ? 'Request sent' : 'Play together'}
+          className={`w-8 h-8 flex items-center justify-center border transition-colors ${
+            requested
+              ? 'border-brand-primary bg-brand-primary/10 text-brand-primary cursor-default'
+              : 'border-brand-divider text-[rgba(26,26,26,0.3)] hover:border-brand-primary hover:text-brand-primary'
+          }`}
+        >
+          {requested ? (
+            <span className="text-[14px] leading-none">✓</span>
+          ) : (
+            <span className="text-[14px] leading-none">▶</span>
+          )}
+        </button>
       </div>
     </Link>
   )
@@ -457,6 +488,7 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
   const [filter, setFilter] = useState<FilterTab>('all')
   const [players, setPlayers] = useState<Player[]>([])
   const [loadingPlayers, setLoadingPlayers] = useState(false)
+  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set())
   const [venues, setVenues] = useState<Venue[]>([])
   const [loadingVenues, setLoadingVenues] = useState(false)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -786,7 +818,19 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
                   {players.length} players in {userCityName}
                 </p>
                 {players.map((player) => (
-                  <PlayerCard key={player.id} player={player} />
+                  <PlayerCard
+                    key={player.id}
+                    player={player}
+                    requested={requestedIds.has(player.id)}
+                    onRequest={async (id) => {
+                      setRequestedIds((prev) => new Set([...prev, id]))
+                      await fetch('/api/game-requests', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ receiver_id: id }),
+                      })
+                    }}
+                  />
                 ))}
               </>
             )}

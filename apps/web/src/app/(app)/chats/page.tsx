@@ -3,6 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import Image from 'next/image'
 import Link from 'next/link'
 
+interface LastMessage {
+  id: string
+  body: string
+  created_at: string
+  sender_id: string
+}
+
 interface ConversationRow {
   id: string
   created_at: string
@@ -38,15 +45,7 @@ async function ChatsList() {
 
   const rows = (conversations ?? []) as unknown as ConversationRow[]
 
-  // For each conversation find the other participant
-  const chats = rows.map((conv) => {
-    const other = conv.conversation_participants.find(
-      (p) => p.user_id !== user.id,
-    )
-    return { id: conv.id, created_at: conv.created_at, other: other?.profiles ?? null }
-  }).filter((c) => c.other !== null)
-
-  if (chats.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
         <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
@@ -64,11 +63,39 @@ async function ChatsList() {
     )
   }
 
+  // Fetch last message for each conversation
+  const lastMessages = new Map<string, LastMessage>()
+  await Promise.all(
+    rows.map(async (conv) => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id, body, created_at, sender_id')
+        .eq('conversation_id', conv.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (data) lastMessages.set(conv.id, data as LastMessage)
+    }),
+  )
+
+  const chats = rows.map((conv) => {
+    const other = conv.conversation_participants.find((p) => p.user_id !== user.id)
+    return {
+      id: conv.id,
+      other: other?.profiles ?? null,
+      lastMsg: lastMessages.get(conv.id) ?? null,
+    }
+  }).filter((c) => c.other !== null)
+
   return (
     <div>
-      {chats.map(({ id, other }) => {
+      {chats.map(({ id, other, lastMsg }) => {
         if (!other) return null
         const initials = other.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+        const preview = lastMsg
+          ? (lastMsg.sender_id === user.id ? 'You: ' : '') + lastMsg.body
+          : null
+
         return (
           <Link
             key={id}
@@ -84,7 +111,11 @@ async function ChatsList() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-display text-base tracking-wide leading-tight">{other.full_name.toUpperCase()}</p>
-              <p className="text-[10px] tracking-[0.12em] text-[rgba(26,26,26,0.4)] mt-0.5">@{other.username}</p>
+              {preview ? (
+                <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5 truncate">{preview}</p>
+              ) : (
+                <p className="text-[10px] tracking-[0.1em] text-[rgba(26,26,26,0.3)] mt-0.5">@{other.username}</p>
+              )}
             </div>
           </Link>
         )
