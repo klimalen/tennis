@@ -2,7 +2,7 @@
 
 import { Search, SlidersHorizontal, MapPin, Zap, DollarSign } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -199,9 +199,14 @@ export function SearchClient({ user }: { user: User | null }) {
   const [suggestions, setSuggestions] = useState<NominatimPlace[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const skipAutocompleteRef = useRef(false)
 
   // Debounced autocomplete
   useEffect(() => {
+    if (skipAutocompleteRef.current) {
+      skipAutocompleteRef.current = false
+      return
+    }
     const q = cityInput.trim()
     if (q.length < 2) {
       setSuggestions([])
@@ -256,6 +261,7 @@ export function SearchClient({ user }: { user: User | null }) {
   }
 
   function selectSuggestion(place: NominatimPlace) {
+    skipAutocompleteRef.current = true
     setCityInput(place.name)
     setCityLabel(place.name + (place.address?.country ? `, ${place.address.country}` : ''))
     setSuggestions([])
