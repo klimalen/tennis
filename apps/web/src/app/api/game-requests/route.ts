@@ -30,21 +30,21 @@ export async function POST(request: Request) {
 
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
-    // Create conversation
-    const { data: conv, error: convErr } = await supabase
-      .from('conversations')
-      .insert({ request_id: reverse.id })
-      .select('id')
-      .single()
+    // Create conversation — generate UUID upfront to avoid SELECT-after-INSERT RLS issue
+    const convId = crypto.randomUUID()
 
-    if (convErr || !conv) return NextResponse.json({ error: convErr?.message ?? 'Failed to create conversation' }, { status: 500 })
+    const { error: convErr } = await supabase
+      .from('conversations')
+      .insert({ id: convId, request_id: reverse.id })
+
+    if (convErr) return NextResponse.json({ error: convErr.message }, { status: 500 })
 
     await supabase.from('conversation_participants').insert([
-      { conversation_id: conv.id, user_id: user.id },
-      { conversation_id: conv.id, user_id: receiverId },
+      { conversation_id: convId, user_id: user.id },
+      { conversation_id: convId, user_id: receiverId },
     ])
 
-    return NextResponse.json({ matched: true, conversation_id: conv.id })
+    return NextResponse.json({ matched: true, conversation_id: convId })
   }
 
   // No reverse — upsert a pending request (ignore if already sent)

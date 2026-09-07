@@ -61,31 +61,31 @@ export async function PATCH(
     return NextResponse.json({ error: updateErr.message }, { status: 500 })
   }
 
-  // Create conversation
-  const { data: conv, error: convErr } = await supabase
-    .from('conversations')
-    .insert({ request_id: id })
-    .select('id')
-    .single()
+  // Generate UUID upfront — avoids SELECT-after-INSERT which fails RLS
+  // (user isn't a participant yet when the SELECT runs)
+  const convId = crypto.randomUUID()
+  const actualSenderId = sender_id ?? req.sender_id
 
-  if (convErr || !conv) {
+  const { error: convErr } = await supabase
+    .from('conversations')
+    .insert({ id: convId, request_id: id })
+
+  if (convErr) {
     console.error('[game-requests PATCH] conversation insert error:', convErr)
-    return NextResponse.json({ error: convErr?.message ?? 'Failed to create conversation' }, { status: 500 })
+    return NextResponse.json({ error: convErr.message }, { status: 500 })
   }
 
-  // Add both participants
-  const actualSenderId = sender_id ?? req.sender_id
   const { error: participantsErr } = await supabase
     .from('conversation_participants')
     .insert([
-      { conversation_id: conv.id, user_id: user.id },
-      { conversation_id: conv.id, user_id: actualSenderId },
+      { conversation_id: convId, user_id: user.id },
+      { conversation_id: convId, user_id: actualSenderId },
     ])
 
   if (participantsErr) {
     console.error('[game-requests PATCH] participants insert error:', participantsErr)
-    // Conversation exists, return it — participants can be retried
+    return NextResponse.json({ error: participantsErr.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, conversation_id: conv.id })
+  return NextResponse.json({ ok: true, conversation_id: convId })
 }
