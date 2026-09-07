@@ -176,11 +176,7 @@ export function SearchClient({ user }: { user: User | null }) {
   const [locationError, setLocationError] = useState(false)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
 
-  useEffect(() => {
-    if (filter !== 'courts') return
-
-    // Guard: geolocation may not be available (navigator can be undefined in
-    // some environments even though this is a client component)
+  function fetchCourts() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setLocationError(true)
       return
@@ -213,6 +209,12 @@ export function SearchClient({ user }: { user: User | null }) {
       },
       { timeout: 10_000 },
     )
+  }
+
+  useEffect(() => {
+    if (filter !== 'courts') return
+    fetchCourts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter])
 
   function handleFilterChange(value: FilterTab) {
@@ -290,11 +292,17 @@ export function SearchClient({ user }: { user: User | null }) {
             )}
 
             {!loadingVenues && locationError && (
-              <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
-                <MapPin size={20} className="mx-auto mb-2 text-[rgba(26,26,26,0.3)]" />
+              <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center space-y-3">
+                <MapPin size={20} className="mx-auto text-[rgba(26,26,26,0.3)]" />
                 <p className="text-sm text-[rgba(26,26,26,0.6)]">
-                  Enable location to see nearby courts
+                  Location access is needed to find nearby courts
                 </p>
+                <button
+                  onClick={fetchCourts}
+                  className="px-5 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+                >
+                  Enable location
+                </button>
               </div>
             )}
 
