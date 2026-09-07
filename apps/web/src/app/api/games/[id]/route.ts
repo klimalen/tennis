@@ -26,7 +26,6 @@ export async function PATCH(
       notes: body.notes ?? null,
     })
     .eq('id', id)
-    .eq('creator_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

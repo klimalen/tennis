@@ -111,6 +111,21 @@ function GameInviteCard({
     }
   }
 
+  // Game was deleted (ON DELETE SET NULL)
+  if (!msg.game_id) {
+    return (
+      <div className="max-w-[80%] border border-brand-divider bg-brand-bg overflow-hidden opacity-50">
+        <div className="px-3 py-2 flex items-center gap-2 bg-brand-surface">
+          <Calendar size={12} className="text-[rgba(26,26,26,0.3)] flex-shrink-0" />
+          <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.4)]">Game proposal</span>
+        </div>
+        <div className="px-3 py-3">
+          <p className="text-sm text-[rgba(26,26,26,0.4)] italic">This game has been cancelled</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`max-w-[80%] border bg-brand-bg overflow-hidden ${isMe ? 'border-brand-primary/30' : 'border-brand-divider'}`}>
       {/* Header */}
