@@ -84,7 +84,7 @@ export function EditGameForm({ game }: { game: Game }) {
   }
 
   return (
-    <div className="flex flex-col h-screen md:min-h-screen md:h-auto md:pb-8">
+    <div className="flex flex-col min-h-screen pb-32 md:pb-0">
       {/* Header */}
       <div className="flex-shrink-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider px-4 py-4 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -101,9 +101,7 @@ export function EditGameForm({ game }: { game: Game }) {
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-4 py-6">
           <form onSubmit={handleSubmit} className="space-y-6">
 
             <div>
@@ -157,10 +155,9 @@ export function EditGameForm({ game }: { game: Game }) {
             {error && <p className="text-sm text-red-500">{error}</p>}
           </form>
         </div>
-      </div>
 
-      {/* Fixed footer */}
-      <div className="flex-shrink-0 bg-brand-bg border-t border-brand-divider px-4 py-4">
+      {/* Submit button — fixed above tab bar on mobile, static on desktop */}
+      <div className="fixed bottom-16 left-0 right-0 md:static md:bottom-auto bg-brand-bg border-t border-brand-divider px-4 py-4 z-30">
         <div className="max-w-2xl mx-auto">
           <button onClick={handleSubmit} disabled={submitting}
             className="w-full py-3.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed">

@@ -449,7 +449,7 @@ export function ChatView({
         <div className="max-w-2xl mx-auto">
           {/* Propose game button */}
           <div className="flex mb-2">
-            <ProposeGameSheet otherUserId={otherUserId} onSent={() => scrollToBottom()} />
+            <ProposeGameSheet otherUserId={otherUserId} otherName={otherName} onSent={() => scrollToBottom()} />
           </div>
           <div className="flex items-end gap-2">
             <textarea
