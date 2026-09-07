@@ -1,6 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
-import { Settings } from 'lucide-react'
+import { Settings, CalendarDays } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -130,6 +130,26 @@ async function ProfileContent() {
               className="mt-5 px-6 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
             >
               Find players
+            </Link>
+          </div>
+        </div>
+
+        {/* Schedule section */}
+        <div className="border-t border-brand-divider">
+          <div className="px-4 py-4 flex items-center gap-2">
+            <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
+            <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Schedule</span>
+          </div>
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] mb-1">No upcoming games</p>
+            <p className="text-xs text-[rgba(26,26,26,0.3)] font-script italic">
+              Your upcoming games and court bookings will appear here.
+            </p>
+            <Link
+              href="/search"
+              className="mt-4 px-6 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+            >
+              Find a game
             </Link>
           </div>
         </div>

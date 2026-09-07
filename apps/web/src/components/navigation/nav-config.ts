@@ -1,4 +1,4 @@
-import { Search, Newspaper, CalendarDays, User } from 'lucide-react'
+import { Search, Newspaper, MessageCircle, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface NavItem {
@@ -8,8 +8,8 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Search',   href: '/search',   icon: Search },
-  { label: 'Feed',     href: '/feed',     icon: Newspaper },
-  { label: 'Schedule', href: '/schedule', icon: CalendarDays },
-  { label: 'Me',       href: '/me',       icon: User },
+  { label: 'Search', href: '/search',   icon: Search },
+  { label: 'Feed',   href: '/feed',     icon: Newspaper },
+  { label: 'Chats',  href: '/chats',    icon: MessageCircle },
+  { label: 'Me',     href: '/me',       icon: User },
 ]
