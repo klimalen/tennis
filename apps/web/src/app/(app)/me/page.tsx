@@ -1,6 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
-import { Settings, CalendarDays } from 'lucide-react'
+import { Settings, CalendarDays, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
@@ -175,6 +175,12 @@ async function ProfileContent() {
                         {timeStr}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
                       </p>
                     </div>
+                    <Link
+                      href={`/games/${game.id}/edit`}
+                      className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.3)] hover:text-brand-primary transition-colors flex-shrink-0"
+                    >
+                      <Pencil size={14} />
+                    </Link>
                   </div>
                 )
               })}
