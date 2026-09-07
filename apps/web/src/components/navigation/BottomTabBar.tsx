@@ -14,7 +14,7 @@ export function BottomTabBar() {
   const rightItems = NAV_ITEMS.slice(2, 4)
 
   function badge(href: string) {
-    if (href === '/feed' && badges.feed > 0) return badges.feed
+    if (href === '/search' && badges.search > 0) return badges.search
     if (href === '/chats' && badges.chats > 0) return badges.chats
     return 0
   }

@@ -4,17 +4,16 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ feed: 0, chats: 0 })
+  if (!user) return NextResponse.json({ search: 0, chats: 0 })
 
-  // Pending game requests (Feed badge)
-  const { count: feedCount } = await supabase
+  // Pending incoming game requests (Search tab badge)
+  const { count: searchCount } = await supabase
     .from('game_requests')
     .select('*', { count: 'exact', head: true })
     .eq('receiver_id', user.id)
     .eq('status', 'pending')
 
   // Conversations with unread messages (Chats badge)
-  // Fix: query builder is immutable — must chain .gt() before executing
   const { data: participations } = await supabase
     .from('conversation_participants')
     .select('conversation_id, last_read_at')
@@ -38,5 +37,5 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ feed: feedCount ?? 0, chats: chatsCount })
+  return NextResponse.json({ search: searchCount ?? 0, chats: chatsCount })
 }

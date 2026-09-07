@@ -4,12 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-interface Badges { feed: number; chats: number }
+interface Badges { search: number; chats: number }
 
 export function useNavBadges(): Badges {
-  const [badges, setBadges] = useState<Badges>({ feed: 0, chats: 0 })
+  const [badges, setBadges] = useState<Badges>({ search: 0, chats: 0 })
   const pathname = usePathname()
-  // Unique channel name per hook instance to avoid Supabase reusing subscribed channels
   const channelName = useRef(`nav-badges-${Math.random().toString(36).slice(2)}`)
 
   async function fetchBadges() {
@@ -19,18 +18,15 @@ export function useNavBadges(): Badges {
     } catch { /* ignore */ }
   }
 
-  // Re-fetch on every navigation
   useEffect(() => {
     fetchBadges()
   }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll every 30s as fallback
   useEffect(() => {
     const id = setInterval(fetchBadges, 30_000)
     return () => clearInterval(id)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Real-time: re-fetch when new messages or read status changes
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase

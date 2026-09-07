@@ -3,9 +3,25 @@
 import { Search, SlidersHorizontal, MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface IncomingRequest {
+  id: string
+  sender_id: string
+  created_at: string
+  sender: {
+    id: string
+    full_name: string
+    username: string
+    avatar_url: string | null
+    skill_level_self: number | null
+    skill_level_computed: number | null
+    city_name: string | null
+  }
+}
 
 export interface Player {
   id: string
@@ -454,6 +470,75 @@ function VenueCard({
   )
 }
 
+// ─── Incoming request card ────────────────────────────────────────────────────
+
+function IncomingRequestCard({
+  req,
+  onAccept,
+  onDecline,
+}: {
+  req: IncomingRequest
+  onAccept: (id: string, senderId: string) => Promise<void>
+  onDecline: (id: string) => Promise<void>
+}) {
+  const [acting, setActing] = useState<'accept' | 'decline' | null>(null)
+  const { sender } = req
+  const skill = sender.skill_level_computed ?? sender.skill_level_self
+  const initials = sender.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+
+  return (
+    <div className="bg-white border border-brand-primary/30 overflow-hidden">
+      <div className="px-3 py-1.5 bg-brand-primary/5 border-b border-brand-primary/20">
+        <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-brand-primary">Wants to play with you</span>
+      </div>
+      <div className="p-3 flex items-center gap-3">
+        <Link href={`/profile/${sender.username}`} className="flex-shrink-0">
+          <div className="w-12 h-12 bg-brand-surface-md flex items-center justify-center overflow-hidden">
+            {sender.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={sender.avatar_url} alt={sender.full_name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-display text-base text-[rgba(26,26,26,0.4)]">{initials}</span>
+            )}
+          </div>
+        </Link>
+        <div className="flex-1 min-w-0">
+          <Link href={`/profile/${sender.username}`}>
+            <p className="font-medium text-[14px] text-[#1a1a1a] leading-tight">{sender.full_name}</p>
+            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{sender.username}</p>
+          </Link>
+          <div className="flex items-center gap-1.5 mt-1">
+            {skill != null && (
+              <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
+                {skill.toFixed(1)} · {skillLabel(skill)}
+              </span>
+            )}
+            {sender.city_name && (
+              <span className="text-[10px] text-[rgba(26,26,26,0.4)]">{sender.city_name}</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex border-t border-brand-divider">
+        <button
+          onClick={async () => { setActing('decline'); await onDecline(req.id) }}
+          disabled={acting !== null}
+          className="flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:bg-brand-surface transition-colors border-r border-brand-divider disabled:opacity-40"
+        >
+          {acting === 'decline' ? '…' : 'Decline'}
+        </button>
+        <button
+          onClick={async () => { setActing('accept'); await onAccept(req.id, req.sender_id) }}
+          disabled={acting !== null}
+          className="flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium bg-brand-primary text-white hover:bg-brand-primary-dark transition-colors disabled:opacity-40"
+        >
+          {acting === 'accept' ? '…' : 'Accept'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Player skeleton ──────────────────────────────────────────────────────────
 
 function PlayerCardSkeleton() {
@@ -485,7 +570,9 @@ const FILTER_CHIPS: { label: string; value: FilterTab }[] = [
 
 // ─── Search client ────────────────────────────────────────────────────────────
 
-export function SearchClient({ user, userCityName }: { user: User | null; userCityName: string | null }) {
+export function SearchClient({ user, userCityName, initialIncoming }: { user: User | null; userCityName: string | null; initialIncoming: IncomingRequest[] }) {
+  const router = useRouter()
+  const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>(initialIncoming)
   const [filter, setFilter] = useState<FilterTab>('all')
   const [players, setPlayers] = useState<Player[]>([])
   const [loadingPlayers, setLoadingPlayers] = useState(false)
@@ -639,6 +726,28 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
     setFilter(value)
   }
 
+  async function handleAccept(requestId: string, senderId: string) {
+    const res = await fetch(`/api/game-requests/${requestId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'accept', sender_id: senderId }),
+    })
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== requestId))
+    if (res.ok) {
+      const data = await res.json() as { conversation_id?: string }
+      if (data.conversation_id) router.push(`/chats/${data.conversation_id}`)
+    }
+  }
+
+  async function handleDecline(requestId: string) {
+    await fetch(`/api/game-requests/${requestId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'decline' }),
+    })
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== requestId))
+  }
+
   const showCourts = filter === 'courts'
 
   return (
@@ -698,6 +807,24 @@ export function SearchClient({ user, userCityName }: { user: User | null; userCi
             >
               Join free
             </Link>
+          </div>
+        )}
+
+        {/* Incoming requests — shown on all non-courts tabs */}
+        {!showCourts && incomingRequests.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+              {incomingRequests.length === 1 ? '1 request' : `${incomingRequests.length} requests`}
+            </p>
+            {incomingRequests.map((req) => (
+              <IncomingRequestCard
+                key={req.id}
+                req={req}
+                onAccept={handleAccept}
+                onDecline={handleDecline}
+              />
+            ))}
+            <div className="border-t border-brand-divider" />
           </div>
         )}
 
