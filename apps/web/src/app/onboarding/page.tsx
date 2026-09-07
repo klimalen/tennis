@@ -527,6 +527,7 @@ export default function OnboardingPage() {
       }
 
       await supabase.from('profiles').update({
+        city_name: data.city || null,
         neighborhood: data.neighborhood || null,
         skill_level_self: data.skillLevel,
         years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
