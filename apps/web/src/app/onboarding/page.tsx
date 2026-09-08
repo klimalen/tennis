@@ -28,9 +28,9 @@ interface OnboardingData {
 }
 
 const PRESET_AVATARS = [
-  '/avatars/preset-1.png',
-  '/avatars/preset-2.png',
-  '/avatars/preset-4.png',
+  '/avatars/preset-1.jpg',
+  '/avatars/preset-2.jpg',
+  '/avatars/preset-4.jpg',
 ]
 
 const INITIAL_DATA: OnboardingData = {
@@ -38,7 +38,7 @@ const INITIAL_DATA: OnboardingData = {
   playFormats: [], playStyle: null, preferredSurfaces: [], preferredDays: [],
   preferredTimeStart: null, preferredTimeEnd: null, maxTravelKm: 10,
   bio: '', lookingFor: '', username: '', avatarFile: null,
-  presetAvatar: '/avatars/preset-4.png',
+  presetAvatar: '/avatars/preset-4.jpg',
 }
 
 const TOTAL_STEPS = 5
@@ -413,7 +413,7 @@ function Step5({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="relative w-20 h-20 rounded-full bg-brand-surface border border-dashed border-brand-divider hover:border-brand-primary transition-colors flex items-center justify-center overflow-hidden group flex-shrink-0"
+            className="relative w-20 h-20 bg-brand-surface border border-dashed border-brand-divider hover:border-brand-primary transition-colors flex items-center justify-center overflow-hidden group flex-shrink-0"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -421,7 +421,7 @@ function Step5({
               alt="Avatar preview"
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Camera size={18} className="text-white" />
             </div>
           </button>
@@ -443,7 +443,7 @@ function Step5({
                 key={src}
                 type="button"
                 onClick={() => handlePresetSelect(src)}
-                className={`w-14 h-14 rounded-full overflow-hidden border-2 transition-all flex-shrink-0 ${
+                className={`w-14 h-14 overflow-hidden border-2 transition-all flex-shrink-0 ${
                   isSelected ? 'border-brand-primary' : 'border-transparent opacity-60 hover:opacity-100'
                 }`}
               >

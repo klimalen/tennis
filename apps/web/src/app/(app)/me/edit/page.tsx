@@ -313,7 +313,7 @@ export default function EditProfilePage() {
         {/* Avatar */}
         <div className="flex items-center gap-5 mb-5">
           <div
-            className="relative w-20 h-20 rounded-full bg-brand-surface border border-brand-divider overflow-hidden cursor-pointer flex-shrink-0"
+            className="relative w-20 h-20 bg-brand-surface border border-brand-divider overflow-hidden cursor-pointer flex-shrink-0"
             onClick={() => fileInputRef.current?.click()}
           >
             {displayAvatar ? (
@@ -322,7 +322,7 @@ export default function EditProfilePage() {
             ) : (
               <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
             )}
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
               <Camera size={18} className="text-white" />
             </div>
           </div>
