@@ -17,6 +17,14 @@ interface Props {
 
 export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows, activityCount }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('feed')
+  const [activitySeen, setActivitySeen] = useState(false)
+
+  function handleTabClick(tab: Tab) {
+    setActiveTab(tab)
+    if (tab === 'activity') setActivitySeen(true)
+  }
+
+  const showBadge = activityCount > 0 && !activitySeen
 
   return (
     <div>
@@ -24,11 +32,11 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
       <div className="flex border-b border-brand-divider">
         {([
           { id: 'feed' as Tab, label: 'Feed' },
-          { id: 'activity' as Tab, label: 'Activity', badge: activityCount },
+          { id: 'activity' as Tab, label: 'Activity' },
         ]).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabClick(tab.id)}
             className={`flex-1 py-3 flex items-center justify-center gap-2 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-b-2 -mb-px ${
               activeTab === tab.id
                 ? 'border-brand-primary text-brand-primary'
@@ -36,7 +44,7 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
             }`}
           >
             {tab.label}
-            {tab.badge && tab.badge > 0 && (
+            {tab.id === 'activity' && showBadge && (
               <span className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
             )}
           </button>
