@@ -29,8 +29,9 @@ interface OnboardingData {
 
 const PRESET_AVATARS = [
   '/avatars/preset-1.jpg',
-  '/avatars/preset-2.jpg',
   '/avatars/preset-4.jpg',
+  '/avatars/preset-7.jpg',
+  '/avatars/preset-8.jpg',
 ]
 
 const INITIAL_DATA: OnboardingData = {
@@ -487,15 +488,15 @@ function Step5({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const SAVING_MESSAGES = [
-  'Подвозим мячики...',
-  'Натягиваем сетку...',
-  'Подготавливаем корт...',
-  'Шнуруем кеды...',
-  'Проверяем погоду...',
-  'Составляем расписание...',
-  'Подбираем соперников...',
-  'Освежаем разметку...',
-  'Почти готово...',
+  'Fetching the balls...',
+  'Setting up the net...',
+  'Preparing the court...',
+  'Lacing up the shoes...',
+  'Checking the weather...',
+  'Building the schedule...',
+  'Finding your opponents...',
+  'Refreshing the lines...',
+  'Almost ready...',
 ]
 
 export default function OnboardingPage() {

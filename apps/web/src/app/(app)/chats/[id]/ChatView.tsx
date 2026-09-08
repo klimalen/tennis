@@ -507,7 +507,7 @@ export function ChatView({
                   className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors"
                 >
                   <Calendar size={12} />
-                  Предложить матч
+                  Propose game
                 </button>
               </div>
               <div className="flex items-end gap-2">
@@ -516,7 +516,7 @@ export function ChatView({
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={onKeyDown}
-                  placeholder="Написать сообщение…"
+                  placeholder="Write a message…"
                   rows={1}
                   className="flex-1 resize-none bg-brand-surface border border-brand-divider px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
                   style={{ maxHeight: '120px' }}
@@ -530,7 +530,7 @@ export function ChatView({
           ) : (
             <div className="border border-brand-divider bg-brand-surface px-4 py-3 text-center">
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                Для отправки сообщений вы должны быть подписаны друг на друга
+                Messaging requires a mutual follow
               </p>
             </div>
           )}

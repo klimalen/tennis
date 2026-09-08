@@ -46,10 +46,10 @@ export function ProposeMatchButton({
   }
 
   const labels: Record<ButtonState, string> = {
-    idle:      'Предложить матч',
-    loading:   'Отправка...',
-    sent:      'Предложение отправлено',
-    connected: 'Предложить матч',
+    idle:      'Suggest a match',
+    loading:   'Sending...',
+    sent:      'Request sent',
+    connected: 'Suggest a match',
   }
 
   return (

@@ -60,7 +60,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
         className="flex items-center gap-1.5 px-4 py-3 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-50"
       >
         <UserPlus size={13} />
-        Подписаться
+        Follow
       </button>
     )
   }
@@ -73,7 +73,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
         className="flex items-center gap-1.5 px-4 py-3 border border-brand-primary text-brand-primary text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary/5 transition-colors disabled:opacity-50"
       >
         <Check size={13} />
-        Вы подписаны
+        Following
         <ChevronDown size={10} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
       </button>
 
@@ -83,7 +83,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
             onClick={handleUnfollow}
             className="w-full px-4 py-2.5 text-left text-[10px] tracking-[0.15em] uppercase font-medium text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"
           >
-            Отписаться
+            Unfollow
           </button>
         </div>
       )}

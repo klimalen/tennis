@@ -37,7 +37,7 @@ export function MessageIcon({
     <button
       onClick={handleClick}
       disabled={loading}
-      title="Открыть чат"
+      title="Open chat"
       className="w-11 h-11 border border-brand-divider flex items-center justify-center text-[rgba(26,26,26,0.4)] hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-50 flex-shrink-0"
     >
       {loading ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}

@@ -64,7 +64,7 @@ export function ComposeButton() {
       <button
         onClick={handleOpen}
         className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors"
-        title="Новый чат"
+        title="New chat"
       >
         <SquarePen size={16} className="text-[rgba(26,26,26,0.5)]" />
       </button>
@@ -78,7 +78,7 @@ export function ComposeButton() {
           <div className="relative bg-brand-bg border-t md:border border-brand-divider w-full md:max-w-sm md:rounded-none shadow-xl z-10 max-h-[70vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-brand-divider flex-shrink-0">
-              <span className="font-display text-2xl tracking-wide">НОВЫЙ ЧАТ</span>
+              <span className="font-display text-2xl tracking-wide">NEW CHAT</span>
               <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.4)] hover:text-[#1a1a1a] transition-colors">
                 <X size={18} />
               </button>
@@ -95,13 +95,13 @@ export function ComposeButton() {
                   <p className="font-display text-4xl text-brand-surface-lg mb-3">✦</p>
                   <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">
                     {allChatsExist
-                      ? 'Вы уже в переписке со всеми своими коннектами'
-                      : 'Нет взаимных коннектов'}
+                      ? 'You\'re already chatting with all your connections'
+                      : 'No mutual connections yet'}
                   </p>
                   <p className="text-xs text-[rgba(26,26,26,0.3)] font-script italic mt-1">
                     {allChatsExist
-                      ? 'Когда появятся новые взаимные подписки — они отобразятся здесь'
-                      : 'Подпишитесь на игроков, которые подпишутся в ответ'}
+                      ? 'New connections will appear here once you follow each other'
+                      : 'Follow players who follow you back to start a chat'}
                   </p>
                 </div>
               ) : (
