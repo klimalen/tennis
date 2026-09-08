@@ -91,6 +91,18 @@ export default async function ChatPage({
     }
   }
 
+  // Check mutual follow — messaging requires both to follow each other
+  let isMutual = true // default true to not break existing chats before follows existed
+  if (otherUserId) {
+    const [{ data: f1 }, { data: f2 }] = await Promise.all([
+      supabase.from('follows').select('follower_id').eq('follower_id', user.id).eq('following_id', otherUserId).maybeSingle(),
+      supabase.from('follows').select('follower_id').eq('follower_id', otherUserId).eq('following_id', user.id).maybeSingle(),
+    ])
+    // If either side has no follows at all yet, allow messaging (legacy chats before follows feature)
+    const followsExist = !!(f1 ?? f2)
+    isMutual = followsExist ? !!(f1 && f2) : true
+  }
+
   const myLastReadAt = (myParticipant as unknown as { last_read_at: string | null }).last_read_at
   const unreadCount = myLastReadAt
     ? initialMessages.filter((m) => m.sender_id !== user.id && m.created_at > myLastReadAt).length
@@ -140,6 +152,7 @@ export default async function ChatPage({
         initialOtherLastReadAt={otherLastReadAt}
         initialGameStatuses={initialGameStatuses}
         initialGameDetails={initialGameDetails}
+        isMutual={isMutual}
       />
     </div>
   )

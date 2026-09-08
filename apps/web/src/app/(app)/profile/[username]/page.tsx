@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, MapPin } from 'lucide-react'
-import { PlayTogetherButton } from './PlayTogetherButton'
+import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
+import { MessageIcon } from './MessageIcon'
 import { formatFollowers } from '@/lib/formatFollowers'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,17 +69,23 @@ export default async function PlayerProfilePage({
       .eq('following_id', profile.id),
   ])
 
-  // Check if viewer is following this profile
+  // Check follow directions + existing conversation
   let viewerIsFollowing = false
+  let profileFollowsViewer = false
+  let existingConvId: string | null = null
+
   if (viewer && viewer.id !== profile.id) {
-    const { data: followRow } = await supabase
-      .from('follows')
-      .select('follower_id')
-      .eq('follower_id', viewer.id)
-      .eq('following_id', profile.id)
-      .maybeSingle()
-    viewerIsFollowing = !!followRow
+    const [{ data: f1 }, { data: f2 }, { data: convId }] = await Promise.all([
+      supabase.from('follows').select('follower_id').eq('follower_id', viewer.id).eq('following_id', profile.id).maybeSingle(),
+      supabase.from('follows').select('follower_id').eq('follower_id', profile.id).eq('following_id', viewer.id).maybeSingle(),
+      supabase.rpc('shared_conversation_id', { other_user_id: profile.id }),
+    ])
+    viewerIsFollowing = !!f1
+    profileFollowsViewer = !!f2
+    existingConvId = convId ?? null
   }
+
+  const isMutual = viewerIsFollowing && profileFollowsViewer
 
   // Check request status in both directions + existing conversation
   let existingRequestStatus: string | null = null
@@ -210,14 +217,20 @@ export default async function PlayerProfilePage({
           {viewer && viewer.id !== profile.id && (
             <div className="flex items-end gap-2 mt-4">
               <div className="flex-1">
-                <PlayTogetherButton receiverId={profile.id} existingStatus={existingRequestStatus} />
+                <ProposeMatchButton
+                  receiverId={profile.id}
+                  receiverName={profile.full_name}
+                  existingStatus={existingRequestStatus}
+                />
               </div>
               <FollowButton
                 followingId={profile.id}
                 initialFollowing={viewerIsFollowing}
                 initialCount={followerCount ?? 0}
-                isMatched={existingRequestStatus === 'matched'}
               />
+              {isMutual && (
+                <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
+              )}
             </div>
           )}
         </div>

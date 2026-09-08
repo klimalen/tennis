@@ -40,6 +40,7 @@ interface Props {
   initialOtherLastReadAt: string | null
   initialGameStatuses: Record<string, GameStatus>
   initialGameDetails: Record<string, GameDetail>
+  isMutual: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -197,6 +198,7 @@ export function ChatView({
   initialOtherLastReadAt,
   initialGameStatuses,
   initialGameDetails,
+  isMutual,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(
     initialMessages.map((m) => ({ ...m, _status: 'sent' as const })),
@@ -497,31 +499,41 @@ export function ChatView({
       <div className="sticky bottom-20 md:bottom-0 bg-brand-bg border-t border-brand-divider px-4 pt-2 pb-3">
         <div className="max-w-2xl mx-auto">
           {/* Propose game button */}
-          <div className="flex mb-2">
-            <button
-              onClick={() => router.push(`/games/new?invite=${otherUserId}&name=${encodeURIComponent(otherName)}`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors"
-            >
-              <Calendar size={12} />
-              Propose game
-            </button>
-          </div>
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={inputRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={onKeyDown}
-              placeholder="Write a message…"
-              rows={1}
-              className="flex-1 resize-none bg-brand-surface border border-brand-divider px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
-              style={{ maxHeight: '120px' }}
-            />
-            <button onClick={send} disabled={!text.trim() || sending}
-              className="w-10 h-10 bg-brand-primary flex items-center justify-center hover:bg-brand-primary-dark transition-colors disabled:opacity-40 flex-shrink-0">
-              <Send size={16} className="text-white" />
-            </button>
-          </div>
+          {isMutual ? (
+            <>
+              <div className="flex mb-2">
+                <button
+                  onClick={() => router.push(`/games/new?invite=${otherUserId}&name=${encodeURIComponent(otherName)}`)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors"
+                >
+                  <Calendar size={12} />
+                  Предложить матч
+                </button>
+              </div>
+              <div className="flex items-end gap-2">
+                <textarea
+                  ref={inputRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  placeholder="Написать сообщение…"
+                  rows={1}
+                  className="flex-1 resize-none bg-brand-surface border border-brand-divider px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
+                  style={{ maxHeight: '120px' }}
+                />
+                <button onClick={send} disabled={!text.trim() || sending}
+                  className="w-10 h-10 bg-brand-primary flex items-center justify-center hover:bg-brand-primary-dark transition-colors disabled:opacity-40 flex-shrink-0">
+                  <Send size={16} className="text-white" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="border border-brand-divider bg-brand-surface px-4 py-3 text-center">
+              <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+                Для отправки сообщений вы должны быть подписаны друг на друга
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </>
