@@ -56,7 +56,7 @@ export function PlayTogetherButton({
     <button
       onClick={state === 'matched' ? () => router.push('/chats') : handleClick}
       disabled={state === 'loading' || state === 'sent'}
-      className="w-full mt-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-60 disabled:cursor-default"
+      className="w-full py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-60 disabled:cursor-default"
     >
       {labels[state]}
     </button>

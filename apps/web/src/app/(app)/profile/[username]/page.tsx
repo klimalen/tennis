@@ -208,11 +208,14 @@ export default async function PlayerProfilePage({
 
           {/* Actions — only shown to other logged-in users */}
           {viewer && viewer.id !== profile.id && (
-            <div className="flex items-center gap-2 mt-3">
-              <PlayTogetherButton receiverId={profile.id} existingStatus={existingRequestStatus} />
+            <div className="flex items-end gap-2 mt-4">
+              <div className="flex-1">
+                <PlayTogetherButton receiverId={profile.id} existingStatus={existingRequestStatus} />
+              </div>
               <FollowButton
                 followingId={profile.id}
                 initialFollowing={viewerIsFollowing}
+                initialCount={followerCount ?? 0}
                 isMatched={existingRequestStatus === 'matched'}
               />
             </div>
