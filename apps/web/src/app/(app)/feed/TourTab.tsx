@@ -491,8 +491,8 @@ function PlayerAvatar({ url, name }: { url: string | null; name: string }) {
 
 function parseScore(raw: string): { games: string; tb: string | null } {
   if (raw.includes('.')) {
-    const [games, tb] = raw.split('.')
-    return { games, tb }
+    const parts = raw.split('.')
+    return { games: parts[0] ?? raw, tb: parts[1] ?? null }
   }
   return { games: raw, tb: null }
 }
