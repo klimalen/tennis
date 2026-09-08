@@ -1,6 +1,7 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { ChatsClient, type ChatItem } from './ChatsClient'
+import { ComposeButton } from './ComposeButton'
 
 interface ParticipantRow {
   user_id: string
@@ -77,8 +78,9 @@ export default async function ChatsPage() {
     <AuthGate section="chats">
       <div className="min-h-screen pb-20 md:pb-0">
         <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
             <span className="font-display text-3xl tracking-wide">CHATS</span>
+            <ComposeButton />
           </div>
         </div>
         <div className="max-w-2xl mx-auto">

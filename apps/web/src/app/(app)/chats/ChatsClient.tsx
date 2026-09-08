@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { SquarePen, X, Loader2 } from 'lucide-react'
 
 export interface ChatItem {
   id: string
@@ -23,6 +25,16 @@ export interface ChatItem {
   myLastReadAt: string | null
 }
 
+interface MutualConnection {
+  id: string
+  full_name: string
+  username: string
+  avatar_url: string | null
+  city_name: string | null
+  skill_level_computed: number | null
+  skill_level_self: number | null
+}
+
 interface Props {
   userId: string
   initialChats: ChatItem[]
@@ -35,8 +47,19 @@ function hasUnread(chat: ChatItem, userId: string): boolean {
   return chat.lastMsg.created_at > chat.myLastReadAt
 }
 
+const SKILL_LABELS: Record<number, string> = {
+  1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
+  4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
+}
+
 export function ChatsClient({ userId, initialChats }: Props) {
   const [chats, setChats] = useState<ChatItem[]>(initialChats)
+  const [showCompose, setShowCompose] = useState(false)
+  const [connections, setConnections] = useState<MutualConnection[]>([])
+  const [allChatsExist, setAllChatsExist] = useState(false)
+  const [loadingConnections, setLoadingConnections] = useState(false)
+  const [startingChat, setStartingChat] = useState<string | null>(null)
+  const router = useRouter()
   const supabase = useRef(createClient()).current
 
   useEffect(() => {
@@ -80,6 +103,31 @@ export function ChatsClient({ userId, initialChats }: Props) {
 
     return () => { supabase.removeChannel(channel) }
   }, [userId, supabase])
+
+  async function openCompose() {
+    setShowCompose(true)
+    setLoadingConnections(true)
+    const res = await fetch('/api/connections/mutual')
+    const data = await res.json() as { connections: MutualConnection[]; allChatsExist?: boolean }
+    setConnections(data.connections)
+    setAllChatsExist(data.allChatsExist ?? false)
+    setLoadingConnections(false)
+  }
+
+  async function startChat(otherUserId: string) {
+    setStartingChat(otherUserId)
+    const res = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ other_user_id: otherUserId }),
+    })
+    if (res.ok) {
+      const { conversation_id } = await res.json() as { conversation_id: string }
+      setShowCompose(false)
+      router.push(`/chats/${conversation_id}`)
+    }
+    setStartingChat(null)
+  }
 
   if (chats.length === 0) {
     return (

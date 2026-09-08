@@ -226,7 +226,6 @@ export default async function PlayerProfilePage({
               <FollowButton
                 followingId={profile.id}
                 initialFollowing={viewerIsFollowing}
-                initialCount={followerCount ?? 0}
               />
               {isMutual && (
                 <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
