@@ -22,7 +22,7 @@ const OPTIONS = [
     icon: FileText,
     label: 'Post',
     description: 'Share a moment, result, or update',
-    available: false,
+    available: true,
   },
 ]
 
@@ -33,6 +33,7 @@ export function CreateSheet({ variant }: Props) {
   function handleOption(id: string) {
     setOpen(false)
     if (id === 'game') router.push('/games/new')
+    if (id === 'post') router.push('/feed/new')
   }
 
   return (
