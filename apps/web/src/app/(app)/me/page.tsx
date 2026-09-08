@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { formatFollowers } from '@/lib/formatFollowers'
+import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 
 const SKILL_LABELS: Record<number, string> = {
   1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
@@ -74,6 +75,65 @@ async function ProfileContent() {
     .filter((g) => g.scheduled_at >= now)
     .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
     .slice(0, 5)
+
+  // Fetch own posts
+  const { data: postRows } = await supabase
+    .from('posts')
+    .select(`
+      id, type, body, image_url, created_at, updated_at,
+      author:profiles!author_id (id, full_name, username, avatar_url),
+      match_result:match_results (
+        id, winner_id, winning_team, played_at,
+        winner:profiles!winner_id (full_name, username),
+        game:games (format, scheduled_at)
+      ),
+      game:games (
+        id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
+        neighborhood, status, max_players, is_open,
+        city:cities (name)
+      ),
+      likes:post_likes (count)
+    `)
+    .eq('author_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  const postIds = (postRows ?? []).map((p) => p.id as string)
+  const { data: myLikes } = postIds.length > 0
+    ? await supabase.from('post_likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
+    : { data: [] }
+  const likedSet = new Set((myLikes ?? []).map((l) => l.post_id as string))
+
+  interface PostRow {
+    id: string; type: string; body: string | null; image_url: string | null
+    created_at: string; updated_at: string
+    author: { id: string; full_name: string; username: string; avatar_url: string | null }
+    match_result: {
+      id: string; winner_id: string | null; winning_team: number | null; played_at: string | null
+      winner: { full_name: string; username: string } | null
+      game: { format: string; scheduled_at: string } | null
+    } | null
+    game: {
+      id: string; creator_id: string; format: string; scheduled_at: string
+      skill_level_min: number | null; skill_level_max: number | null
+      neighborhood: string | null; status: string; max_players: number
+      is_open: boolean; city: { name: string } | null
+    } | null
+    likes: [{ count: number }] | []
+  }
+  const posts: PostItem[] = ((postRows ?? []) as unknown as PostRow[]).map((row) => ({
+    id: row.id,
+    type: row.type as PostItem['type'],
+    body: row.body,
+    image_url: row.image_url,
+    created_at: row.created_at,
+    updated_at: row.updated_at ?? row.created_at,
+    author: row.author as PostItem['author'],
+    match_result: row.match_result as PostItem['match_result'],
+    game: row.game as PostItem['game'],
+    likes_count: (row.likes as [{ count: number }] | [])[0]?.count ?? 0,
+    liked_by_me: likedSet.has(row.id),
+  }))
 
   const fullName = profile?.full_name || 'Tennis Player'
   const username = profile?.username || ''
@@ -153,37 +213,6 @@ async function ProfileContent() {
           </div>
         </div>
 
-        {/* Tab bar */}
-        <div className="border-t border-brand-divider">
-          <div className="flex">
-            {['Matches', 'Trophies', 'Stats'].map((label, i) => (
-              <button
-                key={label}
-                className={`flex-1 py-3 text-[9px] tracking-[0.2em] uppercase font-medium border-b-2 transition-colors ${
-                  i === 0
-                    ? 'border-brand-primary text-brand-primary'
-                    : 'border-transparent text-[rgba(26,26,26,0.3)]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Empty state */}
-          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-            <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No matches yet</p>
-            <p className="text-xs text-[rgba(26,26,26,0.3)]">Find a game and start building your history</p>
-            <Link
-              href="/search"
-              className="mt-5 px-6 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
-            >
-              Find players
-            </Link>
-          </div>
-        </div>
-
         {/* Schedule section */}
         <div className="border-t border-brand-divider">
           <div className="px-4 py-4 flex items-center justify-between">
@@ -233,6 +262,26 @@ async function ProfileContent() {
               <p className="text-xs text-[rgba(26,26,26,0.3)] font-script italic">
                 Tap + to add your first game
               </p>
+            </div>
+          )}
+        </div>
+
+        {/* Publications */}
+        <div className="border-t border-brand-divider">
+          {posts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No posts yet</p>
+            </div>
+          ) : (
+            <div>
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={user.id}
+                />
+              ))}
             </div>
           )}
         </div>

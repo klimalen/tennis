@@ -56,6 +56,7 @@ interface PostRow {
   } | null
   game: {
     id: string
+    creator_id: string
     format: string
     scheduled_at: string
     skill_level_min: number | null
@@ -98,7 +99,7 @@ async function FeedContent() {
             game:games (format, scheduled_at)
           ),
           game:games (
-            id, format, scheduled_at, skill_level_min, skill_level_max,
+            id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
             neighborhood, status, max_players, is_open,
             city:cities (name)
           ),
@@ -156,7 +157,7 @@ async function FeedContent() {
   const likedSet = new Set((myLikes ?? []).map((l) => l.post_id as string))
 
   // Transform posts
-  const posts: PostItem[] = postRows.map((row) => ({
+  const rawPosts: PostItem[] = postRows.map((row) => ({
     id: row.id,
     type: row.type as PostItem['type'],
     body: row.body,
@@ -169,6 +170,28 @@ async function FeedContent() {
     likes_count: row.likes[0]?.count ?? 0,
     liked_by_me: likedSet.has(row.id),
   }))
+
+  // Deduplicate open_game posts: one per game_id, prefer creator's post
+  const openGameMap = new Map<string, PostItem>()
+  const nonGamePosts: PostItem[] = []
+  for (const post of rawPosts) {
+    if (post.type !== 'open_game' || !post.game?.id) {
+      nonGamePosts.push(post)
+      continue
+    }
+    const gameId = post.game.id
+    const existing = openGameMap.get(gameId)
+    if (!existing) {
+      openGameMap.set(gameId, post)
+    } else {
+      // Prefer the creator's post over a participant's post
+      const isCreator = post.game.creator_id === post.author.id
+      const existingIsCreator = existing.game?.creator_id === existing.author.id
+      if (isCreator && !existingIsCreator) openGameMap.set(gameId, post)
+    }
+  }
+  const posts: PostItem[] = [...nonGamePosts, ...openGameMap.values()]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
 
   // Transform activity
   const followItems: FollowItem[] = followRows.map((f) => ({

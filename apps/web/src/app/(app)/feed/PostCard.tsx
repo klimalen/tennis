@@ -32,6 +32,7 @@ export interface PostItem {
   } | null
   game: {
     id: string
+    creator_id: string
     format: string
     scheduled_at: string
     skill_level_min: number | null
