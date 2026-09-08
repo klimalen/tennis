@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, MapPin } from 'lucide-react'
 import { PlayTogetherButton } from './PlayTogetherButton'
+import { FollowButton } from './FollowButton'
+import { formatFollowers } from '@/lib/formatFollowers'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -54,11 +56,29 @@ export default async function PlayerProfilePage({
 
   if (!profile) notFound()
 
-  const { count: wins } = await supabase
-    .from('match_results')
-    .select('*', { count: 'exact', head: true })
-    .eq('winner_id', profile.id)
-    .eq('status', 'confirmed')
+  const [{ count: wins }, { count: followerCount }] = await Promise.all([
+    supabase
+      .from('match_results')
+      .select('*', { count: 'exact', head: true })
+      .eq('winner_id', profile.id)
+      .eq('status', 'confirmed'),
+    supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', profile.id),
+  ])
+
+  // Check if viewer is following this profile
+  let viewerIsFollowing = false
+  if (viewer && viewer.id !== profile.id) {
+    const { data: followRow } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('follower_id', viewer.id)
+      .eq('following_id', profile.id)
+      .maybeSingle()
+    viewerIsFollowing = !!followRow
+  }
 
   // Check request status in both directions + existing conversation
   let existingRequestStatus: string | null = null
@@ -131,13 +151,19 @@ export default async function PlayerProfilePage({
         {/* Profile header */}
         <div className="px-4 pt-6 pb-5">
           <div className="flex items-start gap-5">
-            {/* Avatar */}
-            <div className="w-20 h-20 bg-brand-surface flex items-center justify-center flex-shrink-0 border border-brand-divider overflow-hidden">
-              {profile.avatar_url ? (
-                <Image src={profile.avatar_url} alt={profile.full_name} width={80} height={80} className="w-full h-full object-cover" />
-              ) : (
-                <span className="font-display text-3xl text-[rgba(26,26,26,0.3)]">{initials}</span>
-              )}
+            {/* Avatar + followers */}
+            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div className="w-20 h-20 bg-brand-surface flex items-center justify-center border border-brand-divider overflow-hidden">
+                {profile.avatar_url ? (
+                  <Image src={profile.avatar_url} alt={profile.full_name} width={80} height={80} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-display text-3xl text-[rgba(26,26,26,0.3)]">{initials}</span>
+                )}
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-numbers text-sm leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
+                <span className="text-[8px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">followers</span>
+              </div>
             </div>
 
             {/* Stats */}
@@ -180,9 +206,16 @@ export default async function PlayerProfilePage({
             )}
           </div>
 
-          {/* Play together button — only shown to other logged-in users */}
+          {/* Actions — only shown to other logged-in users */}
           {viewer && viewer.id !== profile.id && (
-            <PlayTogetherButton receiverId={profile.id} existingStatus={existingRequestStatus} />
+            <div className="flex items-center gap-2 mt-3">
+              <PlayTogetherButton receiverId={profile.id} existingStatus={existingRequestStatus} />
+              <FollowButton
+                followingId={profile.id}
+                initialFollowing={viewerIsFollowing}
+                isMatched={existingRequestStatus === 'matched'}
+              />
+            </div>
           )}
         </div>
 
