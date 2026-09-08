@@ -7,6 +7,7 @@ import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
 import { formatFollowers } from '@/lib/formatFollowers'
+import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -20,12 +21,25 @@ const SKILL_NAMES: Record<number, string> = {
   5: 'Expert', 5.5: 'Expert', 6: 'Pro', 6.5: 'Pro', 7: 'Elite',
 }
 
-const FORMAT_LABELS: Record<string, string> = {
-  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed doubles',
-}
-
-const DAY_LABELS: Record<number, string> = {
-  1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 0: 'Sun',
+interface PostRow {
+  id: string
+  type: string
+  body: string | null
+  image_url: string | null
+  created_at: string
+  updated_at: string
+  author: { id: string; full_name: string; username: string; avatar_url: string | null }
+  match_result: {
+    id: string; winner_id: string | null; winning_team: number | null; played_at: string | null
+    winner: { full_name: string; username: string } | null
+    game: { format: string; scheduled_at: string } | null
+  } | null
+  game: {
+    id: string; format: string; scheduled_at: string; skill_level_min: number | null
+    skill_level_max: number | null; neighborhood: string | null; status: string
+    max_players: number; is_open: boolean; city: { name: string } | null
+  } | null
+  likes: [{ count: number }] | []
 }
 
 function skillLevel(v: number | null) {
@@ -136,9 +150,48 @@ export default async function PlayerProfilePage({
   const totalWins = wins ?? 0
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
-  const timeLabel = profile.preferred_time_start && profile.preferred_time_end
-    ? `${profile.preferred_time_start.slice(0, 5)} – ${profile.preferred_time_end.slice(0, 5)}`
-    : null
+  // Fetch user's posts
+  const { data: postRows } = await supabase
+    .from('posts')
+    .select(`
+      id, type, body, image_url, created_at, updated_at,
+      author:profiles!author_id (id, full_name, username, avatar_url),
+      match_result:match_results (
+        id, winner_id, winning_team, played_at,
+        winner:profiles!winner_id (full_name, username),
+        game:games (format, scheduled_at)
+      ),
+      game:games (
+        id, format, scheduled_at, skill_level_min, skill_level_max,
+        neighborhood, status, max_players, is_open,
+        city:cities (name)
+      ),
+      likes:post_likes (count)
+    `)
+    .eq('author_id', profile.id)
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  const rows = (postRows ?? []) as unknown as PostRow[]
+  const postIds = rows.map((p) => p.id)
+  const { data: myLikes } = viewer && postIds.length > 0
+    ? await supabase.from('post_likes').select('post_id').eq('user_id', viewer.id).in('post_id', postIds)
+    : { data: [] }
+  const likedSet = new Set((myLikes ?? []).map((l) => l.post_id as string))
+
+  const posts: PostItem[] = rows.map((row) => ({
+    id: row.id,
+    type: row.type as PostItem['type'],
+    body: row.body,
+    image_url: row.image_url,
+    created_at: row.created_at,
+    updated_at: row.updated_at ?? row.created_at,
+    author: row.author as PostItem['author'],
+    match_result: row.match_result as PostItem['match_result'],
+    game: row.game as PostItem['game'],
+    likes_count: row.likes[0]?.count ?? 0,
+    liked_by_me: likedSet.has(row.id),
+  }))
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -234,65 +287,24 @@ export default async function PlayerProfilePage({
           )}
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-brand-divider" />
-
-        {/* Game preferences */}
-        <div className="px-4 py-5 space-y-4">
-          <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Game preferences</p>
-
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-            {profile.preferred_formats?.length > 0 && (
-              <div>
-                <p className="text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1">Format</p>
-                <div className="flex flex-wrap gap-1">
-                  {profile.preferred_formats.map((f: string) => (
-                    <span key={f} className="px-2 py-0.5 border border-brand-divider text-[10px] text-[rgba(26,26,26,0.6)]">
-                      {FORMAT_LABELS[f] ?? f}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {profile.play_style && (
-              <div>
-                <p className="text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1">Style</p>
-                <p className="text-sm text-[rgba(26,26,26,0.7)] capitalize">{profile.play_style.replace('_', ' ')}</p>
-              </div>
-            )}
-
-            {profile.years_playing != null && (
-              <div>
-                <p className="text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1">Experience</p>
-                <p className="text-sm text-[rgba(26,26,26,0.7)]">{profile.years_playing} {profile.years_playing === 1 ? 'year' : 'years'}</p>
-              </div>
-            )}
-
-            {profile.preferred_days?.length > 0 && (
-              <div>
-                <p className="text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1">Available</p>
-                <p className="text-sm text-[rgba(26,26,26,0.7)]">
-                  {profile.preferred_days.map((d: number) => DAY_LABELS[d]).join(', ')}
-                </p>
-              </div>
-            )}
-
-            {timeLabel && (
-              <div>
-                <p className="text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1">Time</p>
-                <p className="text-sm text-[rgba(26,26,26,0.7)]">{timeLabel}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Match history placeholder */}
+        {/* Publications */}
         <div className="border-t border-brand-divider">
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No matches yet</p>
-          </div>
+          {posts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No posts yet</p>
+            </div>
+          ) : (
+            <div>
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={viewer?.id ?? ''}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
