@@ -4,13 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, LogOut, Trash2, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { deleteAccount } from './actions'
-
 export default function SettingsPage() {
   const router = useRouter()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const [signingOut, setSigningOut] = useState(false)
 
   async function handleSignOut() {
@@ -24,12 +23,17 @@ export default function SettingsPage() {
   async function handleDeleteAccount() {
     if (deleteInput !== 'DELETE') return
     setDeleting(true)
-    try {
-      await deleteAccount()
-    } catch {
+    setDeleteError('')
+    const supabase = createClient()
+    const { error } = await supabase.rpc('delete_current_user')
+    if (error) {
+      setDeleteError(error.message)
       setDeleting(false)
-      setShowDeleteConfirm(false)
+      return
     }
+    await supabase.auth.signOut()
+    router.push('/sign-in')
+    router.refresh()
   }
 
   return (
@@ -113,6 +117,9 @@ export default function SettingsPage() {
               className="w-full px-4 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent mb-4"
             />
 
+            {deleteError && (
+              <p className="text-xs text-red-500 mb-3">{deleteError}</p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowDeleteConfirm(false); setDeleteInput('') }}

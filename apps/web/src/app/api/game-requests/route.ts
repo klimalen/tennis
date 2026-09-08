@@ -59,6 +59,13 @@ export async function POST(request: Request) {
   if (!receiverId) return NextResponse.json({ error: 'receiver_id required' }, { status: 400 })
   if (receiverId === user.id) return NextResponse.json({ error: 'Cannot request yourself' }, { status: 400 })
 
+  // If a conversation already exists between these two users, treat as matched
+  const { data: existingConvId } = await supabase
+    .rpc('shared_conversation_id', { other_user_id: receiverId })
+  if (existingConvId) {
+    return NextResponse.json({ matched: true, conversation_id: existingConvId })
+  }
+
   // Check if a reverse request already exists (mutual match)
   const { data: reverse } = await supabase
     .from('game_requests')
@@ -77,19 +84,11 @@ export async function POST(request: Request) {
 
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
-    // Create conversation — generate UUID upfront to avoid SELECT-after-INSERT RLS issue
-    const convId = crypto.randomUUID()
+    // Atomically find-or-create conversation (prevents duplicates)
+    const { data: convId, error: convErr } = await supabase
+      .rpc('get_or_create_conversation', { other_user_id: receiverId })
 
-    const { error: convErr } = await supabase
-      .from('conversations')
-      .insert({ id: convId, request_id: reverse.id })
-
-    if (convErr) return NextResponse.json({ error: convErr.message }, { status: 500 })
-
-    await supabase.from('conversation_participants').insert([
-      { conversation_id: convId, user_id: user.id },
-      { conversation_id: convId, user_id: receiverId },
-    ])
+    if (convErr || !convId) return NextResponse.json({ error: convErr?.message ?? 'Failed to create conversation' }, { status: 500 })
 
     return NextResponse.json({ matched: true, conversation_id: convId })
   }

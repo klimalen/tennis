@@ -37,17 +37,13 @@ export async function PATCH(
 
   // --- Accept ---
 
-  // Idempotent: if already accepted, look for existing conversation
-  if (req.status === 'accepted') {
-    const { data: existing } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('request_id', id)
-      .maybeSingle()
-    if (existing) {
-      return NextResponse.json({ ok: true, conversation_id: existing.id })
-    }
-    // Conversation was never created — fall through to create it
+  const actualSenderId = sender_id ?? req.sender_id
+
+  // Check if conversation already exists between this pair (idempotent, dedup guard)
+  const { data: existingConvId } = await supabase
+    .rpc('shared_conversation_id', { other_user_id: actualSenderId })
+  if (existingConvId) {
+    return NextResponse.json({ ok: true, conversation_id: existingConvId })
   }
 
   // Update status
@@ -61,30 +57,13 @@ export async function PATCH(
     return NextResponse.json({ error: updateErr.message }, { status: 500 })
   }
 
-  // Generate UUID upfront — avoids SELECT-after-INSERT which fails RLS
-  // (user isn't a participant yet when the SELECT runs)
-  const convId = crypto.randomUUID()
-  const actualSenderId = sender_id ?? req.sender_id
+  // Atomically find-or-create conversation (prevents duplicates)
+  const { data: convId, error: convErr } = await supabase
+    .rpc('get_or_create_conversation', { other_user_id: actualSenderId })
 
-  const { error: convErr } = await supabase
-    .from('conversations')
-    .insert({ id: convId, request_id: id })
-
-  if (convErr) {
-    console.error('[game-requests PATCH] conversation insert error:', convErr)
-    return NextResponse.json({ error: convErr.message }, { status: 500 })
-  }
-
-  const { error: participantsErr } = await supabase
-    .from('conversation_participants')
-    .insert([
-      { conversation_id: convId, user_id: user.id },
-      { conversation_id: convId, user_id: actualSenderId },
-    ])
-
-  if (participantsErr) {
-    console.error('[game-requests PATCH] participants insert error:', participantsErr)
-    return NextResponse.json({ error: participantsErr.message }, { status: 500 })
+  if (convErr || !convId) {
+    console.error('[game-requests PATCH] conversation error:', convErr)
+    return NextResponse.json({ error: convErr?.message ?? 'Failed to create conversation' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, conversation_id: convId })

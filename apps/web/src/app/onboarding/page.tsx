@@ -24,13 +24,21 @@ interface OnboardingData {
   lookingFor: string
   username: string
   avatarFile: File | null
+  presetAvatar: string
 }
+
+const PRESET_AVATARS = [
+  '/avatars/preset-1.png',
+  '/avatars/preset-2.png',
+  '/avatars/preset-4.png',
+]
 
 const INITIAL_DATA: OnboardingData = {
   city: '', neighborhood: '', yearsPlaying: null, skillLevel: null,
   playFormats: [], playStyle: null, preferredSurfaces: [], preferredDays: [],
   preferredTimeStart: null, preferredTimeEnd: null, maxTravelKm: 10,
   bio: '', lookingFor: '', username: '', avatarFile: null,
+  presetAvatar: '/avatars/preset-4.png',
 }
 
 const TOTAL_STEPS = 5
@@ -369,6 +377,13 @@ function Step5({
     setPreview(file ? URL.createObjectURL(file) : null)
   }
 
+  function handlePresetSelect(preset: string) {
+    if (preview) URL.revokeObjectURL(preview)
+    setPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    onChange({ avatarFile: null, presetAvatar: preset })
+  }
+
   useEffect(() => {
     return () => { if (preview) URL.revokeObjectURL(preview) }
   }, [preview])
@@ -393,29 +408,51 @@ function Step5({
       <StepHeading title="YOUR PROFILE" sub="Choose a username to finish — photo is optional" />
 
       {/* Avatar */}
-      <div className="flex items-center gap-5 mb-8">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="relative w-20 h-20 rounded-full bg-brand-surface border border-dashed border-brand-divider hover:border-brand-primary transition-colors flex items-center justify-center overflow-hidden group flex-shrink-0"
-        >
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="Avatar preview" className="w-full h-full object-cover" />
-          ) : (
-            <Camera size={20} className="text-[rgba(26,26,26,0.3)] group-hover:text-brand-primary transition-colors" />
-          )}
-          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
-            <Camera size={18} className="text-white" />
-          </div>
-        </button>
-        <div>
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[10px] tracking-[0.15em] uppercase text-brand-primary font-medium hover:underline">
-            {preview ? 'Change photo' : 'Upload photo'}
+      <div className="mb-8">
+        <div className="flex items-center gap-5 mb-4">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="relative w-20 h-20 rounded-full bg-brand-surface border border-dashed border-brand-divider hover:border-brand-primary transition-colors flex items-center justify-center overflow-hidden group flex-shrink-0"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={preview ?? data.presetAvatar}
+              alt="Avatar preview"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+              <Camera size={18} className="text-white" />
+            </div>
           </button>
-          <p className="text-[9px] text-[rgba(26,26,26,0.35)] mt-0.5">Optional</p>
+          <div>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[10px] tracking-[0.15em] uppercase text-brand-primary font-medium hover:underline">
+              {preview ? 'Change photo' : 'Upload your photo'}
+            </button>
+            <p className="text-[9px] text-[rgba(26,26,26,0.35)] mt-0.5">Optional — or pick a preset below</p>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
         </div>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+
+        {/* Preset avatars */}
+        <div className="flex gap-3">
+          {PRESET_AVATARS.map((src) => {
+            const isSelected = !preview && data.presetAvatar === src
+            return (
+              <button
+                key={src}
+                type="button"
+                onClick={() => handlePresetSelect(src)}
+                className={`w-14 h-14 rounded-full overflow-hidden border-2 transition-all flex-shrink-0 ${
+                  isSelected ? 'border-brand-primary' : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt="Preset avatar" className="w-full h-full object-cover" />
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Username */}
@@ -540,7 +577,7 @@ export default function OnboardingPage() {
         bio: data.bio || null,
         looking_for: data.lookingFor || null,
         username: data.username.trim() || null,
-        avatar_url: avatarUrl,
+        avatar_url: avatarUrl ?? data.presetAvatar,
       }).eq('id', session.user.id)
 
       router.push('/search')
