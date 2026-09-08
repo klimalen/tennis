@@ -126,21 +126,44 @@ function PlayerAvatar({ url, name }: { url: string | null; name: string }) {
 
 // ─── Set scores display ───────────────────────────────────────────────────────
 
-function SetScores({ scores, winner }: { scores: SetScore[]; winner: string | null }) {
+// API encodes tiebreak as decimal: "7.6" = 7 games, tiebreak 6 points
+function parseScore(raw: string): { games: string; tb: string | null } {
+  if (raw.includes('.')) {
+    const [games, tb] = raw.split('.')
+    return { games, tb }
+  }
+  return { games: raw, tb: null }
+}
+
+function SetScores({ scores }: { scores: SetScore[] }) {
   if (!scores.length) return null
   return (
     <div className="flex gap-2">
       {scores.map((s) => {
-        const p1Won = Number(s.score_first) > Number(s.score_second)
-        const p2Won = Number(s.score_second) > Number(s.score_first)
+        const p1 = parseScore(s.score_first)
+        const p2 = parseScore(s.score_second)
+        const p1Won = Number(p1.games) > Number(p2.games)
+        const p2Won = Number(p2.games) > Number(p1.games)
         return (
-          <div key={s.score_set} className="flex flex-col items-center gap-0.5 min-w-[16px]">
-            <span className={`font-numbers text-[13px] leading-none ${p1Won ? 'text-[#1a1a1a] font-semibold' : 'text-[rgba(26,26,26,0.35)]'}`}>
-              {s.score_first}
-            </span>
-            <span className={`font-numbers text-[13px] leading-none ${p2Won ? 'text-[#1a1a1a] font-semibold' : 'text-[rgba(26,26,26,0.35)]'}`}>
-              {s.score_second}
-            </span>
+          <div key={s.score_set} className="flex flex-col items-center gap-0.5">
+            {/* Player 1 score */}
+            <div className="flex items-start gap-0.5">
+              <span className={`font-numbers text-[13px] leading-none ${p1Won ? 'text-[#1a1a1a] font-semibold' : 'text-[rgba(26,26,26,0.35)]'}`}>
+                {p1.games}
+              </span>
+              {p1.tb && (
+                <span className="font-numbers text-[8px] leading-none text-[rgba(26,26,26,0.4)] mt-0.5">{p1.tb}</span>
+              )}
+            </div>
+            {/* Player 2 score */}
+            <div className="flex items-start gap-0.5">
+              <span className={`font-numbers text-[13px] leading-none ${p2Won ? 'text-[#1a1a1a] font-semibold' : 'text-[rgba(26,26,26,0.35)]'}`}>
+                {p2.games}
+              </span>
+              {p2.tb && (
+                <span className="font-numbers text-[8px] leading-none text-[rgba(26,26,26,0.4)] mt-0.5">{p2.tb}</span>
+              )}
+            </div>
           </div>
         )
       })}
@@ -149,6 +172,15 @@ function SetScores({ scores, winner }: { scores: SetScore[]; winner: string | nu
 }
 
 // ─── Match card ───────────────────────────────────────────────────────────────
+
+function formatMatchDate(dateStr: string): string {
+  const t = today()
+  const y = yesterday()
+  if (dateStr === t) return 'Today'
+  if (dateStr === y) return 'Yesterday'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
 function MatchCard({ match, showTournament = false }: { match: TennisMatch; showTournament?: boolean }) {
   const isLive = match.event_live === '1'
@@ -159,12 +191,18 @@ function MatchCard({ match, showTournament = false }: { match: TennisMatch; show
   return (
     <div className="px-4 py-3 border-b border-brand-divider last:border-0">
 
-      {/* Tournament label */}
-      {showTournament && (
-        <p className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.3)] mb-2">
-          {match.tournament_name} · {typeLabel(match.event_type_type)}
+      {/* Meta row: tournament + date */}
+      <div className="flex items-center justify-between mb-2">
+        {showTournament ? (
+          <p className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.3)] truncate flex-1">
+            {match.tournament_name} · {typeLabel(match.event_type_type)}
+          </p>
+        ) : <span />}
+        <p className="text-[9px] font-numbers text-[rgba(26,26,26,0.3)] flex-shrink-0 ml-3">
+          {isLive ? '' : formatMatchDate(match.event_date)}
+          {!isFinished && !isLive ? ` · ${match.event_time.slice(0, 5)}` : ''}
         </p>
-      )}
+      </div>
 
       <div className="flex items-center gap-3">
 
@@ -175,25 +213,19 @@ function MatchCard({ match, showTournament = false }: { match: TennisMatch; show
             <span className={`text-[13px] flex-1 truncate leading-none ${p1Wins ? 'font-semibold text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.75)]'}`}>
               {match.event_first_player}
             </span>
-            {isLive && match.event_serve === 'First Player' && (
-              <span className="text-[8px] text-brand-primary font-medium">●</span>
-            )}
           </div>
           <div className="flex items-center gap-2">
             <PlayerAvatar url={match.event_second_player_logo} name={match.event_second_player} />
             <span className={`text-[13px] flex-1 truncate leading-none ${p2Wins ? 'font-semibold text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.75)]'}`}>
               {match.event_second_player}
             </span>
-            {isLive && match.event_serve === 'Second Player' && (
-              <span className="text-[8px] text-brand-primary font-medium">●</span>
-            )}
           </div>
         </div>
 
         {/* Score / Time */}
         <div className="flex-shrink-0 flex items-center gap-2">
           {(isFinished || isLive) ? (
-            <SetScores scores={match.scores} winner={match.event_winner} />
+            <SetScores scores={match.scores} />
           ) : (
             <span className="font-numbers text-sm text-[rgba(26,26,26,0.45)]">
               {match.event_time.slice(0, 5)}
