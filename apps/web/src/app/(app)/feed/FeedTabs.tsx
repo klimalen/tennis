@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { PostsFeed } from './PostsFeed'
 import { FeedClient, type RequestItem, type FollowItem } from './FeedClient'
+import { TourTab } from './TourTab'
 import type { PostItem } from './PostCard'
 
-type Tab = 'feed' | 'activity'
+type Tab = 'feed' | 'activity' | 'tour'
 
 interface Props {
   userId: string
@@ -33,6 +34,7 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
         {([
           { id: 'feed' as Tab, label: 'Feed' },
           { id: 'activity' as Tab, label: 'Activity' },
+          { id: 'tour' as Tab, label: 'Tour' },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -54,8 +56,10 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
       {/* Content */}
       {activeTab === 'feed' ? (
         <PostsFeed userId={userId} initialPosts={initialPosts} />
-      ) : (
+      ) : activeTab === 'activity' ? (
         <FeedClient userId={userId} initialRequests={initialRequests} initialFollows={initialFollows} />
+      ) : (
+        <TourTab />
       )}
     </div>
   )
