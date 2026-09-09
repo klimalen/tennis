@@ -64,8 +64,11 @@ const SKIP_NAME_PATTERNS = [
 ]
 
 const DRY_RUN = process.argv.includes('--dry-run')
+const CLUSTER_MODE = process.argv.includes('--clusters')
 const MAX_PAGES_PER_VENUE = 4    // max fetch_page calls per venue
 const DELAY_BETWEEN_MS = 3_000  // pause between venues to be polite
+const CLUSTER_RADIUS_M = 250     // must match venues API
+const MIN_CLUSTER_SIZE = 4       // clusters with fewer courts are likely just a small park
 
 // ─── HTML → text ──────────────────────────────────────────────────────────────
 
@@ -254,6 +257,58 @@ Important: Verify the website actually belongs to THIS venue (correct name and c
   return result
 }
 
+// ─── Cluster discovery ────────────────────────────────────────────────────────
+
+function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6_371_000
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+interface RawVenue { id: string; name: string; lat: number; lng: number }
+
+/** Group venues by proximity into clusters, return cluster centroids with member ids */
+function buildClusters(venues: RawVenue[]): { lat: number; lng: number; ids: string[] }[] {
+  const clusters: { lat: number; lng: number; ids: string[] }[] = []
+  for (const v of venues) {
+    const existing = clusters.find(
+      (c) => haversineM(v.lat, v.lng, c.lat, c.lng) < CLUSTER_RADIUS_M,
+    )
+    if (existing) {
+      existing.ids.push(v.id)
+      // Update centroid
+      existing.lat = existing.ids.length === 1 ? v.lat : (existing.lat + v.lat) / 2
+      existing.lng = existing.ids.length === 1 ? v.lng : (existing.lng + v.lng) / 2
+    } else {
+      clusters.push({ lat: v.lat, lng: v.lng, ids: [v.id] })
+    }
+  }
+  return clusters
+}
+
+/** Nominatim reverse geocode — returns nearest named place or null */
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=17`
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'TennisApp/1.0 (catalog-builder; contact@tennisapp.com)' },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return null
+    const json = await res.json() as { display_name?: string; address?: { amenity?: string; leisure?: string } }
+    // Prefer specific amenity/leisure name over full display_name
+    const specific = json.address?.amenity ?? json.address?.leisure
+    return specific ?? json.display_name ?? null
+  } catch {
+    return null
+  }
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -387,7 +442,82 @@ async function main() {
   console.log(`\n📊 Done: ${enriched} enriched, ${skipped} skipped / errors`)
 }
 
-main().catch((err) => {
+// ─── Cluster mode ─────────────────────────────────────────────────────────────
+
+async function runClusterMode() {
+  console.log(`\n🔍 Cluster Discovery Mode${DRY_RUN ? ' [DRY RUN]' : ''}\n`)
+  console.log(`Finding large unnamed court clusters (≥${MIN_CLUSTER_SIZE} courts within ${CLUSTER_RADIUS_M}m)…`)
+
+  const supabase = createClient(
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
+  )
+  const anthropic = new Anthropic({ apiKey: requireEnv('ANTHROPIC_API_KEY') })
+
+  // All unnamed Austin venues
+  const { data: unnamed } = await supabase
+    .from('venues')
+    .select('id, name, lat, lng')
+    .gte('lat', AUSTIN_BBOX.south).lte('lat', AUSTIN_BBOX.north)
+    .gte('lng', AUSTIN_BBOX.west).lte('lng', AUSTIN_BBOX.east)
+    .in('name', ['Tennis Court', 'Tennis Courts'])
+
+  if (!unnamed?.length) { console.log('No unnamed venues found.'); return }
+
+  const clusters = buildClusters(unnamed).filter((c) => c.ids.length >= MIN_CLUSTER_SIZE)
+  console.log(`Found ${clusters.length} large cluster(s):\n`)
+
+  let enriched = 0
+  for (const cluster of clusters) {
+    const nearbyName = await reverseGeocode(cluster.lat, cluster.lng)
+    console.log(`Cluster: ${cluster.ids.length} courts @ (${cluster.lat.toFixed(5)}, ${cluster.lng.toFixed(5)})`)
+    console.log(`  Nominatim: ${nearbyName ?? '(nothing found)'}`)
+
+    if (DRY_RUN) continue
+
+    // Run browser agent with location-based prompt instead of name-based
+    const fakeVenue = {
+      id: cluster.ids[0]!,
+      name: nearbyName ?? `Tennis facility at ${cluster.lat.toFixed(5)}, ${cluster.lng.toFixed(5)}`,
+      address: `near ${nearbyName ?? 'Austin, TX'}, Austin, Texas`,
+      lat: cluster.lat,
+      lng: cluster.lng,
+    }
+
+    const result = await runAgentForVenue(anthropic, fakeVenue)
+    if (!result?.website && !result?.phone) {
+      console.log('  → Agent found nothing\n')
+      continue
+    }
+
+    // Update the representative record (first id in cluster) with found name + data
+    const update: Record<string, unknown> = {
+      enriched_at: new Date().toISOString(),
+      needs_enrichment: false,
+    }
+    if (result.website) update['website'] = result.website
+    if (result.phone) update['phone'] = result.phone
+    if (result.description) update['description'] = result.description
+    if (typeof result.court_count === 'number') update['court_count'] = result.court_count
+    if (result.has_indoor != null) update['has_indoor'] = result.has_indoor
+    if (result.has_outdoor != null) update['has_outdoor'] = result.has_outdoor
+    // Rename the representative to the found name if it was just "Tennis Court"
+    if (nearbyName) update['name'] = nearbyName
+
+    await supabase.from('venues').update(update).eq('id', cluster.ids[0])
+    console.log(`  ✅ Updated representative with: ${Object.keys(update).filter(k => !['enriched_at','needs_enrichment'].includes(k)).join(', ')}\n`)
+    enriched++
+
+    await new Promise((r) => setTimeout(r, DELAY_BETWEEN_MS))
+  }
+
+  console.log(`📊 Done: ${enriched} clusters enriched`)
+}
+
+// ─── Entry point ──────────────────────────────────────────────────────────────
+
+const runner = CLUSTER_MODE ? runClusterMode : main
+runner().catch((err) => {
   console.error('❌ Fatal error:', err)
   process.exit(1)
 })

@@ -86,7 +86,7 @@ const CATALOG_SUFFICIENT_COUNT = 50
 // Max venues to return to the client
 const MAX_RESULTS = 20
 // Venues within this radius (metres) are considered the same physical location
-const CLUSTER_RADIUS_M = 120
+const CLUSTER_RADIUS_M = 250
 
 /** Score a venue by data richness — higher = show this one when clustering */
 function venueScore(v: Record<string, unknown>): number {
