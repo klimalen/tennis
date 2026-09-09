@@ -243,18 +243,14 @@ export default async function PlayerProfilePage({
         {/* Profile header */}
         <div className="px-4 pt-6 pb-5">
           <div className="flex items-start gap-5">
-            {/* Avatar + followers */}
-            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+            {/* Avatar */}
+            <div className="flex-shrink-0">
               <div className="w-20 h-20 bg-brand-surface flex items-center justify-center border border-brand-divider overflow-hidden">
                 {profile.avatar_url ? (
                   <Image src={profile.avatar_url} alt={profile.full_name} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
                   <span className="font-display text-3xl text-[rgba(26,26,26,0.3)]">{initials}</span>
                 )}
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="font-numbers text-sm leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
-                <span className="text-[8px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">followers</span>
               </div>
             </div>
 
@@ -263,7 +259,7 @@ export default async function PlayerProfilePage({
               {[
                 { value: String(profile.total_matches), label: 'Matches' },
                 { value: String(totalWins), label: 'Wins' },
-                { value: rating ? String(rating) : '—', label: 'Rating' },
+                { value: formatFollowers(followerCount ?? 0), label: 'Followers' },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col items-center gap-0.5">
                   <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>

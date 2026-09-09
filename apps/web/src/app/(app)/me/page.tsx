@@ -158,8 +158,8 @@ async function ProfileContent() {
         {/* Profile header */}
         <div className="px-4 pt-6 pb-5">
           <div className="flex items-start gap-5">
-            {/* Avatar + followers */}
-            <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+            {/* Avatar */}
+            <div className="flex-shrink-0">
               <div className="w-20 h-20 bg-brand-surface flex items-center justify-center border border-brand-divider overflow-hidden">
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt={fullName} width={80} height={80} className="w-full h-full object-cover" />
@@ -167,24 +167,22 @@ async function ProfileContent() {
                   <span className="text-3xl">👤</span>
                 )}
               </div>
-              <Link href="/me/followers" className="flex flex-col items-center hover:opacity-70 transition-opacity">
-                <span className="font-numbers text-sm leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
-                <span className="text-[8px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">followers</span>
-              </Link>
             </div>
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              {[
-                { value: String(totalMatches), label: 'Matches' },
-                { value: String(totalWins), label: 'Wins' },
-                { value: rating ? String(rating) : '—', label: 'Rating' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-0.5">
-                  <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>
-                  <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">{stat.label}</span>
-                </div>
-              ))}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalMatches}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Matches</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalWins}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Wins</span>
+              </div>
+              <Link href="/me/followers" className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
+              </Link>
             </div>
           </div>
 

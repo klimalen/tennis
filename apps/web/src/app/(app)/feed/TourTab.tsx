@@ -214,6 +214,7 @@ function PlayerSheet({ playerKey, name, logo, onClose }: {
 }) {
   const [profile, setProfile] = useState<PlayerProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [photoFailed, setPhotoFailed] = useState(false)
 
   useEffect(() => {
     fetchTennis('get_players', { player_key: String(playerKey) }).then((r) => {
@@ -247,16 +248,14 @@ function PlayerSheet({ playerKey, name, logo, onClose }: {
         <div className="pb-8">
           {/* Hero */}
           <div className="px-4 pt-5 pb-4 flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden border border-brand-divider bg-brand-surface flex-shrink-0">
-              {profile.player_logo ? (
-                <Image src={profile.player_logo} alt={profile.player_full_name} width={64} height={64} className="w-full h-full object-cover" />
+            <div className="w-16 h-16 rounded-full overflow-hidden border border-brand-divider bg-brand-surface flex-shrink-0 flex items-center justify-center">
+              {profile.player_logo && !photoFailed ? (
+                <Image src={profile.player_logo} alt={profile.player_full_name} width={64} height={64} className="w-full h-full object-cover" onError={() => setPhotoFailed(true)} />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-[rgba(26,26,26,0.3)]">
-                    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                </div>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-[rgba(26,26,26,0.3)]">
+                  <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
               )}
             </div>
             <div>

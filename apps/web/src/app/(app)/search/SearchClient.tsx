@@ -170,7 +170,7 @@ function PlayerCard({
           <div className="flex flex-wrap items-center gap-1.5">
             {skill != null && (
               <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
-                {skill.toFixed(1)} · {skillLabel(skill)}
+                {skillLabel(skill)}
               </span>
             )}
             {player.preferred_formats.map((f) => (
@@ -537,7 +537,7 @@ function IncomingRequestCard({
           <div className="flex items-center gap-2 mt-0.5">
             {skill != null && (
               <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
-                {SKILL_LABELS[Math.round(skill * 2) / 2] ?? skill.toFixed(1)}
+                {skillLabel(skill)}
               </span>
             )}
             {sender.city_name && (
@@ -734,7 +734,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: {
                 <p className="font-display text-base tracking-wide leading-tight">{game.creator.full_name.toUpperCase()}</p>
                 {creatorSkill != null && (
                   <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
-                    {OPEN_SKILL_LABELS[Math.round(creatorSkill * 2) / 2] ?? creatorSkill.toFixed(1)}
+                    {skillLabel(creatorSkill)}
                   </span>
                 )}
               </div>
@@ -767,7 +767,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: {
                       </div>
                       {pSkill != null && (
                         <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
-                          {OPEN_SKILL_LABELS[Math.round(pSkill * 2) / 2] ?? pSkill.toFixed(1)}
+                          {skillLabel(pSkill)}
                         </span>
                       )}
                     </Link>
@@ -1054,7 +1054,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           onClose={() => setSelectedGame(null)}
         />
       )}
-      {/* Header */}
+      {/* TODO: Search bar + Filter button — hidden until search/filter logic is implemented
       <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <div className="flex-1 flex items-center gap-2 bg-brand-surface rounded px-4 py-2.5">
@@ -1068,6 +1068,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           </button>
         </div>
       </div>
+      */}
 
       {/* Filter chips */}
       <div className="px-4 py-3 border-b border-brand-divider overflow-x-auto">

@@ -201,7 +201,14 @@ async function FeedContent() {
     follower: f.follower,
   }))
 
-  const activityCount = requestRows.length + followRows.length
+  // Latest timestamp across all notification items for badge logic
+  const allTimestamps = [
+    ...requestRows.map((r) => r.created_at),
+    ...followRows.map((f) => f.created_at),
+  ]
+  const latestNotificationAt = allTimestamps.length > 0
+    ? allTimestamps.reduce((a, b) => (a > b ? a : b))
+    : null
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -218,7 +225,7 @@ async function FeedContent() {
           initialPosts={posts}
           initialRequests={requestRows as RequestItem[]}
           initialFollows={followItems}
-          activityCount={activityCount}
+          latestNotificationAt={latestNotificationAt}
         />
       </div>
     </div>
