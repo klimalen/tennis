@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
+import { ArrowLeft, Camera, Check, Loader2, MapPin, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CityInput } from '@/components/ui/CityInput'
 
@@ -79,19 +79,119 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
 
 // ─── Step 1: Location ─────────────────────────────────────────────────────────
 
+type GeoDetectState = 'idle' | 'detecting' | 'detected' | 'error'
+
 function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial<OnboardingData>) => void }) {
+  const [geoState, setGeoState] = useState<GeoDetectState>('idle')
+  const [detectedCity, setDetectedCity] = useState<string | null>(null)
+
+  async function handleUseMyLocation() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeoState('error')
+      return
+    }
+    setGeoState('detecting')
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            { headers: { 'Accept-Language': 'en' } },
+          )
+          const result = await res.json() as { address?: { city?: string; town?: string; county?: string }; name?: string }
+          const city = result.address?.city ?? result.address?.town ?? result.address?.county ?? result.name ?? null
+          if (city) {
+            setDetectedCity(city)
+            setGeoState('detected')
+          } else {
+            setGeoState('error')
+          }
+        } catch {
+          setGeoState('error')
+        }
+      },
+      () => setGeoState('error'),
+      { timeout: 10_000 },
+    )
+  }
+
+  function confirmDetected() {
+    if (detectedCity) onChange({ city: detectedCity })
+    setGeoState('idle')
+    setDetectedCity(null)
+  }
+
+  function rejectDetected() {
+    setGeoState('idle')
+    setDetectedCity(null)
+  }
+
   return (
     <div>
-      <StepHeading title="WHERE DO YOU PLAY?" sub="We'll show you players and courts near you — all optional" />
+      <StepHeading title="WHERE DO YOU PLAY?" sub="Helps us find players and courts near you" />
       <div className="space-y-4">
         <div>
           <FieldLabel>City</FieldLabel>
+
+          {/* Detected city confirmation */}
+          {geoState === 'detected' && detectedCity && (
+            <div className="border border-brand-primary/30 bg-brand-primary/5 px-4 py-3 mb-3">
+              <p className="text-sm text-[#1a1a1a]">
+                We detected your city as <span className="font-medium">{detectedCity}</span>. Is this correct?
+              </p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={confirmDetected}
+                  className="flex-1 py-2 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+                >
+                  Yes, that&apos;s right
+                </button>
+                <button
+                  type="button"
+                  onClick={rejectDetected}
+                  className="flex-1 py-2 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.6)] hover:border-[rgba(26,26,26,0.4)] transition-colors"
+                >
+                  Enter manually
+                </button>
+              </div>
+            </div>
+          )}
+
           <CityInput
             value={data.city}
             onChange={(city) => onChange({ city })}
             placeholder="Search your city..."
           />
+
+          {/* Use my location button */}
+          {geoState !== 'detected' && (
+            <button
+              type="button"
+              onClick={() => void handleUseMyLocation()}
+              disabled={geoState === 'detecting'}
+              className="mt-2 flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40"
+            >
+              {geoState === 'detecting' ? (
+                <><Loader2 size={11} className="animate-spin" /> Detecting location...</>
+              ) : (
+                <><MapPin size={11} /> Use my location</>
+              )}
+            </button>
+          )}
+
+          {geoState === 'error' && (
+            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.45)]">
+              Could not detect your location. Please enter your city manually.
+            </p>
+          )}
+
+          <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.35)]">
+            You can change your city at any time in your profile.
+          </p>
         </div>
+
         <div>
           <FieldLabel>Neighbourhood <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">optional</span></FieldLabel>
           <input

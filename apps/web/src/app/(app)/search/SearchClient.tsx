@@ -679,6 +679,21 @@ function NoCityState() {
   )
 }
 
+// ─── Courts city persistence ───────────────────────────────────────────────────
+
+const COURTS_CITY_KEY = 'courts_last_city'
+
+interface SavedCourtsCity {
+  name: string
+  label: string
+  lat: number
+  lng: number
+  south: number
+  north: number
+  west: number
+  east: number
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function SearchClient({ user, userCityName, initialIncoming }: { user: User | null; userCityName: string | null; initialIncoming: IncomingRequest[] }) {
@@ -815,6 +830,27 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const skipAutocompleteRef = useRef(false)
+  const courtsRestoredRef = useRef(false)
+
+  // Restore last city when courts view opens
+  useEffect(() => {
+    if (view !== 'courts' || courtsRestoredRef.current || userCoords) return
+    courtsRestoredRef.current = true
+    try {
+      const raw = localStorage.getItem(COURTS_CITY_KEY)
+      if (!raw) return
+      const saved = JSON.parse(raw) as SavedCourtsCity
+      const coords = { lat: saved.lat, lng: saved.lng }
+      skipAutocompleteRef.current = true
+      setCityInput(saved.name)
+      setCityLabel(saved.label)
+      setUserCoords(coords)
+      void loadVenuesByBbox(saved.south, saved.west, saved.north, saved.east, coords)
+    } catch {
+      // ignore malformed data
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
 
   useEffect(() => {
     if (view !== 'courts') return
@@ -842,18 +878,19 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityInput])
 
-  async function loadVenuesByBbox(south: number, west: number, north: number, east: number) {
+  async function loadVenuesByBbox(south: number, west: number, north: number, east: number, coords?: { lat: number; lng: number }) {
     setLoadingVenues(true)
     setCourtsError(null)
     setShowSuggestions(false)
+    const sortCoords = coords ?? userCoords
     try {
       const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east) })
       const res = await fetch(`/api/venues?${params}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = (await res.json()) as { venues: Venue[] }
       const sorted = (json.venues ?? []).sort((a, b) => {
-        if (!userCoords) return 0
-        return haversineMeters(userCoords.lat, userCoords.lng, a.lat, a.lng) - haversineMeters(userCoords.lat, userCoords.lng, b.lat, b.lng)
+        if (!sortCoords) return 0
+        return haversineMeters(sortCoords.lat, sortCoords.lng, a.lat, a.lng) - haversineMeters(sortCoords.lat, sortCoords.lng, b.lat, b.lng)
       })
       setVenues(sorted)
     } catch {
@@ -866,15 +903,28 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   function selectSuggestion(place: NominatimPlace) {
     skipAutocompleteRef.current = true
-    setCityInput(place.name)
-    setCityLabel(place.name + (place.address?.country ? `, ${place.address.country}` : ''))
+    const name = place.name
+    const label = place.name + (place.address?.country ? `, ${place.address.country}` : '')
+    const bb = place.boundingbox.map(Number)
+    const south = bb[0] ?? 0
+    const north = bb[1] ?? 0
+    const west = bb[2] ?? 0
+    const east = bb[3] ?? 0
+    const lat = (south + north) / 2
+    const lng = (west + east) / 2
+    const coords = { lat, lng }
+
+    setCityInput(name)
+    setCityLabel(label)
     setSuggestions([])
     setShowSuggestions(false)
-    const bb = place.boundingbox.map(Number)
-    const lat = ((bb[0] ?? 0) + (bb[1] ?? 0)) / 2
-    const lng = ((bb[2] ?? 0) + (bb[3] ?? 0)) / 2
-    setUserCoords({ lat, lng })
-    void loadVenuesByBbox(bb[0] ?? 0, bb[2] ?? 0, bb[1] ?? 0, bb[3] ?? 0)
+    setUserCoords(coords)
+
+    // Persist for next session
+    const toSave: SavedCourtsCity = { name, label, lat, lng, south, north, west, east }
+    localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
+
+    void loadVenuesByBbox(south, west, north, east, coords)
   }
 
   function requestGeolocation() {
@@ -888,10 +938,11 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords
-        setUserCoords({ lat: latitude, lng: longitude })
+        const coords = { lat: latitude, lng: longitude }
+        setUserCoords(coords)
         setCityLabel('your location')
         const { south, west, north, east } = boundingBoxClient(latitude, longitude, 10)
-        void loadVenuesByBbox(south, west, north, east)
+        void loadVenuesByBbox(south, west, north, east, coords)
       },
       () => setLoadingVenues(false),
       { timeout: 10_000 },
