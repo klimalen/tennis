@@ -15,9 +15,12 @@ interface Connection {
   skill_level_self: number | null
 }
 
-const SKILL_LABELS: Record<number, string> = {
-  1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
-  4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
+function skillLabel(v: number | null): string | null {
+  if (!v) return null
+  if (v < 2) return 'Beginner'
+  if (v < 3.5) return 'Intermediate'
+  if (v < 5) return 'Advanced'
+  return 'Competitive'
 }
 
 export function ComposeButton() {
@@ -107,8 +110,7 @@ export function ComposeButton() {
               ) : (
                 connections.map((c) => {
                   const rating = c.skill_level_computed ?? c.skill_level_self
-                  const rounded = rating ? Math.round(rating * 2) / 2 : null
-                  const skillLabel = rounded ? SKILL_LABELS[rounded] : null
+                  const label = skillLabel(rating)
                   const initials = c.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
                   return (
@@ -131,9 +133,9 @@ export function ComposeButton() {
                           <p className="text-[10px] text-[rgba(26,26,26,0.4)] mt-0.5">{c.city_name}</p>
                         )}
                       </div>
-                      {skillLabel && (
+                      {label && (
                         <span className="text-[8px] tracking-[0.12em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
-                          {skillLabel}
+                          {label}
                         </span>
                       )}
                       {starting === c.id && (

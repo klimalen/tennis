@@ -8,14 +8,12 @@ import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/Loc
 import { formatFollowers } from '@/lib/formatFollowers'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 
-const SKILL_LABELS: Record<number, string> = {
-  1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
-  4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
-}
-const SKILL_NAMES: Record<number, string> = {
-  1: 'Beginner', 1.5: 'Beginner', 2: 'Novice', 2.5: 'Novice',
-  3: 'Intermediate', 3.5: 'Intermediate', 4: 'Advanced', 4.5: 'Advanced',
-  5: 'Expert', 5.5: 'Expert', 6: 'Pro', 6.5: 'Pro', 7: 'Elite',
+function skillLabel(v: number | null): string | null {
+  if (!v) return null
+  if (v < 2) return 'Beginner'
+  if (v < 3.5) return 'Intermediate'
+  if (v < 5) return 'Advanced'
+  return 'Competitive'
 }
 
 async function ProfileContent() {
@@ -198,10 +196,10 @@ async function ProfileContent() {
                 {profile.city_name}
               </p>
             )}
-            {rating && (
+            {skillLabel(rating) && (
               <div className="inline-flex items-center gap-1.5 mt-2">
                 <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
-                  {SKILL_LABELS[rating]} — {SKILL_NAMES[rating]}
+                  {skillLabel(rating)}
                 </span>
               </div>
             )}
