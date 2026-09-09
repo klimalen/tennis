@@ -68,7 +68,7 @@ const CLUSTER_MODE = process.argv.includes('--clusters')
 const MAX_PAGES_PER_VENUE = 4    // max fetch_page calls per venue
 const DELAY_BETWEEN_MS = 3_000  // pause between venues to be polite
 const CLUSTER_RADIUS_M = 250     // must match venues API
-const MIN_CLUSTER_SIZE = 4       // clusters with fewer courts are likely just a small park
+const MIN_CLUSTER_SIZE = 8       // clusters with fewer courts are likely HOA/apartment complexes
 
 // ─── HTML → text ──────────────────────────────────────────────────────────────
 
@@ -108,6 +108,7 @@ async function fetchPage(url: string): Promise<string> {
 // ─── Enrichment result type ───────────────────────────────────────────────────
 
 interface EnrichmentResult {
+  venue_name?: string | null
   website: string | null
   phone: string | null
   description: string | null
@@ -139,6 +140,7 @@ const saveEnrichmentTool: Anthropic.Tool = {
   input_schema: {
     type: 'object' as const,
     properties: {
+      venue_name: { type: 'string', description: 'Proper name of the venue (e.g. "Westwood Country Club", "Settlers Park Tennis Center"). Use the official name from their website, not a street address.' },
       website: { type: 'string', description: 'Official website URL (must start with http)' },
       phone: { type: 'string', description: 'Phone number as found on the site' },
       description: {
@@ -485,7 +487,7 @@ async function runClusterMode() {
     }
 
     const result = await runAgentForVenue(anthropic, fakeVenue)
-    if (!result?.website && !result?.phone) {
+    if (!result?.website && !result?.phone && !result?.venue_name) {
       console.log('  → Agent found nothing\n')
       continue
     }
@@ -495,14 +497,15 @@ async function runClusterMode() {
       enriched_at: new Date().toISOString(),
       needs_enrichment: false,
     }
+    // Prefer the name the agent found on the official site over Nominatim street address
+    const properName = result.venue_name ?? nearbyName
+    if (properName) update['name'] = properName
     if (result.website) update['website'] = result.website
     if (result.phone) update['phone'] = result.phone
     if (result.description) update['description'] = result.description
     if (typeof result.court_count === 'number') update['court_count'] = result.court_count
     if (result.has_indoor != null) update['has_indoor'] = result.has_indoor
     if (result.has_outdoor != null) update['has_outdoor'] = result.has_outdoor
-    // Rename the representative to the found name if it was just "Tennis Court"
-    if (nearbyName) update['name'] = nearbyName
 
     await supabase.from('venues').update(update).eq('id', cluster.ids[0])
     console.log(`  ✅ Updated representative with: ${Object.keys(update).filter(k => !['enriched_at','needs_enrichment'].includes(k)).join(', ')}\n`)
