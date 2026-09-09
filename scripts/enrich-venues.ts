@@ -497,9 +497,8 @@ async function runClusterMode() {
       enriched_at: new Date().toISOString(),
       needs_enrichment: false,
     }
-    // Prefer the name the agent found on the official site over Nominatim street address
-    const properName = result.venue_name ?? nearbyName
-    if (properName) update['name'] = properName
+    // Only rename if agent found a proper venue name — never fall back to Nominatim street address
+    if (result.venue_name) update['name'] = result.venue_name
     if (result.website) update['website'] = result.website
     if (result.phone) update['phone'] = result.phone
     if (result.description) update['description'] = result.description
