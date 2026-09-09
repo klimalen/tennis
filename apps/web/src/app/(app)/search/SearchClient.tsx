@@ -890,6 +890,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Full courts view ────────────────────────────────────────────────────────
   const [venues, setVenues] = useState<Venue[]>([])
   const [loadingVenues, setLoadingVenues] = useState(false)
+  const [loadingMoreVenues, setLoadingMoreVenues] = useState(false)
+  const [venuesHasMore, setVenuesHasMore] = useState(false)
+  const [venuesOffset, setVenuesOffset] = useState(0)
+  const [currentBbox, setCurrentBbox] = useState<{ south: number; west: number; north: number; east: number } | null>(null)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [cityInput, setCityInput] = useState('')
   const [cityLabel, setCityLabel] = useState<string | null>(null)
@@ -950,22 +954,41 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     setLoadingVenues(true)
     setCourtsError(null)
     setShowSuggestions(false)
-    const sortCoords = coords ?? userCoords
+    setVenuesOffset(0)
+    setVenuesHasMore(false)
+    setCurrentBbox({ south, west, north, east })
     try {
       const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east) })
       const res = await fetch(`/api/venues?${params}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = (await res.json()) as { venues: Venue[] }
-      const sorted = (json.venues ?? []).sort((a, b) => {
-        if (!sortCoords) return 0
-        return haversineMeters(sortCoords.lat, sortCoords.lng, a.lat, a.lng) - haversineMeters(sortCoords.lat, sortCoords.lng, b.lat, b.lng)
-      })
-      setVenues(sorted)
+      const json = (await res.json()) as { venues: Venue[]; hasMore: boolean }
+      setVenues(json.venues ?? [])
+      setVenuesHasMore(json.hasMore ?? false)
+      setVenuesOffset(json.venues?.length ?? 0)
     } catch {
       setVenues([])
       setCourtsError('Failed to load courts. Please try again.')
     } finally {
       setLoadingVenues(false)
+    }
+  }
+
+  async function loadMoreVenues() {
+    if (!currentBbox || loadingMoreVenues) return
+    setLoadingMoreVenues(true)
+    try {
+      const { south, west, north, east } = currentBbox
+      const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east), offset: String(venuesOffset) })
+      const res = await fetch(`/api/venues?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = (await res.json()) as { venues: Venue[]; hasMore: boolean }
+      setVenues((prev) => [...prev, ...(json.venues ?? [])])
+      setVenuesHasMore(json.hasMore ?? false)
+      setVenuesOffset((prev) => prev + (json.venues?.length ?? 0))
+    } catch {
+      // keep existing venues
+    } finally {
+      setLoadingMoreVenues(false)
     }
   }
 
@@ -1370,7 +1393,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           <>
             {cityLabel && (
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                {venues.length} {venues.length === 1 ? 'court' : 'courts'} near {cityLabel}
+                Courts near {cityLabel}
               </p>
             )}
             {venues.map((venue) => (
@@ -1386,6 +1409,15 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 }}
               />
             ))}
+            {venuesHasMore && (
+              <button
+                onClick={() => void loadMoreVenues()}
+                disabled={loadingMoreVenues}
+                className="w-full py-3 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-40"
+              >
+                {loadingMoreVenues ? 'Loading...' : 'Load more'}
+              </button>
+            )}
           </>
         )}
 

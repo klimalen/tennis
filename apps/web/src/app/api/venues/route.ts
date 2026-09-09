@@ -318,20 +318,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ venues: [], _debug: { overpassError, queryError: queryError.message } })
   }
 
-  // Cluster nearby courts, sort by distance, return nearest MAX_RESULTS
+  // Cluster nearby courts, sort by distance, paginate
+  const offsetParam = searchParams.get('offset')
+  const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0
+
   const centerLat = (south + north) / 2
   const centerLng = (west + east) / 2
-  const clustered = clusterVenues(allVenues ?? [])
-  const venues = clustered
-    .sort(
-      (a, b) =>
-        haversineKm(centerLat, centerLng, a['lat'] as number, a['lng'] as number) -
-        haversineKm(centerLat, centerLng, b['lat'] as number, b['lng'] as number),
-    )
-    .slice(0, MAX_RESULTS)
+  const sorted = clusterVenues(allVenues ?? []).sort(
+    (a, b) =>
+      haversineKm(centerLat, centerLng, a['lat'] as number, a['lng'] as number) -
+      haversineKm(centerLat, centerLng, b['lat'] as number, b['lng'] as number),
+  )
+  const total = sorted.length
+  const venues = sorted.slice(offset, offset + MAX_RESULTS)
 
   return NextResponse.json({
     venues,
+    total,
+    hasMore: offset + MAX_RESULTS < total,
     _debug: { catalogSufficient, existingCount, overpassCount, overpassError, bbox: { south, west, north, east } },
   })
 }
