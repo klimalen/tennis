@@ -85,6 +85,61 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 const CATALOG_SUFFICIENT_COUNT = 50
 // Max venues to return to the client
 const MAX_RESULTS = 20
+// Venues within this radius (metres) are considered the same physical location
+const CLUSTER_RADIUS_M = 120
+
+/** Score a venue by data richness — higher = show this one when clustering */
+function venueScore(v: Record<string, unknown>): number {
+  return (
+    (v['name'] && v['name'] !== 'Tennis Court' ? 20 : 0) +
+    (v['phone'] ? 10 : 0) +
+    (v['website'] ? 10 : 0) +
+    (v['description'] ? 5 : 0) +
+    (typeof v['court_count'] === 'number' ? v['court_count'] : 0)
+  )
+}
+
+/**
+ * Cluster nearby courts into single venue cards.
+ * Unnamed courts within CLUSTER_RADIUS_M of a named/better venue are merged:
+ * their court counts are summed and they are dropped from the result.
+ */
+function clusterVenues(venues: Record<string, unknown>[]): Record<string, unknown>[] {
+  // Sort best-scored first so the "representative" venue wins ties
+  const sorted = [...venues].sort((a, b) => venueScore(b) - venueScore(a))
+  const result: Record<string, unknown>[] = []
+
+  for (const venue of sorted) {
+    const vLat = venue['lat'] as number
+    const vLng = venue['lng'] as number
+
+    const existingCluster = result.find((r) => {
+      const rLat = r['lat'] as number
+      const rLng = r['lng'] as number
+      return haversineKm(vLat, vLng, rLat, rLng) * 1000 < CLUSTER_RADIUS_M
+    })
+
+    if (existingCluster) {
+      // Merge court count from this venue into the cluster representative
+      const existingCount = typeof existingCluster['court_count'] === 'number'
+        ? existingCluster['court_count']
+        : 0
+      const incomingCount = typeof venue['court_count'] === 'number'
+        ? venue['court_count']
+        : 1   // each individual pitch = 1 court
+      existingCluster['court_count'] = existingCount + incomingCount
+    } else {
+      // New cluster — ensure unnamed single courts show court_count = 1
+      if (venue['court_count'] == null) {
+        result.push({ ...venue, court_count: 1 })
+      } else {
+        result.push({ ...venue })
+      }
+    }
+  }
+
+  return result
+}
 
 function parseElement(el: OverpassElement): VenueUpsert | null {
   const lat = el.type === 'node' ? el.lat : el.center?.lat
@@ -263,14 +318,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ venues: [], _debug: { overpassError, queryError: queryError.message } })
   }
 
-  // Sort by distance from the request's centre point, return nearest MAX_RESULTS
+  // Cluster nearby courts, sort by distance, return nearest MAX_RESULTS
   const centerLat = (south + north) / 2
   const centerLng = (west + east) / 2
-  const venues = (allVenues ?? [])
+  const clustered = clusterVenues(allVenues ?? [])
+  const venues = clustered
     .sort(
       (a, b) =>
-        haversineKm(centerLat, centerLng, a.lat, a.lng) -
-        haversineKm(centerLat, centerLng, b.lat, b.lng),
+        haversineKm(centerLat, centerLng, a['lat'] as number, a['lng'] as number) -
+        haversineKm(centerLat, centerLng, b['lat'] as number, b['lng'] as number),
     )
     .slice(0, MAX_RESULTS)
 
