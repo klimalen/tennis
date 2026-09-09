@@ -6,7 +6,6 @@ import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
 import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
-import { formatFollowers } from '@/lib/formatFollowers'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
@@ -18,6 +17,21 @@ function skillLabel(v: number | null): string | null {
   if (v < 3.5) return 'Intermediate'
   if (v < 5) return 'Advanced'
   return 'Competitive'
+}
+
+const SURFACE_LABELS: Record<string, string> = {
+  hard: 'Hard',
+  clay: 'Clay',
+  grass: 'Grass',
+  indoor: 'Indoor',
+}
+
+function timeLabel(start: string | null): string | null {
+  if (!start) return null
+  if (start < '12:00') return 'Morning'
+  if (start < '17:00') return 'Afternoon'
+  if (start < '21:00') return 'Evening'
+  return 'Night'
 }
 
 interface PostRow {
@@ -57,7 +71,7 @@ export default async function PlayerProfilePage({
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'id, full_name, username, avatar_url, bio, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_days, preferred_time_start, preferred_time_end',
+      'id, full_name, username, avatar_url, bio, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_days, preferred_time_start, preferred_time_end, preferred_surfaces',
     )
     .eq('username', username)
     .is('deleted_at', null)
@@ -76,6 +90,9 @@ export default async function PlayerProfilePage({
       .select('*', { count: 'exact', head: true })
       .eq('following_id', profile.id),
   ])
+
+  const surfaces: string[] = profile.preferred_surfaces ?? []
+  const time = timeLabel(profile.preferred_time_start ?? null)
 
   // Check follow directions + existing conversation
   let viewerIsFollowing = false
@@ -142,6 +159,7 @@ export default async function PlayerProfilePage({
   const rating = profile.skill_level_computed ?? profile.skill_level_self
   const skill = skillLabel(rating)
   const totalWins = wins ?? 0
+  const totalLosses = Math.max(0, (profile.total_matches ?? 0) - totalWins)
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   // Fetch upcoming games for this profile user
@@ -250,9 +268,9 @@ export default async function PlayerProfilePage({
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
               {[
-                { value: String(profile.total_matches), label: 'Matches' },
+                { value: String(profile.total_matches ?? 0), label: 'Matches' },
                 { value: String(totalWins), label: 'Wins' },
-                { value: formatFollowers(followerCount ?? 0), label: 'Followers' },
+                { value: String(totalLosses), label: 'Losses' },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col items-center gap-0.5">
                   <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>
@@ -274,11 +292,23 @@ export default async function PlayerProfilePage({
               </p>
             )}
 
-            {skill && (
-              <div className="pt-0.5">
-                <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
-                  {skill}
-                </span>
+            {(skill || surfaces.length > 0 || time) && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {skill && (
+                  <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
+                    {skill}
+                  </span>
+                )}
+                {surfaces.map((s) => (
+                  <span key={s} className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                    {SURFACE_LABELS[s] ?? s}
+                  </span>
+                ))}
+                {time && (
+                  <span className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                    {time}
+                  </span>
+                )}
               </div>
             )}
 

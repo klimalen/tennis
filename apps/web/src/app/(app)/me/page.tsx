@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
-import { formatFollowers } from '@/lib/formatFollowers'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 
 function skillLabel(v: number | null): string | null {
@@ -16,6 +15,21 @@ function skillLabel(v: number | null): string | null {
   return 'Competitive'
 }
 
+const SURFACE_LABELS: Record<string, string> = {
+  hard: 'Hard',
+  clay: 'Clay',
+  grass: 'Grass',
+  indoor: 'Indoor',
+}
+
+function timeLabel(start: string | null): string | null {
+  if (!start) return null
+  if (start < '12:00') return 'Morning'
+  if (start < '17:00') return 'Afternoon'
+  if (start < '21:00') return 'Evening'
+  return 'Night'
+}
+
 async function ProfileContent() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -23,21 +37,15 @@ async function ProfileContent() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, city_name')
+    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, city_name, preferred_surfaces, preferred_time_start')
     .eq('id', user.id)
     .single()
 
-  const [{ count: wins }, { count: followerCount }] = await Promise.all([
-    supabase
-      .from('match_results')
-      .select('*', { count: 'exact', head: true })
-      .eq('winner_id', user.id)
-      .eq('status', 'confirmed'),
-    supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', user.id),
-  ])
+  const { count: wins } = await supabase
+    .from('match_results')
+    .select('*', { count: 'exact', head: true })
+    .eq('winner_id', user.id)
+    .eq('status', 'confirmed')
 
   // Games created by user
   const { data: createdGames } = await supabase
@@ -138,7 +146,10 @@ async function ProfileContent() {
   const avatarUrl = profile?.avatar_url || null
   const totalMatches = profile?.total_matches ?? 0
   const totalWins = wins ?? 0
+  const totalLosses = Math.max(0, totalMatches - totalWins)
   const rating = profile?.skill_level_computed ?? profile?.skill_level_self ?? null
+  const surfaces: string[] = profile?.preferred_surfaces ?? []
+  const time = timeLabel(profile?.preferred_time_start ?? null)
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -162,25 +173,25 @@ async function ProfileContent() {
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt={fullName} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-3xl">👤</span>
+                  <span className="font-display text-3xl text-[rgba(26,26,26,0.3)]">
+                    {fullName.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}
+                  </span>
                 )}
               </div>
             </div>
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalMatches}</span>
-                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Matches</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalWins}</span>
-                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Wins</span>
-              </div>
-              <Link href="/me/followers" className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity">
-                <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
-                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
-              </Link>
+              {[
+                { value: String(totalMatches), label: 'Matches' },
+                { value: String(totalWins), label: 'Wins' },
+                { value: String(totalLosses), label: 'Losses' },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col items-center gap-0.5">
+                  <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>
+                  <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">{stat.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -196,11 +207,23 @@ async function ProfileContent() {
                 {profile.city_name}
               </p>
             )}
-            {skillLabel(rating) && (
-              <div className="inline-flex items-center gap-1.5 mt-2">
-                <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
-                  {skillLabel(rating)}
-                </span>
+            {(skillLabel(rating) || surfaces.length > 0 || time) && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                {skillLabel(rating) && (
+                  <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
+                    {skillLabel(rating)}
+                  </span>
+                )}
+                {surfaces.map((s) => (
+                  <span key={s} className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                    {SURFACE_LABELS[s] ?? s}
+                  </span>
+                ))}
+                {time && (
+                  <span className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                    {time}
+                  </span>
+                )}
               </div>
             )}
             {profile?.bio && (
