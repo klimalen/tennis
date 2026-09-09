@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { X, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -566,22 +566,24 @@ function MatchCard({ match, showTournament = false, onPlayerClick }: {
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0 flex flex-col gap-2">
           <button
-            className="flex items-center gap-2 text-left"
+            className="flex items-center gap-2 text-left group"
             onClick={() => onPlayerClick({ key: match.first_player_key, name: match.event_first_player, logo: match.event_first_player_logo })}
           >
             <PlayerAvatar url={match.event_first_player_logo} name={match.event_first_player} />
             <span className={`text-[13px] flex-1 truncate leading-none ${p1Wins ? 'font-semibold text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.75)]'}`}>
               {match.event_first_player}
             </span>
+            <ChevronRight size={11} className="flex-shrink-0 text-[rgba(26,26,26,0.2)] group-hover:text-brand-primary transition-colors" />
           </button>
           <button
-            className="flex items-center gap-2 text-left"
+            className="flex items-center gap-2 text-left group"
             onClick={() => onPlayerClick({ key: match.second_player_key, name: match.event_second_player, logo: match.event_second_player_logo })}
           >
             <PlayerAvatar url={match.event_second_player_logo} name={match.event_second_player} />
             <span className={`text-[13px] flex-1 truncate leading-none ${p2Wins ? 'font-semibold text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.75)]'}`}>
               {match.event_second_player}
             </span>
+            <ChevronRight size={11} className="flex-shrink-0 text-[rgba(26,26,26,0.2)] group-hover:text-brand-primary transition-colors" />
           </button>
         </div>
 
