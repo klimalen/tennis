@@ -259,7 +259,17 @@ function PlayerSheet({ playerKey, name, logo, onClose }: {
               )}
             </div>
             <div>
-              <p className="font-display text-2xl tracking-wide leading-none">{profile.player_full_name.toUpperCase()}</p>
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(profile.player_full_name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5"
+              >
+                <span className="font-display text-2xl tracking-wide leading-none group-hover:text-brand-primary transition-colors">
+                  {profile.player_full_name.toUpperCase()}
+                </span>
+                <ChevronRight size={16} className="text-[rgba(26,26,26,0.25)] group-hover:text-brand-primary transition-colors mt-0.5 flex-shrink-0" />
+              </a>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 {profile.player_country && (
                   <span className="text-[10px] tracking-[0.12em] text-[rgba(26,26,26,0.5)]">{profile.player_country}</span>
