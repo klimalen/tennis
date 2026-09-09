@@ -71,6 +71,21 @@ function boundingBox(lat: number, lng: number, radiusKm: number) {
   }
 }
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = degreesToRadians(lat2 - lat1)
+  const dLng = degreesToRadians(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(degreesToRadians(lat1)) * Math.cos(degreesToRadians(lat2)) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// If we already have this many venues in the bbox, skip Overpass entirely
+const CATALOG_SUFFICIENT_COUNT = 50
+// Max venues to return to the client
+const MAX_RESULTS = 20
+
 function parseElement(el: OverpassElement): VenueUpsert | null {
   const lat = el.type === 'node' ? el.lat : el.center?.lat
   const lng = el.type === 'node' ? el.lon : el.center?.lon
@@ -184,60 +199,83 @@ export async function GET(request: NextRequest) {
   }
   const supabase = await createClient()
 
-  // Check if we have recent data for this area (any venue within bbox fetched in last 30 days)
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const { data: recentCheck } = await supabase
+  // Check how many venues we already have in this area
+  const { count: existingCount } = await supabase
     .from('venues')
-    .select('id')
+    .select('*', { count: 'exact', head: true })
     .gte('lat', south)
     .lte('lat', north)
     .gte('lng', west)
     .lte('lng', east)
-    .gte('osm_fetched_at', thirtyDaysAgo)
-    .limit(1)
 
-  const isStale = !recentCheck || recentCheck.length === 0
+  const catalogSufficient = (existingCount ?? 0) >= CATALOG_SUFFICIENT_COUNT
 
   let overpassCount = 0
   let overpassError: string | null = null
 
-  if (isStale) {
-    try {
-      const fetched = await fetchFromOverpass(south, west, north, east)
-      overpassCount = fetched.length
-      if (fetched.length > 0) {
-        const { error: upsertError } = await supabase
-          .from('venues')
-          .upsert(fetched, { onConflict: 'osm_id', ignoreDuplicates: false })
-        if (upsertError) {
-          console.error('Venues upsert error:', upsertError)
-          overpassError = upsertError.message
+  if (!catalogSufficient) {
+    // Fall back to Overpass for cities without a pre-populated catalog
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: recentCheck } = await supabase
+      .from('venues')
+      .select('id')
+      .gte('lat', south)
+      .lte('lat', north)
+      .gte('lng', west)
+      .lte('lng', east)
+      .gte('osm_fetched_at', thirtyDaysAgo)
+      .limit(1)
+
+    const isStale = !recentCheck || recentCheck.length === 0
+
+    if (isStale) {
+      try {
+        const fetched = await fetchFromOverpass(south, west, north, east)
+        overpassCount = fetched.length
+        if (fetched.length > 0) {
+          const { error: upsertError } = await supabase
+            .from('venues')
+            .upsert(fetched, { onConflict: 'osm_id', ignoreDuplicates: false })
+          if (upsertError) {
+            console.error('Venues upsert error:', upsertError)
+            overpassError = upsertError.message
+          }
         }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('Overpass fetch failed:', msg)
+        overpassError = msg
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error('Overpass fetch failed:', msg)
-      overpassError = msg
     }
   }
 
-  // Return all venues within the bounding box
-  const { data: venues, error: queryError } = await supabase
+  // Fetch venues from DB, then sort by distance and limit
+  const { data: allVenues, error: queryError } = await supabase
     .from('venues')
     .select('*')
     .gte('lat', south)
     .lte('lat', north)
     .gte('lng', west)
     .lte('lng', east)
-    .order('name')
 
   if (queryError) {
     console.error('Venues query error:', queryError)
     return NextResponse.json({ venues: [], _debug: { overpassError, queryError: queryError.message } })
   }
 
+  // Sort by distance from the request's centre point, return nearest MAX_RESULTS
+  const centerLat = (south + north) / 2
+  const centerLng = (west + east) / 2
+  const venues = (allVenues ?? [])
+    .sort(
+      (a, b) =>
+        haversineKm(centerLat, centerLng, a.lat, a.lng) -
+        haversineKm(centerLat, centerLng, b.lat, b.lng),
+    )
+    .slice(0, MAX_RESULTS)
+
   return NextResponse.json({
-    venues: venues ?? [],
-    _debug: { isStale, overpassCount, overpassError, bbox: { south, west, north, east } },
+    venues,
+    _debug: { catalogSufficient, existingCount, overpassCount, overpassError, bbox: { south, west, north, east } },
   })
 }

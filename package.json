@@ -8,11 +8,17 @@
     "build:web": "pnpm --filter web build",
     "build:backend": "pnpm --filter backend build",
     "lint": "pnpm --recursive lint",
-    "typecheck": "pnpm --recursive typecheck"
+    "typecheck": "pnpm --recursive typecheck",
+    "ingest:austin": "tsx scripts/ingest-venues-austin.ts",
+    "ingest:austin:dry": "tsx scripts/ingest-venues-austin.ts --dry-run",
+    "enrich:venues": "tsx scripts/enrich-venues.ts",
+    "enrich:venues:dry": "tsx scripts/enrich-venues.ts --dry-run"
   },
   "devDependencies": {
     "typescript": "^5.7.2",
     "prettier": "^3.4.2",
-    "@types/node": "^22.10.2"
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "@anthropic-ai/sdk": "^0.55.0"
   }
 }
