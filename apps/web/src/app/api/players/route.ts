@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('profiles')
       .select(
-        'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng',
+        'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for',
       )
       .is('deleted_at', null)
       .neq('full_name', '')
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('profiles')
     .select(
-      'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng',
+      'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for',
     )
     .is('deleted_at', null)
     .neq('full_name', '')

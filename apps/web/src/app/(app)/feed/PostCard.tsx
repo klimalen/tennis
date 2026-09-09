@@ -99,7 +99,7 @@ function timeAgo(dateStr: string): string {
 }
 
 const FORMAT_LABELS: Record<string, string> = {
-  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed doubles',
+  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Doubles',
 }
 
 const SKILL_LABELS: Record<number, string> = {

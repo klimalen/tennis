@@ -6,12 +6,11 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
-type Format = 'singles' | 'doubles' | 'mixed_doubles'
+type Format = 'singles' | 'doubles'
 
 const FORMAT_OPTIONS: { value: Format; label: string }[] = [
   { value: 'singles', label: 'Singles' },
   { value: 'doubles', label: 'Doubles' },
-  { value: 'mixed_doubles', label: 'Mixed' },
 ]
 
 const STATUS_LABELS: Record<string, string> = {

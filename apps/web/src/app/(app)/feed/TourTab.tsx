@@ -788,6 +788,26 @@ export function TourTab() {
 
   return (
     <div className="pb-8">
+      {/* TOURNAMENTS */}
+      {tournaments.length > 0 && (
+        <Section title="Active tournaments" badge={tournaments.length}>
+          {tournaments.map((t) => (
+            <TournamentRow
+              key={t.name}
+              t={t}
+              onSelect={(entry) => setSelectedDraw({
+                name: t.name,
+                tournamentKey: allFixtures.find(
+                  (m) => m.tournament_name.trim() === t.name && m.event_type_type === entry.eventTypeType
+                )?.tournament_key ?? 0,
+                eventTypeKey: entry.eventTypeKey,
+                eventTypeType: entry.eventTypeType,
+              })}
+            />
+          ))}
+        </Section>
+      )}
+
       {/* LIVE */}
       <Section title="Live now" badge={liveMatches.length}>
         {liveToShow.length === 0 ? (
@@ -847,26 +867,6 @@ export function TourTab() {
           </>
         )}
       </Section>
-
-      {/* TOURNAMENTS */}
-      {tournaments.length > 0 && (
-        <Section title="Active tournaments" badge={tournaments.length}>
-          {tournaments.map((t) => (
-            <TournamentRow
-              key={t.name}
-              t={t}
-              onSelect={(entry) => setSelectedDraw({
-                name: t.name,
-                tournamentKey: allFixtures.find(
-                  (m) => m.tournament_name.trim() === t.name && m.event_type_type === entry.eventTypeType
-                )?.tournament_key ?? 0,
-                eventTypeKey: entry.eventTypeKey,
-                eventTypeType: entry.eventTypeType,
-              })}
-            />
-          ))}
-        </Section>
-      )}
 
       {/* Player sheet */}
       {selectedPlayer && (

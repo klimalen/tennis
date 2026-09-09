@@ -25,7 +25,7 @@ async function ProfileContent() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio')
+    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, city_name')
     .eq('id', user.id)
     .single()
 
@@ -192,6 +192,12 @@ async function ProfileContent() {
             {username && (
               <p className="text-[11px] tracking-[0.15em] text-[rgba(26,26,26,0.4)] mt-1">@{username}</p>
             )}
+            {profile?.city_name && (
+              <p className="text-[11px] text-[rgba(26,26,26,0.4)] mt-0.5 flex items-center gap-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 13-8 13S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {profile.city_name}
+              </p>
+            )}
             {rating && (
               <div className="inline-flex items-center gap-1.5 mt-2">
                 <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
@@ -224,7 +230,7 @@ async function ProfileContent() {
           {upcomingGames && upcomingGames.length > 0 ? (
             <div className="pb-4">
               {upcomingGames.map((game) => {
-                const formatLabel = game.format === 'singles' ? 'Singles' : game.format === 'doubles' ? 'Doubles' : 'Mixed'
+                const formatLabel = game.format === 'singles' ? 'Singles' : 'Doubles'
                 return (
                   <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
                     <div className="flex-shrink-0 w-10 text-center">

@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
 import Image from 'next/image'
 
-type Format = 'singles' | 'doubles' | 'mixed_doubles'
+type Format = 'singles' | 'doubles'
 
 const FORMAT_OPTIONS: { value: Format; label: string }[] = [
   { value: 'singles', label: 'Singles' },
   { value: 'doubles', label: 'Doubles' },
-  { value: 'mixed_doubles', label: 'Mixed' },
 ]
 
 interface Connection {

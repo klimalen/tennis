@@ -26,7 +26,6 @@ const YEARS_OPTIONS = [
 const FORMAT_OPTIONS = [
   { value: 'singles', label: 'Singles' },
   { value: 'doubles', label: 'Doubles' },
-  { value: 'mixed_doubles', label: 'Mixed doubles' },
 ]
 
 const STYLE_OPTIONS = [

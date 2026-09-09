@@ -38,6 +38,8 @@ export interface Player {
   city_name: string | null
   city_lat: number | null
   city_lng: number | null
+  bio: string | null
+  looking_for: string | null
 }
 
 export interface Venue {
@@ -104,18 +106,15 @@ interface OpenGame {
 function skillLabel(level: number | null): string {
   if (level == null) return ''
   if (level < 2) return 'Beginner'
-  if (level < 3) return 'Casual'
-  if (level < 4) return 'Intermediate'
-  if (level < 5) return 'Club'
-  if (level < 6) return 'Advanced'
-  if (level < 7) return 'Competitive'
-  return 'Elite'
+  if (level < 3.5) return 'Intermediate'
+  if (level < 5) return 'Advanced'
+  return 'Competitive'
 }
 
 const FORMAT_LABELS: Record<string, string> = {
   singles: 'Singles',
   doubles: 'Doubles',
-  mixed_doubles: 'Mixed',
+  mixed_doubles: 'Doubles',
 }
 
 type RequestStatus = 'none' | 'pending' | 'accepted' | 'matched' | 'declined'
@@ -214,13 +213,24 @@ function PlayerCard({
                 {FORMAT_LABELS[f] ?? f}
               </span>
             ))}
+            {player.play_style === 'both' ? (
+              <>
+                <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">Recreational</span>
+                <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">Competitive</span>
+              </>
+            ) : player.play_style ? (
+              <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
+                {player.play_style === 'recreational' ? 'Recreational' : 'Competitive'}
+              </span>
+            ) : null}
           </div>
-          {(player.play_style || player.total_matches > 0) && (
-            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">
-              {player.play_style && <span className="capitalize">{player.play_style.replace('_', ' ')}</span>}
-              {player.play_style && player.total_matches > 0 && ' · '}
-              {player.total_matches > 0 && `${player.total_matches} matches`}
+          {(player.bio || player.looking_for) && (
+            <p className="text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed">
+              {player.bio || player.looking_for}
             </p>
+          )}
+          {player.total_matches > 0 && (
+            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">{player.total_matches} matches</p>
           )}
         </div>
       </div>
@@ -461,7 +471,7 @@ function ParticipantAvatars({ participants, max = 3 }: { participants: OpenGameP
   )
 }
 
-const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
+const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Doubles' }
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 

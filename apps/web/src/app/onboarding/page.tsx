@@ -227,9 +227,8 @@ const YEARS_OPTIONS = [
 ]
 
 const FORMAT_OPTIONS = [
-  { value: 'singles', label: 'Singles' },
-  { value: 'doubles', label: 'Doubles' },
-  { value: 'mixed_doubles', label: 'Mixed doubles' },
+  { value: 'singles', label: 'Singles', sublabel: null },
+  { value: 'doubles', label: 'Doubles', sublabel: '2v2, any gender' },
 ]
 
 const STYLE_OPTIONS = [
@@ -288,7 +287,10 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           <div className="flex flex-wrap gap-2">
             {FORMAT_OPTIONS.map((o) => (
               <Pill key={o.value} active={data.playFormats.includes(o.value)} onClick={() => toggleFormat(o.value)}>
-                {o.label}
+                <span className="flex flex-col items-start">
+                  <span>{o.label}</span>
+                  {o.sublabel && <span className="text-[8px] normal-case tracking-normal opacity-60 mt-0.5">{o.sublabel}</span>}
+                </span>
               </Pill>
             ))}
           </div>
