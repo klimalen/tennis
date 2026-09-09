@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { formatFollowers } from '@/lib/formatFollowers'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 
 function skillLabel(v: number | null): string | null {
@@ -41,11 +42,17 @@ async function ProfileContent() {
     .eq('id', user.id)
     .single()
 
-  const { count: wins } = await supabase
-    .from('match_results')
-    .select('*', { count: 'exact', head: true })
-    .eq('winner_id', user.id)
-    .eq('status', 'confirmed')
+  const [{ count: wins }, { count: followerCount }] = await Promise.all([
+    supabase
+      .from('match_results')
+      .select('*', { count: 'exact', head: true })
+      .eq('winner_id', user.id)
+      .eq('status', 'confirmed'),
+    supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', user.id),
+  ])
 
   // Games created by user
   const { data: createdGames } = await supabase
@@ -146,7 +153,6 @@ async function ProfileContent() {
   const avatarUrl = profile?.avatar_url || null
   const totalMatches = profile?.total_matches ?? 0
   const totalWins = wins ?? 0
-  const totalLosses = Math.max(0, totalMatches - totalWins)
   const rating = profile?.skill_level_computed ?? profile?.skill_level_self ?? null
   const surfaces: string[] = profile?.preferred_surfaces ?? []
   const time = timeLabel(profile?.preferred_time_start ?? null)
@@ -182,16 +188,18 @@ async function ProfileContent() {
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              {[
-                { value: String(totalMatches), label: 'Matches' },
-                { value: String(totalWins), label: 'Wins' },
-                { value: String(totalLosses), label: 'Losses' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-0.5">
-                  <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>
-                  <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">{stat.label}</span>
-                </div>
-              ))}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalMatches}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Matches</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalWins}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Wins</span>
+              </div>
+              <Link href="/me/followers" className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
+              </Link>
             </div>
           </div>
 

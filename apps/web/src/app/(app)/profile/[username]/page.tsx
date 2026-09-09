@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
 import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
+import { formatFollowers } from '@/lib/formatFollowers'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
@@ -159,7 +160,6 @@ export default async function PlayerProfilePage({
   const rating = profile.skill_level_computed ?? profile.skill_level_self
   const skill = skillLabel(rating)
   const totalWins = wins ?? 0
-  const totalLosses = Math.max(0, (profile.total_matches ?? 0) - totalWins)
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   // Fetch upcoming games for this profile user
@@ -270,7 +270,7 @@ export default async function PlayerProfilePage({
               {[
                 { value: String(profile.total_matches ?? 0), label: 'Matches' },
                 { value: String(totalWins), label: 'Wins' },
-                { value: String(totalLosses), label: 'Losses' },
+                { value: formatFollowers(followerCount ?? 0), label: 'Followers' },
               ].map((stat) => (
                 <div key={stat.label} className="flex flex-col items-center gap-0.5">
                   <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>
