@@ -7,14 +7,21 @@ interface NominatimPlace {
   place_id: number
   name: string
   display_name: string
+  lat?: string
+  lon?: string
   address?: { country?: string; state?: string }
   class?: string
   type?: string
 }
 
+export interface CityCoords {
+  lat: number
+  lng: number
+}
+
 interface Props {
   value: string
-  onChange: (city: string) => void
+  onChange: (city: string, coords?: CityCoords) => void
   placeholder?: string
   className?: string
 }
@@ -80,7 +87,11 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
     lastConfirmedRef.current = city
     skipFetchRef.current = true
     setInput(city)
-    onChange(city)
+    const coords: CityCoords | undefined =
+      place.lat && place.lon
+        ? { lat: parseFloat(place.lat), lng: parseFloat(place.lon) }
+        : undefined
+    onChange(city, coords)
     setSuggestions([])
     setShowSuggestions(false)
   }

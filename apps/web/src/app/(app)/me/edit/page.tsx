@@ -125,6 +125,8 @@ interface ProfileData {
   maxTravelKm: number | null
   lookingFor: string
   city: string
+  cityLat: number | null
+  cityLng: number | null
   neighborhood: string
 }
 
@@ -144,7 +146,7 @@ export default function EditProfilePage() {
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null, avatarPreview: null,
     skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], preferredDays: [], preferredTimeStart: null, preferredTimeEnd: null,
-    maxTravelKm: null, lookingFor: '', city: '', neighborhood: '',
+    maxTravelKm: null, lookingFor: '', city: '', cityLat: null, cityLng: null, neighborhood: '',
   })
 
   function update(partial: Partial<ProfileData>) {
@@ -259,6 +261,8 @@ export default function EditProfilePage() {
         looking_for: d.lookingFor.trim() || null,
         neighborhood: d.neighborhood.trim() || null,
         city_name: d.city.trim() || null,
+        city_lat: d.cityLat,
+        city_lng: d.cityLng,
       }).eq('id', userId)
 
       if (updateErr) throw updateErr
@@ -552,7 +556,7 @@ export default function EditProfilePage() {
           <FieldLabel optional>City</FieldLabel>
           <CityInput
             value={d.city}
-            onChange={(city) => update({ city })}
+            onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
             placeholder="Search your city..."
           />
         </div>

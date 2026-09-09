@@ -10,6 +10,8 @@ import { CityInput } from '@/components/ui/CityInput'
 
 interface OnboardingData {
   city: string
+  cityLat: number | null
+  cityLng: number | null
   neighborhood: string
   yearsPlaying: number | null
   skillLevel: number | null
@@ -35,7 +37,7 @@ const PRESET_AVATARS = [
 ]
 
 const INITIAL_DATA: OnboardingData = {
-  city: '', neighborhood: '', yearsPlaying: null, skillLevel: null,
+  city: '', cityLat: null, cityLng: null, neighborhood: '', yearsPlaying: null, skillLevel: null,
   playFormats: [], playStyle: null, preferredSurfaces: [], preferredDays: [],
   preferredTimeStart: null, preferredTimeEnd: null, maxTravelKm: 10,
   bio: '', lookingFor: '', username: '', avatarFile: null,
@@ -161,7 +163,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 
           <CityInput
             value={data.city}
-            onChange={(city) => onChange({ city })}
+            onChange={(city, coords) => onChange({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
             placeholder="Search your city..."
           />
 
@@ -665,6 +667,8 @@ export default function OnboardingPage() {
 
       await supabase.from('profiles').update({
         city_name: data.city || null,
+        city_lat: data.cityLat,
+        city_lng: data.cityLng,
         neighborhood: data.neighborhood || null,
         skill_level_self: data.skillLevel,
         years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,

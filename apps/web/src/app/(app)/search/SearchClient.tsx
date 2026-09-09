@@ -36,6 +36,8 @@ export interface Player {
   total_matches: number
   last_active_at: string | null
   city_name: string | null
+  city_lat: number | null
+  city_lng: number | null
 }
 
 export interface Venue {
@@ -781,29 +783,85 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Full players view ───────────────────────────────────────────────────────
   const [players, setPlayers] = useState<Player[]>([])
   const [loadingPlayers, setLoadingPlayers] = useState(false)
+  const [loadingMorePlayers, setLoadingMorePlayers] = useState(false)
+  const [playersOffset, setPlayersOffset] = useState(0)
+  const [hasMorePlayers, setHasMorePlayers] = useState(false)
+  const [userGeoCoords, setUserGeoCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // Geocode user city once to get coords for distance sorting
+  useEffect(() => {
+    if (!userCityName || userGeoCoords) return
+    fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'en' } },
+    )
+      .then((r) => r.json())
+      .then((results: Array<{ lat: string; lon: string }>) => {
+        const p = results[0]
+        if (p) setUserGeoCoords({ lat: parseFloat(p.lat), lng: parseFloat(p.lon) })
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userCityName])
+
+  async function fetchPlayers(offset: number, append: boolean) {
+    if (!userCityName) return
+    append ? setLoadingMorePlayers(true) : setLoadingPlayers(true)
+
+    const params = new URLSearchParams({ offset: String(offset) })
+    if (user) params.set('exclude', user.id)
+    if (userGeoCoords) {
+      params.set('lat', String(userGeoCoords.lat))
+      params.set('lng', String(userGeoCoords.lng))
+    } else {
+      params.set('city', userCityName)
+    }
+
+    try {
+      const res = await fetch(`/api/players?${params}`)
+      const json = await res.json() as { players: Player[]; hasMore: boolean }
+      const loaded = json.players ?? []
+
+      setPlayers((prev) => append ? [...prev, ...loaded] : loaded)
+      setHasMorePlayers(json.hasMore ?? false)
+      setPlayersOffset(offset + loaded.length)
+
+      // Fetch request statuses for newly loaded players
+      if (user && loaded.length > 0) {
+        const ids = loaded.map((p) => p.id).join(',')
+        const statusRes = await fetch(`/api/game-requests?receiver_ids=${ids}`)
+        if (statusRes.ok) {
+          const data = await statusRes.json() as { statuses: Record<string, string> }
+          setRequestStatuses((prev) => ({ ...prev, ...(data.statuses as Record<string, RequestStatus>) }))
+        }
+      }
+    } catch {
+      if (!append) setPlayers([])
+    } finally {
+      append ? setLoadingMorePlayers(false) : setLoadingPlayers(false)
+    }
+  }
 
   function loadPlayers() {
-    if (!userCityName) return
-    setLoadingPlayers(true)
-    const params = new URLSearchParams({ city: userCityName })
-    if (user) params.set('exclude', user.id)
-    fetch(`/api/players?${params}`)
-      .then((r) => r.json())
-      .then(async (json: { players: Player[] }) => {
-        const loaded = json.players ?? []
-        setPlayers(loaded)
-        if (user && loaded.length > 0) {
-          const ids = loaded.map((p) => p.id).join(',')
-          const res = await fetch(`/api/game-requests?receiver_ids=${ids}`)
-          if (res.ok) {
-            const data = await res.json() as { statuses: Record<string, string> }
-            setRequestStatuses(data.statuses as Record<string, RequestStatus>)
-          }
-        }
-      })
-      .catch(() => setPlayers([]))
-      .finally(() => setLoadingPlayers(false))
+    setPlayersOffset(0)
+    setHasMorePlayers(false)
+    void fetchPlayers(0, false)
   }
+
+  // IntersectionObserver — load next page when sentinel is visible
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMorePlayers || loadingMorePlayers) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void fetchPlayers(playersOffset, true)
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMorePlayers, loadingMorePlayers, playersOffset])
 
   // ── Full games view ─────────────────────────────────────────────────────────
   const [openGames, setOpenGames] = useState<OpenGame[]>([])
@@ -1159,7 +1217,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           ) : (
             <>
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                {players.length} player{players.length !== 1 ? 's' : ''} in {userCityName}
+                Players near {userCityName}
               </p>
               {players.map((player) => (
                 <PlayerCard
@@ -1169,6 +1227,21 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                   onRequest={handlePlayerRequest}
                 />
               ))}
+
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} />
+
+              {loadingMorePlayers && (
+                <div className="flex justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
+                </div>
+              )}
+
+              {!hasMorePlayers && players.length > 0 && (
+                <p className="text-center text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.25)] py-4">
+                  All players shown
+                </p>
+              )}
             </>
           )}
         </div>
