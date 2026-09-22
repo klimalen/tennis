@@ -18,6 +18,8 @@ const config: Config = {
           navy:           '#1E3A6E',
           fern:           '#497250',
           conifer:        '#BCD85E',
+          divider:        '#C4B8AE',
+          field:          '#D9CFC3',
         },
       },
       fontFamily: {

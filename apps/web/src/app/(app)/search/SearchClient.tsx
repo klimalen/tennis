@@ -448,13 +448,13 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
             </a>
             {venue.website && (
               <a href={venue.website.startsWith('http') ? venue.website : `https://${venue.website}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-4 py-3 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.7)] hover:bg-brand-surface transition-colors">
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors">
                 <Globe size={13} /> Website
               </a>
             )}
             {venue.phone && (
               <a href={`tel:${venue.phone}`}
-                className="flex items-center justify-center gap-2 px-4 py-3 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.7)] hover:bg-brand-surface transition-colors">
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors">
                 <Phone size={13} /> {venue.phone}
               </a>
             )}
@@ -677,7 +677,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={game.creator.avatar_url} alt={game.creator.full_name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{game.creator.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}</span>
+                  <span className="font-display text-sm text-[#1a1a1a]">{game.creator.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}</span>
                 )}
               </div>
               <div>
@@ -704,7 +704,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{pInitials}</span>
+                          <span className="font-display text-sm text-[#1a1a1a]">{pInitials}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -723,7 +723,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
             </div>
           )}
           <button onClick={() => { if (!alreadyIn && !isFull) onJoin(game.id) }} disabled={alreadyIn || isFull}
-            className={`w-full py-4 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${alreadyIn ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.3)] cursor-default' : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
+            className={`w-full py-4 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${alreadyIn || isFull ? 'bg-brand-field text-[rgba(26,26,26,0.55)] cursor-default' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
             {alreadyIn ? "You're in" : isFull ? 'Game is full' : 'Join game'}
           </button>
         </div>
@@ -825,7 +825,7 @@ function NoCityState({ guest, onBrowseCourts, vivid = true }: { guest?: boolean;
     )
   }
   return (
-    <div className="border border-brand-divider bg-brand-surface px-4 py-10 text-center space-y-3">
+    <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-10 text-center space-y-3">
       <MapPin size={24} className="mx-auto text-[rgba(26,26,26,0.2)]" />
       <div>
         <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium mb-1">No city set</p>
@@ -1305,7 +1305,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const pageHeader = (title: string, onBack: () => void) => (
     <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
       <div className="max-w-2xl mx-auto flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+        <button onClick={onBack} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
           <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
         </button>
         <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">{title}</span>
@@ -1459,7 +1459,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           ) : loadingPlayers || !geocodeDone ? (
             [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)
           ) : players.length === 0 ? (
-            <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center">
+            <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No players found</p>
               <p className="text-sm text-[rgba(26,26,26,0.5)]">No players in {userCityName} yet</p>
             </div>
@@ -1513,7 +1513,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           ) : loadingOpenGames ? (
             [...Array(3)].map((_, i) => <GameCardSkeleton key={i} />)
           ) : openGames.length === 0 ? (
-            <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center space-y-3">
+            <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center space-y-3">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No open games in {userCityName}</p>
               {user && (
                 <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
@@ -1560,7 +1560,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder="Search city or area..."
-              className="flex-1 bg-white border border-brand-divider px-4 py-2.5 text-sm outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.35)]"
+              className="flex-1 bg-brand-field border border-[#1a1a1a]/40 rounded-lg px-4 py-2.5 text-sm text-[#1a1a1a] outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.4)]"
             />
             {loadingSuggestions && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -1569,7 +1569,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             )}
           </div>
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-20 bg-white border border-brand-divider shadow-sm mt-0.5">
+            <div className="absolute top-full left-0 right-0 z-20 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
               {suggestions.map((place) => {
                 const country = place.address?.country
                 const subtitle = [place.address?.city ?? place.address?.town, country].filter(Boolean).join(', ')
@@ -1602,7 +1602,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         )}
 
         {!loadingVenues && userCoords && venues.length === 0 && !courtsError && (
-          <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
+          <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-6 text-center">
             <p className="text-sm text-[rgba(26,26,26,0.6)]">No courts found in this area</p>
           </div>
         )}
@@ -1631,7 +1631,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
               <button
                 onClick={() => void loadMoreVenues()}
                 disabled={loadingMoreVenues}
-                className="w-full py-3 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-40"
+                className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors disabled:opacity-40"
               >
                 {loadingMoreVenues ? 'Loading...' : 'Load more'}
               </button>
@@ -1640,7 +1640,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         )}
 
         {!loadingVenues && !userCoords && (
-          <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center">
+          <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">Enter a city to find courts</p>
             <p className="text-sm text-[rgba(26,26,26,0.5)]">Or use your location for the nearest courts</p>
           </div>

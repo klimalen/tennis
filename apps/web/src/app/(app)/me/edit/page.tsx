@@ -95,8 +95,8 @@ function Pill({
       onClick={onClick}
       className={`px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
         active
-          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
-          : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary hover:text-brand-primary'
+          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
+          : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
       }`}
     >
       {children}
@@ -289,7 +289,7 @@ export default function EditProfilePage() {
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
           </button>
           <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
@@ -316,7 +316,7 @@ export default function EditProfilePage() {
         {/* Avatar */}
         <div className="flex items-center gap-5 mb-5">
           <div
-            className="relative w-20 h-20 bg-brand-surface border border-brand-divider overflow-hidden cursor-pointer flex-shrink-0"
+            className="relative w-20 h-20 rounded-full bg-brand-field border border-[#1a1a1a]/40 overflow-hidden cursor-pointer flex-shrink-0"
             onClick={() => fileInputRef.current?.click()}
           >
             {displayAvatar ? (
@@ -345,7 +345,7 @@ export default function EditProfilePage() {
             type="text"
             value={d.fullName}
             onChange={(e) => update({ fullName: e.target.value })}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white rounded-2xl"
+            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
             placeholder="Your name"
           />
         </div>
@@ -354,12 +354,12 @@ export default function EditProfilePage() {
         <div className="mb-4">
           <FieldLabel>Username</FieldLabel>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.3)] text-sm">@</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
             <input
               type="text"
               value={d.username}
               onChange={(e) => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-              className="w-full pl-7 pr-8 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white rounded-2xl"
+              className="w-full pl-7 pr-8 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
               placeholder="username"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -379,7 +379,7 @@ export default function EditProfilePage() {
             onChange={(e) => update({ bio: e.target.value })}
             rows={3}
             maxLength={300}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-white rounded-2xl"
+            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="A few words about yourself..."
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right">{d.bio.length}/300</p>
@@ -399,12 +399,12 @@ export default function EditProfilePage() {
                 onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
                 className={`flex flex-col p-3 border text-left transition-colors ${
                   d.skillLevel === s.value
-                    ? 'border-brand-primary bg-brand-primary-muted'
-                    : 'border-brand-divider bg-brand-bg hover:border-brand-primary'
+                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
-                <span className={`text-[10px] tracking-[0.12em] uppercase font-semibold ${d.skillLevel === s.value ? 'text-brand-primary' : 'text-[#1a1a1a]'}`}>{s.label}</span>
-                <span className="text-[9px] text-[rgba(26,26,26,0.4)] mt-0.5">{s.sub}</span>
+                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
+                <span className={`text-[9px] mt-0.5 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
               </button>
             ))}
           </div>
@@ -457,12 +457,12 @@ export default function EditProfilePage() {
                 onClick={() => update({ playStyle: d.playStyle === o.value ? null : o.value })}
                 className={`flex flex-col p-3 border text-left transition-colors ${
                   d.playStyle === o.value
-                    ? 'border-brand-primary bg-brand-primary-muted'
-                    : 'border-brand-divider bg-brand-bg hover:border-brand-primary'
+                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
-                <span className={`text-[10px] tracking-[0.1em] uppercase font-semibold ${d.playStyle === o.value ? 'text-brand-primary' : 'text-[#1a1a1a]'}`}>{o.label}</span>
-                <span className="text-[9px] text-[rgba(26,26,26,0.4)] mt-0.5">{o.sub}</span>
+                <span className="text-[10px] tracking-[0.1em] uppercase font-semibold text-[#1a1a1a]">{o.label}</span>
+                <span className={`text-[9px] mt-0.5 ${d.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sub}</span>
               </button>
             ))}
           </div>
@@ -482,8 +482,8 @@ export default function EditProfilePage() {
                 onClick={() => update({ preferredDays: toggleArr(d.preferredDays, day.value) })}
                 className={`w-10 h-10 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
                   d.preferredDays.includes(day.value)
-                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
-                    : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary'
+                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
+                    : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
                 {day.label}
@@ -509,12 +509,12 @@ export default function EditProfilePage() {
                 }}
                 className={`flex flex-col p-3 border text-left transition-colors ${
                   activeTime?.start === t.start
-                    ? 'border-brand-primary bg-brand-primary-muted'
-                    : 'border-brand-divider bg-brand-bg hover:border-brand-primary'
+                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
-                <span className={`text-[10px] tracking-[0.12em] uppercase font-semibold ${activeTime?.start === t.start ? 'text-brand-primary' : 'text-[#1a1a1a]'}`}>{t.label}</span>
-                <span className="text-[9px] text-[rgba(26,26,26,0.4)] mt-0.5">{t.sub}</span>
+                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{t.label}</span>
+                <span className={`text-[9px] mt-0.5 ${activeTime?.start === t.start ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{t.sub}</span>
               </button>
             ))}
           </div>
@@ -542,7 +542,7 @@ export default function EditProfilePage() {
             onChange={(e) => update({ lookingFor: e.target.value })}
             rows={3}
             maxLength={300}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-white rounded-2xl"
+            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right">{d.lookingFor.length}/300</p>
@@ -570,7 +570,7 @@ export default function EditProfilePage() {
             type="text"
             value={d.neighborhood}
             onChange={(e) => update({ neighborhood: e.target.value })}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white rounded-2xl"
+            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
             placeholder="e.g. Vračar, Chelsea, Brooklyn..."
           />
         </div>

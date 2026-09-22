@@ -113,18 +113,18 @@ function ParticipantAvatars({ participants, max = 4 }: { participants: GameParti
       {shown.map((p) => {
         const initials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
         return (
-          <div key={p.player_id} className="w-6 h-6 border-2 border-white bg-brand-surface overflow-hidden flex items-center justify-center">
+          <div key={p.player_id} className="w-6 h-6 rounded-full border-2 border-white bg-[#E8748A] overflow-hidden flex items-center justify-center">
             {p.profile.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-[7px] font-medium text-[rgba(26,26,26,0.5)]">{initials}</span>
+              <span className="text-[7px] font-medium text-[#1a1a1a]">{initials}</span>
             )}
           </div>
         )
       })}
       {extra > 0 && (
-        <div className="w-6 h-6 border-2 border-white bg-brand-surface flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-white bg-[#E8748A] flex items-center justify-center">
           <span className="text-[7px] font-medium text-[rgba(26,26,26,0.5)]">+{extra}</span>
         </div>
       )}
@@ -176,7 +176,7 @@ function OpenGameSheet({
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-brand-bg max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">Open Game</span>
@@ -235,7 +235,7 @@ function OpenGameSheet({
                 {game.creator.avatar_url ? (
                   <Image src={game.creator.avatar_url} alt={game.creator.full_name} width={40} height={40} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">
+                  <span className="font-display text-sm text-[#1a1a1a]">
                     {game.creator.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}
                   </span>
                 )}
@@ -268,7 +268,7 @@ function OpenGameSheet({
                         {p.profile.avatar_url ? (
                           <Image src={p.profile.avatar_url} alt={p.profile.full_name} width={36} height={36} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{pInitials}</span>
+                          <span className="font-display text-sm text-[#1a1a1a]">{pInitials}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -358,7 +358,7 @@ function OpenGameCard({
     <>
       <button
         onClick={() => setShowSheet(true)}
-        className="w-full text-left border border-brand-divider bg-brand-surface mb-3 hover:border-brand-primary/40 transition-colors"
+        className="w-full text-left rounded-[20px] border border-[#1a1a1a]/10 bg-brand-field mb-3 overflow-hidden hover:border-[#1a1a1a]/25 transition-colors"
       >
         <div className="px-4 py-3">
           {/* Header badge */}
@@ -419,7 +419,7 @@ function OpenGameCard({
                 ? 'text-[rgba(26,26,26,0.35)] bg-brand-surface cursor-default'
                 : isFull
                   ? 'text-[rgba(26,26,26,0.3)] bg-brand-surface cursor-default'
-                  : 'text-brand-primary hover:bg-brand-primary hover:text-white'
+                  : 'text-[#1a1a1a] bg-[#E8748A] hover:bg-[#E8406A]'
             }`}
           >
             {!gameDetail ? <Loader2 size={12} className="animate-spin inline" /> : buttonLabel}
@@ -456,7 +456,7 @@ function MatchResultCard({ matchResult }: { matchResult: NonNullable<PostItem['m
   const winner = matchResult.winner
 
   return (
-    <div className="border border-brand-divider bg-brand-surface px-4 py-3 mb-3">
+    <div className="rounded-[20px] bg-brand-field px-4 py-3 mb-3">
       <div className="flex items-center gap-2 mb-2">
         <Trophy size={13} className="text-brand-primary flex-shrink-0" />
         <span className="text-[9px] tracking-[0.2em] uppercase text-brand-primary font-medium">Match result</span>
@@ -514,7 +514,7 @@ function PostMenu({ postId, onDeleted }: { postId: string; onDeleted: () => void
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1 bg-brand-bg border border-brand-divider shadow-lg z-30 min-w-[140px]">
+        <div className="absolute top-full right-0 mt-1 bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 min-w-[140px] overflow-hidden">
           <button
             onClick={() => { setOpen(false); router.push(`/feed/${postId}/edit`) }}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] text-[rgba(26,26,26,0.7)] hover:bg-brand-surface transition-colors"
@@ -571,7 +571,7 @@ export function PostCard({
             {post.author.avatar_url ? (
               <Image src={post.author.avatar_url} alt={post.author.full_name} width={40} height={40} className="w-full h-full object-cover" />
             ) : (
-              <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{initials}</span>
+              <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
             )}
           </div>
         </Link>
@@ -603,7 +603,7 @@ export function PostCard({
 
       {/* Image */}
       {post.image_url && (
-        <div className="relative w-full aspect-video bg-brand-surface overflow-hidden mb-3">
+        <div className="relative w-full aspect-video rounded-[20px] bg-brand-field overflow-hidden mb-3">
           <Image src={post.image_url} alt="Post image" fill className="object-cover" />
         </div>
       )}

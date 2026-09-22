@@ -234,7 +234,7 @@ export default async function PlayerProfilePage({
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/search" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <Link href="/search" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">
@@ -293,12 +293,12 @@ export default async function PlayerProfilePage({
                   </span>
                 )}
                 {surfaces.map((s) => (
-                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
+                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
                     {SURFACE_LABELS[s] ?? s}
                   </span>
                 ))}
                 {time && (
-                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
+                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
                     {time}
                   </span>
                 )}
@@ -317,7 +317,7 @@ export default async function PlayerProfilePage({
                 <Link href="/sign-up" className="flex-1 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium text-center hover:bg-[#E8406A] transition-colors">
                   Create free account
                 </Link>
-                <Link href={`/sign-in?next=/profile/${profile.username}`} className="flex-1 py-2.5 rounded-full border border-[#1a1a1a]/15 text-[10px] tracking-[0.15em] uppercase font-medium text-center text-[#1a1a1a] hover:bg-white transition-colors">
+                <Link href={`/sign-in?next=/profile/${profile.username}`} className="flex-1 py-2.5 rounded-full bg-white border border-[#1a1a1a]/15 text-[10px] tracking-[0.15em] uppercase font-medium text-center text-[#1a1a1a] hover:bg-brand-field transition-colors">
                   Sign in
                 </Link>
               </div>
@@ -356,7 +356,7 @@ export default async function PlayerProfilePage({
               {upcomingGames.map((game) => {
                 const formatLabel = game.format === 'singles' ? 'Singles' : game.format === 'doubles' ? 'Doubles' : 'Mixed'
                 return (
-                  <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
+                  <div key={game.id} className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
                     <div className="flex-shrink-0 w-10 text-center">
                       <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
                       <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]"><LocalGameMonth iso={game.scheduled_at} /></p>

@@ -38,7 +38,7 @@ export function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${
                 isActive
                   ? 'bg-[#FAF7F2] text-brand-primary rounded-full'
-                  : 'text-[rgba(26,26,26,0.5)] hover:bg-brand-surface hover:text-[#1a1a1a]'
+                  : 'text-[rgba(26,26,26,0.62)] hover:bg-[#FAF7F2] hover:text-[#1a1a1a] rounded-full'
               }`}
             >
               <div className="relative">

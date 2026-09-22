@@ -57,7 +57,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
       <button
         onClick={handleFollow}
         disabled={loading}
-        className="flex items-center gap-1.5 px-4 py-3 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase font-medium text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50"
       >
         <UserPlus size={13} />
         Follow
@@ -70,7 +70,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
       <button
         onClick={() => setShowMenu((v) => !v)}
         disabled={loading}
-        className="flex items-center gap-1.5 px-4 py-3 border border-brand-primary text-brand-primary text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary/5 transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50"
       >
         <Check size={13} />
         Following
@@ -78,7 +78,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
       </button>
 
       {showMenu && (
-        <div className="absolute top-full mt-1 right-0 bg-brand-bg border border-brand-divider shadow-lg z-30 min-w-full">
+        <div className="absolute top-full mt-1 right-0 bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 min-w-full overflow-hidden">
           <button
             onClick={handleUnfollow}
             className="w-full px-4 py-2.5 text-left text-[10px] tracking-[0.15em] uppercase font-medium text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"

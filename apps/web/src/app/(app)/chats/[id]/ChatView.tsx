@@ -130,7 +130,7 @@ function GameInviteCard({
   // Game was deleted (ON DELETE SET NULL)
   if (!msg.game_id) {
     return (
-      <div className="max-w-[80%] border border-[#1a1a1a]/10 bg-white rounded-2xl overflow-hidden opacity-50">
+      <div className="max-w-[80%] border border-[#1a1a1a]/40 bg-brand-field rounded-lg overflow-hidden opacity-50">
         <div className="px-3 py-2 flex items-center gap-2 bg-brand-surface">
           <Calendar size={12} className="text-[rgba(26,26,26,0.3)] flex-shrink-0" />
           <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.4)]">Game proposal</span>
@@ -143,7 +143,7 @@ function GameInviteCard({
   }
 
   return (
-    <div className={`max-w-[80%] border bg-brand-bg overflow-hidden ${isMe ? 'border-brand-primary/30' : 'border-brand-divider'}`}>
+    <div className={`max-w-[80%] rounded-[20px] border bg-white overflow-hidden ${isMe ? 'border-[#E8748A]/50' : 'border-[#1a1a1a]/10'}`}>
       {/* Header */}
       <div className={`px-3 py-2 flex items-center gap-2 ${isMe ? 'bg-brand-primary/5' : 'bg-brand-surface'}`}>
         <Calendar size={12} className="text-brand-primary flex-shrink-0" />
@@ -175,7 +175,7 @@ function GameInviteCard({
               Accept
             </button>
             <button onClick={() => respond('declined')} disabled={responding}
-              className="flex-1 py-2 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)] transition-colors disabled:opacity-50">
+              className="flex-1 py-2 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase font-medium text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50">
               Decline
             </button>
           </div>
@@ -407,7 +407,7 @@ export function ChatView({
     <>
       {messages.length === 0 && otherName && (
         <div className="max-w-2xl w-full mx-auto px-4 pt-6">
-          <div className="border border-brand-divider bg-brand-surface px-4 py-4 text-center">
+          <div className="rounded-[20px] bg-white px-4 py-4 text-center">
             <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
               You matched with {otherName}
@@ -454,7 +454,7 @@ export function ChatView({
                   ) : (
                     <div className={`max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
                       isMe
-                        ? isError ? 'bg-red-50 text-red-700 border border-red-200' : 'rounded-[22px] bg-[#E8748A] text-[#1a1a1a]'
+                        ? isError ? 'rounded-[22px] bg-red-50 text-red-700 border border-red-200' : 'rounded-[22px] bg-[#E8748A] text-[#1a1a1a]'
                         : 'rounded-[22px] bg-white text-[#1a1a1a]'
                     } ${isSending ? 'opacity-60' : ''}`}>
                       {msg.body}
@@ -476,7 +476,7 @@ export function ChatView({
                           )}
                         </span>
                       )}
-                      <span className="text-[10px] text-[rgba(26,26,26,0.3)]">{formatTime(msg.created_at)}</span>
+                      <span className="text-[10px] text-[rgba(26,26,26,0.5)]">{formatTime(msg.created_at)}</span>
                     </div>
                   )}
                 </div>
@@ -505,7 +505,7 @@ export function ChatView({
               <div className="flex mb-2">
                 <button
                   onClick={() => router.push(`/games/new?invite=${otherUserId}&name=${encodeURIComponent(otherName)}`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors"
                 >
                   <Calendar size={12} />
                   Propose game
@@ -519,17 +519,17 @@ export function ChatView({
                   onKeyDown={onKeyDown}
                   placeholder="Write a message…"
                   rows={1}
-                  className="flex-1 resize-none bg-brand-surface border border-brand-divider px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
+                  className="flex-1 resize-none bg-brand-field border border-[#1a1a1a]/40 rounded-lg px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
                   style={{ maxHeight: '120px' }}
                 />
                 <button onClick={send} disabled={!text.trim() || sending}
                   className="w-10 h-10 rounded-full bg-[#E8748A] text-[#1a1a1a] flex items-center justify-center hover:bg-[#E8406A] transition-colors disabled:opacity-40 flex-shrink-0">
-                  <Send size={16} className="text-white" />
+                  <Send size={16} className="text-[#1a1a1a]" />
                 </button>
               </div>
             </>
           ) : (
-            <div className="border border-brand-divider bg-brand-surface px-4 py-3 text-center">
+            <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-3 text-center">
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
                 Messaging requires a mutual follow
               </p>

@@ -44,7 +44,7 @@ export function ChatInput({ conversationId }: { conversationId: string }) {
           onKeyDown={onKeyDown}
           placeholder="Write a message…"
           rows={1}
-          className="flex-1 resize-none bg-brand-surface border border-brand-divider px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
+          className="flex-1 resize-none bg-brand-field border border-[#1a1a1a]/40 rounded-lg px-3 py-2 text-sm text-[rgba(26,26,26,0.8)] placeholder:text-[rgba(26,26,26,0.3)] outline-none focus:border-brand-primary transition-colors"
           style={{ maxHeight: '120px' }}
         />
         <button
@@ -52,7 +52,7 @@ export function ChatInput({ conversationId }: { conversationId: string }) {
           disabled={!text.trim() || sending}
           className="w-10 h-10 rounded-full bg-[#E8748A] text-[#1a1a1a] flex items-center justify-center hover:bg-[#E8406A] transition-colors disabled:opacity-40 flex-shrink-0"
         >
-          <Send size={16} className="text-white" />
+          <Send size={16} className="text-[#1a1a1a]" />
         </button>
       </div>
     </div>

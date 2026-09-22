@@ -52,8 +52,8 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
             onClick={() => handleTabClick(tab.id)}
             className={`flex-1 py-2.5 rounded-full flex items-center justify-center gap-2 text-[10px] tracking-[0.16em] uppercase font-medium transition-colors ${
               activeTab === tab.id
-                ? 'bg-[#1a1a1a] text-[#FAF7F2]'
-                : 'bg-white text-[rgba(26,26,26,0.45)] hover:text-[#1a1a1a]'
+                ? 'bg-[#1a1a1a] text-[#FAF7F2] border border-[#1a1a1a]'
+                : 'bg-brand-field text-[#1a1a1a] border border-[#1a1a1a]/15 hover:border-[#1a1a1a]/35'
             }`}
           >
             {tab.label}

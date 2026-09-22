@@ -70,8 +70,8 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       className={`px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
         active
-          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
-          : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary hover:text-brand-primary'
+          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
+          : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
       }`}
     >
       {children}
@@ -138,7 +138,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 
           {/* Detected city confirmation */}
           {geoState === 'detected' && detectedCity && (
-            <div className="border border-brand-primary/30 bg-brand-primary/5 px-4 py-3 mb-3">
+            <div className="rounded-[20px] border border-[#3A8A7A]/30 bg-white px-4 py-3 mb-3">
               <p className="text-sm text-[#1a1a1a]">
                 We detected your city as <span className="font-medium">{detectedCity}</span>. Is this correct?
               </p>
@@ -153,7 +153,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 <button
                   type="button"
                   onClick={rejectDetected}
-                  className="flex-1 py-2 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.6)] hover:border-[rgba(26,26,26,0.4)] transition-colors"
+                  className="flex-1 py-2 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase font-medium text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors"
                 >
                   Enter manually
                 </button>
@@ -201,7 +201,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             value={data.neighborhood}
             onChange={(e) => onChange({ neighborhood: e.target.value })}
             placeholder="Vračar, Chelsea, Brooklyn..."
-            className="w-full px-4 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
+            className="w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
           />
         </div>
       </div>
@@ -269,14 +269,14 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 onClick={() => onChange({ skillLevel: s.value })}
                 className={`flex flex-col p-3 border text-left transition-colors ${
                   data.skillLevel === s.value
-                    ? 'border-brand-primary bg-brand-primary-muted'
-                    : 'border-brand-divider bg-brand-bg hover:border-brand-primary'
+                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
-                <span className={`text-[10px] tracking-[0.12em] uppercase font-semibold ${data.skillLevel === s.value ? 'text-brand-primary' : 'text-[#1a1a1a]'}`}>
+                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">
                   {s.label}
                 </span>
-                <span className="text-[9px] text-[rgba(26,26,26,0.4)] mt-0.5">{s.sublabel}</span>
+                <span className={`text-[9px] mt-0.5 ${data.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sublabel}</span>
               </button>
             ))}
           </div>
@@ -306,14 +306,14 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 onClick={() => onChange({ playStyle: o.value })}
                 className={`flex flex-col p-3 border text-left transition-colors ${
                   data.playStyle === o.value
-                    ? 'border-brand-primary bg-brand-primary-muted'
-                    : 'border-brand-divider bg-brand-bg hover:border-brand-primary'
+                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
-                <span className={`text-[10px] tracking-[0.1em] uppercase font-semibold ${data.playStyle === o.value ? 'text-brand-primary' : 'text-[#1a1a1a]'}`}>
+                <span className="text-[10px] tracking-[0.1em] uppercase font-semibold text-[#1a1a1a]">
                   {o.label}
                 </span>
-                <span className="text-[9px] text-[rgba(26,26,26,0.4)] mt-0.5">{o.sublabel}</span>
+                <span className={`text-[9px] mt-0.5 ${data.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sublabel}</span>
               </button>
             ))}
           </div>
@@ -368,8 +368,8 @@ function Step3({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 onClick={() => toggleDay(d.value)}
                 className={`w-11 h-11 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
                   data.preferredDays.includes(d.value)
-                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
-                    : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary'
+                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
+                    : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
                 {d.label}
@@ -388,14 +388,14 @@ function Step3({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 onClick={() => onChange({ preferredTimeStart: t.start, preferredTimeEnd: t.end })}
                 className={`flex flex-col items-start px-4 py-3 border text-left transition-colors ${
                   activeTimeSlot?.start === t.start
-                    ? 'border-brand-primary bg-brand-primary-muted'
-                    : 'border-brand-divider bg-brand-bg hover:border-brand-primary'
+                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
-                <span className={`text-[10px] tracking-[0.12em] uppercase font-semibold ${activeTimeSlot?.start === t.start ? 'text-brand-primary' : 'text-[#1a1a1a]'}`}>
+                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">
                   {t.label}
                 </span>
-                <span className="text-[9px] text-[rgba(26,26,26,0.4)] mt-0.5">{t.sublabel}</span>
+                <span className={`text-[9px] mt-0.5 ${activeTimeSlot?.start === t.start ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{t.sublabel}</span>
               </button>
             ))}
           </div>
@@ -432,7 +432,7 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="e.g. I love long baseline rallies and play a few times a week after work..."
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
+            className="w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.bio.length}/300</p>
         </div>
@@ -445,12 +445,12 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
+            className="w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.lookingFor.length}/300</p>
         </div>
 
-        <div className="border border-brand-divider bg-brand-surface px-4 py-3">
+        <div className="rounded-lg bg-white px-4 py-3">
           <p className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
             ✦ &nbsp; You can update your profile anytime from the Me section.
           </p>
@@ -518,7 +518,7 @@ function Step5({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="relative w-20 h-20 bg-brand-surface border border-dashed border-brand-divider hover:border-brand-primary transition-colors flex items-center justify-center overflow-hidden group flex-shrink-0"
+            className="relative w-20 h-20 rounded-full bg-brand-field border border-dashed border-[#1a1a1a]/25 hover:border-[#1a1a1a]/50 transition-colors flex items-center justify-center overflow-hidden group flex-shrink-0"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -548,8 +548,8 @@ function Step5({
                 key={src}
                 type="button"
                 onClick={() => handlePresetSelect(src)}
-                className={`w-14 h-14 overflow-hidden border-2 transition-all flex-shrink-0 ${
-                  isSelected ? 'border-brand-primary' : 'border-transparent opacity-60 hover:opacity-100'
+                className={`w-14 h-14 rounded-full overflow-hidden border-2 transition-all flex-shrink-0 ${
+                  isSelected ? 'border-[#E8748A]' : 'border-[#1a1a1a]/15 opacity-80 hover:opacity-100'
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -564,14 +564,14 @@ function Step5({
       <div>
         <FieldLabel>Username</FieldLabel>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.3)] text-sm">@</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
           <input
             type="text"
             value={data.username}
             onChange={(e) => onChange({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
             placeholder="your_username"
             maxLength={20}
-            className="w-full pl-8 pr-10 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
+            className="w-full pl-8 pr-10 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
@@ -713,16 +713,16 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-surface">
+      <div className="min-h-screen flex items-center justify-center bg-brand-bg">
         <div className="w-6 h-6 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-brand-surface flex flex-col">
+    <div className="min-h-screen bg-brand-bg flex flex-col">
       {/* Top bar */}
-      <div className="bg-brand-surface border-b border-brand-divider px-4 py-4">
+      <div className="bg-brand-bg px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-4">
           {step > 1 ? (
             <button onClick={() => setStep(step - 1)} className="text-[rgba(26,26,26,0.4)] hover:text-[#1a1a1a] transition-colors">
@@ -758,7 +758,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Bottom action */}
-      <div className="bg-brand-surface border-t border-brand-divider px-4 py-4 safe-area-pb">
+      <div className="bg-brand-bg px-4 py-4 safe-area-pb">
         <div className="max-w-lg mx-auto space-y-2">
           <button
             onClick={handleNext}

@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
               placeholder="Min. 8 characters"
               required
               autoComplete="new-password"
-              className="w-full px-4 py-2.5 pr-10 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-2.5 pr-10 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
             />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -87,8 +87,8 @@ export default function ResetPasswordPage() {
             placeholder="Repeat password"
             required
             autoComplete="new-password"
-            className={`w-full px-4 py-2.5 rounded-xl border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm ${
-              confirm.length > 0 && !passwordsMatch ? 'border-red-300 bg-red-50' : 'border-gray-200'
+            className={`w-full px-4 py-2.5 rounded-lg border text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm ${
+              confirm.length > 0 && !passwordsMatch ? 'border-red-300 bg-red-50' : 'border-[#1a1a1a]/40 bg-brand-field'
             }`}
           />
           {confirm.length > 0 && !passwordsMatch && (
@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={loading || !passwordValid || !passwordsMatch}
-          className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] font-semibold hover:bg-[#E8406A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : null}
           {loading ? 'Updating...' : 'Update password'}

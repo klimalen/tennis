@@ -44,7 +44,7 @@ export default function SettingsPage() {
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors"
+            className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors"
           >
             <ChevronLeft size={20} className="text-[rgba(26,26,26,0.5)]" />
           </button>
@@ -62,8 +62,8 @@ export default function SettingsPage() {
             href="/me/edit"
             className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left border-b border-brand-divider"
           >
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0">
-              <Pencil size={16} className="text-[rgba(26,26,26,0.5)]" />
+            <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
+              <Pencil size={16} className="text-[#1a1a1a]" />
             </div>
             <div>
               <span className="block text-sm font-medium text-[#1a1a1a]">Edit profile</span>
@@ -75,8 +75,8 @@ export default function SettingsPage() {
             disabled={signingOut}
             className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left"
           >
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0">
-              <LogOut size={16} className="text-[rgba(26,26,26,0.5)]" />
+            <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
+              <LogOut size={16} className="text-[#1a1a1a]" />
             </div>
             <span className="text-sm font-medium text-[#1a1a1a]">
               {signingOut ? 'Signing out...' : 'Sign out'}
@@ -93,7 +93,7 @@ export default function SettingsPage() {
             onClick={() => setShowDeleteConfirm(true)}
             className="w-full flex items-center gap-3 px-4 py-4 hover:bg-red-50 transition-colors text-left"
           >
-            <div className="w-9 h-9 bg-red-50 flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
               <Trash2 size={16} className="text-red-500" />
             </div>
             <div>
@@ -109,7 +109,7 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle size={20} className="text-red-500" />
               </div>
               <span className="font-display text-2xl tracking-wide">DELETE ACCOUNT</span>
@@ -127,7 +127,7 @@ export default function SettingsPage() {
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
               placeholder="DELETE"
-              className="w-full px-4 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent mb-4"
+              className="w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-sm text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent mb-4"
             />
 
             {deleteError && (
@@ -137,14 +137,14 @@ export default function SettingsPage() {
               <button
                 onClick={() => { setShowDeleteConfirm(false); setDeleteInput('') }}
                 disabled={deleting}
-                className="flex-1 py-2.5 border border-brand-divider text-sm font-medium text-[rgba(26,26,26,0.6)] hover:bg-brand-surface transition-colors"
+                className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={deleteInput !== 'DELETE' || deleting}
-                className="flex-1 py-2.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>

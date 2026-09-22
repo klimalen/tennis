@@ -135,7 +135,7 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
           onBlur={handleBlur}
           onFocus={() => suggestions.length > 0 && showSuggestions && setShowSuggestions(true)}
           placeholder={placeholder}
-          className="w-full pl-8 pr-8 py-2.5 bg-white border border-brand-divider text-sm outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.35)]"
+          className="w-full pl-8 pr-8 py-2.5 bg-brand-field border border-[#1a1a1a]/40 rounded-lg text-sm text-[#1a1a1a] outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.4)]"
         />
         {loading && (
           <div className="absolute right-3 w-3.5 h-3.5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
@@ -148,7 +148,7 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-brand-divider shadow-sm mt-0.5">
+        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
           {suggestions.map((place) => {
             const country = place.address?.country
             const sub = [place.address?.state, country].filter(Boolean).join(', ')

@@ -50,7 +50,7 @@ export function CreateSheet({ variant }: Props) {
       ) : variant === 'schedule' ? (
         <button
           onClick={() => setOpen(true)}
-          className="w-7 h-7 bg-brand-surface border border-brand-divider flex items-center justify-center hover:border-brand-primary hover:text-brand-primary transition-colors text-[rgba(26,26,26,0.4)]"
+          className="w-7 h-7 rounded-full bg-brand-field border border-[#1a1a1a]/40 flex items-center justify-center hover:border-[#1a1a1a]/60 transition-colors text-[#1a1a1a]"
           aria-label="Add game"
         >
           <Plus size={13} strokeWidth={2} />
@@ -102,8 +102,8 @@ export function CreateSheet({ variant }: Props) {
                   disabled={!opt.available}
                   className={`w-full flex items-center gap-4 px-4 py-4 rounded-[28px] transition-colors text-left ${
                     opt.available
-                      ? 'bg-[#FAF7F2] hover:bg-[#F4F1EC]'
-                      : 'bg-[#FAF7F2] opacity-40 cursor-not-allowed'
+                      ? 'bg-brand-field hover:bg-[#CFC4B6]'
+                      : 'bg-brand-field opacity-40 cursor-not-allowed'
                   }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">

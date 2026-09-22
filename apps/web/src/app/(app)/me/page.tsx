@@ -156,7 +156,7 @@ async function ProfileContent() {
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <span className="font-display text-5xl tracking-wide text-[#1a1a1a]">PROFILE</span>
-          <Link href="/settings" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <Link href="/settings" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <Settings size={16} className="text-[rgba(26,26,26,0.5)]" />
           </Link>
         </div>
@@ -216,12 +216,12 @@ async function ProfileContent() {
                   </span>
                 )}
                 {surfaces.map((s) => (
-                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
+                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
                     {SURFACE_LABELS[s] ?? s}
                   </span>
                 ))}
                 {time && (
-                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
+                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
                     {time}
                   </span>
                 )}

@@ -135,7 +135,7 @@ function NewGameForm() {
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm px-4 py-4 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/me" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+            <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
               <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
             </Link>
             <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">NEW GAME</span>
@@ -152,12 +152,12 @@ function NewGameForm() {
               <div>
                 <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
                 <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
               </div>
               <div>
                 <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
                 <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
               </div>
             </div>
           </div>
@@ -170,8 +170,8 @@ function NewGameForm() {
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
                   className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
                     format === opt.value
-                      ? 'border-brand-primary text-brand-primary bg-brand-surface'
-                      : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                      ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]'
+                      : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
                   }`}>
                   {opt.label}
                 </button>
@@ -186,7 +186,7 @@ function NewGameForm() {
             </p>
             <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
               placeholder="Court name or address" maxLength={200}
-              className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
+              className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
           </div>
 
           {/* About */}
@@ -196,14 +196,14 @@ function NewGameForm() {
             </p>
             <textarea value={about} onChange={(e) => setAbout(e.target.value)}
               placeholder="Practice, match, group training..." rows={3} maxLength={500}
-              className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+              className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
           {/* Pre-selected player from chat */}
           {preselectedId && preselectedName && (
             <div>
               <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
-              <div className="flex items-center gap-2 px-3 py-2.5 border border-brand-primary bg-brand-surface">
+              <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA]">
                 <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
                 <span className="text-sm text-[#1a1a1a] flex-1">{preselectedName}</span>
                 <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
@@ -225,13 +225,13 @@ function NewGameForm() {
                   return (
                     <button key={c.id} type="button" onClick={() => togglePlayer(c.id)}
                       className={`w-full flex items-center gap-3 px-3 py-3 border transition-colors text-left ${
-                        selected ? 'border-brand-primary bg-brand-surface' : 'border-brand-divider hover:border-[rgba(26,26,26,0.3)]'
+                        selected ? 'rounded-[20px] border-[#E8748A] bg-[#F8E6EA]' : 'rounded-[20px] bg-brand-field border-[#1a1a1a]/15 hover:border-[#1a1a1a]/35'
                       }`}>
                       <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                         {c.avatar_url ? (
                           <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{initials}</span>
+                          <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -239,9 +239,9 @@ function NewGameForm() {
                         <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{c.username}</p>
                       </div>
                       <div className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 transition-colors ${
-                        selected ? 'border-brand-primary bg-brand-primary' : 'border-brand-divider'
+                        selected ? 'rounded-md border-[#E8748A] bg-[#E8748A]' : 'rounded-md border-[#1a1a1a]/25 bg-white'
                       }`}>
-                        {selected && <span className="text-white text-[10px] font-bold">✓</span>}
+                        {selected && <span className="text-[#1a1a1a] text-[10px] font-bold">✓</span>}
                       </div>
                     </button>
                   )
@@ -262,13 +262,13 @@ function NewGameForm() {
             <div className="flex gap-2">
               <button type="button" onClick={() => setIsOpen(false)}
                 className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                  !isOpen ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                  !isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
                 }`}>
                 Private
               </button>
               <button type="button" onClick={() => setIsOpen(true)}
                 className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                  isOpen ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                  isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
                 }`}>
                 Public
               </button>

@@ -35,7 +35,7 @@ export function BottomTabBar() {
               <div className="relative">
                 <Icon
                   size={20}
-                  className={isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.3)]'}
+                  className={isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'}
                   strokeWidth={isActive ? 2.5 : 1.8}
                 />
                 {count > 0 && (
@@ -43,7 +43,7 @@ export function BottomTabBar() {
                 )}
               </div>
               <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${
-                isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.3)]'
+                isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'
               }`}>
                 {item.label}
               </span>
@@ -69,7 +69,7 @@ export function BottomTabBar() {
               <div className="relative">
                 <Icon
                   size={20}
-                  className={isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.3)]'}
+                  className={isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'}
                   strokeWidth={isActive ? 2.5 : 1.8}
                 />
                 {count > 0 && (
@@ -77,7 +77,7 @@ export function BottomTabBar() {
                 )}
               </div>
               <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${
-                isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.3)]'
+                isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'
               }`}>
                 {item.label}
               </span>
