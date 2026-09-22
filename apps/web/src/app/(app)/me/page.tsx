@@ -6,15 +6,8 @@ import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { formatFollowers } from '@/lib/formatFollowers'
+import { formatPlayFormat, skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
-
-function skillLabel(v: number | null): string | null {
-  if (!v) return null
-  if (v < 2) return 'Beginner'
-  if (v < 3.5) return 'Intermediate'
-  if (v < 5) return 'Advanced'
-  return 'Competitive'
-}
 
 const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
@@ -259,7 +252,7 @@ async function ProfileContent() {
           {upcomingGames && upcomingGames.length > 0 ? (
             <div className="pb-4">
               {upcomingGames.map((game) => {
-                const formatLabel = game.format === 'singles' ? 'Singles' : 'Doubles'
+                const formatLabel = formatPlayFormat(game.format)
                 return (
                   <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
                     <div className="flex-shrink-0 w-10 text-center">

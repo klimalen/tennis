@@ -15,7 +15,7 @@ const SECTION_CONTENT = {
   schedule: {
     emoji: '📅',
     title: 'Never miss a game',
-    description: 'Track upcoming matches, manage court bookings and see your full match history.',
+    description: 'Games you create or join show up here.',
   },
   me: {
     emoji: '🎾',
@@ -63,7 +63,7 @@ export async function AuthGate({ children, section }: AuthGateProps) {
         <div className="bg-white border border-brand-divider p-8 shadow-md text-center max-w-sm w-full">
           <div className="text-4xl mb-4 text-brand-accent">✦</div>
           <h2 className="font-display text-3xl tracking-wide text-[#1a1a1a] mb-2">{content.title}</h2>
-          <p className="text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.4)] mb-6">{content.description}</p>
+          <p className="text-sm text-[rgba(26,26,26,0.55)] mb-6">{content.description}</p>
           <div className="space-y-3">
             <Link
               href="/sign-up"

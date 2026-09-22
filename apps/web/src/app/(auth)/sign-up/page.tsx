@@ -212,9 +212,6 @@ export default function SignUpPage() {
           {loading ? 'Creating account...' : 'Create account'}
         </button>
 
-        <p className="text-xs text-[rgba(26,26,26,0.4)] text-center">
-          By signing up you agree to our Terms of Service and Privacy Policy.
-        </p>
       </form>
 
       <p className="text-center text-sm text-[rgba(26,26,26,0.4)] mt-6">

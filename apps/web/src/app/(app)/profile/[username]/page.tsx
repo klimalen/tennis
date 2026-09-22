@@ -7,18 +7,11 @@ import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
 import { formatFollowers } from '@/lib/formatFollowers'
+import { skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function skillLabel(v: number | null): string | null {
-  if (!v) return null
-  if (v < 2) return 'Beginner'
-  if (v < 3.5) return 'Intermediate'
-  if (v < 5) return 'Advanced'
-  return 'Competitive'
-}
 
 const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
@@ -139,7 +132,7 @@ export default async function PlayerProfilePage({
     }
 
     // Final check: if there's already a conversation between them, always show matched
-    if (!existingRequestStatus || existingRequestStatus === 'pending') {
+    if (!existingRequestStatus || existingRequestStatus === 'pending' || existingRequestStatus === 'cancelled' || existingRequestStatus === 'declined') {
       const { data: profileConvs } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -316,6 +309,20 @@ export default async function PlayerProfilePage({
               <p className="text-sm text-[rgba(26,26,26,0.6)] font-script italic pt-1">{profile.bio}</p>
             )}
           </div>
+
+          {!viewer && (
+            <div className="mt-4 border border-brand-divider bg-brand-surface px-4 py-4 space-y-3">
+              <p className="text-sm text-[rgba(26,26,26,0.6)]">Sign in to follow this player and suggest a match.</p>
+              <div className="flex gap-2">
+                <Link href="/sign-up" className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium text-center hover:bg-brand-primary-dark transition-colors">
+                  Create free account
+                </Link>
+                <Link href={`/sign-in?next=/profile/${profile.username}`} className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-center text-[rgba(26,26,26,0.65)] hover:border-brand-primary hover:text-brand-primary transition-colors">
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Actions — only shown to other logged-in users */}
           {viewer && viewer.id !== profile.id && (

@@ -190,7 +190,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           )}
 
           <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.35)]">
-            You can change your city at any time in your profile.
+            Discover uses your city to show nearby players, games, and courts. You can change it later in your profile.
           </p>
         </div>
 
@@ -636,7 +636,48 @@ export default function OnboardingPage() {
   }
 
   function canProceed() {
+    if (step === 1) return data.city.trim().length > 0
     if (step === 5) return data.username.trim().length >= 3
+    return true
+  }
+
+  async function saveProfile() {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { router.replace('/sign-in'); return false }
+
+    let avatarUrl: string | null = null
+    if (data.avatarFile) {
+      const ext = data.avatarFile.name.split('.').pop()
+      const path = `${session.user.id}/avatar.${ext}`
+      const { data: upload } = await supabase.storage.from('avatars').upload(path, data.avatarFile, { upsert: true })
+      if (upload) {
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+        avatarUrl = publicUrl
+      }
+    }
+
+    const username = data.username.trim()
+    await supabase.from('profiles').update({
+      city_name: data.city || null,
+      city_lat: data.cityLat,
+      city_lng: data.cityLng,
+      neighborhood: data.neighborhood || null,
+      skill_level_self: data.skillLevel,
+      years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
+      preferred_formats: data.playFormats,
+      play_style: data.playStyle,
+      preferred_surfaces: data.preferredSurfaces,
+      preferred_days: data.preferredDays,
+      preferred_time_start: data.preferredTimeStart,
+      preferred_time_end: data.preferredTimeEnd,
+      max_travel_km: data.maxTravelKm,
+      bio: data.bio || null,
+      looking_for: data.lookingFor || null,
+      ...(username.length >= 3 ? { username } : {}),
+      avatar_url: avatarUrl ?? data.presetAvatar,
+    }).eq('id', session.user.id)
+
     return true
   }
 
@@ -652,44 +693,20 @@ export default function OnboardingPage() {
     }, 800)
 
     try {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.replace('/sign-in'); return }
-
-      let avatarUrl: string | null = null
-      if (data.avatarFile) {
-        const ext = data.avatarFile.name.split('.').pop()
-        const path = `${session.user.id}/avatar.${ext}`
-        const { data: upload } = await supabase.storage.from('avatars').upload(path, data.avatarFile, { upsert: true })
-        if (upload) {
-          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-          avatarUrl = publicUrl
-        }
-      }
-
-      await supabase.from('profiles').update({
-        city_name: data.city || null,
-        city_lat: data.cityLat,
-        city_lng: data.cityLng,
-        neighborhood: data.neighborhood || null,
-        skill_level_self: data.skillLevel,
-        years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
-        preferred_formats: data.playFormats,
-        play_style: data.playStyle,
-        preferred_surfaces: data.preferredSurfaces,
-        preferred_days: data.preferredDays,
-        preferred_time_start: data.preferredTimeStart,
-        preferred_time_end: data.preferredTimeEnd,
-        max_travel_km: data.maxTravelKm,
-        bio: data.bio || null,
-        looking_for: data.lookingFor || null,
-        username: data.username.trim() || null,
-        avatar_url: avatarUrl ?? data.presetAvatar,
-      }).eq('id', session.user.id)
-
-      router.push('/search')
+      const ok = await saveProfile()
+      if (ok) router.push('/search')
     } finally {
       clearInterval(msgInterval)
+      setSaving(false)
+    }
+  }
+
+  async function handleSkipFinish() {
+    setSaving(true)
+    try {
+      const ok = await saveProfile()
+      if (ok) router.push('/search')
+    } finally {
       setSaving(false)
     }
   }
@@ -751,7 +768,7 @@ export default function OnboardingPage() {
             {saving && <Loader2 size={14} className="animate-spin flex-shrink-0" />}
             {saving ? savingMsg : step === TOTAL_STEPS ? 'Finish setup' : 'Continue'}
           </button>
-          {step < TOTAL_STEPS && (
+          {step > 1 && step < TOTAL_STEPS && (
             <button
               onClick={() => setStep(step + 1)}
               className="w-full py-2 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] hover:text-[rgba(26,26,26,0.6)] transition-colors"
@@ -761,8 +778,9 @@ export default function OnboardingPage() {
           )}
           {step === TOTAL_STEPS && (
             <button
-              onClick={() => router.push('/search')}
-              className="w-full py-2 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] hover:text-[rgba(26,26,26,0.6)] transition-colors"
+              onClick={() => void handleSkipFinish()}
+              disabled={saving}
+              className="w-full py-2 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] hover:text-[rgba(26,26,26,0.6)] transition-colors disabled:opacity-40"
             >
               Skip for now
             </button>
