@@ -210,7 +210,7 @@ function PlayerCard({
   onRequest,
   onCancel,
   onPlan,
-  vivid = false,
+  vivid = true,
 }: {
   player: Player
   status: RequestStatus
@@ -235,7 +235,7 @@ function PlayerCard({
 
   const actionClass = vivid
     ? `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
-    : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider bg-brand-primary text-white hover:bg-brand-primary-dark'
+    : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
   const chipClass = vivid
     ? 'px-2.5 py-0.5 rounded-full border border-[#1a1a1a]/10 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]'
     : 'px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]'
@@ -258,7 +258,7 @@ function PlayerCard({
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {skill != null && (
-              <span className={vivid ? `px-2.5 py-0.5 rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold ${skillFill(skill)}` : 'px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold'}>
+              <span className={vivid ? `px-2.5 py-0.5 rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold ${skillFill(skill)}` : 'px-2 py-0.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[9px] tracking-[0.12em] uppercase font-semibold'}>
                 {skillLabel(skill)}
               </span>
             )}
@@ -383,7 +383,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{venueKindLabel(venue.kind)}</span>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
@@ -443,7 +443,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
           </p>
           <div className="grid grid-cols-1 gap-2 pt-1">
             <a href={venue.google_maps_uri ?? googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
               <Navigation size={13} /> View on Google Maps
             </a>
             {venue.website && (
@@ -467,7 +467,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
 
 // ─── Venue card ───────────────────────────────────────────────────────────────
 
-function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = false }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; vivid?: boolean }) {
+function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = true }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; vivid?: boolean }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
     <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
@@ -586,7 +586,7 @@ const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
+function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
   const spotsTaken = game.participants.filter((p) => p.status === 'accepted' || p.status === 'invited').length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
@@ -627,7 +627,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: 
           <button
             onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
             disabled={alreadyIn || isFull}
-            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
+            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]' : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
             {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
           </button>
         </div>
@@ -649,7 +649,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">Open Game</span>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
@@ -672,7 +672,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">Organiser</p>
             <Link href={`/profile/${game.creator.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                 {game.creator.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={game.creator.avatar_url} alt={game.creator.full_name} className="w-full h-full object-cover" />
@@ -699,7 +699,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
                   const pInitials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
                   return (
                     <Link key={p.player_id} href={`/profile/${p.profile.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <div className="w-9 h-9 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                         {p.profile.avatar_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
@@ -723,7 +723,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
             </div>
           )}
           <button onClick={() => { if (!alreadyIn && !isFull) onJoin(game.id) }} disabled={alreadyIn || isFull}
-            className={`w-full py-4 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${alreadyIn ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.3)] cursor-default' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
+            className={`w-full py-4 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${alreadyIn ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.3)] cursor-default' : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
             {alreadyIn ? "You're in" : isFull ? 'Game is full' : 'Join game'}
           </button>
         </div>
@@ -736,7 +736,7 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
 
 function PlayerCardSkeleton() {
   return (
-    <div className="bg-white border border-brand-divider p-4 flex gap-3 animate-pulse">
+    <div className="bg-white rounded-[28px] p-4 flex gap-3 animate-pulse">
       <div className="w-14 h-14 bg-brand-surface-md flex-shrink-0" />
       <div className="flex-1 space-y-2 py-1">
         <div className="h-3.5 bg-brand-surface-md rounded w-1/3" />
@@ -752,7 +752,7 @@ function PlayerCardSkeleton() {
 
 function GameCardSkeleton() {
   return (
-    <div className="bg-white border border-brand-divider p-4 animate-pulse space-y-2">
+    <div className="bg-white rounded-[28px] p-4 animate-pulse space-y-2">
       <div className="h-5 bg-brand-surface-md w-2/5 rounded" />
       <div className="h-3 bg-brand-surface w-1/3 rounded" />
       <div className="h-8 bg-brand-surface w-full rounded mt-3" />
@@ -762,7 +762,7 @@ function GameCardSkeleton() {
 
 function CourtCardSkeleton() {
   return (
-    <div className="bg-white border border-brand-divider flex animate-pulse">
+    <div className="bg-white rounded-[28px] flex animate-pulse overflow-hidden">
       <div className="w-20 h-20 bg-brand-surface-md flex-shrink-0" />
       <div className="flex-1 p-3 space-y-2">
         <div className="h-4 bg-brand-surface-md rounded w-1/2" />
@@ -794,7 +794,7 @@ function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeA
 
 // ─── No city state ─────────────────────────────────────────────────────────────
 
-function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean; onBrowseCourts?: () => void; vivid?: boolean }) {
+function NoCityState({ guest, onBrowseCourts, vivid = true }: { guest?: boolean; onBrowseCourts?: () => void; vivid?: boolean }) {
   if (vivid) {
     return (
       <div className="rounded-[28px] bg-[#E8748A] text-[#1a1a1a] px-5 py-8 space-y-3">
@@ -803,7 +803,7 @@ function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean
         <p className="font-fraunces italic text-lg text-[#1a1a1a]">
           {guest
             ? 'Create an account and add your city. Courts are open without one.'
-            : 'Add your city so Discover can find games near you.'}
+            : 'Add your city so Discover can find games near you'}
         </p>
         <div className="flex flex-col items-start gap-3 pt-2">
           {guest ? (
@@ -837,11 +837,11 @@ function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean
       </div>
       <div className="flex flex-col items-center gap-2">
         {guest ? (
-          <Link href="/sign-up" className="inline-block px-5 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+          <Link href="/sign-up" className="inline-block px-5 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
             Create free account
           </Link>
         ) : (
-          <a href="/me/edit" className="inline-block px-5 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+          <a href="/me/edit" className="inline-block px-5 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
             Add city
           </a>
         )}
@@ -1303,9 +1303,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const pageHeader = (title: string, onBack: () => void) => (
-    <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+    <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
       <div className="max-w-2xl mx-auto flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+        <button onClick={onBack} className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
           <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
         </button>
         <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">{title}</span>
@@ -1346,7 +1346,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         <div className="max-w-2xl mx-auto px-4 pt-8 pb-2">
           <p className="text-[10px] tracking-[0.28em] uppercase text-[#85648F]">✦ The club</p>
           <h1 className="font-display text-7xl leading-[0.9] tracking-wide text-[#1a1a1a] mt-1">DISCOVER</h1>
-          <p className="font-script italic text-xl text-[#497250] mt-2">A game, a court, a partner.</p>
+          <p className="font-fraunces italic text-xl text-[#497250] mt-2">A game, a court, a partner</p>
         </div>
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
@@ -1354,7 +1354,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             <div className="rounded-[28px] bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
               <div>
                 <p className="font-display text-4xl leading-none">JOIN FREE</p>
-                <p className="font-fraunces italic text-base text-[#D4E040] mt-1">Play with people near you.</p>
+                <p className="font-fraunces italic text-base text-[#D4E040] mt-1">Play with people near you</p>
               </div>
               <Link href="/sign-up" className="flex-shrink-0 rounded-full px-4 py-2.5 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.14em] uppercase font-medium">Join</Link>
             </div>
@@ -1387,7 +1387,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
                     <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
-                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted in {userCityName} yet.</p>
+                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted in {userCityName} yet</p>
                     {user && (
                       <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
                         <Plus size={12} /> Create a game
@@ -1412,7 +1412,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-white px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO PLAYERS YET</p>
-                    <p className="font-fraunces italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court.</p>
+                    <p className="font-fraunces italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court</p>
                   </div>
                 )}
               </DiscoverySection>
@@ -1435,7 +1435,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-white px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO COURTS NEARBY</p>
-                    <p className="font-fraunces italic text-[#85648F] mt-2">Try another area from the courts list.</p>
+                    <p className="font-fraunces italic text-[#85648F] mt-2">Try another area from the courts list</p>
                   </div>
                 )}
               </DiscoverySection>
@@ -1516,7 +1516,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center space-y-3">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No open games in {userCityName}</p>
               {user && (
-                <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+                <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
                   <Plus size={12} /> Create a game
                 </Link>
               )}

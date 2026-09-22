@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Bebas_Neue, Anton, DM_Sans, Playfair_Display } from 'next/font/google'
+import { Bebas_Neue, Anton, DM_Sans, Fraunces } from 'next/font/google'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({
@@ -22,10 +22,10 @@ const dmSans = DM_Sans({
   display: 'swap',
 })
 
-const playfair = Playfair_Display({
+const fraunces = Fraunces({
   subsets: ['latin'],
   style: ['normal', 'italic'],
-  variable: '--font-playfair',
+  variable: '--font-fraunces',
   display: 'swap',
 })
 
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${bebasNeue.variable} ${anton.variable} ${dmSans.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${bebasNeue.variable} ${anton.variable} ${dmSans.variable} ${fraunces.variable}`}>
       <body className="min-h-screen bg-brand-bg text-[#1a1a1a] font-sans antialiased">
         {children}
       </body>

@@ -130,7 +130,7 @@ function GameInviteCard({
   // Game was deleted (ON DELETE SET NULL)
   if (!msg.game_id) {
     return (
-      <div className="max-w-[80%] border border-brand-divider bg-brand-bg overflow-hidden opacity-50">
+      <div className="max-w-[80%] border border-[#1a1a1a]/10 bg-white rounded-2xl overflow-hidden opacity-50">
         <div className="px-3 py-2 flex items-center gap-2 bg-brand-surface">
           <Calendar size={12} className="text-[rgba(26,26,26,0.3)] flex-shrink-0" />
           <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.4)]">Game proposal</span>
@@ -171,7 +171,7 @@ function GameInviteCard({
         {canRespond ? (
           <div className="flex gap-2">
             <button onClick={() => respond('accepted')} disabled={responding}
-              className="flex-1 py-2 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
+              className="flex-1 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
               Accept
             </button>
             <button onClick={() => respond('declined')} disabled={responding}
@@ -413,7 +413,7 @@ export function ChatView({
               You matched with {otherName}
             </p>
             <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
-            <p className="text-sm text-[rgba(26,26,26,0.4)] font-script italic mt-1">Say hello and arrange a game.</p>
+            <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">Say hello and arrange a game</p>
           </div>
         </div>
       )}
@@ -454,8 +454,8 @@ export function ChatView({
                   ) : (
                     <div className={`max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
                       isMe
-                        ? isError ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-brand-primary text-white'
-                        : 'bg-brand-surface border border-brand-divider text-[rgba(26,26,26,0.8)]'
+                        ? isError ? 'bg-red-50 text-red-700 border border-red-200' : 'rounded-[22px] bg-[#E8748A] text-[#1a1a1a]'
+                        : 'rounded-[22px] bg-white text-[#1a1a1a]'
                     } ${isSending ? 'opacity-60' : ''}`}>
                       {msg.body}
                     </div>
@@ -490,7 +490,7 @@ export function ChatView({
       {showScrollBtn && (
         <div className="absolute bottom-24 right-4 md:right-8 z-10">
           <button onClick={() => scrollToBottom()}
-            className="w-9 h-9 bg-brand-primary text-white flex items-center justify-center shadow-lg hover:bg-brand-primary-dark transition-colors">
+            className="w-9 h-9 rounded-full bg-[#E8748A] text-[#1a1a1a] flex items-center justify-center shadow-lg hover:bg-[#E8406A] transition-colors">
             <ChevronDown size={18} />
           </button>
         </div>
@@ -523,7 +523,7 @@ export function ChatView({
                   style={{ maxHeight: '120px' }}
                 />
                 <button onClick={send} disabled={!text.trim() || sending}
-                  className="w-10 h-10 bg-brand-primary flex items-center justify-center hover:bg-brand-primary-dark transition-colors disabled:opacity-40 flex-shrink-0">
+                  className="w-10 h-10 rounded-full bg-[#E8748A] text-[#1a1a1a] flex items-center justify-center hover:bg-[#E8406A] transition-colors disabled:opacity-40 flex-shrink-0">
                   <Send size={16} className="text-white" />
                 </button>
               </div>

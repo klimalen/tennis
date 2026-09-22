@@ -153,26 +153,26 @@ async function ProfileContent() {
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <span className="font-display text-3xl tracking-wide text-[#1a1a1a]">PROFILE</span>
-          <Link href="/settings" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <span className="font-display text-5xl tracking-wide text-[#1a1a1a]">PROFILE</span>
+          <Link href="/settings" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
             <Settings size={16} className="text-[rgba(26,26,26,0.5)]" />
           </Link>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto px-4 pt-2 space-y-4">
         {/* Profile header */}
-        <div className="px-4 pt-6 pb-5">
+        <div className="bg-white rounded-[28px] p-5">
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-20 h-20 bg-brand-surface flex items-center justify-center border border-brand-divider overflow-hidden">
+              <div className="w-20 h-20 rounded-full bg-[#E8748A] flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt={fullName} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-display text-3xl text-[rgba(26,26,26,0.3)]">
+                  <span className="font-display text-3xl text-[#1a1a1a]">
                     {fullName.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}
                   </span>
                 )}
@@ -200,7 +200,7 @@ async function ProfileContent() {
           <div className="mt-4">
             <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
             {username && (
-              <p className="text-[11px] tracking-[0.15em] text-[rgba(26,26,26,0.4)] mt-1">@{username}</p>
+              <p className="font-fraunces italic text-sm text-[#85648F] mt-1">@{username}</p>
             )}
             {profile?.city_name && (
               <p className="text-[11px] text-[rgba(26,26,26,0.4)] mt-0.5 flex items-center gap-1">
@@ -211,28 +211,28 @@ async function ProfileContent() {
             {(skillLabel(rating) || surfaces.length > 0 || time) && (
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 {skillLabel(rating) && (
-                  <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
+                  <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
                     {skillLabel(rating)}
                   </span>
                 )}
                 {surfaces.map((s) => (
-                  <span key={s} className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
                     {SURFACE_LABELS[s] ?? s}
                   </span>
                 ))}
                 {time && (
-                  <span className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
                     {time}
                   </span>
                 )}
               </div>
             )}
             {profile?.bio && (
-              <p className="text-sm text-[rgba(26,26,26,0.6)] mt-2 font-script italic">{profile.bio}</p>
+              <p className="text-sm text-[#497250] mt-2 font-fraunces italic">{profile.bio}</p>
             )}
             <Link
               href="/me/edit"
-              className="block w-full mt-3 py-2 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-brand-primary hover:text-brand-primary transition-colors text-center"
+              className="block w-full mt-4 py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors text-center"
             >
               Edit profile
             </Link>
@@ -240,7 +240,7 @@ async function ProfileContent() {
         </div>
 
         {/* Schedule section */}
-        <div className="border-t border-brand-divider">
+        <div>
           <div className="px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
@@ -254,7 +254,7 @@ async function ProfileContent() {
               {upcomingGames.map((game) => {
                 const formatLabel = formatPlayFormat(game.format)
                 return (
-                  <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
+                  <div key={game.id} className="mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
                     <div className="flex-shrink-0 w-10 text-center">
                       <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
                       <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]">
@@ -285,7 +285,7 @@ async function ProfileContent() {
           ) : (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] mb-1">No upcoming games</p>
-              <p className="text-xs text-[rgba(26,26,26,0.3)] font-script italic">
+              <p className="text-xs text-[#85648F] font-fraunces italic">
                 Tap + to add your first game
               </p>
             </div>
@@ -293,7 +293,7 @@ async function ProfileContent() {
         </div>
 
         {/* Publications */}
-        <div className="border-t border-brand-divider">
+        <div>
           {posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
               <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>

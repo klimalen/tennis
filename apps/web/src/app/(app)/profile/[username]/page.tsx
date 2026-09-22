@@ -232,9 +232,9 @@ export default async function PlayerProfilePage({
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/search" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <Link href="/search" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">
@@ -243,17 +243,17 @@ export default async function PlayerProfilePage({
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto px-4 pt-2">
         {/* Profile header */}
-        <div className="px-4 pt-6 pb-5">
+        <div className="bg-white rounded-[28px] p-5">
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-20 h-20 bg-brand-surface flex items-center justify-center border border-brand-divider overflow-hidden">
+              <div className="w-20 h-20 rounded-full bg-[#E8748A] flex items-center justify-center overflow-hidden">
                 {profile.avatar_url ? (
                   <Image src={profile.avatar_url} alt={profile.full_name} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-display text-3xl text-[rgba(26,26,26,0.3)]">{initials}</span>
+                  <span className="font-display text-3xl text-[#1a1a1a]">{initials}</span>
                 )}
               </div>
             </div>
@@ -276,7 +276,7 @@ export default async function PlayerProfilePage({
           {/* Name + meta */}
           <div className="mt-4 space-y-1.5">
             <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
-            <p className="text-[11px] tracking-[0.15em] text-[rgba(26,26,26,0.4)]">@{profile.username}</p>
+            <p className="font-fraunces italic text-sm text-[#85648F]">@{profile.username}</p>
 
             {profile.city_name && (
               <p className="flex items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
@@ -288,17 +288,17 @@ export default async function PlayerProfilePage({
             {(skill || surfaces.length > 0 || time) && (
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 {skill && (
-                  <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
+                  <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
                     {skill}
                   </span>
                 )}
                 {surfaces.map((s) => (
-                  <span key={s} className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
                     {SURFACE_LABELS[s] ?? s}
                   </span>
                 ))}
                 {time && (
-                  <span className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.5)] border border-brand-divider px-2 py-0.5">
+                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.55)] border border-[#1a1a1a]/10 px-2.5 py-0.5">
                     {time}
                   </span>
                 )}
@@ -306,18 +306,18 @@ export default async function PlayerProfilePage({
             )}
 
             {profile.bio && (
-              <p className="text-sm text-[rgba(26,26,26,0.6)] font-script italic pt-1">{profile.bio}</p>
+              <p className="text-sm text-[#497250] font-fraunces italic pt-1">{profile.bio}</p>
             )}
           </div>
 
           {!viewer && (
-            <div className="mt-4 border border-brand-divider bg-brand-surface px-4 py-4 space-y-3">
-              <p className="text-sm text-[rgba(26,26,26,0.6)]">Sign in to follow this player and suggest a match.</p>
+            <div className="mt-4 rounded-[20px] bg-[#FAF7F2] px-4 py-4 space-y-3">
+              <p className="font-fraunces italic text-sm text-[#497250]">Sign in to follow this player and suggest a match</p>
               <div className="flex gap-2">
-                <Link href="/sign-up" className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium text-center hover:bg-brand-primary-dark transition-colors">
+                <Link href="/sign-up" className="flex-1 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium text-center hover:bg-[#E8406A] transition-colors">
                   Create free account
                 </Link>
-                <Link href={`/sign-in?next=/profile/${profile.username}`} className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.15em] uppercase font-medium text-center text-[rgba(26,26,26,0.65)] hover:border-brand-primary hover:text-brand-primary transition-colors">
+                <Link href={`/sign-in?next=/profile/${profile.username}`} className="flex-1 py-2.5 rounded-full border border-[#1a1a1a]/15 text-[10px] tracking-[0.15em] uppercase font-medium text-center text-[#1a1a1a] hover:bg-white transition-colors">
                   Sign in
                 </Link>
               </div>

@@ -95,7 +95,7 @@ function Pill({
       onClick={onClick}
       className={`px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
         active
-          ? 'bg-brand-primary text-white border-brand-primary'
+          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
           : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary hover:text-brand-primary'
       }`}
     >
@@ -287,16 +287,16 @@ export default function EditProfilePage() {
   return (
     <div className="min-h-screen pb-24 md:pb-8 bg-brand-bg">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
           </button>
           <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
           <button
             onClick={handleSave}
             disabled={saving || !canSave}
-            className="px-4 py-1.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-40"
+            className="px-4 py-1.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-40"
           >
             {saving ? <Loader2 size={12} className="animate-spin" /> : 'Save'}
           </button>
@@ -345,7 +345,7 @@ export default function EditProfilePage() {
             type="text"
             value={d.fullName}
             onChange={(e) => update({ fullName: e.target.value })}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
+            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white rounded-2xl"
             placeholder="Your name"
           />
         </div>
@@ -359,7 +359,7 @@ export default function EditProfilePage() {
               type="text"
               value={d.username}
               onChange={(e) => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-              className="w-full pl-7 pr-8 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
+              className="w-full pl-7 pr-8 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white rounded-2xl"
               placeholder="username"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -379,7 +379,7 @@ export default function EditProfilePage() {
             onChange={(e) => update({ bio: e.target.value })}
             rows={3}
             maxLength={300}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-brand-bg"
+            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-white rounded-2xl"
             placeholder="A few words about yourself..."
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right">{d.bio.length}/300</p>
@@ -482,7 +482,7 @@ export default function EditProfilePage() {
                 onClick={() => update({ preferredDays: toggleArr(d.preferredDays, day.value) })}
                 className={`w-10 h-10 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
                   d.preferredDays.includes(day.value)
-                    ? 'bg-brand-primary text-white border-brand-primary'
+                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
                     : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary'
                 }`}
               >
@@ -542,7 +542,7 @@ export default function EditProfilePage() {
             onChange={(e) => update({ lookingFor: e.target.value })}
             rows={3}
             maxLength={300}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-brand-bg"
+            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none bg-white rounded-2xl"
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right">{d.lookingFor.length}/300</p>
@@ -570,7 +570,7 @@ export default function EditProfilePage() {
             type="text"
             value={d.neighborhood}
             onChange={(e) => update({ neighborhood: e.target.value })}
-            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-brand-bg"
+            className="w-full px-3 py-2.5 border border-brand-divider text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white rounded-2xl"
             placeholder="e.g. Vračar, Chelsea, Brooklyn..."
           />
         </div>

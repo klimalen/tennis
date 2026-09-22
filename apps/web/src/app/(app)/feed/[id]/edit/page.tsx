@@ -82,16 +82,16 @@ export default function EditPostPage() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <button onClick={() => router.back()} className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </button>
           <span className="font-display text-2xl tracking-wide">EDIT POST</span>
           <button
             onClick={handleSubmit}
             disabled={!canPost}
-            className="px-4 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-40 disabled:cursor-default"
+            className="px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-40 disabled:cursor-default"
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : 'Save'}
           </button>

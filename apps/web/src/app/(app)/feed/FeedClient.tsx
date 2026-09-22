@@ -37,7 +37,7 @@ function Avatar({ user, size = 12 }: { user: Sender; size?: number }) {
   const initials = user.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
   const px = size * 4
   return (
-    <Link href={`/profile/${user.username}`} className={`w-${size} h-${size} bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0`}>
+    <Link href={`/profile/${user.username}`} className={`w-${size} h-${size} rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0`}>
       {user.avatar_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={user.avatar_url} alt={user.full_name} width={px} height={px} className="w-full h-full object-cover" />
@@ -73,7 +73,7 @@ function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: str
   }
 
   return (
-    <div className="px-4 py-4 border-b border-brand-divider">
+    <div className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white">
       <div className="flex items-center gap-3">
         <Avatar user={s} />
         <div className="flex-1 min-w-0">
@@ -94,7 +94,7 @@ function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: str
         <button
           onClick={() => void respond('accept')}
           disabled={acting !== null}
-          className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50"
         >
           {acting === 'accept' ? 'Opening chat…' : 'Accept'}
         </button>
@@ -132,7 +132,7 @@ function FollowCard({ item, onFollowBack }: { item: FollowItem; onFollowBack: (i
   }
 
   return (
-    <div className="px-4 py-4 border-b border-brand-divider">
+    <div className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white">
       <div className="flex items-center gap-3">
         <Avatar user={f} />
         <div className="flex-1 min-w-0">
@@ -158,7 +158,7 @@ function FollowCard({ item, onFollowBack }: { item: FollowItem; onFollowBack: (i
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors disabled:opacity-60 ${
             followingBack
               ? 'border border-brand-primary text-brand-primary'
-              : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
+              : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
           }`}
         >
           {followingBack ? <UserCheck size={12} /> : <UserPlus size={12} />}
@@ -284,7 +284,7 @@ export function FeedClient({ userId, initialRequests, initialFollows }: Props) {
         <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
         <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">All quiet here</p>
         <p className="text-sm text-[rgba(26,26,26,0.4)] max-w-xs font-script italic">
-          Game requests and new followers will appear here.
+          Game requests and new followers will appear here
         </p>
       </div>
     )

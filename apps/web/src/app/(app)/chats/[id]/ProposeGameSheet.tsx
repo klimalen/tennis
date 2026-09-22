@@ -141,12 +141,12 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                   <div>
                     <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
                     <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required
-                      className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                      className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
                   </div>
                   <div>
                     <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
                     <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                      className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                      className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
                   </div>
                 </div>
               </div>
@@ -175,7 +175,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                 </p>
                 <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
                   placeholder="Court name or address" maxLength={200}
-                  className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
+                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
               </div>
 
               {/* About */}
@@ -185,7 +185,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                 </p>
                 <textarea value={about} onChange={(e) => setAbout(e.target.value)}
                   placeholder="Practice, match, group training..." rows={3} maxLength={500}
-                  className="w-full px-3 py-2.5 border border-brand-divider bg-brand-bg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
               </div>
 
               {/* Players */}
@@ -211,7 +211,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                           className={`w-full flex items-center gap-3 px-3 py-2.5 border transition-colors text-left ${
                             selected ? 'border-brand-primary bg-brand-surface' : 'border-brand-divider hover:border-[rgba(26,26,26,0.3)]'
                           }`}>
-                          <div className="w-9 h-9 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                             {c.avatar_url
                               ? <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
                               : <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{initials}</span>}
@@ -244,7 +244,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
             <button
               onClick={handleSubmit}
               disabled={submitting || !date || !time}
-              className="w-full py-4 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50"
+              className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50"
             >
               {submitting
                 ? 'Sending...'

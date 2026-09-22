@@ -6,7 +6,7 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          bg:             '#FFFFFF',
+          bg:             '#FAF7F2',
           surface:        '#F0EBE3',
           'surface-md':   '#EDE8E2',
           'surface-lg':   '#E5DED5',
@@ -23,17 +23,18 @@ const config: Config = {
       fontFamily: {
         display:  ['var(--font-bebas)', 'sans-serif'],
         numbers:  ['var(--font-anton)', 'sans-serif'],
-        script:   ['var(--font-playfair)', 'serif'],
+        script:   ['var(--font-fraunces)', 'serif'],
         fraunces: ['var(--font-fraunces)', 'serif'],
         sans:     ['var(--font-dm-sans)', 'DM Sans', 'sans-serif'],
       },
       borderRadius: {
-        DEFAULT: '2px',
-        sm:   '2px',
-        md:   '4px',
-        lg:   '6px',
-        xl:   '8px',
-        '2xl':'12px',
+        DEFAULT: '16px',
+        sm:   '12px',
+        md:   '16px',
+        lg:   '20px',
+        xl:   '24px',
+        '2xl':'28px',
+        '3xl':'32px',
         full: '9999px',
       },
       letterSpacing: {

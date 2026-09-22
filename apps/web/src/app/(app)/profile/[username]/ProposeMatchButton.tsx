@@ -85,7 +85,7 @@ export function ProposeMatchButton({
           type="button"
           onClick={handleClick}
           disabled={state === 'loading'}
-          className="w-full py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-60 disabled:cursor-default"
+          className="w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-60 disabled:cursor-default"
         >
           {label}
         </button>

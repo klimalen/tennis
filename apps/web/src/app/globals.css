@@ -7,8 +7,12 @@
     box-sizing: border-box;
   }
 
+  .bg-\[\#E8748A\] > .font-display {
+    color: #1a1a1a;
+  }
+
   body {
-    background-color: #FFFFFF;
+    background-color: #FAF7F2;
     color: #1a1a1a;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

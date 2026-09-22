@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+      <div className="bg-white rounded-[28px] p-8 text-center">
         <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
           <Check size={24} className="text-green-600" />
         </div>
@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <div className="bg-white rounded-[28px] p-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">New password</h1>
       <p className="text-gray-500 text-sm mb-6">Choose a strong password for your account.</p>
 

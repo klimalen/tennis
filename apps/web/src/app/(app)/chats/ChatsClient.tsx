@@ -147,11 +147,11 @@ export function ChatsClient({ userId, initialChats }: Props) {
         <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
         <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No chats yet</p>
         <p className="text-sm text-[rgba(26,26,26,0.4)] max-w-xs font-script italic">
-          When someone accepts your game request, a chat will open here.
+          When someone accepts your game request, a chat will open here
         </p>
         <Link
           href="/search"
-          className="mt-6 px-6 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+          className="mt-6 px-6 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
         >
           Find players
         </Link>
@@ -190,10 +190,10 @@ export function ChatsClient({ userId, initialChats }: Props) {
                 ),
               )
             }}
-            className="flex items-center gap-4 px-4 py-4 border-b border-brand-divider hover:bg-brand-surface/50 transition-colors"
+            className="flex items-center gap-4 mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white hover:bg-[#F4F1EC] transition-colors"
           >
             {/* Avatar */}
-            <div className="w-12 h-12 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
               {other.avatar_url ? (
                 <Image src={other.avatar_url} alt={other.full_name} width={48} height={48} className="w-full h-full object-cover" />
               ) : (

@@ -17,7 +17,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-brand-bg border-r border-brand-divider z-40">
+    <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-[#1a1a1a]/10 z-40">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-brand-divider">
         <Link href="/search" className="block">
@@ -37,7 +37,7 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${
                 isActive
-                  ? 'bg-brand-surface text-brand-primary'
+                  ? 'bg-[#FAF7F2] text-brand-primary rounded-full'
                   : 'text-[rgba(26,26,26,0.5)] hover:bg-brand-surface hover:text-[#1a1a1a]'
               }`}
             >
