@@ -196,18 +196,28 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
 
 // ─── Player card ──────────────────────────────────────────────────────────────
 
+function skillFill(level: number): string {
+  const label = skillLabel(level)
+  if (label === 'Beginner') return 'bg-[#E8E1D7] text-[#1a1a1a]'
+  if (label === 'Advanced') return 'bg-[#E8748A] text-[#F0EBE3]'
+  if (label === 'Competitive') return 'bg-[#D4A017] text-[#1E3A6E]'
+  return 'bg-[#3A8A7A] text-[#F0EBE3]'
+}
+
 function PlayerCard({
   player,
   status,
   onRequest,
   onCancel,
   onPlan,
+  vivid = false,
 }: {
   player: Player
   status: RequestStatus
   onRequest: (id: string) => void
   onCancel: (id: string) => void
   onPlan: (player: Player) => void
+  vivid?: boolean
 }) {
   const skill = player.skill_level_computed ?? player.skill_level_self
   const initials = player.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -223,25 +233,29 @@ function PlayerCard({
 
   const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
 
+  const actionClass = vivid
+    ? `w-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]'}`
+    : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider bg-brand-primary text-white hover:bg-brand-primary-dark'
+
   return (
-    <Link href={`/profile/${player.username}`} className="block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
+    <Link href={`/profile/${player.username}`} className={vivid ? 'block bg-[#FAF7F2] active:bg-white' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
       <div className="p-4 flex gap-3">
-        <div className="w-14 h-14 flex-shrink-0 bg-brand-surface-md flex items-center justify-center overflow-hidden">
+        <div className={`w-14 h-14 flex-shrink-0 flex items-center justify-center overflow-hidden ${vivid ? 'bg-[#E8748A]' : 'bg-brand-surface-md'}`}>
           {player.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
           ) : (
-            <span className="font-display text-lg text-[rgba(26,26,26,0.4)]">{initials}</span>
+            <span className={`font-display text-lg ${vivid ? 'text-[#F0EBE3]' : 'text-[rgba(26,26,26,0.4)]'}`}>{initials}</span>
           )}
         </div>
         <div className="flex-1 min-w-0 space-y-1.5">
           <div>
-            <p className="font-medium text-[14px] text-[#1a1a1a] leading-tight">{player.full_name}</p>
-            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{player.username}</p>
+            <p className={vivid ? 'font-display text-3xl tracking-wide leading-none text-[#1a1a1a]' : 'font-medium text-[14px] text-[#1a1a1a] leading-tight'}>{vivid ? player.full_name.toUpperCase() : player.full_name}</p>
+            <p className={vivid ? 'font-script italic text-sm text-[#85648F] mt-0.5' : 'text-[11px] text-[rgba(26,26,26,0.4)]'}>@{player.username}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {skill != null && (
-              <span className="px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold">
+              <span className={vivid ? `px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-semibold ${skillFill(skill)}` : 'px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold'}>
                 {skillLabel(skill)}
               </span>
             )}
@@ -262,7 +276,7 @@ function PlayerCard({
             ) : null}
           </div>
           {(player.bio || player.looking_for) && (
-            <p className="text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed">
+            <p className={vivid ? 'font-script italic text-sm text-[#497250] line-clamp-2 leading-snug' : 'text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed'}>
               {player.bio || player.looking_for}
             </p>
           )}
@@ -272,13 +286,13 @@ function PlayerCard({
         </div>
       </div>
       {pending ? (
-        <div className="flex border-t border-brand-divider">
+        <div className={`flex ${vivid ? 'bg-[#E8E1D7]' : 'border-t border-brand-divider'}`}>
           <span className="flex-1 py-2.5 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.4)]">
             Request sent
           </span>
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
-            className="px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.55)] hover:text-brand-primary border-l border-brand-divider"
+            className={`px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium border-l ${vivid ? 'border-[#F0EBE3] text-[#E8748A]' : 'border-brand-divider text-[rgba(26,26,26,0.55)] hover:text-brand-primary'}`}
           >
             Cancel
           </button>
@@ -286,7 +300,7 @@ function PlayerCard({
       ) : (
         <button
           onClick={handleRequest}
-          className="w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider bg-brand-primary text-white hover:bg-brand-primary-dark"
+          className={actionClass}
         >
           {btnLabel}
         </button>
@@ -430,22 +444,22 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
 
 // ─── Venue card ───────────────────────────────────────────────────────────────
 
-function VenueCard({ venue, userLat, userLng, viewed, onClick }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void }) {
+function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = false }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; vivid?: boolean }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
-    <button onClick={onClick} className={`w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface ${viewed ? 'opacity-55' : ''}`}>
+    <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'bg-[#FAF7F2] active:bg-white' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
       <div className="flex gap-0">
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
-            <p className="font-display text-[18px] leading-none tracking-wide text-[#1a1a1a] uppercase">{courtTitle(venue)}</p>
+            <p className={`font-display leading-none tracking-wide text-[#1a1a1a] uppercase ${vivid ? 'text-2xl' : 'text-[18px]'}`}>{courtTitle(venue)}</p>
             <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">
               <span className="text-[9px] tracking-[0.1em] uppercase mr-1.5">{venueKindLabel(venue.kind)}</span>
               {courtTitle(venue) === venue.address ? null : venue.address}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
-            <span className="text-[11px] text-[rgba(26,26,26,0.4)] flex items-center gap-0.5"><MapPin size={10} />{formatDistance(distanceM)}</span>
+            <span className={`text-[11px] flex items-center gap-0.5 ${vivid ? 'text-[#D4A017]' : 'text-[rgba(26,26,26,0.4)]'}`}><MapPin size={10} />{formatDistance(distanceM)}</span>
             <SurfaceBadge surface={venue.surface} />
             {venue.lit && <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]"><Zap size={9} />Lit</span>}
             {venue.has_indoor && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Indoor</span>}
@@ -476,38 +490,39 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
   const initials = sender.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="px-4 py-4 border-b border-brand-divider">
+    <div className="bg-[#E8748A] text-[#F0EBE3] px-5 py-5">
+      <p className="text-[10px] tracking-[0.22em] uppercase text-[#F0EBE3]/80 mb-2">✦ Wants to play</p>
       <div className="flex items-center gap-3">
-        <Link href={`/profile/${sender.username}`} className="w-12 h-12 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+        <Link href={`/profile/${sender.username}`} className="w-14 h-14 bg-[#F0EBE3] overflow-hidden flex items-center justify-center flex-shrink-0">
           {sender.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={sender.avatar_url} alt={sender.full_name} className="w-full h-full object-cover" />
           ) : (
-            <span className="font-display text-lg text-[rgba(26,26,26,0.3)]">{initials}</span>
+            <span className="font-display text-xl text-[#E8748A]">{initials}</span>
           )}
         </Link>
         <div className="flex-1 min-w-0">
-          <Link href={`/profile/${sender.username}`} className="block font-display text-base tracking-wide leading-tight hover:text-brand-primary transition-colors">
+          <Link href={`/profile/${sender.username}`} className="block font-display text-4xl tracking-wide leading-none">
             {sender.full_name.toUpperCase()}
           </Link>
-          <p className="text-[12px] text-[rgba(26,26,26,0.55)] mt-1">Wants to play. Accept to open a chat — you will follow each other.</p>
-          <div className="flex items-center gap-2 mt-1.5">
+          <p className="font-script italic text-base text-[#F0EBE3]/90 mt-1">Accept to open a chat. You will follow each other.</p>
+          <div className="flex items-center gap-2 mt-2">
             {skill != null && (
-              <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
+              <span className="text-[9px] tracking-[0.12em] uppercase font-semibold bg-[#F0EBE3] text-[#E8748A] px-2 py-0.5">
                 {skillLabel(skill)}
               </span>
             )}
-            {sender.city_name && <span className="text-[10px] text-[rgba(26,26,26,0.4)]">{sender.city_name}</span>}
+            {sender.city_name && <span className="text-[11px] text-[#F0EBE3]/80">{sender.city_name}</span>}
           </div>
         </div>
       </div>
-      <div className="flex gap-2 mt-3">
+      <div className="flex gap-2 mt-4">
         <button onClick={async () => { setActing('accept'); await onAccept(req.id, req.sender_id) }} disabled={acting !== null}
-          className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
+          className="flex-1 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium hover:bg-white transition-colors disabled:opacity-50">
           {acting === 'accept' ? 'Opening chat…' : 'Accept'}
         </button>
         <button onClick={async () => { setActing('decline'); await onDecline(req.id) }} disabled={acting !== null}
-          className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.4)] hover:text-[rgba(26,26,26,0.7)] transition-colors disabled:opacity-50">
+          className="flex-1 py-3 border border-[#F0EBE3]/50 text-[11px] tracking-[0.16em] uppercase font-medium text-[#F0EBE3] hover:bg-[#F0EBE3]/10 transition-colors disabled:opacity-50">
           {acting === 'decline' ? 'Declining…' : 'Decline'}
         </button>
       </div>
@@ -548,7 +563,7 @@ const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, userId, joined, onJoin, onClick }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void }) {
+function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
   const spotsTaken = game.participants.filter((p) => p.status === 'accepted' || p.status === 'invited').length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
@@ -556,33 +571,40 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick }: { game: OpenGam
   const alreadyIn = isParticipant || joined
 
   return (
-    <button onClick={onClick} className="w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
-      <div className="p-4">
+    <button onClick={onClick} className={vivid ? 'w-full text-left bg-[#3A8A7A] text-[#F0EBE3] active:bg-[#2d7066]' : 'w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
+      <div className={vivid ? 'p-5' : 'p-4'}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="font-display text-xl tracking-wide leading-none text-[#1a1a1a]">
-              <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} /> · <LocalGameTime iso={game.scheduled_at} />
+            {vivid && <p className="text-[10px] tracking-[0.22em] uppercase text-[#BCD85E] mb-2">✦ Open game</p>}
+            <p className={vivid ? 'font-display text-6xl tracking-wide leading-none' : 'font-display text-xl tracking-wide leading-none text-[#1a1a1a]'}>
+              <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} />
+              {vivid ? null : <> · <LocalGameTime iso={game.scheduled_at} /></>}
             </p>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            <p className={vivid ? 'font-script italic text-lg text-[#F0EBE3]/85 mt-2' : 'hidden'}>
+              <LocalGameTime iso={game.scheduled_at} />
+              {' · '}
+              {OPEN_FORMAT_LABELS[game.format] ?? game.format}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
+            </p>
+            <div className={vivid ? 'hidden' : 'flex items-center gap-2 mt-1.5 flex-wrap'}>
               <span className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">{OPEN_FORMAT_LABELS[game.format] ?? game.format}</span>
               {game.neighborhood && (
                 <span className="text-[10px] text-[rgba(26,26,26,0.45)] flex items-center gap-0.5"><MapPin size={9} />{game.neighborhood}</span>
               )}
             </div>
           </div>
-          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 flex-shrink-0 ${isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.35)]' : 'bg-brand-primary/10 text-brand-primary'}`}>
+          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 flex-shrink-0 ${vivid ? 'bg-[#F0EBE3] text-[#3A8A7A]' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.35)]' : 'bg-brand-primary/10 text-brand-primary'}`}>
             {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-2">
             <ParticipantAvatars participants={game.participants} />
-            <span className="text-[10px] text-[rgba(26,26,26,0.4)]">{spotsTaken}/{game.max_players}</span>
+            <span className={vivid ? 'text-[11px] text-[#F0EBE3]/80' : 'text-[10px] text-[rgba(26,26,26,0.4)]'}>{spotsTaken}/{game.max_players}</span>
           </div>
           <button
             onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
             disabled={alreadyIn || isFull}
-            className={`px-4 py-1.5 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${alreadyIn ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.3)] cursor-default' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
+            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
             {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
           </button>
         </div>
@@ -736,9 +758,9 @@ function CourtCardSkeleton() {
 function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeAll: () => void; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.5)]">{title}</span>
-        <button onClick={onSeeAll} className="flex items-center gap-1 text-[10px] tracking-[0.15em] uppercase text-brand-primary font-medium hover:underline">
+      <div className="flex items-end justify-between mb-3">
+        <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">{title}</span>
+        <button onClick={onSeeAll} className="flex items-center gap-1 text-[11px] tracking-[0.14em] uppercase text-[#1E3A6E] font-medium hover:underline pb-1">
           See all <ChevronRight size={11} />
         </button>
       </div>
@@ -749,7 +771,36 @@ function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeA
 
 // ─── No city state ─────────────────────────────────────────────────────────────
 
-function NoCityState({ guest, onBrowseCourts }: { guest?: boolean; onBrowseCourts?: () => void }) {
+function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean; onBrowseCourts?: () => void; vivid?: boolean }) {
+  if (vivid) {
+    return (
+      <div className="bg-[#E8748A] text-[#F0EBE3] px-5 py-8 space-y-3">
+        <p className="text-[10px] tracking-[0.22em] uppercase text-[#F0EBE3]/80">✦ No city yet</p>
+        <p className="font-display text-5xl leading-none tracking-wide">WHERE DO YOU PLAY?</p>
+        <p className="font-script italic text-lg text-[#F0EBE3]/90">
+          {guest
+            ? 'Create an account and add your city. Courts are open without one.'
+            : 'Add your city so Discover can find games near you.'}
+        </p>
+        <div className="flex flex-col items-start gap-3 pt-2">
+          {guest ? (
+            <Link href="/sign-up" className="inline-block px-5 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
+              Create free account
+            </Link>
+          ) : (
+            <a href="/me/edit" className="inline-block px-5 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
+              Add city
+            </a>
+          )}
+          {onBrowseCourts && (
+            <button type="button" onClick={onBrowseCourts} className="text-[11px] tracking-[0.14em] uppercase font-medium text-[#F0EBE3] underline">
+              Browse courts
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="border border-brand-divider bg-brand-surface px-4 py-10 text-center space-y-3">
       <MapPin size={24} className="mx-auto text-[rgba(26,26,26,0.2)]" />
@@ -1266,42 +1317,39 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   if (view === 'discovery') {
     return (
-      <div className="min-h-screen pb-20 md:pb-0">
+      <div className="min-h-screen bg-[#F0EBE3] pb-20 md:pb-0">
         {sheets}
 
-        {/* Header */}
-        <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
-          <div className="max-w-2xl mx-auto">
-            <span className="font-display text-3xl tracking-wide">DISCOVER</span>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 pt-8 pb-2">
+          <p className="text-[10px] tracking-[0.28em] uppercase text-[#85648F]">✦ The club</p>
+          <h1 className="font-display text-7xl leading-[0.9] tracking-wide text-[#1a1a1a] mt-1">DISCOVER</h1>
+          <p className="font-script italic text-xl text-[#497250] mt-2">A game, a court, a partner.</p>
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 py-5 space-y-8">
-          {/* Guest CTA */}
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
           {!user && (
-            <div className="bg-brand-primary-muted border border-brand-primary/20 px-4 py-3 flex items-center justify-between gap-3">
-              <p className="text-sm text-brand-primary font-medium">Sign up to connect with players near you</p>
-              <Link href="/sign-up" className="flex-shrink-0 px-4 py-1.5 bg-brand-primary text-white text-xs font-semibold hover:bg-brand-primary-dark transition-colors">Join free</Link>
+            <div className="bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="font-display text-4xl leading-none">JOIN FREE</p>
+                <p className="font-script italic text-base text-[#D4E040] mt-1">Play with people near you.</p>
+              </div>
+              <Link href="/sign-up" className="flex-shrink-0 px-4 py-2.5 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.14em] uppercase font-medium">Join</Link>
             </div>
           )}
 
-          {/* Incoming requests */}
           {incomingRequests.length > 0 && (
-            <div className="-mx-4 border-y border-brand-divider">
-              <p className="px-4 pt-3 pb-1 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Game requests</p>
+            <div className="space-y-3">
               {incomingRequests.map((req) => (
                 <IncomingRequestCard key={req.id} req={req} onAccept={handleAccept} onDecline={handleDecline} />
               ))}
             </div>
           )}
 
-          {/* No city — single global state */}
           {!userCityName ? (
-            <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
+            <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} vivid />
           ) : (
             <>
-              {/* ── Open Games ── */}
-              <DiscoverySection title="Open Games" onSeeAll={() => navigateTo('games')}>
+              <DiscoverySection title="OPEN GAMES" onSeeAll={() => navigateTo('games')}>
                 {loadingPreviewGame ? (
                   <GameCardSkeleton />
                 ) : previewGame ? (
@@ -1311,12 +1359,14 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     joined={joinedGameIds.has(previewGame.id)}
                     onJoin={handleJoin}
                     onClick={() => setSelectedGame(previewGame)}
+                    vivid
                   />
                 ) : (
-                  <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center space-y-3">
-                    <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No open games in {userCityName}</p>
+                  <div className="bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
+                    <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
+                    <p className="font-script italic text-lg text-[#F0EBE3]/85">Nothing posted in {userCityName} yet.</p>
                     {user && (
-                      <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+                      <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-3 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.16em] uppercase font-medium">
                         <Plus size={12} /> Create a game
                       </Link>
                     )}
@@ -1324,8 +1374,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 )}
               </DiscoverySection>
 
-              {/* ── Players ── */}
-              <DiscoverySection title="Players" onSeeAll={() => navigateTo('players')}>
+              <DiscoverySection title="PLAYERS" onSeeAll={() => navigateTo('players')}>
                 {loadingPreviewPlayer ? (
                   <PlayerCardSkeleton />
                 ) : previewPlayer ? (
@@ -1335,17 +1384,17 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     onRequest={handlePlayerRequest}
                     onCancel={handleCancelRequest}
                     onPlan={handlePlanGame}
+                    vivid
                   />
                 ) : (
-                  <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
-                    <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No players in {userCityName} yet</p>
-                    <p className="text-sm text-[rgba(26,26,26,0.45)]">Invite friends to join you on the court</p>
+                  <div className="bg-[#FAF7F2] px-5 py-8">
+                    <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO PLAYERS YET</p>
+                    <p className="font-script italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court.</p>
                   </div>
                 )}
               </DiscoverySection>
 
-              {/* ── Courts ── */}
-              <DiscoverySection title="Courts" onSeeAll={() => navigateTo('courts')}>
+              <DiscoverySection title="COURTS" onSeeAll={() => navigateTo('courts')}>
                 {loadingPreviewVenue ? (
                   <CourtCardSkeleton />
                 ) : previewVenue && previewCoords ? (
@@ -1354,15 +1403,16 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     userLat={previewCoords.lat}
                     userLng={previewCoords.lng}
                     viewed={viewedVenues.has(previewVenue.id)}
+                    vivid
                     onClick={() => {
                       setSelectedVenue(previewVenue)
                       setViewedVenues((prev) => new Set(prev).add(previewVenue.id))
                     }}
                   />
                 ) : (
-                  <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
-                    <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No courts found near {userCityName}</p>
-                    <p className="text-sm text-[rgba(26,26,26,0.45)]">Try searching a specific area in the courts view</p>
+                  <div className="bg-[#FAF7F2] px-5 py-8">
+                    <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO COURTS NEARBY</p>
+                    <p className="font-script italic text-[#85648F] mt-2">Try another area from the courts list.</p>
                   </div>
                 )}
               </DiscoverySection>
