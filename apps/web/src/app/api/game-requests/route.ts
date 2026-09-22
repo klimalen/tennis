@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
 
   const statuses: Record<string, string> = {}
   for (const row of requests ?? []) {
+    // A cancelled request can be sent again — treat it as no request.
+    if (row.status === 'cancelled') continue
     statuses[row.receiver_id] = row.status
   }
 
@@ -93,12 +95,54 @@ export async function POST(request: Request) {
     return NextResponse.json({ matched: true, conversation_id: convId })
   }
 
-  // No reverse — upsert a pending request (ignore if already sent)
+  // One row per pair. Re-open a declined or cancelled request instead of ignoring it.
+  const { data: existing } = await supabase
+    .from('game_requests')
+    .select('id, status')
+    .eq('sender_id', user.id)
+    .eq('receiver_id', receiverId)
+    .maybeSingle()
+
+  if (existing) {
+    if (existing.status === 'pending') {
+      return NextResponse.json({ matched: false })
+    }
+    if (existing.status === 'accepted' || existing.status === 'matched') {
+      return NextResponse.json({ matched: true })
+    }
+    const { error: reopenErr } = await supabase
+      .from('game_requests')
+      .update({ status: 'pending' })
+      .eq('id', existing.id)
+    if (reopenErr) return NextResponse.json({ error: reopenErr.message }, { status: 500 })
+    return NextResponse.json({ matched: false })
+  }
+
   const { error } = await supabase
     .from('game_requests')
-    .upsert({ sender_id: user.id, receiver_id: receiverId }, { onConflict: 'sender_id,receiver_id', ignoreDuplicates: true })
+    .insert({ sender_id: user.id, receiver_id: receiverId })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ matched: false })
+}
+
+// DELETE /api/game-requests?receiver_id=  — sender withdraws a pending request
+export async function DELETE(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const receiverId = request.nextUrl.searchParams.get('receiver_id')
+  if (!receiverId) return NextResponse.json({ error: 'receiver_id required' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('game_requests')
+    .update({ status: 'cancelled' })
+    .eq('sender_id', user.id)
+    .eq('receiver_id', receiverId)
+    .eq('status', 'pending')
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }

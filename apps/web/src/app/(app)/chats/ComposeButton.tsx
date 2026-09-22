@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { SquarePen, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { skillLabel } from '@/lib/skill'
 
 interface Connection {
   id: string
@@ -13,14 +14,6 @@ interface Connection {
   city_name: string | null
   skill_level_computed: number | null
   skill_level_self: number | null
-}
-
-function skillLabel(v: number | null): string | null {
-  if (!v) return null
-  if (v < 2) return 'Beginner'
-  if (v < 3.5) return 'Intermediate'
-  if (v < 5) return 'Advanced'
-  return 'Competitive'
 }
 
 export function ComposeButton() {

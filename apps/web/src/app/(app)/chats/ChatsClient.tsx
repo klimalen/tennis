@@ -40,6 +40,18 @@ interface Props {
   initialChats: ChatItem[]
 }
 
+function formatChatTime(iso: string): string {
+  const date = new Date(iso)
+  const now = new Date()
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  }
+  const yesterday = new Date(now)
+  yesterday.setDate(now.getDate() - 1)
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 function hasUnread(chat: ChatItem, userId: string): boolean {
   if (!chat.lastMsg) return false
   if (chat.lastMsg.sender_id === userId) return false
@@ -191,9 +203,14 @@ export function ChatsClient({ userId, initialChats }: Props) {
 
             {/* Text */}
             <div className="flex-1 min-w-0">
-              <p className={`font-display text-base tracking-wide leading-tight ${unread ? 'text-[#1a1a1a]' : ''}`}>
-                {other.full_name.toUpperCase()}
-              </p>
+              <div className="flex items-baseline justify-between gap-2">
+                <p className={`font-display text-base tracking-wide leading-tight truncate ${unread ? 'text-[#1a1a1a]' : ''}`}>
+                  {other.full_name.toUpperCase()}
+                </p>
+                {lastMsg && (
+                  <span className="text-[10px] text-[rgba(26,26,26,0.35)] flex-shrink-0">{formatChatTime(lastMsg.created_at)}</span>
+                )}
+              </div>
               {preview ? (
                 <p className={`text-[11px] mt-0.5 truncate ${unread ? 'text-[rgba(26,26,26,0.7)] font-medium' : 'text-[rgba(26,26,26,0.45)]'}`}>
                   {preview}

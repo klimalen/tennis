@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { skillLabel } from '@/lib/skill'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,18 +131,23 @@ interface OpenGame {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function skillLabel(level: number | null): string {
-  if (level == null) return ''
-  if (level < 2) return 'Beginner'
-  if (level < 3.5) return 'Intermediate'
-  if (level < 5) return 'Advanced'
-  return 'Competitive'
-}
-
 const FORMAT_LABELS: Record<string, string> = {
   singles: 'Singles',
   doubles: 'Doubles',
-  mixed_doubles: 'Doubles',
+  mixed_doubles: 'Mixed',
+}
+
+function isGenericCourtName(name: string): boolean {
+  return /^tennis courts?$/i.test(name.trim())
+}
+
+function courtTitle(venue: Venue): string {
+  if (isGenericCourtName(venue.name) && venue.address) return venue.address
+  return venue.name
+}
+
+function surfaceLabel(surface: string): string {
+  return surface.replace(/_/g, ' ')
 }
 
 type RequestStatus = 'none' | 'pending' | 'accepted' | 'matched' | 'declined'
@@ -179,7 +185,7 @@ const SURFACE_STYLES: Record<string, string> = {
 
 function SurfaceBadge({ surface }: { surface: string | null }) {
   if (!surface) return null
-  const label = surface.charAt(0).toUpperCase() + surface.slice(1)
+  const label = surfaceLabel(surface)
   const cls = SURFACE_STYLES[surface.toLowerCase()] ?? 'bg-brand-surface text-[rgba(26,26,26,0.6)]'
   return (
     <span className={`px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-semibold ${cls}`}>
@@ -194,24 +200,28 @@ function PlayerCard({
   player,
   status,
   onRequest,
+  onCancel,
+  onPlan,
 }: {
   player: Player
   status: RequestStatus
   onRequest: (id: string) => void
+  onCancel: (id: string) => void
+  onPlan: (player: Player) => void
 }) {
   const skill = player.skill_level_computed ?? player.skill_level_self
   const initials = player.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-  const isSent = status === 'pending' || status === 'accepted' || status === 'matched'
+  const matched = status === 'accepted' || status === 'matched'
+  const pending = status === 'pending'
 
   function handleRequest(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
-    if (!isSent) onRequest(player.id)
+    if (matched) onPlan(player)
+    else if (!pending) onRequest(player.id)
   }
 
-  const btnLabel =
-    status === 'matched' || status === 'accepted' ? 'Matched' :
-    status === 'pending' ? 'Request sent' : 'Play together'
+  const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
 
   return (
     <Link href={`/profile/${player.username}`} className="block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface">
@@ -261,17 +271,26 @@ function PlayerCard({
           )}
         </div>
       </div>
-      <button
-        onClick={handleRequest}
-        disabled={isSent}
-        className={`w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider ${
-          isSent
-            ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
-            : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
-        }`}
-      >
-        {btnLabel}
-      </button>
+      {pending ? (
+        <div className="flex border-t border-brand-divider">
+          <span className="flex-1 py-2.5 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.4)]">
+            Request sent
+          </span>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
+            className="px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.55)] hover:text-brand-primary border-l border-brand-divider"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={handleRequest}
+          className="w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider bg-brand-primary text-white hover:bg-brand-primary-dark"
+        >
+          {btnLabel}
+        </button>
+      )}
     </Link>
   )
 }
@@ -338,12 +357,14 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
         <div className="p-5 pb-24 space-y-4">
           <div>
             <div className="flex items-start justify-between gap-3">
-              <h2 className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{venue.name}</h2>
+              <h2 className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{courtTitle(venue)}</h2>
               <span className="text-[11px] text-[rgba(26,26,26,0.45)] flex items-center gap-1 flex-shrink-0 mt-1">
                 <MapPin size={11} />{formatDistance(distanceM)}
               </span>
             </div>
-            {venue.address && <p className="text-[12px] text-[rgba(26,26,26,0.5)] mt-1">{venue.address}</p>}
+            {venue.address && courtTitle(venue) !== venue.address && (
+              <p className="text-[12px] text-[rgba(26,26,26,0.5)] mt-1">{venue.address}</p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <SurfaceBadge surface={venue.surface} />
@@ -380,6 +401,9 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
               <span>{venue.opening_hours}</span>
             </div>
           )}
+          <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
+            Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
+          </p>
           <div className="grid grid-cols-1 gap-2 pt-1">
             <a href={venue.google_maps_uri ?? googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
@@ -414,10 +438,10 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick }: { venue: Venue;
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
-            <p className="font-display text-[18px] leading-none tracking-wide text-[#1a1a1a] uppercase">{venue.name}</p>
+            <p className="font-display text-[18px] leading-none tracking-wide text-[#1a1a1a] uppercase">{courtTitle(venue)}</p>
             <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">
-              {venue.kind !== 'unknown' && <span className="text-[9px] tracking-[0.1em] uppercase mr-1.5">{venueKindLabel(venue.kind)}</span>}
-              {venue.address}
+              <span className="text-[9px] tracking-[0.1em] uppercase mr-1.5">{venueKindLabel(venue.kind)}</span>
+              {courtTitle(venue) === venue.address ? null : venue.address}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
@@ -466,7 +490,8 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
           <Link href={`/profile/${sender.username}`} className="block font-display text-base tracking-wide leading-tight hover:text-brand-primary transition-colors">
             {sender.full_name.toUpperCase()}
           </Link>
-          <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-[12px] text-[rgba(26,26,26,0.55)] mt-1">Wants to play. Accept to open a chat — you will follow each other.</p>
+          <div className="flex items-center gap-2 mt-1.5">
             {skill != null && (
               <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
                 {skillLabel(skill)}
@@ -478,12 +503,12 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
       </div>
       <div className="flex gap-2 mt-3">
         <button onClick={async () => { setActing('accept'); await onAccept(req.id, req.sender_id) }} disabled={acting !== null}
-          className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
-          {acting === 'accept' ? '…' : 'Accept'}
+          className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50">
+          {acting === 'accept' ? 'Opening chat…' : 'Accept'}
         </button>
         <button onClick={async () => { setActing('decline'); await onDecline(req.id) }} disabled={acting !== null}
           className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.4)] hover:text-[rgba(26,26,26,0.7)] transition-colors disabled:opacity-50">
-          {acting === 'decline' ? '…' : 'Decline'}
+          {acting === 'decline' ? 'Declining…' : 'Decline'}
         </button>
       </div>
     </div>
@@ -519,7 +544,7 @@ function ParticipantAvatars({ participants, max = 3 }: { participants: OpenGameP
   )
 }
 
-const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Doubles' }
+const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
@@ -724,17 +749,34 @@ function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeA
 
 // ─── No city state ─────────────────────────────────────────────────────────────
 
-function NoCityState() {
+function NoCityState({ guest, onBrowseCourts }: { guest?: boolean; onBrowseCourts?: () => void }) {
   return (
     <div className="border border-brand-divider bg-brand-surface px-4 py-10 text-center space-y-3">
       <MapPin size={24} className="mx-auto text-[rgba(26,26,26,0.2)]" />
       <div>
         <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium mb-1">No city set</p>
-        <p className="text-sm text-[rgba(26,26,26,0.5)]">Add your city to discover players, games, and courts nearby</p>
+        <p className="text-sm text-[rgba(26,26,26,0.55)]">
+          {guest
+            ? 'Create an account and add your city to see players and games. You can look up courts without an account.'
+            : 'Add your city so Discover can show players, games, and courts near you.'}
+        </p>
       </div>
-      <a href="/me/edit" className="inline-block px-5 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
-        Add city
-      </a>
+      <div className="flex flex-col items-center gap-2">
+        {guest ? (
+          <Link href="/sign-up" className="inline-block px-5 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+            Create free account
+          </Link>
+        ) : (
+          <a href="/me/edit" className="inline-block px-5 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
+            Add city
+          </a>
+        )}
+        {onBrowseCourts && (
+          <button type="button" onClick={onBrowseCourts} className="text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline">
+            Browse courts
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -786,24 +828,33 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     if (discoveryLoaded.current || !userCityName) return
     discoveryLoaded.current = true
 
-    // Player preview
-    const playerParams = new URLSearchParams({ city: userCityName })
-    if (user) playerParams.set('exclude', user.id)
-    fetch(`/api/players?${playerParams}`)
-      .then((r) => r.json())
-      .then(async (json: { players: Player[] }) => {
+    let playerLoaded = false
+    async function loadPreviewPlayer(coords?: { lat: number; lng: number }) {
+      playerLoaded = true
+      const playerParams = new URLSearchParams({ city: userCityName! })
+      if (user) playerParams.set('exclude', user.id)
+      if (coords) {
+        playerParams.set('lat', String(coords.lat))
+        playerParams.set('lng', String(coords.lng))
+      }
+      try {
+        const res = await fetch(`/api/players?${playerParams}`)
+        const json = await res.json() as { players: Player[] }
         const first = json.players?.[0] ?? null
         setPreviewPlayer(first)
         if (user && first) {
-          const res = await fetch(`/api/game-requests?receiver_ids=${first.id}`)
-          if (res.ok) {
-            const data = await res.json() as { statuses: Record<string, string> }
+          const statusRes = await fetch(`/api/game-requests?receiver_ids=${first.id}`)
+          if (statusRes.ok) {
+            const data = await statusRes.json() as { statuses: Record<string, string> }
             setRequestStatuses(data.statuses as Record<string, RequestStatus>)
           }
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoadingPreviewPlayer(false))
+      } catch {
+        setPreviewPlayer(null)
+      } finally {
+        setLoadingPreviewPlayer(false)
+      }
+    }
 
     // Game preview
     fetch(`/api/open-games?city=${encodeURIComponent(userCityName)}`)
@@ -820,11 +871,15 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       .then((r) => r.json())
       .then(async (results: NominatimPlace[]) => {
         const place = results[0]
-        if (!place) return
+        if (!place) {
+          await loadPreviewPlayer()
+          return
+        }
         const bb = place.boundingbox.map(Number) as [number, number, number, number]
         const lat = (bb[0] + bb[1]) / 2
         const lng = (bb[2] + bb[3]) / 2
         setPreviewCoords({ lat, lng })
+        await loadPreviewPlayer({ lat, lng })
         const res = await fetch(`/api/venues?south=${bb[0]}&west=${bb[2]}&north=${bb[1]}&east=${bb[3]}`)
         if (!res.ok) return
         const json = await res.json() as { venues: Venue[] }
@@ -833,7 +888,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         )
         setPreviewVenue(sorted[0] ?? null)
       })
-      .catch(() => {})
+      .catch(async () => {
+        if (!playerLoaded) await loadPreviewPlayer()
+      })
       .finally(() => setLoadingPreviewVenue(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -845,23 +902,33 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [playersOffset, setPlayersOffset] = useState(0)
   const [hasMorePlayers, setHasMorePlayers] = useState(false)
   const [userGeoCoords, setUserGeoCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [geocodeDone, setGeocodeDone] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const playersQueryKey = useRef('')
 
-  // Geocode user city once to get coords for distance sorting
+  // Geocode user city once so the full list sorts by distance, same as the preview.
   useEffect(() => {
-    if (!userCityName || userGeoCoords) return
+    if (!userCityName) return
+    if (previewCoords) {
+      setUserGeoCoords(previewCoords)
+      setGeocodeDone(true)
+      return
+    }
+    let cancelled = false
     fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=1`,
       { headers: { 'Accept-Language': 'en' } },
     )
       .then((r) => r.json())
       .then((results: Array<{ lat: string; lon: string }>) => {
+        if (cancelled) return
         const p = results[0]
         if (p) setUserGeoCoords({ lat: parseFloat(p.lat), lng: parseFloat(p.lon) })
       })
       .catch(() => {})
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userCityName])
+      .finally(() => { if (!cancelled) setGeocodeDone(true) })
+    return () => { cancelled = true }
+  }, [userCityName, previewCoords])
 
   async function fetchPlayers(offset: number, append: boolean) {
     if (!userCityName) return
@@ -869,11 +936,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
     const params = new URLSearchParams({ offset: String(offset) })
     if (user) params.set('exclude', user.id)
+    params.set('city', userCityName)
     if (userGeoCoords) {
       params.set('lat', String(userGeoCoords.lat))
       params.set('lng', String(userGeoCoords.lng))
-    } else {
-      params.set('city', userCityName)
     }
 
     try {
@@ -901,11 +967,18 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     }
   }
 
-  function loadPlayers() {
+  useEffect(() => {
+    if (view !== 'players' || !userCityName || !geocodeDone) return
+    const key = userGeoCoords
+      ? `${userGeoCoords.lat.toFixed(4)},${userGeoCoords.lng.toFixed(4)}`
+      : 'city'
+    if (playersQueryKey.current === key) return
+    playersQueryKey.current = key
     setPlayersOffset(0)
     setHasMorePlayers(false)
     void fetchPlayers(0, false)
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, userCityName, userGeoCoords, geocodeDone])
 
   // IntersectionObserver — load next page when sentinel is visible
   useEffect(() => {
@@ -1092,7 +1165,6 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   function navigateTo(v: View) {
     setView(v)
-    if (v === 'players' && players.length === 0) loadPlayers()
     if (v === 'games' && openGames.length === 0) loadGames()
   }
 
@@ -1125,12 +1197,33 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   }
 
   async function handlePlayerRequest(playerId: string) {
+    if (!user) {
+      router.push('/sign-in?next=/search')
+      return
+    }
     setRequestStatuses((prev) => ({ ...prev, [playerId]: 'pending' }))
-    await fetch('/api/game-requests', {
+    const res = await fetch('/api/game-requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ receiver_id: playerId }),
     })
+    if (!res.ok) {
+      setRequestStatuses((prev) => ({ ...prev, [playerId]: 'none' }))
+      return
+    }
+    const data = await res.json() as { matched?: boolean }
+    if (data.matched) setRequestStatuses((prev) => ({ ...prev, [playerId]: 'matched' }))
+  }
+
+  async function handleCancelRequest(playerId: string) {
+    const previous = requestStatuses[playerId] ?? 'pending'
+    setRequestStatuses((prev) => ({ ...prev, [playerId]: 'none' }))
+    const res = await fetch(`/api/game-requests?receiver_id=${playerId}`, { method: 'DELETE' })
+    if (!res.ok) setRequestStatuses((prev) => ({ ...prev, [playerId]: previous }))
+  }
+
+  function handlePlanGame(player: Player) {
+    router.push(`/games/new?invite=${player.id}&name=${encodeURIComponent(player.full_name)}`)
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -1204,7 +1297,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
           {/* No city — single global state */}
           {!userCityName ? (
-            <NoCityState />
+            <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : (
             <>
               {/* ── Open Games ── */}
@@ -1240,6 +1333,8 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     player={previewPlayer}
                     status={requestStatuses[previewPlayer.id] ?? 'none'}
                     onRequest={handlePlayerRequest}
+                    onCancel={handleCancelRequest}
+                    onPlan={handlePlanGame}
                   />
                 ) : (
                   <div className="border border-brand-divider bg-brand-surface px-4 py-6 text-center">
@@ -1287,8 +1382,8 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {pageHeader('PLAYERS', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
           {!userCityName ? (
-            <NoCityState />
-          ) : loadingPlayers ? (
+            <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
+          ) : loadingPlayers || !geocodeDone ? (
             [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)
           ) : players.length === 0 ? (
             <div className="border border-brand-divider bg-brand-surface px-4 py-8 text-center">
@@ -1306,6 +1401,8 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                   player={player}
                   status={requestStatuses[player.id] ?? 'none'}
                   onRequest={handlePlayerRequest}
+                  onCancel={handleCancelRequest}
+                  onPlan={handlePlanGame}
                 />
               ))}
 
@@ -1339,7 +1436,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
           {!userCityName ? (
-            <NoCityState />
+            <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingOpenGames ? (
             [...Array(3)].map((_, i) => <GameCardSkeleton key={i} />)
           ) : openGames.length === 0 ? (

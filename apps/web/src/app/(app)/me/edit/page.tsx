@@ -552,12 +552,16 @@ export default function EditProfilePage() {
         <SectionTitle>Location</SectionTitle>
 
         <div className="mb-4">
-          <FieldLabel optional>City</FieldLabel>
+          <FieldLabel>City</FieldLabel>
+          <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Discover uses this city to show players, games, and courts near you.</p>
           <CityInput
             value={d.city}
             onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
             placeholder="Search your city..."
           />
+          {!d.city.trim() && (
+            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
+          )}
         </div>
 
         <div className="mb-2">

@@ -11,6 +11,7 @@ export default function NewPostPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = useRef(createClient()).current
@@ -32,20 +33,29 @@ export default function NewPostPage() {
     if (submitting) return
     if (!text.trim() && !imageFile) return
     setSubmitting(true)
+    setError('')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setError('Sign in to post.')
+      setSubmitting(false)
+      return
+    }
 
     let imageUrl: string | null = null
 
     if (imageFile) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setSubmitting(false); return }
-
       const ext = imageFile.name.split('.').pop() ?? 'jpg'
       const path = `${user.id}/${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('post-images')
         .upload(path, imageFile, { contentType: imageFile.type })
 
-      if (uploadError) { setSubmitting(false); return }
+      if (uploadError) {
+        setError('Could not upload the photo. Try again.')
+        setSubmitting(false)
+        return
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('post-images')
@@ -62,7 +72,9 @@ export default function NewPostPage() {
     if (res.ok) {
       router.push('/feed')
       router.refresh()
+      return
     }
+    setError('Could not publish the post. Try again.')
     setSubmitting(false)
   }
 
@@ -100,6 +112,10 @@ export default function NewPostPage() {
           className="w-full bg-transparent resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.3)] outline-none leading-relaxed"
           autoFocus
         />
+
+        {error && (
+          <p className="mt-3 text-sm text-red-600">{error}</p>
+        )}
 
         {/* Image preview */}
         {imagePreview && (

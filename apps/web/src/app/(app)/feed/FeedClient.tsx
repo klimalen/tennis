@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { UserPlus, UserCheck } from 'lucide-react'
+import { skillLabel } from '@/lib/skill'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,11 +33,6 @@ export interface FollowItem {
   follower: Sender
 }
 
-const SKILL_LABELS: Record<number, string> = {
-  1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
-  4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
-}
-
 function Avatar({ user, size = 12 }: { user: Sender; size?: number }) {
   const initials = user.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
   const px = size * 4
@@ -54,8 +50,8 @@ function Avatar({ user, size = 12 }: { user: Sender; size?: number }) {
 
 function SkillBadge({ user }: { user: Sender }) {
   const rating = user.skill_level_computed ?? user.skill_level_self
-  if (!rating) return null
-  const label = SKILL_LABELS[Math.round(rating * 2) / 2] ?? rating
+  const label = skillLabel(rating)
+  if (!label) return null
   return (
     <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
       {label}
@@ -65,14 +61,15 @@ function SkillBadge({ user }: { user: Sender }) {
 
 // ─── Game request card ────────────────────────────────────────────────────────
 
-function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: string, action: 'accept' | 'decline') => void }) {
-  const [state, setState] = useState<'idle' | 'loading'>('idle')
+function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: string, action: 'accept' | 'decline') => Promise<void> }) {
+  const [acting, setActing] = useState<'accept' | 'decline' | null>(null)
   const s = req.sender
 
   async function respond(action: 'accept' | 'decline') {
-    if (state === 'loading') return
-    setState('loading')
-    onRespond(req.id, action)
+    if (acting) return
+    setActing(action)
+    await onRespond(req.id, action)
+    setActing(null)
   }
 
   return (
@@ -89,26 +86,24 @@ function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: str
               <span className="text-[10px] text-[rgba(26,26,26,0.4)]">{s.city_name}</span>
             )}
           </div>
+          <p className="text-[12px] text-[rgba(26,26,26,0.55)] mt-1">Wants to play. Accept to open a chat — you will follow each other.</p>
         </div>
-        <span className="text-[8px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] font-medium flex-shrink-0">
-          Play request
-        </span>
       </div>
 
       <div className="flex gap-2 mt-3">
         <button
-          onClick={() => respond('accept')}
-          disabled={state === 'loading'}
+          onClick={() => void respond('accept')}
+          disabled={acting !== null}
           className="flex-1 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors disabled:opacity-50"
         >
-          Accept
+          {acting === 'accept' ? 'Opening chat…' : 'Accept'}
         </button>
         <button
-          onClick={() => respond('decline')}
-          disabled={state === 'loading'}
+          onClick={() => void respond('decline')}
+          disabled={acting !== null}
           className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.4)] hover:text-[rgba(26,26,26,0.7)] transition-colors disabled:opacity-50"
         >
-          Decline
+          {acting === 'decline' ? 'Declining…' : 'Decline'}
         </button>
       </div>
     </div>
@@ -251,20 +246,20 @@ export function FeedClient({ userId, initialRequests, initialFollows }: Props) {
   }, [userId, supabase])
 
   async function handleRespond(requestId: string, action: 'accept' | 'decline') {
-    setRequests((prev) => prev.filter((r) => r.id !== requestId))
     const res = await fetch(`/api/game-requests/${requestId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action }),
     })
-    if (res.ok && action === 'accept') {
+    if (!res.ok) return
+    if (action === 'accept') {
       const data = await res.json() as { conversation_id?: string }
       if (data.conversation_id) {
         router.push(`/chats/${data.conversation_id}`)
         return
       }
     }
-    if (!res.ok) router.refresh()
+    setRequests((prev) => prev.filter((r) => r.id !== requestId))
   }
 
   function handleFollowBack(followerId: string) {

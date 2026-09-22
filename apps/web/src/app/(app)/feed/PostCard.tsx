@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Calendar, Loader2, MapPin, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { skillLabel } from '@/lib/skill'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -99,17 +100,7 @@ function timeAgo(dateStr: string): string {
 }
 
 const FORMAT_LABELS: Record<string, string> = {
-  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Doubles',
-}
-
-const SKILL_LABELS: Record<number, string> = {
-  1: '1.0', 1.5: '1.5', 2: '2.0', 2.5: '2.5', 3: '3.0', 3.5: '3.5',
-  4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
-}
-
-function skillLabel(v: number | null) {
-  if (!v) return null
-  return SKILL_LABELS[Math.round(v * 2) / 2] ?? v.toFixed(1)
+  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed',
 }
 
 // ─── Participant avatars ───────────────────────────────────────────────────────
@@ -628,7 +619,7 @@ export function PostCard({
           strokeWidth={liked ? 0 : 1.8}
         />
         {likesCount > 0 && (
-          <span className="text-[11px] font-medium">{likesCount}</span>
+          <span className="text-[11px] font-medium">{likesCount} {likesCount === 1 ? 'like' : 'likes'}</span>
         )}
       </button>
     </div>

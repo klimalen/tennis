@@ -69,7 +69,7 @@ function addMessage(prev: Message[], msg: Message): Message[] {
 }
 
 const FORMAT_LABELS: Record<string, string> = {
-  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Doubles',
+  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed',
 }
 
 // ─── Game Invite Card ─────────────────────────────────────────────────────────
@@ -410,9 +410,10 @@ export function ChatView({
           <div className="border border-brand-divider bg-brand-surface px-4 py-4 text-center">
             <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
-              You matched with {otherName.split(' ')[0]}
+              You matched with {otherName}
             </p>
-            <p className="text-sm text-[rgba(26,26,26,0.4)] font-script italic mt-1">Say hello and arrange a game!</p>
+            <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
+            <p className="text-sm text-[rgba(26,26,26,0.4)] font-script italic mt-1">Say hello and arrange a game.</p>
           </div>
         </div>
       )}

@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const PAGE_SIZE = 15
+const NEARBY_RADIUS_KM = 80
+
+function boundingBox(lat: number, lng: number, radiusKm: number) {
+  const earthKm = 6371
+  const deltaLat = (radiusKm / earthKm) * (180 / Math.PI)
+  const deltaLng = deltaLat / Math.max(0.2, Math.cos((lat * Math.PI) / 180))
+  return {
+    south: lat - deltaLat,
+    north: lat + deltaLat,
+    west: lng - deltaLng,
+    east: lng + deltaLng,
+  }
+}
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
@@ -27,8 +40,13 @@ export async function GET(request: NextRequest) {
   const userLat = latStr ? parseFloat(latStr) : null
   const userLng = lngStr ? parseFloat(lngStr) : null
 
-  // When user coordinates are provided: fetch all players, sort by distance
-  if (userLat !== null && userLng !== null) {
+  // Nearby players: bounding box (plus same city name), then sort by distance in memory.
+  if (userLat !== null && userLng !== null && !Number.isNaN(userLat) && !Number.isNaN(userLng)) {
+    const box = boundingBox(userLat, userLng, NEARBY_RADIUS_KM)
+    const safeCity = (city ?? '').replace(/[%*,().]/g, '').trim()
+    const nearby = `and(city_lat.gte.${box.south},city_lat.lte.${box.north},city_lng.gte.${box.west},city_lng.lte.${box.east})`
+    const cityClause = safeCity ? `,city_name.ilike.*${safeCity}*` : ''
+
     let query = supabase
       .from('profiles')
       .select(
@@ -36,6 +54,7 @@ export async function GET(request: NextRequest) {
       )
       .is('deleted_at', null)
       .neq('full_name', '')
+      .or(`${nearby}${cityClause}`)
 
     if (exclude) query = query.neq('id', exclude)
 

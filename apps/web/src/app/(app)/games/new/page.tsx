@@ -57,6 +57,7 @@ function NewGameForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
+  const [connectionsLoaded, setConnectionsLoaded] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isOpen, setIsOpen] = useState(false)
 
@@ -68,6 +69,7 @@ function NewGameForm() {
         setConnections((data.connections ?? []).filter((c) => c.id !== preselectedId))
       })
       .catch(() => {})
+      .finally(() => setConnectionsLoaded(true))
   }, [preselectedId])
 
   function togglePlayer(id: string) {
@@ -248,6 +250,12 @@ function NewGameForm() {
             </div>
           )}
 
+          {connectionsLoaded && connections.length === 0 && !preselectedId && (
+            <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
+              You can invite people after you have matched with them. Until then, this game stays on your profile.
+            </p>
+          )}
+
           {/* Visibility */}
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
@@ -265,9 +273,13 @@ function NewGameForm() {
                 Public
               </button>
             </div>
-            {isOpen && (
+            {isOpen ? (
               <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
                 Anyone in your city can find and join this game
+              </p>
+            ) : (
+              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
+                Only you and people you invite can see this game.
               </p>
             )}
           </div>

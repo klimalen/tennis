@@ -4,14 +4,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-
-function skillLabel(v: number | null): string | null {
-  if (!v) return null
-  if (v < 2) return 'Beginner'
-  if (v < 3.5) return 'Intermediate'
-  if (v < 5) return 'Advanced'
-  return 'Competitive'
-}
+import { skillLabel } from '@/lib/skill'
 
 async function FollowersContent() {
   const supabase = await createClient()
@@ -53,7 +46,7 @@ async function FollowersContent() {
           <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
             <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No followers yet</p>
-            <p className="text-xs text-[rgba(26,26,26,0.3)]">Play with others to grow your network</p>
+            <p className="text-xs text-[rgba(26,26,26,0.4)]">When someone follows you, they appear here.</p>
           </div>
         ) : (
           <div>
