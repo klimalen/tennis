@@ -241,7 +241,7 @@ function PlayerCard({
     : 'px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]'
 
   return (
-    <Link href={`/profile/${player.username}`} className={vivid ? 'block overflow-hidden rounded-[28px] bg-[#FAF7F2] active:bg-white' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
+    <Link href={`/profile/${player.username}`} className={vivid ? 'block overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
       <div className="p-4 flex gap-3">
         <div className={`w-14 h-14 flex-shrink-0 flex items-center justify-center overflow-hidden ${vivid ? 'rounded-full bg-[#E8748A]' : 'bg-brand-surface-md'}`}>
           {player.avatar_url ? (
@@ -470,7 +470,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
 function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = false }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; vivid?: boolean }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
-    <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'overflow-hidden rounded-[28px] bg-[#FAF7F2] active:bg-white' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
+    <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
       <div className="flex gap-0">
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
@@ -1340,7 +1340,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   if (view === 'discovery') {
     return (
-      <div className="min-h-screen bg-[#F0EBE3] pb-20 md:pb-0">
+      <div className="min-h-screen bg-[#FAF7F2] pb-20 md:pb-0">
         {sheets}
 
         <div className="max-w-2xl mx-auto px-4 pt-8 pb-2">
@@ -1410,7 +1410,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     vivid
                   />
                 ) : (
-                  <div className="rounded-[28px] bg-[#FAF7F2] px-5 py-8">
+                  <div className="rounded-[28px] bg-white px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO PLAYERS YET</p>
                     <p className="font-fraunces italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court.</p>
                   </div>
@@ -1433,7 +1433,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     }}
                   />
                 ) : (
-                  <div className="rounded-[28px] bg-[#FAF7F2] px-5 py-8">
+                  <div className="rounded-[28px] bg-white px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO COURTS NEARBY</p>
                     <p className="font-fraunces italic text-[#85648F] mt-2">Try another area from the courts list.</p>
                   </div>
