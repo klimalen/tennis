@@ -234,13 +234,16 @@ function PlayerCard({
   const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
 
   const actionClass = vivid
-    ? `w-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]'}`
+    ? `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]'}`
     : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider bg-brand-primary text-white hover:bg-brand-primary-dark'
+  const chipClass = vivid
+    ? 'px-2.5 py-0.5 rounded-full border border-[#1a1a1a]/10 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]'
+    : 'px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]'
 
   return (
-    <Link href={`/profile/${player.username}`} className={vivid ? 'block bg-[#FAF7F2] active:bg-white' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
+    <Link href={`/profile/${player.username}`} className={vivid ? 'block overflow-hidden rounded-[28px] bg-[#FAF7F2] active:bg-white' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
       <div className="p-4 flex gap-3">
-        <div className={`w-14 h-14 flex-shrink-0 flex items-center justify-center overflow-hidden ${vivid ? 'bg-[#E8748A]' : 'bg-brand-surface-md'}`}>
+        <div className={`w-14 h-14 flex-shrink-0 flex items-center justify-center overflow-hidden ${vivid ? 'rounded-full bg-[#E8748A]' : 'bg-brand-surface-md'}`}>
           {player.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
@@ -255,22 +258,22 @@ function PlayerCard({
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {skill != null && (
-              <span className={vivid ? `px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-semibold ${skillFill(skill)}` : 'px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold'}>
+              <span className={vivid ? `px-2.5 py-0.5 rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold ${skillFill(skill)}` : 'px-2 py-0.5 bg-brand-primary text-white text-[9px] tracking-[0.12em] uppercase font-semibold'}>
                 {skillLabel(skill)}
               </span>
             )}
             {player.preferred_formats.map((f) => (
-              <span key={f} className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
+              <span key={f} className={chipClass}>
                 {FORMAT_LABELS[f] ?? f}
               </span>
             ))}
             {player.play_style === 'both' ? (
               <>
-                <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">Recreational</span>
-                <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">Competitive</span>
+                <span className={chipClass}>Recreational</span>
+                <span className={chipClass}>Competitive</span>
               </>
             ) : player.play_style ? (
-              <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
+              <span className={chipClass}>
                 {player.play_style === 'recreational' ? 'Recreational' : 'Competitive'}
               </span>
             ) : null}
@@ -286,15 +289,35 @@ function PlayerCard({
         </div>
       </div>
       {pending ? (
-        <div className={`flex ${vivid ? 'bg-[#E8E1D7]' : 'border-t border-brand-divider'}`}>
-          <span className="flex-1 py-2.5 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.4)]">
-            Request sent
-          </span>
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
-            className={`px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium border-l ${vivid ? 'border-[#F0EBE3] text-[#E8748A]' : 'border-brand-divider text-[rgba(26,26,26,0.55)] hover:text-brand-primary'}`}
-          >
-            Cancel
+        vivid ? (
+          <div className="mx-4 mb-4 flex overflow-hidden rounded-full bg-[#E8E1D7]">
+            <span className="flex-1 py-3 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.45)]">
+              Request sent
+            </span>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
+              className="px-5 py-3 text-[10px] tracking-[0.2em] uppercase font-medium text-[#E8748A]"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex border-t border-brand-divider">
+            <span className="flex-1 py-2.5 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.4)]">
+              Request sent
+            </span>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
+              className="px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium border-l border-brand-divider text-[rgba(26,26,26,0.55)] hover:text-brand-primary"
+            >
+              Cancel
+            </button>
+          </div>
+        )
+      ) : vivid ? (
+        <div className="px-4 pb-4">
+          <button onClick={handleRequest} className={actionClass}>
+            {btnLabel}
           </button>
         </div>
       ) : (
@@ -447,7 +470,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
 function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = false }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; vivid?: boolean }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
-    <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'bg-[#FAF7F2] active:bg-white' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
+    <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'overflow-hidden rounded-[28px] bg-[#FAF7F2] active:bg-white' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
       <div className="flex gap-0">
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
@@ -490,10 +513,10 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
   const initials = sender.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="bg-[#E8748A] text-[#F0EBE3] px-5 py-5">
+    <div className="rounded-[28px] bg-[#E8748A] text-[#F0EBE3] px-5 py-5">
       <p className="text-[10px] tracking-[0.22em] uppercase text-[#F0EBE3]/80 mb-2">✦ Wants to play</p>
       <div className="flex items-center gap-3">
-        <Link href={`/profile/${sender.username}`} className="w-14 h-14 bg-[#F0EBE3] overflow-hidden flex items-center justify-center flex-shrink-0">
+        <Link href={`/profile/${sender.username}`} className="w-14 h-14 rounded-full bg-[#F0EBE3] overflow-hidden flex items-center justify-center flex-shrink-0">
           {sender.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={sender.avatar_url} alt={sender.full_name} className="w-full h-full object-cover" />
@@ -508,7 +531,7 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
           <p className="font-script italic text-base text-[#F0EBE3]/90 mt-1">Accept to open a chat. You will follow each other.</p>
           <div className="flex items-center gap-2 mt-2">
             {skill != null && (
-              <span className="text-[9px] tracking-[0.12em] uppercase font-semibold bg-[#F0EBE3] text-[#E8748A] px-2 py-0.5">
+              <span className="rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold bg-[#F0EBE3] text-[#E8748A] px-2.5 py-0.5">
                 {skillLabel(skill)}
               </span>
             )}
@@ -518,11 +541,11 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
       </div>
       <div className="flex gap-2 mt-4">
         <button onClick={async () => { setActing('accept'); await onAccept(req.id, req.sender_id) }} disabled={acting !== null}
-          className="flex-1 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium hover:bg-white transition-colors disabled:opacity-50">
+          className="flex-1 rounded-full py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium hover:bg-white transition-colors disabled:opacity-50">
           {acting === 'accept' ? 'Opening chat…' : 'Accept'}
         </button>
         <button onClick={async () => { setActing('decline'); await onDecline(req.id) }} disabled={acting !== null}
-          className="flex-1 py-3 border border-[#F0EBE3]/50 text-[11px] tracking-[0.16em] uppercase font-medium text-[#F0EBE3] hover:bg-[#F0EBE3]/10 transition-colors disabled:opacity-50">
+          className="flex-1 rounded-full py-3 border border-[#F0EBE3]/50 text-[11px] tracking-[0.16em] uppercase font-medium text-[#F0EBE3] hover:bg-[#F0EBE3]/10 transition-colors disabled:opacity-50">
           {acting === 'decline' ? 'Declining…' : 'Decline'}
         </button>
       </div>
@@ -571,7 +594,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: 
   const alreadyIn = isParticipant || joined
 
   return (
-    <button onClick={onClick} className={vivid ? 'w-full text-left bg-[#3A8A7A] text-[#F0EBE3] active:bg-[#2d7066]' : 'w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
+    <button onClick={onClick} className={vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3] active:bg-[#2d7066]' : 'w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
       <div className={vivid ? 'p-5' : 'p-4'}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -592,7 +615,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: 
               )}
             </div>
           </div>
-          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 flex-shrink-0 ${vivid ? 'bg-[#F0EBE3] text-[#3A8A7A]' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.35)]' : 'bg-brand-primary/10 text-brand-primary'}`}>
+          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 flex-shrink-0 ${vivid ? 'rounded-full px-3 bg-[#F0EBE3] text-[#3A8A7A]' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.35)]' : 'bg-brand-primary/10 text-brand-primary'}`}>
             {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
           </span>
         </div>
@@ -604,7 +627,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: 
           <button
             onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
             disabled={alreadyIn || isFull}
-            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
+            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
             {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
           </button>
         </div>
@@ -774,7 +797,7 @@ function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeA
 function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean; onBrowseCourts?: () => void; vivid?: boolean }) {
   if (vivid) {
     return (
-      <div className="bg-[#E8748A] text-[#F0EBE3] px-5 py-8 space-y-3">
+      <div className="rounded-[28px] bg-[#E8748A] text-[#F0EBE3] px-5 py-8 space-y-3">
         <p className="text-[10px] tracking-[0.22em] uppercase text-[#F0EBE3]/80">✦ No city yet</p>
         <p className="font-display text-5xl leading-none tracking-wide">WHERE DO YOU PLAY?</p>
         <p className="font-script italic text-lg text-[#F0EBE3]/90">
@@ -784,11 +807,11 @@ function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean
         </p>
         <div className="flex flex-col items-start gap-3 pt-2">
           {guest ? (
-            <Link href="/sign-up" className="inline-block px-5 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
+            <Link href="/sign-up" className="inline-block rounded-full px-5 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
               Create free account
             </Link>
           ) : (
-            <a href="/me/edit" className="inline-block px-5 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
+            <a href="/me/edit" className="inline-block rounded-full px-5 py-3 bg-[#F0EBE3] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
               Add city
             </a>
           )}
@@ -1328,12 +1351,12 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
           {!user && (
-            <div className="bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
+            <div className="rounded-[28px] bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
               <div>
                 <p className="font-display text-4xl leading-none">JOIN FREE</p>
                 <p className="font-script italic text-base text-[#D4E040] mt-1">Play with people near you.</p>
               </div>
-              <Link href="/sign-up" className="flex-shrink-0 px-4 py-2.5 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.14em] uppercase font-medium">Join</Link>
+              <Link href="/sign-up" className="flex-shrink-0 rounded-full px-4 py-2.5 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.14em] uppercase font-medium">Join</Link>
             </div>
           )}
 
@@ -1362,11 +1385,11 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     vivid
                   />
                 ) : (
-                  <div className="bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
+                  <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
                     <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
                     <p className="font-script italic text-lg text-[#F0EBE3]/85">Nothing posted in {userCityName} yet.</p>
                     {user && (
-                      <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-3 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.16em] uppercase font-medium">
+                      <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.16em] uppercase font-medium">
                         <Plus size={12} /> Create a game
                       </Link>
                     )}
@@ -1387,7 +1410,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     vivid
                   />
                 ) : (
-                  <div className="bg-[#FAF7F2] px-5 py-8">
+                  <div className="rounded-[28px] bg-[#FAF7F2] px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO PLAYERS YET</p>
                     <p className="font-script italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court.</p>
                   </div>
@@ -1410,7 +1433,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     }}
                   />
                 ) : (
-                  <div className="bg-[#FAF7F2] px-5 py-8">
+                  <div className="rounded-[28px] bg-[#FAF7F2] px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO COURTS NEARBY</p>
                     <p className="font-script italic text-[#85648F] mt-2">Try another area from the courts list.</p>
                   </div>
