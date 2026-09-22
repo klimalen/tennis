@@ -199,7 +199,7 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
 function skillFill(level: number): string {
   const label = skillLabel(level)
   if (label === 'Beginner') return 'bg-[#E8E1D7] text-[#1a1a1a]'
-  if (label === 'Advanced') return 'bg-[#E8748A] text-[#F0EBE3]'
+  if (label === 'Advanced') return 'bg-[#E8748A] text-[#1a1a1a]'
   if (label === 'Competitive') return 'bg-[#D4A017] text-[#1E3A6E]'
   return 'bg-[#3A8A7A] text-[#F0EBE3]'
 }
@@ -234,7 +234,7 @@ function PlayerCard({
   const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
 
   const actionClass = vivid
-    ? `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]'}`
+    ? `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
     : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider bg-brand-primary text-white hover:bg-brand-primary-dark'
   const chipClass = vivid
     ? 'px-2.5 py-0.5 rounded-full border border-[#1a1a1a]/10 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]'
@@ -248,13 +248,13 @@ function PlayerCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
           ) : (
-            <span className={`font-display text-lg ${vivid ? 'text-[#F0EBE3]' : 'text-[rgba(26,26,26,0.4)]'}`}>{initials}</span>
+            <span className={`font-display text-lg ${vivid ? 'text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.4)]'}`}>{initials}</span>
           )}
         </div>
         <div className="flex-1 min-w-0 space-y-1.5">
           <div>
             <p className={vivid ? 'font-display text-3xl tracking-wide leading-none text-[#1a1a1a]' : 'font-medium text-[14px] text-[#1a1a1a] leading-tight'}>{vivid ? player.full_name.toUpperCase() : player.full_name}</p>
-            <p className={vivid ? 'font-script italic text-sm text-[#85648F] mt-0.5' : 'text-[11px] text-[rgba(26,26,26,0.4)]'}>@{player.username}</p>
+            <p className={vivid ? 'font-fraunces italic text-sm text-[#85648F] mt-0.5' : 'text-[11px] text-[rgba(26,26,26,0.4)]'}>@{player.username}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             {skill != null && (
@@ -279,7 +279,7 @@ function PlayerCard({
             ) : null}
           </div>
           {(player.bio || player.looking_for) && (
-            <p className={vivid ? 'font-script italic text-sm text-[#497250] line-clamp-2 leading-snug' : 'text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed'}>
+            <p className={vivid ? 'font-fraunces italic text-sm text-[#497250] line-clamp-2 leading-snug' : 'text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed'}>
               {player.bio || player.looking_for}
             </p>
           )}
@@ -513,8 +513,8 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
   const initials = sender.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   return (
-    <div className="rounded-[28px] bg-[#E8748A] text-[#F0EBE3] px-5 py-5">
-      <p className="text-[10px] tracking-[0.22em] uppercase text-[#F0EBE3]/80 mb-2">✦ Wants to play</p>
+    <div className="rounded-[28px] bg-[#E8748A] text-[#1a1a1a] px-5 py-5">
+      <p className="text-[10px] tracking-[0.22em] uppercase text-[#1a1a1a]/70 mb-2">✦ Wants to play</p>
       <div className="flex items-center gap-3">
         <Link href={`/profile/${sender.username}`} className="w-14 h-14 rounded-full bg-[#F0EBE3] overflow-hidden flex items-center justify-center flex-shrink-0">
           {sender.avatar_url ? (
@@ -528,14 +528,14 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
           <Link href={`/profile/${sender.username}`} className="block font-display text-4xl tracking-wide leading-none">
             {sender.full_name.toUpperCase()}
           </Link>
-          <p className="font-script italic text-base text-[#F0EBE3]/90 mt-1">Accept to open a chat. You will follow each other.</p>
+          <p className="font-fraunces italic text-base text-[#1a1a1a] mt-1">Accept to open a chat. You will follow each other.</p>
           <div className="flex items-center gap-2 mt-2">
             {skill != null && (
               <span className="rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold bg-[#F0EBE3] text-[#E8748A] px-2.5 py-0.5">
                 {skillLabel(skill)}
               </span>
             )}
-            {sender.city_name && <span className="text-[11px] text-[#F0EBE3]/80">{sender.city_name}</span>}
+            {sender.city_name && <span className="text-[11px] text-[#1a1a1a]/70">{sender.city_name}</span>}
           </div>
         </div>
       </div>
@@ -545,7 +545,7 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
           {acting === 'accept' ? 'Opening chat…' : 'Accept'}
         </button>
         <button onClick={async () => { setActing('decline'); await onDecline(req.id) }} disabled={acting !== null}
-          className="flex-1 rounded-full py-3 border border-[#F0EBE3]/50 text-[11px] tracking-[0.16em] uppercase font-medium text-[#F0EBE3] hover:bg-[#F0EBE3]/10 transition-colors disabled:opacity-50">
+          className="flex-1 rounded-full py-3 border border-[#1a1a1a]/40 text-[11px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-[#1a1a1a]/10 transition-colors disabled:opacity-50">
           {acting === 'decline' ? 'Declining…' : 'Decline'}
         </button>
       </div>
@@ -603,7 +603,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: 
               <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} />
               {vivid ? null : <> · <LocalGameTime iso={game.scheduled_at} /></>}
             </p>
-            <p className={vivid ? 'font-script italic text-lg text-[#F0EBE3]/85 mt-2' : 'hidden'}>
+            <p className={vivid ? 'font-fraunces italic text-lg text-[#F0EBE3] mt-2' : 'hidden'}>
               <LocalGameTime iso={game.scheduled_at} />
               {' · '}
               {OPEN_FORMAT_LABELS[game.format] ?? game.format}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
@@ -627,7 +627,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = false }: 
           <button
             onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
             disabled={alreadyIn || isFull}
-            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#F0EBE3] hover:bg-[#E8406A]' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
+            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]' : 'bg-brand-primary text-white hover:bg-brand-primary-dark'}`}>
             {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
           </button>
         </div>
@@ -797,10 +797,10 @@ function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeA
 function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean; onBrowseCourts?: () => void; vivid?: boolean }) {
   if (vivid) {
     return (
-      <div className="rounded-[28px] bg-[#E8748A] text-[#F0EBE3] px-5 py-8 space-y-3">
-        <p className="text-[10px] tracking-[0.22em] uppercase text-[#F0EBE3]/80">✦ No city yet</p>
+      <div className="rounded-[28px] bg-[#E8748A] text-[#1a1a1a] px-5 py-8 space-y-3">
+        <p className="text-[10px] tracking-[0.22em] uppercase text-[#1a1a1a]/70">✦ No city yet</p>
         <p className="font-display text-5xl leading-none tracking-wide">WHERE DO YOU PLAY?</p>
-        <p className="font-script italic text-lg text-[#F0EBE3]/90">
+        <p className="font-fraunces italic text-lg text-[#1a1a1a]">
           {guest
             ? 'Create an account and add your city. Courts are open without one.'
             : 'Add your city so Discover can find games near you.'}
@@ -816,7 +816,7 @@ function NoCityState({ guest, onBrowseCourts, vivid = false }: { guest?: boolean
             </a>
           )}
           {onBrowseCourts && (
-            <button type="button" onClick={onBrowseCourts} className="text-[11px] tracking-[0.14em] uppercase font-medium text-[#F0EBE3] underline">
+            <button type="button" onClick={onBrowseCourts} className="text-[11px] tracking-[0.14em] uppercase font-medium text-[#1a1a1a] underline">
               Browse courts
             </button>
           )}
@@ -1354,9 +1354,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             <div className="rounded-[28px] bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
               <div>
                 <p className="font-display text-4xl leading-none">JOIN FREE</p>
-                <p className="font-script italic text-base text-[#D4E040] mt-1">Play with people near you.</p>
+                <p className="font-fraunces italic text-base text-[#D4E040] mt-1">Play with people near you.</p>
               </div>
-              <Link href="/sign-up" className="flex-shrink-0 rounded-full px-4 py-2.5 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.14em] uppercase font-medium">Join</Link>
+              <Link href="/sign-up" className="flex-shrink-0 rounded-full px-4 py-2.5 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.14em] uppercase font-medium">Join</Link>
             </div>
           )}
 
@@ -1387,9 +1387,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
                     <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
-                    <p className="font-script italic text-lg text-[#F0EBE3]/85">Nothing posted in {userCityName} yet.</p>
+                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted in {userCityName} yet.</p>
                     {user && (
-                      <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#F0EBE3] text-[11px] tracking-[0.16em] uppercase font-medium">
+                      <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
                         <Plus size={12} /> Create a game
                       </Link>
                     )}
@@ -1412,7 +1412,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-[#FAF7F2] px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO PLAYERS YET</p>
-                    <p className="font-script italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court.</p>
+                    <p className="font-fraunces italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court.</p>
                   </div>
                 )}
               </DiscoverySection>
@@ -1435,7 +1435,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-[#FAF7F2] px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO COURTS NEARBY</p>
-                    <p className="font-script italic text-[#85648F] mt-2">Try another area from the courts list.</p>
+                    <p className="font-fraunces italic text-[#85648F] mt-2">Try another area from the courts list.</p>
                   </div>
                 )}
               </DiscoverySection>

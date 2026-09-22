@@ -24,6 +24,7 @@ const config: Config = {
         display:  ['var(--font-bebas)', 'sans-serif'],
         numbers:  ['var(--font-anton)', 'sans-serif'],
         script:   ['var(--font-playfair)', 'serif'],
+        fraunces: ['var(--font-fraunces)', 'serif'],
         sans:     ['var(--font-dm-sans)', 'DM Sans', 'sans-serif'],
       },
       borderRadius: {
