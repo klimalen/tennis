@@ -17,6 +17,9 @@ out/
 supabase/.branches
 supabase/.temp
 
+# Venue pipeline caches / work queues
+scripts/.cache/
+
 # Expo
 .expo/
 ios/

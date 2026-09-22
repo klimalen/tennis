@@ -44,8 +44,9 @@ export interface Player {
 
 export interface Venue {
   id: string
-  osm_id: string
+  osm_id: string | null
   name: string
+  kind: string
   lat: number
   lng: number
   address: string | null
@@ -58,6 +59,32 @@ export interface Venue {
   phone: string | null
   operator: string | null
   opening_hours: string | null
+  description: string | null
+  has_indoor: boolean | null
+  has_outdoor: boolean | null
+  google_maps_uri: string | null
+  member_count: number
+  confidence: 'low' | 'medium' | 'high'
+}
+
+const VENUE_KIND_LABELS: Record<string, string> = {
+  public_park: 'Public park',
+  tennis_center: 'Tennis center',
+  club: 'Club',
+  school: 'School',
+  residential: 'Private community',
+  hotel: 'Hotel / resort',
+  commercial: 'Commercial',
+  other: 'Facility',
+  unknown: 'Tennis courts',
+}
+
+function venueKindLabel(kind: string): string {
+  return VENUE_KIND_LABELS[kind] ?? 'Tennis courts'
+}
+
+function isPrivateVenue(venue: Venue): boolean {
+  return venue.access === 'private' || venue.access === 'members' || venue.kind === 'residential'
 }
 
 type View = 'discovery' | 'players' | 'games' | 'courts'
@@ -302,7 +329,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
       <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">Tennis Court</span>
+          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{venueKindLabel(venue.kind)}</span>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
         </div>
         <div className="h-48 bg-brand-surface">
@@ -330,13 +357,23 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
                 <Zap size={9} /> Floodlit
               </span>
             )}
+            {venue.has_indoor && <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">Indoor</span>}
+            {venue.has_outdoor && venue.has_indoor && <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">Outdoor</span>}
             {venue.fee === false && <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">Free</span>}
             {venue.fee === true && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
                 <DollarSign size={9} /> Fee
               </span>
             )}
+            {isPrivateVenue(venue) && (
+              <span className="px-2 py-0.5 bg-brand-surface-md text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
+                {venue.access === 'members' ? 'Members only' : 'Private'}
+              </span>
+            )}
           </div>
+          {venue.description && (
+            <p className="text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
+          )}
           {venue.opening_hours && (
             <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
               <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
@@ -344,7 +381,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
             </div>
           )}
           <div className="grid grid-cols-1 gap-2 pt-1">
-            <a href={googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
+            <a href={venue.google_maps_uri ?? googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-4 py-3 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors">
               <Navigation size={13} /> View on Google Maps
             </a>
@@ -378,15 +415,26 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick }: { venue: Venue;
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
             <p className="font-display text-[18px] leading-none tracking-wide text-[#1a1a1a] uppercase">{venue.name}</p>
-            {venue.address && <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">{venue.address}</p>}
+            <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">
+              {venue.kind !== 'unknown' && <span className="text-[9px] tracking-[0.1em] uppercase mr-1.5">{venueKindLabel(venue.kind)}</span>}
+              {venue.address}
+            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
             <span className="text-[11px] text-[rgba(26,26,26,0.4)] flex items-center gap-0.5"><MapPin size={10} />{formatDistance(distanceM)}</span>
             <SurfaceBadge surface={venue.surface} />
             {venue.lit && <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]"><Zap size={9} />Lit</span>}
+            {venue.has_indoor && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Indoor</span>}
             {venue.fee === false && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Free</span>}
             {venue.fee === true && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Fee</span>}
-            {venue.court_count != null && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">{venue.court_count}c</span>}
+            {isPrivateVenue(venue) && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Private</span>}
+            {venue.court_count != null && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">{venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}</span>}
+            {(venue.phone || venue.website) && (
+              <span className="inline-flex items-center gap-1 text-[rgba(26,26,26,0.35)]">
+                {venue.phone && <Phone size={9} />}
+                {venue.website && <Globe size={9} />}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center pr-3 text-[rgba(26,26,26,0.2)]"><ChevronRight size={14} /></div>

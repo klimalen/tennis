@@ -315,7 +315,7 @@ out center bb tags;`
 
   if (!res?.ok) throw new Error('All Overpass endpoints failed')
 
-  const json: { elements: OverpassElement[] } = await res.json()
+  const json = (await res.json()) as { elements: OverpassElement[] }
   saveOverpassCache(json)
 
   const venues: VenueRow[] = []
@@ -376,7 +376,7 @@ async function fetchGeoapify(): Promise<VenueRow[]> {
   })
   if (!res.ok) throw new Error(`Geoapify returned ${res.status}`)
 
-  const json: { features: GeoapifyFeature[] } = await res.json()
+  const json = (await res.json()) as { features: GeoapifyFeature[] }
   const now = new Date().toISOString()
 
   const venues: VenueRow[] = []
@@ -448,7 +448,7 @@ async function fetchAustinOpenData(): Promise<VenueRow[]> {
     return []
   }
 
-  const rows: AustinODRow[] = await res.json()
+  const rows = (await res.json()) as AustinODRow[]
   const now = new Date().toISOString()
   const venues: VenueRow[] = []
 

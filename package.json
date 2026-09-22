@@ -9,12 +9,10 @@
     "build:backend": "pnpm --filter backend build",
     "lint": "pnpm --recursive lint",
     "typecheck": "pnpm --recursive typecheck",
+    "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
     "ingest:austin": "tsx scripts/ingest-venues-austin.ts",
     "ingest:austin:dry": "tsx scripts/ingest-venues-austin.ts --dry-run",
-    "enrich:venues": "tsx scripts/enrich-venues.ts",
-    "enrich:venues:dry": "tsx scripts/enrich-venues.ts --dry-run",
-    "enrich:clusters": "tsx scripts/enrich-venues.ts --clusters",
-    "enrich:clusters:dry": "tsx scripts/enrich-venues.ts --clusters --dry-run"
+    "venues": "tsx scripts/venue-pipeline.ts"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

@@ -88,56 +88,143 @@ const MAX_RESULTS = 20
 // Venues within this radius (metres) are considered the same physical location
 const CLUSTER_RADIUS_M = 250
 
-/** Score a venue by data richness — higher = show this one when clustering */
-function venueScore(v: Record<string, unknown>): number {
+/**
+ * Shape returned to the client. One card = one organization / facility.
+ * Backed by `venue_groups` where the catalog pipeline has run, or by runtime
+ * clustering of raw `venues` rows elsewhere.
+ */
+export interface VenueCard {
+  id: string
+  osm_id: string | null
+  name: string
+  kind: string
+  lat: number
+  lng: number
+  address: string | null
+  surface: string | null
+  court_count: number | null
+  lit: boolean | null
+  access: string | null
+  fee: boolean | null
+  website: string | null
+  phone: string | null
+  operator: string | null
+  opening_hours: string | null
+  description: string | null
+  has_indoor: boolean | null
+  has_outdoor: boolean | null
+  google_maps_uri: string | null
+  member_count: number
+  confidence: 'low' | 'medium' | 'high'
+}
+
+interface GroupRow {
+  id: string
+  name: string | null
+  kind: string
+  lat: number
+  lng: number
+  address: string | null
+  phone: string | null
+  website: string | null
+  opening_hours: string | null
+  description: string | null
+  court_count: number | null
+  court_count_osm: number
+  member_count: number
+  surface: string | null
+  lit: boolean | null
+  has_indoor: boolean | null
+  has_outdoor: boolean | null
+  access: string | null
+  fee: boolean | null
+  google_maps_uri: string | null
+  confidence: 'low' | 'medium' | 'high'
+}
+
+function groupToCard(g: GroupRow): VenueCard {
+  return {
+    id: g.id,
+    osm_id: null,
+    name: g.name ?? 'Tennis Courts',
+    kind: g.kind,
+    lat: g.lat,
+    lng: g.lng,
+    address: g.address,
+    surface: g.surface,
+    court_count: g.court_count ?? (g.court_count_osm > 0 ? g.court_count_osm : null),
+    lit: g.lit,
+    access: g.access,
+    fee: g.fee,
+    website: g.website,
+    phone: g.phone,
+    operator: null,
+    opening_hours: g.opening_hours,
+    description: g.description,
+    has_indoor: g.has_indoor,
+    has_outdoor: g.has_outdoor,
+    google_maps_uri: g.google_maps_uri,
+    member_count: g.member_count,
+    confidence: g.confidence,
+  }
+}
+
+function rawToCard(v: Record<string, unknown>): VenueCard {
+  const name = typeof v['name'] === 'string' && v['name'] ? v['name'] : 'Tennis Court'
+  return {
+    id: v['id'] as string,
+    osm_id: (v['osm_id'] as string | null) ?? null,
+    name,
+    kind: 'unknown',
+    lat: v['lat'] as number,
+    lng: v['lng'] as number,
+    address: (v['address'] as string | null) ?? null,
+    surface: (v['surface'] as string | null) ?? null,
+    court_count: typeof v['court_count'] === 'number' ? v['court_count'] : 1,
+    lit: (v['lit'] as boolean | null) ?? null,
+    access: (v['access'] as string | null) ?? null,
+    fee: (v['fee'] as boolean | null) ?? null,
+    website: (v['website'] as string | null) ?? null,
+    phone: (v['phone'] as string | null) ?? null,
+    operator: (v['operator'] as string | null) ?? null,
+    opening_hours: (v['opening_hours'] as string | null) ?? null,
+    description: (v['description'] as string | null) ?? null,
+    has_indoor: (v['has_indoor'] as boolean | null) ?? null,
+    has_outdoor: (v['has_outdoor'] as boolean | null) ?? null,
+    google_maps_uri: null,
+    member_count: 1,
+    confidence: 'low',
+  }
+}
+
+/** Score a card by data richness — higher = becomes the representative when clustering */
+function cardScore(v: VenueCard): number {
   return (
-    (v['name'] && v['name'] !== 'Tennis Court' ? 20 : 0) +
-    (v['phone'] ? 10 : 0) +
-    (v['website'] ? 10 : 0) +
-    (v['description'] ? 5 : 0) +
-    (typeof v['court_count'] === 'number' ? v['court_count'] : 0)
+    (v.name !== 'Tennis Court' && v.name !== 'Tennis Courts' ? 20 : 0) +
+    (v.phone ? 10 : 0) +
+    (v.website ? 10 : 0) +
+    (v.description ? 5 : 0) +
+    (v.court_count ?? 0)
   )
 }
 
 /**
- * Cluster nearby courts into single venue cards.
- * Unnamed courts within CLUSTER_RADIUS_M of a named/better venue are merged:
- * their court counts are summed and they are dropped from the result.
+ * Runtime fallback for courts that the catalog pipeline has not grouped yet:
+ * merge courts within CLUSTER_RADIUS_M into one card and sum their court counts.
  */
-function clusterVenues(venues: Record<string, unknown>[]): Record<string, unknown>[] {
-  // Sort best-scored first so the "representative" venue wins ties
-  const sorted = [...venues].sort((a, b) => venueScore(b) - venueScore(a))
-  const result: Record<string, unknown>[] = []
+function clusterUngrouped(cards: VenueCard[]): VenueCard[] {
+  const sorted = [...cards].sort((a, b) => cardScore(b) - cardScore(a))
+  const result: VenueCard[] = []
 
-  for (const venue of sorted) {
-    const vLat = venue['lat'] as number
-    const vLng = venue['lng'] as number
-
-    const existingCluster = result.find((r) => {
-      const rLat = r['lat'] as number
-      const rLng = r['lng'] as number
-      return haversineKm(vLat, vLng, rLat, rLng) * 1000 < CLUSTER_RADIUS_M
-    })
-
-    if (existingCluster) {
-      // Merge court count from this venue into the cluster representative
-      const existingCount = typeof existingCluster['court_count'] === 'number'
-        ? existingCluster['court_count']
-        : 0
-      const incomingCount = typeof venue['court_count'] === 'number'
-        ? venue['court_count']
-        : 1   // each individual pitch = 1 court
-      existingCluster['court_count'] = existingCount + incomingCount
+  for (const card of sorted) {
+    const existing = result.find((r) => haversineKm(card.lat, card.lng, r.lat, r.lng) * 1000 < CLUSTER_RADIUS_M)
+    if (existing) {
+      existing.court_count = (existing.court_count ?? 0) + (card.court_count ?? 1)
+      existing.member_count += 1
     } else {
-      // New cluster — ensure unnamed single courts show court_count = 1
-      if (venue['court_count'] == null) {
-        result.push({ ...venue, court_count: 1 })
-      } else {
-        result.push({ ...venue })
-      }
+      result.push({ ...card })
     }
   }
-
   return result
 }
 
@@ -304,31 +391,50 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Fetch venues from DB, then sort by distance and limit
-  const { data: allVenues, error: queryError } = await supabase
-    .from('venues')
-    .select('*')
-    .gte('lat', south)
-    .lte('lat', north)
-    .gte('lng', west)
-    .lte('lng', east)
+  // 1. Organizations from the catalog pipeline (venue_groups)
+  // 2. Raw courts not yet attached to a group → runtime clustering fallback
+  const [groupsResult, ungroupedResult] = await Promise.all([
+    supabase
+      .from('venue_groups')
+      .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence')
+      .gte('lat', south)
+      .lte('lat', north)
+      .gte('lng', west)
+      .lte('lng', east),
+    supabase
+      .from('venues')
+      .select('*')
+      .is('group_id', null)
+      .gte('lat', south)
+      .lte('lat', north)
+      .gte('lng', west)
+      .lte('lng', east),
+  ])
 
-  if (queryError) {
-    console.error('Venues query error:', queryError)
-    return NextResponse.json({ venues: [], _debug: { overpassError, queryError: queryError.message } })
+  if (ungroupedResult.error) {
+    console.error('Venues query error:', ungroupedResult.error)
+    return NextResponse.json({ venues: [], _debug: { overpassError, queryError: ungroupedResult.error.message } })
+  }
+  if (groupsResult.error) {
+    // Migration 037 not applied yet → degrade gracefully to raw clustering
+    console.error('Venue groups query error:', groupsResult.error)
   }
 
-  // Cluster nearby courts, sort by distance, paginate
+  const groupCards = ((groupsResult.data ?? []) as GroupRow[]).map(groupToCard)
+  const rawCards = clusterUngrouped((ungroupedResult.data ?? []).map(rawToCard))
+
   const offsetParam = searchParams.get('offset')
   const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0
+  const includePrivate = searchParams.get('include_private') === '1'
 
   const centerLat = (south + north) / 2
   const centerLng = (west + east) / 2
-  const sorted = clusterVenues(allVenues ?? []).sort(
-    (a, b) =>
-      haversineKm(centerLat, centerLng, a['lat'] as number, a['lng'] as number) -
-      haversineKm(centerLat, centerLng, b['lat'] as number, b['lng'] as number),
-  )
+  const sorted = [...groupCards, ...rawCards]
+    .filter((c) => includePrivate || c.kind !== 'residential')
+    .sort(
+      (a, b) =>
+        haversineKm(centerLat, centerLng, a.lat, a.lng) - haversineKm(centerLat, centerLng, b.lat, b.lng),
+    )
   const total = sorted.length
   const venues = sorted.slice(offset, offset + MAX_RESULTS)
 
@@ -336,6 +442,14 @@ export async function GET(request: NextRequest) {
     venues,
     total,
     hasMore: offset + MAX_RESULTS < total,
-    _debug: { catalogSufficient, existingCount, overpassCount, overpassError, bbox: { south, west, north, east } },
+    _debug: {
+      catalogSufficient,
+      existingCount,
+      groups: groupCards.length,
+      ungrouped: rawCards.length,
+      overpassCount,
+      overpassError,
+      bbox: { south, west, north, east },
+    },
   })
 }
