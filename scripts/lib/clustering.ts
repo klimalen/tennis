@@ -24,6 +24,12 @@ import {
 export const LINK_M = 120
 /** OSM parents larger than this (neighbourhoods) name the group but don't merge courts across it. */
 export const MERGE_PARENT_MAX_AREA_M2 = 2_500_000
+/**
+ * Clusters whose existing groups carry the same organization name and sit within this
+ * distance are one facility split by a road / parking lot (e.g. two banks of courts
+ * at a country club). Enrichment gives both halves the same name; re-clustering merges them.
+ */
+export const SAME_NAME_MERGE_M = 600
 
 const GENERIC_NAMES = new Set(['tennis court', 'tennis courts', 'court', 'courts', 'tennis'])
 export const STREET_ADDRESS_RE =
@@ -32,6 +38,25 @@ export const STREET_ADDRESS_RE =
 export function isGenericName(name: string | null | undefined): boolean {
   if (!name) return true
   return GENERIC_NAMES.has(name.trim().toLowerCase())
+}
+
+const NAME_STOPWORDS = /\b(the|park|tennis|courts?|center|centre|club|country|district|neighborhood|hoa|of|at|and|complex|sports?)\b/g
+
+/** Loose equality of organization names: same significant tokens, ignoring generic words. */
+export function namesSimilar(a: string, b: string): boolean {
+  const norm = (s: string) =>
+    s.toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(NAME_STOPWORDS, ' ').replace(/\s+/g, ' ').trim()
+  const na = norm(a)
+  const nb = norm(b)
+  if (!na || !nb) return false
+  if (na === nb) return true
+  const ta = new Set(na.split(' '))
+  const tb = new Set(nb.split(' '))
+  // Substring match only when the shorter name is specific enough ("great hills" ⊂ "great hills golf")
+  if (Math.min(ta.size, tb.size) >= 2 && (na.includes(nb) || nb.includes(na))) return true
+  let common = 0
+  for (const t of ta) if (tb.has(t) && t.length > 2) common++
+  return common >= Math.min(2, Math.min(ta.size, tb.size))
 }
 
 export function mostCommon<T>(values: (T | null | undefined)[]): T | null {
@@ -131,6 +156,63 @@ export function buildClusters(venues: VenueRow[], parents: ParentIndex): Cluster
     const parent = matches.find((m) => m.feature.osmId === key) ?? null
     return { members, parent }
   })
+}
+
+/**
+ * Merge geometric clusters that already belong to identically named organizations
+ * (via their members' current `group_id`) and lie within SAME_NAME_MERGE_M of each other.
+ * Names come from enrichment, so this only kicks in on re-runs. Idempotent.
+ */
+export function mergeClustersBySameName(
+  clusters: Cluster[],
+  groups: Map<string, { name: string | null; kind: VenueKind }>,
+  maxM = SAME_NAME_MERGE_M,
+): { clusters: Cluster[]; merged: number } {
+  const groupOf = (c: Cluster) => {
+    const gid = mostCommon(c.members.map((v) => v.group_id))
+    const g = gid ? groups.get(gid) : null
+    return g && g.name && !isGenericName(g.name) ? g : null
+  }
+  const owners = clusters.map(groupOf)
+  const centers = clusters.map((c) => centroid(c.members))
+  const uf = new UnionFind(clusters.length)
+  let merged = 0
+
+  for (let i = 0; i < clusters.length; i++) {
+    const ga = owners[i]
+    if (!ga) continue
+    for (let j = i + 1; j < clusters.length; j++) {
+      const gb = owners[j]
+      if (!gb) continue
+      // "South Austin Tennis Center" vs "South Austin Neighborhood Park" share a park but not an operator
+      if (ga.kind !== gb.kind && ga.kind !== 'unknown' && gb.kind !== 'unknown') continue
+      const a = centers[i]!
+      const b = centers[j]!
+      if (Math.abs(a.lat - b.lat) > 0.01 || Math.abs(a.lng - b.lng) > 0.01) continue
+      if (haversineM(a.lat, a.lng, b.lat, b.lng) > maxM) continue
+      if (!namesSimilar(ga.name!, gb.name!)) continue
+      if (uf.find(i) !== uf.find(j)) {
+        uf.union(i, j)
+        merged++
+      }
+    }
+  }
+  if (merged === 0) return { clusters, merged }
+
+  const byRoot = new Map<number, Cluster>()
+  for (let i = 0; i < clusters.length; i++) {
+    const r = uf.find(i)
+    const c = clusters[i]!
+    const acc = byRoot.get(r)
+    if (!acc) {
+      byRoot.set(r, { members: [...c.members], parent: c.parent })
+    } else {
+      acc.members.push(...c.members)
+      // Prefer a parent that truly contains courts over a nearby one
+      if (!acc.parent || (acc.parent.how === 'near' && c.parent && c.parent.how !== 'near')) acc.parent = c.parent
+    }
+  }
+  return { clusters: [...byRoot.values()], merged }
 }
 
 export interface DerivedGroup {

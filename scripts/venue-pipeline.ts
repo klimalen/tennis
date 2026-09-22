@@ -5,7 +5,9 @@
  *   pnpm venues cluster   [--city austin] [--dry-run] [--no-cache]
  *       Group raw `venues` rows into `venue_groups` (same OSM parent polygon, or
  *       courts within LINK_M of each other). Idempotent: re-running keeps groups
- *       and their enrichment, only membership / centroids are refreshed.
+ *       and their enrichment, only membership / centroids are refreshed. Clusters
+ *       whose groups were enriched to the same organization name (same kind, within
+ *       SAME_NAME_MERGE_M) are merged into one group.
  *
  *   pnpm venues identify  [--city austin] [--limit N] [--force] [--dry-run]
  *       For groups without a name (or all with --force): find the organization by
@@ -35,7 +37,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import * as fs from 'fs'
 import * as path from 'path'
 
-import { buildClusters, deriveGroupFields, isGenericName, mostCommon, STREET_ADDRESS_RE, type VenueRow } from './lib/clustering'
+import { buildClusters, deriveGroupFields, isGenericName, mergeClustersBySameName, mostCommon, namesSimilar, STREET_ADDRESS_RE, type VenueRow } from './lib/clustering'
 import { fetchPage } from './lib/fetch-page'
 import { contactsFromTags, findParent, loadParentIndex } from './lib/osm-parents'
 import { googleOrganizationAt, hasGooglePlacesKey, reverseAddress } from './lib/places'
@@ -157,13 +159,14 @@ async function cmdCluster(sb: SupabaseClient, city: CityConfig, flags: Record<st
   const venues = await loadVenues(sb, city)
   console.log(`   ${venues.length} court records`)
 
-  const clusters = buildClusters(venues, parents)
-  const withParent = clusters.filter((c) => c.parent).length
-  const multi = clusters.filter((c) => c.members.length > 1).length
-  console.log(`\n→ ${clusters.length} groups (${multi} with 2+ courts, ${withParent} inside a named OSM feature)`)
-
   const existing = await loadGroups(sb, city)
   const existingById = new Map(existing.map((g) => [g.id, g]))
+
+  const geometric = buildClusters(venues, parents)
+  const { clusters, merged } = mergeClustersBySameName(geometric, new Map(existing.map((g) => [g.id, { name: g.name, kind: g.kind }])))
+  const withParent = clusters.filter((c) => c.parent).length
+  const multi = clusters.filter((c) => c.members.length > 1).length
+  console.log(`\n→ ${clusters.length} groups (${multi} with 2+ courts, ${withParent} inside a named OSM feature${merged ? `, ${merged} same-name halves merged` : ''})`)
 
   let created = 0
   let updated = 0
@@ -173,7 +176,26 @@ async function cmdCluster(sb: SupabaseClient, city: CityConfig, flags: Record<st
   for (const c of clusters) {
     const d = deriveGroupFields(c)
     const prevId = mostCommon(c.members.map((v) => v.group_id))
-    const prev = prevId ? existingById.get(prevId) : undefined
+    let prev = prevId ? existingById.get(prevId) : undefined
+
+    // A merged cluster spans several existing groups: keep the biggest, fill its gaps from the others.
+    const absorbed = [...new Set(c.members.map((v) => v.group_id))]
+      .filter((id): id is string => id != null && id !== prevId)
+      .map((id) => existingById.get(id))
+      .filter((g): g is GroupRow => g != null)
+    if (prev && absorbed.length > 0) {
+      const filled = { ...prev }
+      for (const other of absorbed) {
+        // google_place_id is unique — the absorbed group still holds it until it is deleted below
+        for (const f of ['name', 'address', 'phone', 'website', 'opening_hours', 'description', 'court_count', 'surface', 'lit', 'has_indoor', 'has_outdoor', 'access', 'fee', 'google_maps_uri'] as const) {
+          if ((filled[f] == null || filled[f] === '') && other[f] != null) (filled as Record<string, unknown>)[f] = other[f]
+        }
+        if (filled.kind === 'unknown' && other.kind !== 'unknown') filled.kind = other.kind
+        for (const s of other.sources ?? []) if (!filled.sources.some((x) => x.type === s.type && x.url === s.url)) filled.sources = [...filled.sources, s]
+      }
+      prev = filled
+      console.log(`   ⊕ ${prev.name}: absorbing ${absorbed.map((g) => `${g.name ?? g.id} (${g.member_count})`).join(', ')}`)
+    }
 
     // Never clobber identified / enriched data — only fill gaps and refresh derived facts.
     const sources: SourceRef[] = prev?.sources ? [...prev.sources] : []
@@ -202,6 +224,10 @@ async function cmdCluster(sb: SupabaseClient, city: CityConfig, flags: Record<st
       osm_parent_id: prev?.osm_parent_id ?? d.osm_parent_id,
       confidence: prev && prev.confidence !== 'low' ? prev.confidence : d.parent_confidence,
       sources,
+    }
+    if (absorbed.length > 0 && prev) {
+      row['court_count'] = prev.court_count
+      row['google_maps_uri'] = prev.google_maps_uri
     }
     const merged = { ...(prev ?? {}), ...row } as GroupRow
     row['needs_enrichment'] = computeNeedsEnrichment(merged)
@@ -294,12 +320,17 @@ async function cmdIdentify(sb: SupabaseClient, city: CityConfig, flags: Record<s
     const sources: SourceRef[] = [...(g.sources ?? [])]
     const log: string[] = []
 
-    // 1. Enclosing OSM feature at the centroid
+    // 1. Enclosing OSM feature at the centroid.
+    //    Contacts are copied only when the parent *is* the organization we are naming —
+    //    courts of a school inside an HOA's residential polygon must not inherit the HOA's phone.
     const parent = findParent(parents, g.lat, g.lng)
-    if (parent && (!g.name || isGenericName(g.name) || force)) {
+    const parentNames = !!parent && (!g.name || isGenericName(g.name) || force || namesSimilar(g.name, parent.feature.name))
+    if (parent && parentNames) {
       const contacts = contactsFromTags(parent.feature.tags)
-      update['name'] = parent.feature.name
-      update['kind'] = parent.feature.kind
+      if (!g.name || isGenericName(g.name) || force) {
+        update['name'] = parent.feature.name
+        update['kind'] = parent.feature.kind
+      }
       update['osm_parent_id'] = parent.feature.osmId
       if (!g.phone && contacts.phone) update['phone'] = normalizePhone(contacts.phone)
       if (!g.website && contacts.website) update['website'] = normalizeWebsite(contacts.website)
@@ -310,6 +341,8 @@ async function cmdIdentify(sb: SupabaseClient, city: CityConfig, flags: Record<s
         sources.push({ type: 'osm_parent', url: `https://www.openstreetmap.org/${parent.feature.osmId}`, fetched_at: parents.fetchedAt, fields: ['name', 'kind'] })
       }
       log.push(`osm: ${parent.feature.name} [${parent.feature.kind}, ${parent.how}]`)
+    } else if (parent) {
+      log.push(`osm: "${parent.feature.name}" ≠ "${g.name}" — contacts not inherited`)
     }
 
     const kindNow = (update['kind'] as VenueKind | undefined) ?? g.kind
@@ -381,19 +414,6 @@ async function cmdIdentify(sb: SupabaseClient, city: CityConfig, flags: Record<s
   }
 
   console.log(`\n📊 Identified ${named}/${targets.length} groups; Google matches: ${googleHits} (${googleRequests} requests)`)
-}
-
-function namesSimilar(a: string, b: string): boolean {
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\b(the|park|tennis|courts?|center|centre|club|district|neighborhood|hoa|of|at|and)\b/g, ' ').replace(/\s+/g, ' ').trim()
-  const na = norm(a)
-  const nb = norm(b)
-  if (!na || !nb) return false
-  if (na.includes(nb) || nb.includes(na)) return true
-  const ta = new Set(na.split(' '))
-  const tb = new Set(nb.split(' '))
-  let common = 0
-  for (const t of ta) if (tb.has(t) && t.length > 2) common++
-  return common >= Math.min(2, Math.min(ta.size, tb.size))
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
