@@ -59,7 +59,7 @@ export function ComposeButton() {
     <>
       <button
         onClick={handleOpen}
-        className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors"
+        className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors"
         title="New chat"
       >
         <SquarePen size={16} className="text-[rgba(26,26,26,0.5)]" />
@@ -71,7 +71,7 @@ export function ComposeButton() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
 
           {/* Sheet */}
-          <div className="relative bg-brand-bg border-t md:border border-brand-divider w-full md:max-w-sm md:rounded-none shadow-xl z-10 max-h-[70vh] flex flex-col">
+          <div className="relative bg-white rounded-t-[28px] md:rounded-[28px] w-full md:max-w-sm shadow-xl z-10 max-h-[70vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-brand-divider flex-shrink-0">
               <span className="font-display text-2xl tracking-wide">NEW CHAT</span>
@@ -117,7 +117,7 @@ export function ComposeButton() {
                         {c.avatar_url ? (
                           <Image src={c.avatar_url} alt={c.full_name} width={44} height={44} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="font-display text-base text-[rgba(26,26,26,0.3)]">{initials}</span>
+                          <span className="font-display text-base text-[#1a1a1a]">{initials}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

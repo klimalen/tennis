@@ -91,7 +91,7 @@ export default function SignUpPage() {
       <button
         type="button"
         onClick={handleGoogleSignUp}
-        className="w-full flex items-center justify-center gap-3 py-2.5 border border-brand-divider rounded text-sm font-medium text-gray-700 hover:bg-brand-surface transition-colors mb-5"
+        className="w-full flex items-center justify-center gap-3 py-2.5 border border-[#1a1a1a]/40 rounded-full bg-brand-field text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors mb-5"
       >
         <GoogleIcon />
         Continue with Google
@@ -117,7 +117,7 @@ export default function SignUpPage() {
             placeholder="Alex Smith"
             required
             autoComplete="name"
-            className="w-full px-4 py-2.5 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
           />
         </div>
 
@@ -131,7 +131,7 @@ export default function SignUpPage() {
             placeholder="you@example.com"
             required
             autoComplete="email"
-            className="w-full px-4 py-2.5 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
           />
         </div>
 
@@ -146,7 +146,7 @@ export default function SignUpPage() {
               placeholder="Min. 8 characters"
               required
               autoComplete="new-password"
-              className="w-full px-4 py-2.5 pr-10 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-2.5 pr-10 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
             />
             <button
               type="button"

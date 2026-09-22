@@ -38,7 +38,7 @@ export function MessageIcon({
       onClick={handleClick}
       disabled={loading}
       aria-label="Open chat"
-      className="h-11 px-2.5 border border-brand-divider flex flex-col items-center justify-center gap-0.5 text-[rgba(26,26,26,0.4)] hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-50 flex-shrink-0"
+      className="h-11 px-3 rounded-full bg-brand-field border border-[#1a1a1a]/40 flex flex-col items-center justify-center gap-0.5 text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50 flex-shrink-0"
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />}
       <span className="text-[8px] tracking-[0.12em] uppercase leading-none">Chat</span>

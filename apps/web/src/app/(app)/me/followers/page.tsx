@@ -33,7 +33,7 @@ async function FollowersContent() {
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/me" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           <span className="font-display text-3xl tracking-wide">FOLLOWERS</span>
@@ -59,13 +59,13 @@ async function FollowersContent() {
                 <Link
                   key={f.id}
                   href={f.username ? `/profile/${f.username}` : '#'}
-                  className="flex items-center gap-4 px-4 py-3 border-b border-brand-divider hover:bg-brand-surface transition-colors"
+                  className="flex items-center gap-4 mx-4 mb-3 px-4 py-3 rounded-[28px] bg-white hover:bg-[#F4F1EC] transition-colors"
                 >
                   <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                     {f.avatar_url ? (
                       <Image src={f.avatar_url} alt={f.full_name} width={48} height={48} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="font-display text-lg text-[rgba(26,26,26,0.3)]">{initials}</span>
+                      <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">

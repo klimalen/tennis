@@ -68,7 +68,7 @@ function SignInForm() {
       <button
         type="button"
         onClick={handleGoogleSignIn}
-        className="w-full flex items-center justify-center gap-3 py-2.5 border border-[#1a1a1a]/10 rounded-full text-sm font-medium text-[#1a1a1a] hover:bg-[#FAF7F2] transition-colors mb-5"
+        className="w-full flex items-center justify-center gap-3 py-2.5 border border-[#1a1a1a]/40 rounded-full bg-brand-field text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors mb-5"
       >
         <GoogleIcon />
         Continue with Google
@@ -94,7 +94,7 @@ function SignInForm() {
             placeholder="you@example.com"
             required
             autoComplete="email"
-            className="w-full px-4 py-2.5 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
+            className="w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
           />
         </div>
 
@@ -114,7 +114,7 @@ function SignInForm() {
               placeholder="••••••••"
               required
               autoComplete="current-password"
-              className="w-full px-4 py-2.5 pr-10 rounded border border-brand-divider text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-2.5 pr-10 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm"
             />
             <button
               type="button"
@@ -128,7 +128,7 @@ function SignInForm() {
 
         {/* Error */}
         {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded text-sm text-red-600">
+          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600">
             {error}
           </div>
         )}

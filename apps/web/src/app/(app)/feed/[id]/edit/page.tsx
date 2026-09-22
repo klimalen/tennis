@@ -84,7 +84,7 @@ export default function EditPostPage() {
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </button>
           <span className="font-display text-2xl tracking-wide">EDIT POST</span>
@@ -104,14 +104,14 @@ export default function EditPostPage() {
           onChange={(e) => setText(e.target.value)}
           placeholder="What's on your mind?"
           rows={5}
-          className="w-full bg-transparent resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.3)] outline-none leading-relaxed"
+          className="w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
           autoFocus
         />
 
         {displayImage && (
-          <div className="relative mt-4 w-full aspect-video bg-brand-surface overflow-hidden">
+          <div className="relative mt-4 w-full aspect-video rounded-[20px] bg-brand-field overflow-hidden">
             <Image src={displayImage} alt="Preview" fill className="object-cover" />
-            <button onClick={removeImage} className="absolute top-2 right-2 w-7 h-7 bg-black/60 flex items-center justify-center text-white">
+            <button onClick={removeImage} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white">
               <X size={14} />
             </button>
           </div>
@@ -120,7 +120,7 @@ export default function EditPostPage() {
         <div className="border-t border-brand-divider mt-6 pt-4">
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-2 text-[rgba(26,26,26,0.4)] hover:text-brand-primary transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors"
           >
             <ImageIcon size={18} />
             <span className="text-[10px] tracking-[0.15em] uppercase font-medium">

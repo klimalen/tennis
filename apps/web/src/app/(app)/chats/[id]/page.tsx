@@ -116,7 +116,7 @@ export default async function ChatPage({
     <div className="relative flex flex-col min-h-screen pb-20 md:pb-0">
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/chats" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <Link href="/chats" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           {otherProfile && (
@@ -125,7 +125,7 @@ export default async function ChatPage({
                 {otherProfile.avatar_url ? (
                   <Image src={otherProfile.avatar_url} alt={otherProfile.full_name} width={32} height={32} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-display text-xs text-[rgba(26,26,26,0.3)]">{otherInitials}</span>
+                  <span className="font-display text-xs text-[#1a1a1a]">{otherInitials}</span>
                 )}
               </div>
               <div className="flex-1 min-w-0">

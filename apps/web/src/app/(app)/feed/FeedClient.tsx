@@ -42,7 +42,7 @@ function Avatar({ user, size = 12 }: { user: Sender; size?: number }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={user.avatar_url} alt={user.full_name} width={px} height={px} className="w-full h-full object-cover" />
       ) : (
-        <span className="font-display text-lg text-[rgba(26,26,26,0.3)]">{initials}</span>
+        <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
       )}
     </Link>
   )
@@ -101,7 +101,7 @@ function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: str
         <button
           onClick={() => void respond('decline')}
           disabled={acting !== null}
-          className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.4)] hover:text-[rgba(26,26,26,0.7)] transition-colors disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors disabled:opacity-50"
         >
           {acting === 'decline' ? 'Declining…' : 'Decline'}
         </button>
@@ -166,7 +166,7 @@ function FollowCard({ item, onFollowBack }: { item: FollowItem; onFollowBack: (i
         </button>
         <Link
           href={`/profile/${f.username}`}
-          className="flex-1 py-2.5 border border-brand-divider text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.4)] hover:text-[rgba(26,26,26,0.7)] transition-colors text-center"
+          className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors text-center"
         >
           View profile
         </Link>

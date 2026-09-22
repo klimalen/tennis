@@ -197,7 +197,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
               {other.avatar_url ? (
                 <Image src={other.avatar_url} alt={other.full_name} width={48} height={48} className="w-full h-full object-cover" />
               ) : (
-                <span className="font-display text-lg text-[rgba(26,26,26,0.3)]">{initials}</span>
+                <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
               )}
             </div>
 

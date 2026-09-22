@@ -127,7 +127,7 @@ export function EditGameForm({
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm px-4 py-4 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/me" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+            <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
               <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
             </Link>
             <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">EDIT GAME</span>
@@ -150,12 +150,12 @@ export function EditGameForm({
               <div>
                 <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
               </div>
               <div>
                 <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
                 <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
+                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@ export function EditGameForm({
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
                   className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    format === opt.value ? 'border-brand-primary text-brand-primary bg-brand-surface' : 'border-brand-divider text-[rgba(26,26,26,0.5)] hover:border-[rgba(26,26,26,0.3)]'
+                    format === opt.value ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
                   }`}>
                   {opt.label}
                 </button>
@@ -180,7 +180,7 @@ export function EditGameForm({
             </p>
             <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
               placeholder="Court name or address" maxLength={200}
-              className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
+              className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
           </div>
 
           <div>
@@ -189,7 +189,7 @@ export function EditGameForm({
             </p>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder="Practice, match, group training..." rows={3} maxLength={500}
-              className="w-full px-3 py-2.5 border border-[#1a1a1a]/10 bg-white rounded-2xl text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+              className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
           {/* Participants */}
@@ -202,12 +202,12 @@ export function EditGameForm({
                   const statusLabel = STATUS_LABELS[p.status] ?? p.status
                   const isGoing = p.status === 'accepted'
                   return (
-                    <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 border border-brand-divider">
+                    <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
                       <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                         {p.profiles.avatar_url ? (
                           <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="font-display text-sm text-[rgba(26,26,26,0.3)]">{initials}</span>
+                          <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -233,7 +233,7 @@ export function EditGameForm({
 
           {!isCreator && (
             <button type="button" onClick={() => setShowLeaveConfirm(true)}
-              className="w-full py-3 border border-red-200 text-red-500 text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-red-50 transition-colors">
+              className="w-full py-3 rounded-full border border-red-200 text-red-500 text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-red-50 transition-colors">
               Leave game
             </button>
           )}
@@ -243,18 +243,18 @@ export function EditGameForm({
       {/* Leave confirmation — participants only */}
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-brand-bg border border-brand-divider shadow-xl max-w-sm w-full p-6">
+          <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
             <span className="font-display text-2xl tracking-wide block mb-3">LEAVE GAME?</span>
             <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
               You will be removed from this game. If no players remain, the game will be cancelled automatically.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowLeaveConfirm(false)} disabled={leaving}
-                className="flex-1 py-2.5 border border-brand-divider text-sm font-medium text-[rgba(26,26,26,0.6)] hover:bg-brand-surface transition-colors">
+                className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors">
                 Cancel
               </button>
               <button onClick={handleLeave} disabled={leaving}
-                className="flex-1 py-2.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors">
+                className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors">
                 {leaving ? 'Leaving...' : 'Leave'}
               </button>
             </div>
@@ -265,18 +265,18 @@ export function EditGameForm({
       {/* Delete confirmation — creator only */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-brand-bg border border-brand-divider shadow-xl max-w-sm w-full p-6">
+          <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
             <span className="font-display text-2xl tracking-wide block mb-3">DELETE GAME?</span>
             <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
               This game will be permanently removed from your schedule.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
-                className="flex-1 py-2.5 border border-brand-divider text-sm font-medium text-[rgba(26,26,26,0.6)] hover:bg-brand-surface transition-colors">
+                className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors">
                 Cancel
               </button>
               <button onClick={handleDelete} disabled={deleting}
-                className="flex-1 py-2.5 bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors">
+                className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors">
                 {deleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
