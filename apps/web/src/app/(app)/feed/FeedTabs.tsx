@@ -41,7 +41,7 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
   return (
     <div>
       {/* Tab bar */}
-      <div className="flex border-b border-brand-divider">
+      <div className="flex gap-2 px-4 pt-3 pb-1">
         {([
           { id: 'activity' as Tab, label: 'Activity' },
           { id: 'tour' as Tab, label: 'Tour' },
@@ -50,10 +50,10 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab.id)}
-            className={`flex-1 py-3 flex items-center justify-center gap-2 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-b-2 -mb-px ${
+            className={`flex-1 py-2.5 rounded-full flex items-center justify-center gap-2 text-[10px] tracking-[0.16em] uppercase font-medium transition-colors ${
               activeTab === tab.id
-                ? 'border-brand-primary text-brand-primary'
-                : 'border-transparent text-[rgba(26,26,26,0.35)] hover:text-[rgba(26,26,26,0.6)]'
+                ? 'bg-[#1a1a1a] text-[#FAF7F2]'
+                : 'bg-white text-[rgba(26,26,26,0.45)] hover:text-[#1a1a1a]'
             }`}
           >
             {tab.label}

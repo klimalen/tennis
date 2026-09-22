@@ -231,7 +231,7 @@ function OpenGameSheet({
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">Organiser</p>
             <Link href={`/profile/${game.creator.username}`} onClick={onClose} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                 {game.creator.avatar_url ? (
                   <Image src={game.creator.avatar_url} alt={game.creator.full_name} width={40} height={40} className="w-full h-full object-cover" />
                 ) : (
@@ -264,7 +264,7 @@ function OpenGameSheet({
                   return (
                     <Link key={p.player_id} href={`/profile/${p.profile.username}`} onClick={onClose}
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <div className="w-9 h-9 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                         {p.profile.avatar_url ? (
                           <Image src={p.profile.avatar_url} alt={p.profile.full_name} width={36} height={36} className="w-full h-full object-cover" />
                         ) : (
@@ -294,7 +294,7 @@ function OpenGameSheet({
             className={`w-full py-4 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${
               alreadyIn || isFull || isPast || isCancelled
                 ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
-                : 'bg-brand-primary text-white hover:bg-brand-primary-dark'
+                : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
             }`}
           >
             {joining ? <Loader2 size={14} className="animate-spin mx-auto" /> : joinLabel}
@@ -563,11 +563,11 @@ export function PostCard({
   }
 
   return (
-    <div className="border-b border-brand-divider px-4 py-4">
+    <div className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white">
       {/* Author header */}
       <div className="flex items-start gap-3 mb-3">
         <Link href={`/profile/${post.author.username}`} className="flex-shrink-0">
-          <div className="w-10 h-10 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center">
             {post.author.avatar_url ? (
               <Image src={post.author.avatar_url} alt={post.author.full_name} width={40} height={40} className="w-full h-full object-cover" />
             ) : (

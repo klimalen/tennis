@@ -70,7 +70,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       className={`px-4 py-2 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
         active
-          ? 'bg-brand-primary text-white border-brand-primary'
+          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
           : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary hover:text-brand-primary'
       }`}
     >
@@ -146,7 +146,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 <button
                   type="button"
                   onClick={confirmDetected}
-                  className="flex-1 py-2 bg-brand-primary text-white text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+                  className="flex-1 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
                 >
                   Yes, that&apos;s right
                 </button>
@@ -201,7 +201,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             value={data.neighborhood}
             onChange={(e) => onChange({ neighborhood: e.target.value })}
             placeholder="Vračar, Chelsea, Brooklyn..."
-            className="w-full px-4 py-3 border border-brand-divider bg-brand-bg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
+            className="w-full px-4 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
           />
         </div>
       </div>
@@ -368,7 +368,7 @@ function Step3({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 onClick={() => toggleDay(d.value)}
                 className={`w-11 h-11 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
                   data.preferredDays.includes(d.value)
-                    ? 'bg-brand-primary text-white border-brand-primary'
+                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-brand-primary'
                     : 'bg-brand-bg text-[rgba(26,26,26,0.5)] border-brand-divider hover:border-brand-primary'
                 }`}
               >
@@ -432,7 +432,7 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="e.g. I love long baseline rallies and play a few times a week after work..."
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 border border-brand-divider bg-brand-bg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
+            className="w-full px-4 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.bio.length}/300</p>
         </div>
@@ -445,7 +445,7 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 border border-brand-divider bg-brand-bg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
+            className="w-full px-4 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.lookingFor.length}/300</p>
         </div>
@@ -571,7 +571,7 @@ function Step5({
             onChange={(e) => onChange({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
             placeholder="your_username"
             maxLength={20}
-            className="w-full pl-8 pr-10 py-3 border border-brand-divider bg-brand-bg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
+            className="w-full pl-8 pr-10 py-3 border border-[#1a1a1a]/10 bg-white rounded-2xl text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
@@ -763,7 +763,7 @@ export default function OnboardingPage() {
           <button
             onClick={handleNext}
             disabled={!canProceed() || saving}
-            className="w-full py-3.5 bg-brand-primary text-white text-[10px] tracking-[0.25em] uppercase font-medium hover:bg-brand-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
+            className="w-full py-3.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.25em] uppercase font-medium hover:bg-[#E8406A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
           >
             {saving && <Loader2 size={14} className="animate-spin flex-shrink-0" />}
             {saving ? savingMsg : step === TOTAL_STEPS ? 'Finish setup' : 'Continue'}

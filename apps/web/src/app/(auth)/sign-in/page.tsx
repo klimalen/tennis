@@ -60,7 +60,7 @@ function SignInForm() {
   }
 
   return (
-    <div className="bg-white border border-brand-divider p-8">
+    <div className="bg-white rounded-[28px] p-8">
       <h1 className="font-display text-4xl tracking-wide mb-1">WELCOME BACK</h1>
       <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">Sign in to your account</p>
 
@@ -68,7 +68,7 @@ function SignInForm() {
       <button
         type="button"
         onClick={handleGoogleSignIn}
-        className="w-full flex items-center justify-center gap-3 py-2.5 border border-brand-divider rounded text-sm font-medium text-gray-700 hover:bg-brand-surface transition-colors mb-5"
+        className="w-full flex items-center justify-center gap-3 py-2.5 border border-[#1a1a1a]/10 rounded-full text-sm font-medium text-[#1a1a1a] hover:bg-[#FAF7F2] transition-colors mb-5"
       >
         <GoogleIcon />
         Continue with Google
@@ -137,7 +137,7 @@ function SignInForm() {
         <button
           type="submit"
           disabled={loading || !email || !password}
-          className="w-full py-3 bg-brand-primary text-white font-medium text-[10px] tracking-[0.2em] uppercase rounded hover:bg-brand-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] font-medium text-[10px] tracking-[0.2em] uppercase hover:bg-[#E8406A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : null}
           {loading ? 'Signing in...' : 'Sign in'}
@@ -157,7 +157,7 @@ function SignInForm() {
 export default function SignInPage() {
   return (
     <Suspense fallback={
-      <div className="bg-white border border-brand-divider p-8">
+      <div className="bg-white rounded-[28px] p-8">
         <div className="h-8 bg-brand-surface rounded w-1/2 mb-6 animate-pulse" />
         <div className="space-y-4">
           <div className="h-10 bg-brand-surface rounded animate-pulse" />

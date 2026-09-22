@@ -82,14 +82,14 @@ export function PostsFeed({ userId, initialPosts }: Props) {
         <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
         <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No posts yet</p>
         <p className="text-sm text-[rgba(26,26,26,0.4)] max-w-xs font-script italic">
-          Follow players to see their posts here, or create your first post.
+          Follow players to see their posts here, or create your first post
         </p>
       </div>
     )
   }
 
   return (
-    <div>
+    <div className="pt-4">
       {posts.map((post) => (
         <PostCard
           key={post.id}

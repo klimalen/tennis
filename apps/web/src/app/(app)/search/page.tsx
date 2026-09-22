@@ -1,14 +1,6 @@
-import { Fraunces } from 'next/font/google'
 import { createClient } from '@/lib/supabase/server'
 import { SearchClient } from './SearchClient'
 import type { IncomingRequest } from '@/app/api/game-requests/incoming/route'
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  variable: '--font-fraunces',
-  display: 'swap',
-})
 
 export default async function SearchPage() {
   const supabase = await createClient()
@@ -41,9 +33,5 @@ export default async function SearchPage() {
     }))
   }
 
-  return (
-    <div className={fraunces.variable}>
-      <SearchClient user={user} userCityName={cityName} initialIncoming={initialIncoming} />
-    </div>
-  )
+  return <SearchClient user={user} userCityName={cityName} initialIncoming={initialIncoming} />
 }

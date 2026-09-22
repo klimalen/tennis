@@ -50,9 +50,9 @@ async function ScheduleContent() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto">
-          <span className="font-display text-3xl tracking-wide">UPCOMING</span>
+          <span className="font-display text-5xl tracking-wide">UPCOMING</span>
         </div>
       </div>
 
@@ -61,12 +61,12 @@ async function ScheduleContent() {
           <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
           <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No games yet</p>
           <p className="text-sm text-[rgba(26,26,26,0.45)] max-w-xs">
-            Games you create or join show up here.
+            Games you create or join show up here
           </p>
           <div className="mt-6 flex flex-col items-center gap-2">
             <Link
               href="/games/new"
-              className="px-6 py-2.5 bg-brand-primary text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-brand-primary-dark transition-colors"
+              className="px-6 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
             >
               Create a game
             </Link>
@@ -81,7 +81,7 @@ async function ScheduleContent() {
       ) : (
         <div className="max-w-2xl mx-auto">
           {upcomingGames.map((game) => (
-            <div key={game.id} className="px-4 py-3 border-b border-brand-divider flex items-center gap-4">
+            <div key={game.id} className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
               <div className="flex-shrink-0 w-10 text-center">
                 <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
                 <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]">

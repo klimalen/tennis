@@ -50,7 +50,7 @@ export function ChatInput({ conversationId }: { conversationId: string }) {
         <button
           onClick={send}
           disabled={!text.trim() || sending}
-          className="w-10 h-10 bg-brand-primary flex items-center justify-center hover:bg-brand-primary-dark transition-colors disabled:opacity-40 flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-[#E8748A] text-[#1a1a1a] flex items-center justify-center hover:bg-[#E8406A] transition-colors disabled:opacity-40 flex-shrink-0"
         >
           <Send size={16} className="text-white" />
         </button>

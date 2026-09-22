@@ -83,7 +83,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="bg-white border border-brand-divider p-8">
+    <div className="bg-white rounded-[28px] p-8">
       <h1 className="font-display text-4xl tracking-wide mb-1">CREATE ACCOUNT</h1>
       <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">Join the tennis community</p>
 
@@ -206,7 +206,7 @@ export default function SignUpPage() {
         <button
           type="submit"
           disabled={loading || !fullName || !email || !passwordValid}
-          className="w-full py-3 bg-brand-primary text-white font-medium text-[10px] tracking-[0.2em] uppercase rounded hover:bg-brand-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] font-medium text-[10px] tracking-[0.2em] uppercase hover:bg-[#E8406A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : null}
           {loading ? 'Creating account...' : 'Create account'}

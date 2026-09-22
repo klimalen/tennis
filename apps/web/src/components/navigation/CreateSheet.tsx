@@ -42,10 +42,10 @@ export function CreateSheet({ variant }: Props) {
       {variant === 'fab' ? (
         <button
           onClick={() => setOpen(true)}
-          className="w-11 h-11 bg-brand-primary flex items-center justify-center shadow-lg -mt-5"
+          className="w-12 h-12 rounded-full bg-[#E8748A] flex items-center justify-center shadow-lg -mt-5"
           aria-label="Create"
         >
-          <Plus size={20} className="text-white" strokeWidth={2.5} />
+          <Plus size={20} className="text-[#1a1a1a]" strokeWidth={2.5} />
         </button>
       ) : variant === 'schedule' ? (
         <button
@@ -58,7 +58,7 @@ export function CreateSheet({ variant }: Props) {
       ) : (
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center justify-center gap-2 w-full py-3 bg-brand-primary text-white hover:bg-brand-primary-dark transition-colors"
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A] transition-colors"
         >
           <Plus size={16} strokeWidth={2.5} />
           <span className="text-xs tracking-[0.2em] uppercase font-medium">Create</span>
@@ -75,7 +75,7 @@ export function CreateSheet({ variant }: Props) {
 
       {/* Sheet */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-brand-bg border-t border-brand-divider transition-transform duration-300 ease-out max-h-[90vh] flex flex-col ${
+        className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] transition-transform duration-300 ease-out max-h-[90vh] flex flex-col ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -100,15 +100,13 @@ export function CreateSheet({ variant }: Props) {
                   key={opt.id}
                   onClick={() => opt.available && handleOption(opt.id)}
                   disabled={!opt.available}
-                  className={`w-full flex items-center gap-4 px-4 py-4 border transition-colors text-left ${
+                  className={`w-full flex items-center gap-4 px-4 py-4 rounded-[28px] transition-colors text-left ${
                     opt.available
-                      ? 'border-brand-divider hover:border-brand-primary hover:bg-brand-surface/50'
-                      : 'border-brand-divider opacity-40 cursor-not-allowed'
+                      ? 'bg-[#FAF7F2] hover:bg-[#F4F1EC]'
+                      : 'bg-[#FAF7F2] opacity-40 cursor-not-allowed'
                   }`}
                 >
-                  <div className={`w-10 h-10 flex items-center justify-center flex-shrink-0 ${
-                    opt.available ? 'bg-brand-surface' : 'bg-brand-surface'
-                  }`}>
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">
                     <Icon size={18} className={opt.available ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.3)]'} />
                   </div>
                   <div className="min-w-0">

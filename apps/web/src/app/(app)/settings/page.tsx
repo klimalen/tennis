@@ -40,21 +40,21 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-brand-bg pb-20 md:pb-0">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors"
+            className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors"
           >
             <ChevronLeft size={20} className="text-[rgba(26,26,26,0.5)]" />
           </button>
-          <span className="font-display text-3xl tracking-wide">SETTINGS</span>
+          <span className="font-display text-5xl tracking-wide">SETTINGS</span>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {/* Account section */}
-        <div className="bg-brand-bg border border-brand-divider overflow-hidden">
+        <div className="bg-white rounded-[28px] overflow-hidden">
           <div className="px-4 py-3 border-b border-brand-divider">
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Account</p>
           </div>
@@ -62,7 +62,7 @@ export default function SettingsPage() {
             href="/me/edit"
             className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left border-b border-brand-divider"
           >
-            <div className="w-9 h-9 bg-brand-surface flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0">
               <Pencil size={16} className="text-[rgba(26,26,26,0.5)]" />
             </div>
             <div>
@@ -75,7 +75,7 @@ export default function SettingsPage() {
             disabled={signingOut}
             className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left"
           >
-            <div className="w-9 h-9 bg-brand-surface flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0">
               <LogOut size={16} className="text-[rgba(26,26,26,0.5)]" />
             </div>
             <span className="text-sm font-medium text-[#1a1a1a]">
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Danger zone */}
-        <div className="bg-brand-bg border border-red-200 overflow-hidden">
+        <div className="bg-white rounded-[28px] overflow-hidden">
           <div className="px-4 py-3 border-b border-red-100">
             <p className="text-[9px] tracking-[0.2em] uppercase text-red-400">Danger zone</p>
           </div>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-brand-bg border border-brand-divider shadow-xl max-w-sm w-full p-6">
+          <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-50 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle size={20} className="text-red-500" />

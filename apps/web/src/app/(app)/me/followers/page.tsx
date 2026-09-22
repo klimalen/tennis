@@ -31,9 +31,9 @@ async function FollowersContent() {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/me" className="w-9 h-9 bg-brand-surface flex items-center justify-center hover:bg-brand-surface-md transition-colors">
+          <Link href="/me" className="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:bg-brand-surface-md transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           <span className="font-display text-3xl tracking-wide">FOLLOWERS</span>
@@ -46,7 +46,7 @@ async function FollowersContent() {
           <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
             <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No followers yet</p>
-            <p className="text-xs text-[rgba(26,26,26,0.4)]">When someone follows you, they appear here.</p>
+            <p className="text-xs font-fraunces italic text-[#85648F]">When someone follows you, they appear here</p>
           </div>
         ) : (
           <div>
@@ -61,7 +61,7 @@ async function FollowersContent() {
                   href={f.username ? `/profile/${f.username}` : '#'}
                   className="flex items-center gap-4 px-4 py-3 border-b border-brand-divider hover:bg-brand-surface transition-colors"
                 >
-                  <div className="w-12 h-12 bg-brand-surface border border-brand-divider overflow-hidden flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
                     {f.avatar_url ? (
                       <Image src={f.avatar_url} alt={f.full_name} width={48} height={48} className="w-full h-full object-cover" />
                     ) : (
