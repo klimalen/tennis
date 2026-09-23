@@ -14,7 +14,6 @@ interface OnboardingData {
   city: string
   cityLat: number | null
   cityLng: number | null
-  neighborhood: string
   yearsPlaying: number | null
   skillLevel: number | null
   playFormats: string[]
@@ -37,7 +36,7 @@ const PRESET_AVATARS = [
 ]
 
 const INITIAL_DATA: OnboardingData = {
-  city: '', cityLat: null, cityLng: null, neighborhood: '', yearsPlaying: null, skillLevel: null,
+  city: '', cityLat: null, cityLng: null, yearsPlaying: null, skillLevel: null,
   playFormats: [], playStyle: null, preferredSurfaces: [], availability: {},
   maxTravelKm: 10,
   bio: '', lookingFor: '', username: '', avatarFile: null,
@@ -192,17 +191,6 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.35)]">
             Discover uses your city to show nearby players, games, and courts. You can change it later in your profile.
           </p>
-        </div>
-
-        <div>
-          <FieldLabel>Neighbourhood <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">optional</span></FieldLabel>
-          <input
-            type="text"
-            value={data.neighborhood}
-            onChange={(e) => onChange({ neighborhood: e.target.value })}
-            placeholder="Vračar, Chelsea, Brooklyn..."
-            className="w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all"
-          />
         </div>
       </div>
     </div>
@@ -603,7 +591,6 @@ export default function OnboardingPage() {
       city_name: data.city || null,
       city_lat: data.cityLat,
       city_lng: data.cityLng,
-      neighborhood: data.neighborhood || null,
       skill_level_self: data.skillLevel,
       years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
       preferred_formats: data.playFormats,

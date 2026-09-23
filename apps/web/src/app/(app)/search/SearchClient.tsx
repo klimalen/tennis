@@ -9,6 +9,7 @@ import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/Loc
 import { skillLabel } from '@/lib/skill'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { LookingFor } from '@/components/ui/LookingFor'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,11 +283,12 @@ function PlayerCard({
             ) : null}
             <AvailabilityButton value={player.availability} />
           </div>
-          {(player.bio || player.looking_for) && (
+          {player.bio && (
             <p className={vivid ? 'font-fraunces italic text-sm text-[#497250] line-clamp-2 leading-snug' : 'text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed'}>
-              {player.bio || player.looking_for}
+              {player.bio}
             </p>
           )}
+          <LookingFor text={player.looking_for} dense={!vivid} />
           {player.total_matches > 0 && (
             <p className="text-[11px] text-[rgba(26,26,26,0.4)]">{player.total_matches} matches</p>
           )}

@@ -109,7 +109,6 @@ interface ProfileData {
   city: string
   cityLat: number | null
   cityLng: number | null
-  neighborhood: string
 }
 
 export default function EditProfilePage() {
@@ -128,7 +127,7 @@ export default function EditProfilePage() {
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null, avatarPreview: null,
     skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], availability: {},
-    maxTravelKm: null, lookingFor: '', city: '', cityLat: null, cityLng: null, neighborhood: '',
+    maxTravelKm: null, lookingFor: '', city: '', cityLat: null, cityLng: null,
   })
 
   function update(partial: Partial<ProfileData>) {
@@ -144,7 +143,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, max_travel_km, looking_for, neighborhood, city_name')
+        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, max_travel_km, looking_for, city_name')
         .eq('id', user.id)
         .single()
 
@@ -163,7 +162,6 @@ export default function EditProfilePage() {
           availability: availabilityFromProfile(p),
           maxTravelKm: p.max_travel_km ?? null,
           lookingFor: p.looking_for || '',
-          neighborhood: p.neighborhood || '',
           city: p.city_name || '',
         })
       }
@@ -241,7 +239,6 @@ export default function EditProfilePage() {
         availability: storedAvailability(d.availability),
         max_travel_km: d.maxTravelKm,
         looking_for: d.lookingFor.trim() || null,
-        neighborhood: d.neighborhood.trim() || null,
         city_name: d.city.trim() || null,
         city_lat: d.cityLat,
         city_lng: d.cityLng,
@@ -504,17 +501,6 @@ export default function EditProfilePage() {
           {!d.city.trim() && (
             <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
           )}
-        </div>
-
-        <div>
-          <FieldLabel optional>Neighbourhood</FieldLabel>
-          <input
-            type="text"
-            value={d.neighborhood}
-            onChange={(e) => update({ neighborhood: e.target.value })}
-            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
-            placeholder="e.g. Vračar, Chelsea, Brooklyn..."
-          />
         </div>
       </div>
     </div>

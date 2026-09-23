@@ -10,6 +10,7 @@ import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
@@ -59,7 +60,7 @@ export default async function PlayerProfilePage({
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'id, full_name, username, avatar_url, bio, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_surfaces, availability',
+      'id, full_name, username, avatar_url, bio, looking_for, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_surfaces, availability',
     )
     .eq('username', username)
     .is('deleted_at', null)
@@ -299,6 +300,7 @@ export default async function PlayerProfilePage({
             {profile.bio && (
               <p className="text-sm text-[#497250] font-fraunces italic pt-1">{profile.bio}</p>
             )}
+            <LookingFor text={profile.looking_for} />
           </div>
 
           {!viewer && (

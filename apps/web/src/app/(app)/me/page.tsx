@@ -9,6 +9,7 @@ import { formatFollowers } from '@/lib/formatFollowers'
 import { formatPlayFormat, skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
 const SURFACE_LABELS: Record<string, string> = {
@@ -25,7 +26,7 @@ async function ProfileContent() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, city_name, preferred_surfaces, availability')
+    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, looking_for, city_name, preferred_surfaces, availability')
     .eq('id', user.id)
     .single()
 
@@ -220,6 +221,7 @@ async function ProfileContent() {
             {profile?.bio && (
               <p className="text-sm text-[#497250] mt-2 font-fraunces italic">{profile.bio}</p>
             )}
+            <LookingFor text={profile?.looking_for} />
             <Link
               href="/me/edit"
               className="block w-full mt-4 py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors text-center"
