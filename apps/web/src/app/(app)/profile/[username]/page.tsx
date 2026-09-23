@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
@@ -72,6 +72,7 @@ export default async function PlayerProfilePage({
     .single()
 
   if (!profile) notFound()
+  if (viewer && viewer.id === profile.id) redirect('/me')
 
   const [{ count: wins }, { count: followerCount }] = await Promise.all([
     supabase
@@ -243,7 +244,7 @@ export default async function PlayerProfilePage({
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-2">
+      <div className="max-w-2xl mx-auto px-4 pt-2 pb-8 space-y-6">
         {/* Profile header */}
         <div className="bg-white rounded-[28px] p-5">
           <div className="flex items-start gap-5">
@@ -324,39 +325,41 @@ export default async function PlayerProfilePage({
             </div>
           )}
 
-          {/* Actions — only shown to other logged-in users */}
           {viewer && viewer.id !== profile.id && (
-            <div className="flex items-end gap-2 mt-4">
-              <div className="flex-1">
-                <ProposeMatchButton
-                  receiverId={profile.id}
-                  receiverName={profile.full_name}
-                  existingStatus={existingRequestStatus}
-                />
-              </div>
-              <FollowButton
-                followingId={profile.id}
-                initialFollowing={viewerIsFollowing}
+            <div className="mt-4 space-y-3">
+              <ProposeMatchButton
+                receiverId={profile.id}
+                receiverName={profile.full_name}
+                existingStatus={existingRequestStatus}
               />
-              {isMutual && (
-                <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
-              )}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <FollowButton
+                    followingId={profile.id}
+                    initialFollowing={viewerIsFollowing}
+                  />
+                </div>
+                {isMutual && (
+                  <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* Schedule — only if user has upcoming games */}
         {upcomingGames.length > 0 && (
-          <div className="border-t border-brand-divider">
-            <div className="px-4 py-4 flex items-center gap-2">
+          <div>
+            <div className="px-1 pb-3 flex items-center gap-2">
               <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Schedule</span>
+              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
+              <div className="flex-1 h-px bg-brand-divider" />
             </div>
-            <div className="pb-4">
+            <div className="space-y-3">
               {upcomingGames.map((game) => {
                 const formatLabel = game.format === 'singles' ? 'Singles' : game.format === 'doubles' ? 'Doubles' : 'Mixed'
                 return (
-                  <div key={game.id} className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
+                  <div key={game.id} className="px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
                     <div className="flex-shrink-0 w-10 text-center">
                       <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
                       <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]"><LocalGameMonth iso={game.scheduled_at} /></p>
@@ -379,8 +382,12 @@ export default async function PlayerProfilePage({
           </div>
         )}
 
-        {/* Publications */}
-        <div className="border-t border-brand-divider">
+        <div>
+          <div className="px-1 pb-3 flex items-center gap-2">
+            <span className="text-brand-accent font-display text-lg leading-none">✦</span>
+            <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Posts</span>
+            <div className="flex-1 h-px bg-brand-divider" />
+          </div>
           {posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
               <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>

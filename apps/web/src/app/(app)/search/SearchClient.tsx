@@ -290,27 +290,23 @@ function PlayerCard({
       </div>
       {pending ? (
         vivid ? (
-          <div className="mx-4 mb-4 flex overflow-hidden rounded-full bg-[#E8E1D7]">
-            <span className="flex-1 py-3 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.45)]">
-              Request sent
-            </span>
+          <div className="mx-4 mb-4 space-y-2">
+            <p className="text-center text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.5)]">Request sent</p>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
-              className="px-5 py-3 text-[10px] tracking-[0.2em] uppercase font-medium text-[#E8748A]"
+              className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/30 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a]"
             >
-              Cancel
+              Cancel request
             </button>
           </div>
         ) : (
-          <div className="flex border-t border-brand-divider">
-            <span className="flex-1 py-2.5 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.4)]">
-              Request sent
-            </span>
+          <div className="px-4 pb-4 space-y-2">
+            <p className="text-center text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.5)]">Request sent</p>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
-              className="px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium border-l border-brand-divider text-[rgba(26,26,26,0.55)] hover:text-brand-primary"
+              className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/30 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a]"
             >
-              Cancel
+              Cancel request
             </button>
           </div>
         )
@@ -356,7 +352,7 @@ function MapThumbnail({ lat, lng }: { lat: number; lng: number }) {
     { x: x0 + 1, y: y0 + 1, dx: 256, dy: 256 },
   ]
   return (
-    <div className="relative overflow-hidden bg-brand-surface flex-shrink-0" style={{ width: 80, height: 80 }}>
+    <div className="relative m-3 overflow-hidden rounded-[20px] bg-brand-surface flex-shrink-0" style={{ width: 72, height: 72 }}>
       <div className="absolute" style={{ left, top, width: 512, height: 512 }}>
         {tiles.map(({ x, y, dx, dy }) => (
           // eslint-disable-next-line @next/next/no-img-element

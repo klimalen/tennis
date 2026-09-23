@@ -68,16 +68,14 @@ export function ProposeMatchButton({
   return (
     <div className="space-y-1.5">
       {state === 'sent' ? (
-        <div className="flex rounded-full bg-brand-field border border-[#1a1a1a]/40 overflow-hidden">
-          <span className="flex-1 py-3 text-center text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a]">
-            Request sent
-          </span>
+        <div className="space-y-2">
+          <p className="text-center text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.5)]">Request sent</p>
           <button
             type="button"
             onClick={() => void cancelRequest()}
-            className="px-4 py-3 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white border-l border-[#1a1a1a]/15"
+            className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/30 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors"
           >
-            Cancel
+            Cancel request
           </button>
         </div>
       ) : (

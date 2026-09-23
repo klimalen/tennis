@@ -563,7 +563,7 @@ export function PostCard({
   }
 
   return (
-    <div className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white">
+    <div className="mb-3 px-4 py-4 rounded-[28px] bg-white">
       {/* Author header */}
       <div className="flex items-start gap-3 mb-3">
         <Link href={`/profile/${post.author.username}`} className="flex-shrink-0">

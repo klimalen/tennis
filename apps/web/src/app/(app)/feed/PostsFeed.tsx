@@ -89,7 +89,7 @@ export function PostsFeed({ userId, initialPosts }: Props) {
   }
 
   return (
-    <div className="pt-4">
+    <div className="px-4 pt-4">
       {posts.map((post) => (
         <PostCard
           key={post.id}

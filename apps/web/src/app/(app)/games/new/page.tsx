@@ -278,8 +278,8 @@ function NewGameForm() {
                 Anyone in your city can find and join this game
               </p>
             ) : (
-              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
-                Only you and people you invite can see this game.
+              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
+                It stays on your profile. Only you and the people you invite can see it. Nobody else can find it or join.
               </p>
             )}
           </div>

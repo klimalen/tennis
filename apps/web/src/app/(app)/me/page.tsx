@@ -241,11 +241,10 @@ async function ProfileContent() {
 
         {/* Schedule section */}
         <div>
-          <div className="px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Schedule</span>
-            </div>
+          <div className="px-1 py-3 flex items-center gap-2">
+            <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
+            <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
+            <div className="flex-1 h-px bg-brand-divider" />
             <CreateSheet variant="schedule" />
           </div>
 
@@ -292,8 +291,12 @@ async function ProfileContent() {
           )}
         </div>
 
-        {/* Publications */}
         <div>
+          <div className="px-1 pt-2 pb-3 flex items-center gap-2">
+            <span className="text-brand-accent font-display text-lg leading-none">✦</span>
+            <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Posts</span>
+            <div className="flex-1 h-px bg-brand-divider" />
+          </div>
           {posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
               <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>

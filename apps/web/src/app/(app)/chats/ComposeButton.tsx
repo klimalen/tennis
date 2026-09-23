@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { SquarePen, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
@@ -65,8 +66,8 @@ export function ComposeButton() {
         <SquarePen size={16} className="text-[rgba(26,26,26,0.5)]" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end md:justify-center md:items-center">
+      {open && createPortal(
+        <div className="fixed inset-0 z-[80] flex flex-col justify-end md:justify-center md:items-center">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={handleClose} />
 
@@ -140,7 +141,8 @@ export function ComposeButton() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )
