@@ -43,13 +43,6 @@ const SURFACE_OPTIONS = [
   { value: 'indoor', label: 'Indoor' },
 ]
 
-const DISTANCE_OPTIONS = [
-  { value: 5, label: '5 km' },
-  { value: 10, label: '10 km' },
-  { value: 20, label: '20 km' },
-  { value: 50, label: '50 km+' },
-]
-
 // ─── Small UI helpers ─────────────────────────────────────────────────────────
 
 function SectionTitle({ children }: { children: string }) {
@@ -104,7 +97,6 @@ interface ProfileData {
   playStyle: string | null
   preferredSurfaces: string[]
   availability: Availability
-  maxTravelKm: number | null
   lookingFor: string
   city: string
   cityLat: number | null
@@ -127,7 +119,7 @@ export default function EditProfilePage() {
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null, avatarPreview: null,
     skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], availability: {},
-    maxTravelKm: null, lookingFor: '', city: '', cityLat: null, cityLng: null,
+    lookingFor: '', city: '', cityLat: null, cityLng: null,
   })
 
   function update(partial: Partial<ProfileData>) {
@@ -143,7 +135,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, max_travel_km, looking_for, city_name')
+        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, city_name')
         .eq('id', user.id)
         .single()
 
@@ -160,7 +152,6 @@ export default function EditProfilePage() {
           playStyle: p.play_style || null,
           preferredSurfaces: p.preferred_surfaces || [],
           availability: availabilityFromProfile(p),
-          maxTravelKm: p.max_travel_km ?? null,
           lookingFor: p.looking_for || '',
           city: p.city_name || '',
         })
@@ -237,7 +228,6 @@ export default function EditProfilePage() {
         preferred_time_start: schedule.preferred_time_start,
         preferred_time_end: schedule.preferred_time_end,
         availability: storedAvailability(d.availability),
-        max_travel_km: d.maxTravelKm,
         looking_for: d.lookingFor.trim() || null,
         city_name: d.city.trim() || null,
         city_lat: d.cityLat,
@@ -460,18 +450,6 @@ export default function EditProfilePage() {
         <div>
           <FieldLabel optional>When you play</FieldLabel>
           <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
-        </div>
-
-        {/* Distance */}
-        <div>
-          <FieldLabel optional>Max travel distance</FieldLabel>
-          <div className="flex flex-wrap gap-4">
-            {DISTANCE_OPTIONS.map((o) => (
-              <Pill key={o.value} active={d.maxTravelKm === o.value} onClick={() => update({ maxTravelKm: d.maxTravelKm === o.value ? null : o.value })}>
-                {o.label}
-              </Pill>
-            ))}
-          </div>
         </div>
         </section>
 

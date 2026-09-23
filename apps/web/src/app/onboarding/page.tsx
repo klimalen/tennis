@@ -20,7 +20,6 @@ interface OnboardingData {
   playStyle: string | null
   preferredSurfaces: string[]
   availability: Availability
-  maxTravelKm: number | null
   bio: string
   lookingFor: string
   username: string
@@ -38,7 +37,6 @@ const PRESET_AVATARS = [
 const INITIAL_DATA: OnboardingData = {
   city: '', cityLat: null, cityLng: null, yearsPlaying: null, skillLevel: null,
   playFormats: [], playStyle: null, preferredSurfaces: [], availability: {},
-  maxTravelKm: 10,
   bio: '', lookingFor: '', username: '', avatarFile: null,
   presetAvatar: '/avatars/preset-4.jpg',
 }
@@ -313,32 +311,14 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 
 // ─── Step 3: Schedule ─────────────────────────────────────────────────────────
 
-const DISTANCE_OPTIONS = [
-  { value: 5, label: '5 km' }, { value: 10, label: '10 km' },
-  { value: 20, label: '20 km' }, { value: 50, label: '50 km+' },
-]
-
 function Step3({ data, onChange }: { data: OnboardingData; onChange: (d: Partial<OnboardingData>) => void }) {
   return (
     <div>
       <StepHeading title="WHEN DO YOU PLAY?" sub="Help us match you with players on your schedule — all optional" />
 
-      <div className="space-y-6">
-        <div>
-          <FieldLabel>When you play</FieldLabel>
-          <AvailabilityEditor value={data.availability} onChange={(availability) => onChange({ availability })} />
-        </div>
-
-        <div>
-          <FieldLabel>How far will you travel?</FieldLabel>
-          <div className="flex gap-2 flex-wrap">
-            {DISTANCE_OPTIONS.map((d) => (
-              <Pill key={d.value} active={data.maxTravelKm === d.value} onClick={() => onChange({ maxTravelKm: d.value })}>
-                {d.label}
-              </Pill>
-            ))}
-          </div>
-        </div>
+      <div>
+        <FieldLabel>When you play</FieldLabel>
+        <AvailabilityEditor value={data.availability} onChange={(availability) => onChange({ availability })} />
       </div>
     </div>
   )
@@ -600,7 +580,6 @@ export default function OnboardingPage() {
       preferred_time_start: schedule.preferred_time_start,
       preferred_time_end: schedule.preferred_time_end,
       availability: storedAvailability(data.availability),
-      max_travel_km: data.maxTravelKm,
       bio: data.bio || null,
       looking_for: data.lookingFor || null,
       ...(username.length >= 3 ? { username } : {}),
