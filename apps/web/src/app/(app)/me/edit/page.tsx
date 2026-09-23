@@ -69,7 +69,7 @@ const DISTANCE_OPTIONS = [
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <div className="flex items-center gap-3 mt-8 pt-2 pb-5">
+    <div className="flex items-center gap-3 pt-8">
       <span className="text-brand-accent font-display text-lg">✦</span>
       <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">{children}</span>
       <div className="flex-1 h-px bg-brand-divider" />
@@ -79,7 +79,7 @@ function SectionTitle({ children }: { children: string }) {
 
 function FieldLabel({ children, optional }: { children: string; optional?: boolean }) {
   return (
-    <label className="flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-1.5">
+    <label className="flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-4">
       {children}
       {optional && <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal text-[9px]">optional</span>}
     </label>
@@ -303,18 +303,18 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-0">
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-10">
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
         {/* ── ABOUT ── */}
-        <div className="flex items-center gap-3 pb-4">
+        <div className="flex items-center gap-3">
           <span className="text-brand-accent font-display text-lg">✦</span>
           <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">About</span>
           <div className="flex-1 h-px bg-brand-divider" />
         </div>
 
         {/* Avatar */}
-        <div className="flex items-center gap-5 mb-5">
+        <div className="flex items-center gap-5">
           <div
             className="relative w-20 h-20 rounded-full bg-brand-field border border-[#1a1a1a]/40 overflow-hidden cursor-pointer flex-shrink-0"
             onClick={() => fileInputRef.current?.click()}
@@ -339,7 +339,7 @@ export default function EditProfilePage() {
         </div>
 
         {/* Name */}
-        <div className="mb-4">
+        <div>
           <FieldLabel>Name</FieldLabel>
           <input
             type="text"
@@ -351,7 +351,7 @@ export default function EditProfilePage() {
         </div>
 
         {/* Username */}
-        <div className="mb-4">
+        <div>
           <FieldLabel>Username</FieldLabel>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
@@ -372,7 +372,7 @@ export default function EditProfilePage() {
         </div>
 
         {/* Bio */}
-        <div className="mb-2">
+        <div>
           <FieldLabel optional>Bio</FieldLabel>
           <textarea
             value={d.bio}
@@ -382,38 +382,38 @@ export default function EditProfilePage() {
             className="w-full min-h-[96px] px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="A few words about yourself..."
           />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1.5">{d.bio.length}/300</p>
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-2">{d.bio.length}/300</p>
         </div>
 
         {/* ── YOUR GAME ── */}
         <SectionTitle>Your game</SectionTitle>
 
         {/* Skill level */}
-        <div className="mb-4">
+        <div>
           <FieldLabel optional>Level</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-4">
             {SKILL_LEVELS.map((s) => (
               <button
                 key={s.value}
                 type="button"
                 onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
-                className={`flex flex-col p-3 border text-left transition-colors ${
+                className={`flex flex-col px-4 py-3.5 border text-left transition-colors ${
                   d.skillLevel === s.value
                     ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
                     : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
                 <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
-                <span className={`text-[9px] mt-0.5 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
+                <span className={`text-[9px] mt-1 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Years playing */}
-        <div className="mb-4">
+        <div>
           <FieldLabel optional>Playing since</FieldLabel>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-4">
             {YEARS_OPTIONS.map((o) => (
               <Pill key={o.value} active={d.yearsPlaying === o.value} onClick={() => update({ yearsPlaying: d.yearsPlaying === o.value ? null : o.value })}>
                 {o.label}
@@ -423,9 +423,9 @@ export default function EditProfilePage() {
         </div>
 
         {/* Formats */}
-        <div className="mb-4">
+        <div>
           <FieldLabel optional>Preferred format</FieldLabel>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-4">
             {FORMAT_OPTIONS.map((o) => (
               <Pill key={o.value} active={d.playFormats.includes(o.value)} onClick={() => update({ playFormats: toggleArr(d.playFormats, o.value) })}>
                 {o.label}
@@ -435,9 +435,9 @@ export default function EditProfilePage() {
         </div>
 
         {/* Surfaces */}
-        <div className="mb-4">
+        <div>
           <FieldLabel optional>Court surfaces</FieldLabel>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-4">
             {SURFACE_OPTIONS.map((o) => (
               <Pill key={o.value} active={d.preferredSurfaces.includes(o.value)} onClick={() => update({ preferredSurfaces: toggleArr(d.preferredSurfaces, o.value) })}>
                 {o.label}
@@ -447,22 +447,22 @@ export default function EditProfilePage() {
         </div>
 
         {/* Play style */}
-        <div className="mb-2">
+        <div>
           <FieldLabel optional>Play style</FieldLabel>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-4">
             {STYLE_OPTIONS.map((o) => (
               <button
                 key={o.value}
                 type="button"
                 onClick={() => update({ playStyle: d.playStyle === o.value ? null : o.value })}
-                className={`flex flex-col p-3 border text-left transition-colors ${
+                className={`flex flex-col px-4 py-3.5 border text-left transition-colors ${
                   d.playStyle === o.value
                     ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
                     : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
                 <span className="text-[10px] tracking-[0.1em] uppercase font-semibold text-[#1a1a1a]">{o.label}</span>
-                <span className={`text-[9px] mt-0.5 ${d.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sub}</span>
+                <span className={`text-[9px] mt-1 ${d.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sub}</span>
               </button>
             ))}
           </div>
@@ -472,9 +472,9 @@ export default function EditProfilePage() {
         <SectionTitle>Schedule</SectionTitle>
 
         {/* Days */}
-        <div className="mb-4">
+        <div>
           <FieldLabel optional>Preferred days</FieldLabel>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-4 flex-wrap">
             {DAYS.map((day) => (
               <button
                 key={day.value}
@@ -493,9 +493,9 @@ export default function EditProfilePage() {
         </div>
 
         {/* Time */}
-        <div className="mb-4">
+        <div>
           <FieldLabel optional>Time of day</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-4">
             {TIME_SLOTS.map((t) => (
               <button
                 key={t.start}
@@ -507,23 +507,23 @@ export default function EditProfilePage() {
                     update({ preferredTimeStart: t.start, preferredTimeEnd: t.end })
                   }
                 }}
-                className={`flex flex-col p-3 border text-left transition-colors ${
+                className={`flex flex-col px-4 py-3.5 border text-left transition-colors ${
                   activeTime?.start === t.start
                     ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
                     : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
                 }`}
               >
                 <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{t.label}</span>
-                <span className={`text-[9px] mt-0.5 ${activeTime?.start === t.start ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{t.sub}</span>
+                <span className={`text-[9px] mt-1 ${activeTime?.start === t.start ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{t.sub}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Distance */}
-        <div className="mb-2">
+        <div>
           <FieldLabel optional>Max travel distance</FieldLabel>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-4">
             {DISTANCE_OPTIONS.map((o) => (
               <Pill key={o.value} active={d.maxTravelKm === o.value} onClick={() => update({ maxTravelKm: d.maxTravelKm === o.value ? null : o.value })}>
                 {o.label}
@@ -535,7 +535,7 @@ export default function EditProfilePage() {
         {/* ── LOOKING FOR ── */}
         <SectionTitle>Looking for</SectionTitle>
 
-        <div className="mb-2">
+        <div>
           <FieldLabel optional>Who are you looking to play with?</FieldLabel>
           <textarea
             value={d.lookingFor}
@@ -545,13 +545,13 @@ export default function EditProfilePage() {
             className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
           />
-          <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right">{d.lookingFor.length}/300</p>
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-2">{d.lookingFor.length}/300</p>
         </div>
 
         {/* ── LOCATION ── */}
         <SectionTitle>Location</SectionTitle>
 
-        <div className="mb-4">
+        <div>
           <FieldLabel>City</FieldLabel>
           <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Discover uses this city to show players, games, and courts near you.</p>
           <CityInput
@@ -564,7 +564,7 @@ export default function EditProfilePage() {
           )}
         </div>
 
-        <div className="mb-2">
+        <div>
           <FieldLabel optional>Neighbourhood</FieldLabel>
           <input
             type="text"
