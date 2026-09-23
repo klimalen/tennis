@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 interface Props {
   /** How the trigger renders — fab for mobile center button, sidebar for desktop, schedule for inline section header */
   variant: 'fab' | 'sidebar' | 'schedule'
+  /** Skip the chooser and open this screen immediately. Used by the profile section plus buttons. */
+  direct?: 'game' | 'post'
 }
 
 const OPTIONS = [
@@ -26,14 +28,25 @@ const OPTIONS = [
   },
 ]
 
-export function CreateSheet({ variant }: Props) {
+export function CreateSheet({ variant, direct }: Props) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
+  function openCreate(id: 'game' | 'post') {
+    router.push(id === 'game' ? '/games/new' : '/feed/new')
+  }
+
   function handleOption(id: string) {
     setOpen(false)
-    if (id === 'game') router.push('/games/new')
-    if (id === 'post') router.push('/feed/new')
+    if (id === 'game' || id === 'post') openCreate(id)
+  }
+
+  function handleTrigger() {
+    if (direct) {
+      openCreate(direct)
+      return
+    }
+    setOpen(true)
   }
 
   return (
@@ -41,7 +54,7 @@ export function CreateSheet({ variant }: Props) {
       {/* Trigger */}
       {variant === 'fab' ? (
         <button
-          onClick={() => setOpen(true)}
+          onClick={handleTrigger}
           className="w-12 h-12 rounded-full bg-[#E8748A] flex items-center justify-center shadow-lg -mt-5"
           aria-label="Create"
         >
@@ -49,15 +62,15 @@ export function CreateSheet({ variant }: Props) {
         </button>
       ) : variant === 'schedule' ? (
         <button
-          onClick={() => setOpen(true)}
+          onClick={handleTrigger}
           className="w-7 h-7 rounded-full bg-brand-field border border-[#1a1a1a]/40 flex items-center justify-center hover:border-[#1a1a1a]/60 transition-colors text-[#1a1a1a]"
-          aria-label="Add game"
+          aria-label={direct === 'post' ? 'Add post' : 'Add game'}
         >
           <Plus size={13} strokeWidth={2} />
         </button>
       ) : (
         <button
-          onClick={() => setOpen(true)}
+          onClick={handleTrigger}
           className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A] transition-colors"
         >
           <Plus size={16} strokeWidth={2.5} />
@@ -65,15 +78,14 @@ export function CreateSheet({ variant }: Props) {
         </button>
       )}
 
-      {/* Backdrop */}
-      {open && (
+      {!direct && open && (
         <div
           className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
       )}
 
-      {/* Sheet */}
+      {!direct && (
       <div
         className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] transition-transform duration-300 ease-out max-h-[90vh] flex flex-col ${
           open ? 'translate-y-0' : 'translate-y-full'
@@ -126,6 +138,7 @@ export function CreateSheet({ variant }: Props) {
           </div>
         </div>
       </div>
+      )}
     </>
   )
 }

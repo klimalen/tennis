@@ -234,7 +234,7 @@ async function ProfileContent() {
             <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
             <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
             <div className="flex-1 h-px bg-brand-divider" />
-            <CreateSheet variant="schedule" />
+            <CreateSheet variant="schedule" direct="game" />
           </div>
 
           {upcomingGames && upcomingGames.length > 0 ? (
@@ -285,6 +285,7 @@ async function ProfileContent() {
             <span className="text-brand-accent font-display text-lg leading-none">✦</span>
             <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Posts</span>
             <div className="flex-1 h-px bg-brand-divider" />
+            <CreateSheet variant="schedule" direct="post" />
           </div>
           {posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
