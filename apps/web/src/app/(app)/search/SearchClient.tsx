@@ -1069,6 +1069,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Full courts view ────────────────────────────────────────────────────────
   const [venues, setVenues] = useState<Venue[]>([])
   const [loadingVenues, setLoadingVenues] = useState(false)
+  const [locating, setLocating] = useState(false)
   const [loadingMoreVenues, setLoadingMoreVenues] = useState(false)
   const [venuesHasMore, setVenuesHasMore] = useState(false)
   const [venuesOffset, setVenuesOffset] = useState(0)
@@ -1082,6 +1083,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [showSuggestions, setShowSuggestions] = useState(false)
   const skipAutocompleteRef = useRef(false)
   const courtsRestoredRef = useRef(false)
+  const venuesRequestRef = useRef(0)
 
   // Restore last city when courts view opens
   useEffect(() => {
@@ -1130,6 +1132,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   }, [cityInput])
 
   async function loadVenuesByBbox(south: number, west: number, north: number, east: number, coords?: { lat: number; lng: number }) {
+    const requestId = ++venuesRequestRef.current
     setLoadingVenues(true)
     setCourtsError(null)
     setShowSuggestions(false)
@@ -1139,16 +1142,19 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     try {
       const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east) })
       const res = await fetch(`/api/venues?${params}`)
+      if (requestId !== venuesRequestRef.current) return
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = (await res.json()) as { venues: Venue[]; hasMore: boolean }
+      if (requestId !== venuesRequestRef.current) return
       setVenues(json.venues ?? [])
       setVenuesHasMore(json.hasMore ?? false)
       setVenuesOffset(json.venues?.length ?? 0)
     } catch {
+      if (requestId !== venuesRequestRef.current) return
       setVenues([])
       setCourtsError('Failed to load courts. Please try again.')
     } finally {
-      setLoadingVenues(false)
+      if (requestId === venuesRequestRef.current) setLoadingVenues(false)
     }
   }
 
@@ -1202,20 +1208,34 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       setCourtsError('Geolocation is not supported by your browser')
       return
     }
-    setLoadingVenues(true)
-    setCourtsError(null)
+    // Drop any in-flight search of the typed city. This click must use the device position.
+    venuesRequestRef.current += 1
+    const requestId = venuesRequestRef.current
+    if (cityInput.trim()) skipAutocompleteRef.current = true
+    setSuggestions([])
     setShowSuggestions(false)
+    setCityInput('')
+    setLocating(true)
+    setCourtsError(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (requestId !== venuesRequestRef.current) return
         const { latitude, longitude } = pos.coords
         const coords = { lat: latitude, lng: longitude }
+        const { south, west, north, east } = boundingBoxClient(latitude, longitude, 10)
         setUserCoords(coords)
         setCityLabel('your location')
-        const { south, west, north, east } = boundingBoxClient(latitude, longitude, 10)
+        setLocating(false)
+        const toSave: SavedCourtsCity = { name: '', label: 'your location', lat: latitude, lng: longitude, south, north, west, east }
+        localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
         void loadVenuesByBbox(south, west, north, east, coords)
       },
-      () => setLoadingVenues(false),
-      { timeout: 10_000 },
+      () => {
+        if (requestId !== venuesRequestRef.current) return
+        setLocating(false)
+        setCourtsError('Could not detect your location. Allow location access and try again.')
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 },
     )
   }
 
@@ -1569,29 +1589,34 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           )}
         </div>
 
-        <button onClick={requestGeolocation} disabled={loadingVenues}
-          className="flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40 -mt-1">
-          <MapPin size={11} /> Use my location
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={requestGeolocation}
+          disabled={loadingVenues || locating}
+          className="relative z-30 -mt-1 flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40"
+        >
+          <MapPin size={11} /> {locating ? 'Detecting location...' : 'Use my location'}
         </button>
 
         {courtsError && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{courtsError}</p>}
 
-        {loadingVenues && (
+        {(loadingVenues || locating) && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
             <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-              Finding courts{cityLabel ? ` near ${cityLabel}` : ''}...
+              {locating ? 'Detecting your location...' : `Finding courts${cityLabel ? ` near ${cityLabel}` : ''}...`}
             </p>
           </div>
         )}
 
-        {!loadingVenues && userCoords && venues.length === 0 && !courtsError && (
+        {!loadingVenues && !locating && userCoords && venues.length === 0 && !courtsError && (
           <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-6 text-center">
             <p className="text-sm text-[rgba(26,26,26,0.6)]">No courts found in this area</p>
           </div>
         )}
 
-        {!loadingVenues && userCoords && venues.length > 0 && (
+        {!loadingVenues && !locating && userCoords && venues.length > 0 && (
           <>
             {cityLabel && (
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
@@ -1623,7 +1648,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           </>
         )}
 
-        {!loadingVenues && !userCoords && (
+        {!loadingVenues && !locating && !userCoords && (
           <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">Enter a city to find courts</p>
             <p className="text-sm text-[rgba(26,26,26,0.5)]">Or use your location for the nearest courts</p>
