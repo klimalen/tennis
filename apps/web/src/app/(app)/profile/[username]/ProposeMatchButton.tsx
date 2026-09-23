@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 
 type ButtonState = 'idle' | 'loading' | 'sent' | 'declined' | 'connected'
 
@@ -60,7 +61,7 @@ export function ProposeMatchButton({
     'Play together'
 
   const helper =
-    state === 'sent' ? 'Waiting for them to accept. You can cancel anytime.' :
+    state === 'sent' ? 'Waiting for them to accept a game' :
     state === 'declined' ? 'They declined. You can send the request again.' :
     state === 'connected' ? 'You can chat and plan a game. You follow each other now.' :
     'They need to accept before a chat opens.'
@@ -68,16 +69,7 @@ export function ProposeMatchButton({
   return (
     <div className="space-y-1.5">
       {state === 'sent' ? (
-        <div className="space-y-2">
-          <p className="text-center text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.5)]">Request sent</p>
-          <button
-            type="button"
-            onClick={() => void cancelRequest()}
-            className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/30 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors"
-          >
-            Cancel request
-          </button>
-        </div>
+        <PlayRequestSentButton onCancel={() => void cancelRequest()} />
       ) : (
         <button
           type="button"

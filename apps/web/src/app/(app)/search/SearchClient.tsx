@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { skillLabel } from '@/lib/skill'
+import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -241,7 +242,7 @@ function PlayerCard({
     : 'px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]'
 
   return (
-    <Link href={`/profile/${player.username}`} className={vivid ? 'block overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
+    <Link href={`/profile/${player.username}`} className={vivid ? 'block rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
       <div className="p-4 flex gap-3">
         <div className={`w-14 h-14 flex-shrink-0 flex items-center justify-center overflow-hidden ${vivid ? 'rounded-full bg-[#E8748A]' : 'bg-brand-surface-md'}`}>
           {player.avatar_url ? (
@@ -289,27 +290,9 @@ function PlayerCard({
         </div>
       </div>
       {pending ? (
-        vivid ? (
-          <div className="mx-4 mb-4 space-y-2">
-            <p className="text-center text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.5)]">Request sent</p>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
-              className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/30 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a]"
-            >
-              Cancel request
-            </button>
-          </div>
-        ) : (
-          <div className="px-4 pb-4 space-y-2">
-            <p className="text-center text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.5)]">Request sent</p>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel(player.id) }}
-              className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/30 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a]"
-            >
-              Cancel request
-            </button>
-          </div>
-        )
+        <div className="px-4 pb-4">
+          <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
+        </div>
       ) : vivid ? (
         <div className="px-4 pb-4">
           <button onClick={handleRequest} className={actionClass}>
