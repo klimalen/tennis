@@ -9,6 +9,8 @@ import { MessageIcon } from './MessageIcon'
 import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
+import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -18,14 +20,6 @@ const SURFACE_LABELS: Record<string, string> = {
   clay: 'Clay',
   grass: 'Grass',
   indoor: 'Indoor',
-}
-
-function timeLabel(start: string | null): string | null {
-  if (!start) return null
-  if (start < '12:00') return 'Morning'
-  if (start < '17:00') return 'Afternoon'
-  if (start < '21:00') return 'Evening'
-  return 'Night'
 }
 
 interface PostRow {
@@ -65,7 +59,7 @@ export default async function PlayerProfilePage({
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'id, full_name, username, avatar_url, bio, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_days, preferred_time_start, preferred_time_end, preferred_surfaces',
+      'id, full_name, username, avatar_url, bio, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_surfaces, availability',
     )
     .eq('username', username)
     .is('deleted_at', null)
@@ -87,7 +81,7 @@ export default async function PlayerProfilePage({
   ])
 
   const surfaces: string[] = profile.preferred_surfaces ?? []
-  const time = timeLabel(profile.preferred_time_start ?? null)
+  const availability = normalizeAvailability(profile.availability)
 
   // Check follow directions + existing conversation
   let viewerIsFollowing = false
@@ -286,7 +280,7 @@ export default async function PlayerProfilePage({
               </p>
             )}
 
-            {(skill || surfaces.length > 0 || time) && (
+            {(skill || surfaces.length > 0 || hasSlots(availability)) && (
               <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                 {skill && (
                   <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
@@ -298,11 +292,7 @@ export default async function PlayerProfilePage({
                     {SURFACE_LABELS[s] ?? s}
                   </span>
                 ))}
-                {time && (
-                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
-                    {time}
-                  </span>
-                )}
+                <AvailabilityButton value={availability} />
               </div>
             )}
 

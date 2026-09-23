@@ -8,20 +8,14 @@ import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/Loc
 import { formatFollowers } from '@/lib/formatFollowers'
 import { formatPlayFormat, skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
+import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
 const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
   clay: 'Clay',
   grass: 'Grass',
   indoor: 'Indoor',
-}
-
-function timeLabel(start: string | null): string | null {
-  if (!start) return null
-  if (start < '12:00') return 'Morning'
-  if (start < '17:00') return 'Afternoon'
-  if (start < '21:00') return 'Evening'
-  return 'Night'
 }
 
 async function ProfileContent() {
@@ -31,7 +25,7 @@ async function ProfileContent() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, city_name, preferred_surfaces, preferred_time_start')
+    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, city_name, preferred_surfaces, availability')
     .eq('id', user.id)
     .single()
 
@@ -148,7 +142,7 @@ async function ProfileContent() {
   const totalWins = wins ?? 0
   const rating = profile?.skill_level_computed ?? profile?.skill_level_self ?? null
   const surfaces: string[] = profile?.preferred_surfaces ?? []
-  const time = timeLabel(profile?.preferred_time_start ?? null)
+  const availability = normalizeAvailability(profile?.availability)
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -208,7 +202,7 @@ async function ProfileContent() {
                 {profile.city_name}
               </p>
             )}
-            {(skillLabel(rating) || surfaces.length > 0 || time) && (
+            {(skillLabel(rating) || surfaces.length > 0 || hasSlots(availability)) && (
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 {skillLabel(rating) && (
                   <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
@@ -220,11 +214,7 @@ async function ProfileContent() {
                     {SURFACE_LABELS[s] ?? s}
                   </span>
                 ))}
-                {time && (
-                  <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
-                    {time}
-                  </span>
-                )}
+                <AvailabilityButton value={availability} />
               </div>
             )}
             {profile?.bio && (

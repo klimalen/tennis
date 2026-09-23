@@ -8,6 +8,7 @@ import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { skillLabel } from '@/lib/skill'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
+import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ export interface Player {
   city_lng: number | null
   bio: string | null
   looking_for: string | null
+  availability: unknown
 }
 
 export interface Venue {
@@ -278,6 +280,7 @@ function PlayerCard({
                 {player.play_style === 'recreational' ? 'Recreational' : 'Competitive'}
               </span>
             ) : null}
+            <AvailabilityButton value={player.availability} />
           </div>
           {(player.bio || player.looking_for) && (
             <p className={vivid ? 'font-fraunces italic text-sm text-[#497250] line-clamp-2 leading-snug' : 'text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed'}>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, Check, Loader2, MapPin, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CityInput } from '@/components/ui/CityInput'
+import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
+import { legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,9 +20,7 @@ interface OnboardingData {
   playFormats: string[]
   playStyle: string | null
   preferredSurfaces: string[]
-  preferredDays: number[]
-  preferredTimeStart: string | null
-  preferredTimeEnd: string | null
+  availability: Availability
   maxTravelKm: number | null
   bio: string
   lookingFor: string
@@ -38,8 +38,8 @@ const PRESET_AVATARS = [
 
 const INITIAL_DATA: OnboardingData = {
   city: '', cityLat: null, cityLng: null, neighborhood: '', yearsPlaying: null, skillLevel: null,
-  playFormats: [], playStyle: null, preferredSurfaces: [], preferredDays: [],
-  preferredTimeStart: null, preferredTimeEnd: null, maxTravelKm: 10,
+  playFormats: [], playStyle: null, preferredSurfaces: [], availability: {},
+  maxTravelKm: 10,
   bio: '', lookingFor: '', username: '', avatarFile: null,
   presetAvatar: '/avatars/preset-4.jpg',
 }
@@ -325,80 +325,20 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 
 // ─── Step 3: Schedule ─────────────────────────────────────────────────────────
 
-const DAYS = [
-  { value: 1, label: 'Mon' }, { value: 2, label: 'Tue' }, { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' }, { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' }, { value: 0, label: 'Sun' },
-]
-
-const TIME_SLOTS = [
-  { label: 'Morning', sublabel: '6:00–12:00', start: '06:00', end: '12:00' },
-  { label: 'Afternoon', sublabel: '12:00–17:00', start: '12:00', end: '17:00' },
-  { label: 'Evening', sublabel: '17:00–21:00', start: '17:00', end: '21:00' },
-  { label: 'Night', sublabel: '21:00–00:00', start: '21:00', end: '23:59' },
-]
-
 const DISTANCE_OPTIONS = [
   { value: 5, label: '5 km' }, { value: 10, label: '10 km' },
   { value: 20, label: '20 km' }, { value: 50, label: '50 km+' },
 ]
 
 function Step3({ data, onChange }: { data: OnboardingData; onChange: (d: Partial<OnboardingData>) => void }) {
-  function toggleDay(v: number) {
-    const has = data.preferredDays.includes(v)
-    onChange({ preferredDays: has ? data.preferredDays.filter((d) => d !== v) : [...data.preferredDays, v] })
-  }
-
-  const activeTimeSlot = TIME_SLOTS.find(
-    (t) => t.start === data.preferredTimeStart && t.end === data.preferredTimeEnd,
-  )
-
   return (
     <div>
       <StepHeading title="WHEN DO YOU PLAY?" sub="Help us match you with players on your schedule — all optional" />
 
       <div className="space-y-6">
         <div>
-          <FieldLabel>Preferred days</FieldLabel>
-          <div className="flex gap-2 flex-wrap">
-            {DAYS.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => toggleDay(d.value)}
-                className={`w-11 h-11 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
-                  data.preferredDays.includes(d.value)
-                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-                    : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel>Time of day</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
-            {TIME_SLOTS.map((t) => (
-              <button
-                key={t.start}
-                type="button"
-                onClick={() => onChange({ preferredTimeStart: t.start, preferredTimeEnd: t.end })}
-                className={`flex flex-col items-start px-4 py-3 border text-left transition-colors ${
-                  activeTimeSlot?.start === t.start
-                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">
-                  {t.label}
-                </span>
-                <span className={`text-[9px] mt-0.5 ${activeTimeSlot?.start === t.start ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{t.sublabel}</span>
-              </button>
-            ))}
-          </div>
+          <FieldLabel>When you play</FieldLabel>
+          <AvailabilityEditor value={data.availability} onChange={(availability) => onChange({ availability })} />
         </div>
 
         <div>
@@ -657,6 +597,7 @@ export default function OnboardingPage() {
       }
     }
 
+    const schedule = legacySchedule(data.availability)
     const username = data.username.trim()
     await supabase.from('profiles').update({
       city_name: data.city || null,
@@ -668,9 +609,10 @@ export default function OnboardingPage() {
       preferred_formats: data.playFormats,
       play_style: data.playStyle,
       preferred_surfaces: data.preferredSurfaces,
-      preferred_days: data.preferredDays,
-      preferred_time_start: data.preferredTimeStart,
-      preferred_time_end: data.preferredTimeEnd,
+      preferred_days: schedule.preferred_days,
+      preferred_time_start: schedule.preferred_time_start,
+      preferred_time_end: schedule.preferred_time_end,
+      availability: storedAvailability(data.availability),
       max_travel_km: data.maxTravelKm,
       bio: data.bio || null,
       looking_for: data.lookingFor || null,

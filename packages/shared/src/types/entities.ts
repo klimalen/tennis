@@ -52,6 +52,7 @@ export interface Profile {
   preferred_days: number[]
   preferred_time_start: string | null
   preferred_time_end: string | null
+  availability: Partial<Record<number, Array<'morning' | 'afternoon' | 'evening'>>>
   max_travel_km: number | null
   looking_for: string | null
   is_coach: boolean

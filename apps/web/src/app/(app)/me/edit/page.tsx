@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
 import { CityInput } from '@/components/ui/CityInput'
+import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
+import { availabilityFromProfile, legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -39,23 +41,6 @@ const SURFACE_OPTIONS = [
   { value: 'clay', label: 'Clay' },
   { value: 'grass', label: 'Grass' },
   { value: 'indoor', label: 'Indoor' },
-]
-
-const DAYS = [
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' },
-  { value: 0, label: 'Sun' },
-]
-
-const TIME_SLOTS = [
-  { label: 'Morning', sub: '6:00–12:00', start: '06:00', end: '12:00' },
-  { label: 'Afternoon', sub: '12:00–17:00', start: '12:00', end: '17:00' },
-  { label: 'Evening', sub: '17:00–21:00', start: '17:00', end: '21:00' },
-  { label: 'Night', sub: '21:00–00:00', start: '21:00', end: '23:59' },
 ]
 
 const DISTANCE_OPTIONS = [
@@ -118,9 +103,7 @@ interface ProfileData {
   playFormats: string[]
   playStyle: string | null
   preferredSurfaces: string[]
-  preferredDays: number[]
-  preferredTimeStart: string | null
-  preferredTimeEnd: string | null
+  availability: Availability
   maxTravelKm: number | null
   lookingFor: string
   city: string
@@ -144,7 +127,7 @@ export default function EditProfilePage() {
   const [d, setD] = useState<ProfileData>({
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null, avatarPreview: null,
     skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
-    preferredSurfaces: [], preferredDays: [], preferredTimeStart: null, preferredTimeEnd: null,
+    preferredSurfaces: [], availability: {},
     maxTravelKm: null, lookingFor: '', city: '', cityLat: null, cityLng: null, neighborhood: '',
   })
 
@@ -161,7 +144,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, max_travel_km, looking_for, neighborhood, city_name')
+        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, max_travel_km, looking_for, neighborhood, city_name')
         .eq('id', user.id)
         .single()
 
@@ -177,9 +160,7 @@ export default function EditProfilePage() {
           playFormats: p.preferred_formats || [],
           playStyle: p.play_style || null,
           preferredSurfaces: p.preferred_surfaces || [],
-          preferredDays: p.preferred_days || [],
-          preferredTimeStart: p.preferred_time_start || null,
-          preferredTimeEnd: p.preferred_time_end || null,
+          availability: availabilityFromProfile(p),
           maxTravelKm: p.max_travel_km ?? null,
           lookingFor: p.looking_for || '',
           neighborhood: p.neighborhood || '',
@@ -243,6 +224,7 @@ export default function EditProfilePage() {
         avatarUrl = publicUrl
       }
 
+      const schedule = legacySchedule(d.availability)
       const { error: updateErr } = await supabase.from('profiles').update({
         full_name: d.fullName.trim(),
         username: d.username.trim(),
@@ -253,9 +235,10 @@ export default function EditProfilePage() {
         preferred_formats: d.playFormats,
         play_style: d.playStyle,
         preferred_surfaces: d.preferredSurfaces,
-        preferred_days: d.preferredDays,
-        preferred_time_start: d.preferredTimeStart,
-        preferred_time_end: d.preferredTimeEnd,
+        preferred_days: schedule.preferred_days,
+        preferred_time_start: schedule.preferred_time_start,
+        preferred_time_end: schedule.preferred_time_end,
+        availability: storedAvailability(d.availability),
         max_travel_km: d.maxTravelKm,
         looking_for: d.lookingFor.trim() || null,
         neighborhood: d.neighborhood.trim() || null,
@@ -274,7 +257,6 @@ export default function EditProfilePage() {
   }
 
   const displayAvatar = d.avatarPreview || d.avatarUrl
-  const activeTime = TIME_SLOTS.find((t) => t.start === d.preferredTimeStart && t.end === d.preferredTimeEnd)
 
   if (loading) {
     return (
@@ -474,53 +456,10 @@ export default function EditProfilePage() {
         {/* ── SCHEDULE ── */}
         <SectionTitle>Schedule</SectionTitle>
 
-        {/* Days */}
+        {/* Days and the parts of those days */}
         <div>
-          <FieldLabel optional>Preferred days</FieldLabel>
-          <div className="flex gap-4 flex-wrap">
-            {DAYS.map((day) => (
-              <button
-                key={day.value}
-                type="button"
-                onClick={() => update({ preferredDays: toggleArr(d.preferredDays, day.value) })}
-                className={`w-10 h-10 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
-                  d.preferredDays.includes(day.value)
-                    ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-                    : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                {day.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Time */}
-        <div>
-          <FieldLabel optional>Time of day</FieldLabel>
-          <div className="grid grid-cols-2 gap-4">
-            {TIME_SLOTS.map((t) => (
-              <button
-                key={t.start}
-                type="button"
-                onClick={() => {
-                  if (activeTime?.start === t.start) {
-                    update({ preferredTimeStart: null, preferredTimeEnd: null })
-                  } else {
-                    update({ preferredTimeStart: t.start, preferredTimeEnd: t.end })
-                  }
-                }}
-                className={`flex flex-col px-4 py-3.5 border text-left transition-colors ${
-                  activeTime?.start === t.start
-                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{t.label}</span>
-                <span className={`text-[9px] mt-1 ${activeTime?.start === t.start ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{t.sub}</span>
-              </button>
-            ))}
-          </div>
+          <FieldLabel optional>When you play</FieldLabel>
+          <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
         </div>
 
         {/* Distance */}
