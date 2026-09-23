@@ -25,6 +25,7 @@ interface Game {
   format: string
   neighborhood: string | null
   notes: string | null
+  is_open: boolean
 }
 
 interface Participant {
@@ -61,6 +62,7 @@ export function EditGameForm({
   const [format, setFormat] = useState<Format>(game.format as Format)
   const [location, setLocation] = useState(game.neighborhood ?? '')
   const [notes, setNotes] = useState(game.notes ?? '')
+  const [isOpen, setIsOpen] = useState(game.is_open)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -83,6 +85,7 @@ export function EditGameForm({
         format,
         location_name: location.trim() || null,
         notes: notes.trim() || null,
+        ...(isCreator ? { is_open: isOpen } : {}),
       }),
     })
 
@@ -191,6 +194,35 @@ export function EditGameForm({
               placeholder="Practice, match, group training..." rows={3} maxLength={500}
               className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
+
+          {isCreator && (
+            <div>
+              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setIsOpen(false)}
+                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
+                    !isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  }`}>
+                  Private
+                </button>
+                <button type="button" onClick={() => setIsOpen(true)}
+                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
+                    isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  }`}>
+                  Public
+                </button>
+              </div>
+              {isOpen ? (
+                <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
+                  Anyone in your city can find and join this game
+                </p>
+              ) : (
+                <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
+                  It stays on your profile. Only you and the people you invite can see it. Nobody else can find it or join.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Participants */}
           {participants.length > 0 && (

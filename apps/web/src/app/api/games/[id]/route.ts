@@ -15,16 +15,21 @@ export async function PATCH(
     format?: string
     location_name?: string | null
     notes?: string | null
+    is_open?: boolean
   }
 
   // Fetch current game to detect if scheduled_at is changing
   const { data: current } = await supabase
     .from('games')
-    .select('scheduled_at, format, neighborhood, creator_id')
+    .select('scheduled_at, format, neighborhood, creator_id, is_open')
     .eq('id', id)
     .single()
 
   if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const canChangeVisibility = current.creator_id === user.id && typeof body.is_open === 'boolean'
+  const opening = canChangeVisibility && body.is_open === true && current.is_open === false
+  const closing = canChangeVisibility && body.is_open === false && current.is_open === true
 
   const { error } = await supabase
     .from('games')
@@ -33,10 +38,27 @@ export async function PATCH(
       ...(body.format && { format: body.format }),
       neighborhood: body.location_name ?? null,
       notes: body.notes ?? null,
+      ...(canChangeVisibility ? { is_open: body.is_open } : {}),
     })
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Public games are announced the same way as when one is created as public.
+  if (opening) {
+    const { data: existing } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('game_id', id)
+      .eq('type', 'open_game')
+      .maybeSingle()
+    if (!existing) {
+      await supabase.from('posts').insert({ author_id: user.id, type: 'open_game', game_id: id })
+    }
+  }
+  if (closing) {
+    await supabase.from('posts').delete().eq('game_id', id).eq('type', 'open_game').eq('author_id', user.id)
+  }
 
   // If date/time changed, notify all other participants via chat
   const scheduledAtChanged =
