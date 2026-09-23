@@ -77,9 +77,9 @@ function SectionTitle({ children }: { children: string }) {
   )
 }
 
-function FieldLabel({ children, optional }: { children: string; optional?: boolean }) {
+function FieldLabel({ children, optional, tight }: { children: string; optional?: boolean; tight?: boolean }) {
   return (
-    <label className="flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-4">
+    <label className={`flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] ${tight ? 'mb-2.5' : 'mb-4'}`}>
       {children}
       {optional && <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal text-[9px]">optional</span>}
     </label>
@@ -385,86 +385,89 @@ export default function EditProfilePage() {
           <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-2">{d.bio.length}/300</p>
         </div>
 
-        {/* ── YOUR GAME ── */}
-        <SectionTitle>Your game</SectionTitle>
-
-        {/* Skill level */}
+        {/* ── YOUR GAME ── small choices, so the gaps stay tighter than the large fields */}
         <div>
-          <FieldLabel optional>Level</FieldLabel>
-          <div className="grid grid-cols-2 gap-4">
-            {SKILL_LEVELS.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
-                className={`flex flex-col px-4 py-3.5 border text-left transition-colors ${
-                  d.skillLevel === s.value
-                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
-                <span className={`text-[9px] mt-1 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <span className="text-brand-accent font-display text-lg">✦</span>
+            <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">Your game</span>
+            <div className="flex-1 h-px bg-brand-divider" />
           </div>
-        </div>
 
-        {/* Years playing */}
-        <div>
-          <FieldLabel optional>Playing since</FieldLabel>
-          <div className="flex flex-wrap gap-4">
-            {YEARS_OPTIONS.map((o) => (
-              <Pill key={o.value} active={d.yearsPlaying === o.value} onClick={() => update({ yearsPlaying: d.yearsPlaying === o.value ? null : o.value })}>
-                {o.label}
-              </Pill>
-            ))}
-          </div>
-        </div>
+          <div className="mt-4 space-y-6">
+            <div>
+              <FieldLabel optional tight>Level</FieldLabel>
+              <div className="grid grid-cols-2 gap-3">
+                {SKILL_LEVELS.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
+                    className={`flex flex-col p-3 border text-left transition-colors ${
+                      d.skillLevel === s.value
+                        ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                        : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
+                    }`}
+                  >
+                    <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
+                    <span className={`text-[9px] mt-0.5 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {/* Formats */}
-        <div>
-          <FieldLabel optional>Preferred format</FieldLabel>
-          <div className="flex flex-wrap gap-4">
-            {FORMAT_OPTIONS.map((o) => (
-              <Pill key={o.value} active={d.playFormats.includes(o.value)} onClick={() => update({ playFormats: toggleArr(d.playFormats, o.value) })}>
-                {o.label}
-              </Pill>
-            ))}
-          </div>
-        </div>
+            <div>
+              <FieldLabel optional tight>Playing since</FieldLabel>
+              <div className="flex flex-wrap gap-2.5">
+                {YEARS_OPTIONS.map((o) => (
+                  <Pill key={o.value} active={d.yearsPlaying === o.value} onClick={() => update({ yearsPlaying: d.yearsPlaying === o.value ? null : o.value })}>
+                    {o.label}
+                  </Pill>
+                ))}
+              </div>
+            </div>
 
-        {/* Surfaces */}
-        <div>
-          <FieldLabel optional>Court surfaces</FieldLabel>
-          <div className="flex flex-wrap gap-4">
-            {SURFACE_OPTIONS.map((o) => (
-              <Pill key={o.value} active={d.preferredSurfaces.includes(o.value)} onClick={() => update({ preferredSurfaces: toggleArr(d.preferredSurfaces, o.value) })}>
-                {o.label}
-              </Pill>
-            ))}
-          </div>
-        </div>
+            <div>
+              <FieldLabel optional tight>Preferred format</FieldLabel>
+              <div className="flex flex-wrap gap-2.5">
+                {FORMAT_OPTIONS.map((o) => (
+                  <Pill key={o.value} active={d.playFormats.includes(o.value)} onClick={() => update({ playFormats: toggleArr(d.playFormats, o.value) })}>
+                    {o.label}
+                  </Pill>
+                ))}
+              </div>
+            </div>
 
-        {/* Play style */}
-        <div>
-          <FieldLabel optional>Play style</FieldLabel>
-          <div className="grid grid-cols-3 gap-4">
-            {STYLE_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => update({ playStyle: d.playStyle === o.value ? null : o.value })}
-                className={`flex flex-col px-4 py-3.5 border text-left transition-colors ${
-                  d.playStyle === o.value
-                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                <span className="text-[10px] tracking-[0.1em] uppercase font-semibold text-[#1a1a1a]">{o.label}</span>
-                <span className={`text-[9px] mt-1 ${d.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sub}</span>
-              </button>
-            ))}
+            <div>
+              <FieldLabel optional tight>Court surfaces</FieldLabel>
+              <div className="flex flex-wrap gap-2.5">
+                {SURFACE_OPTIONS.map((o) => (
+                  <Pill key={o.value} active={d.preferredSurfaces.includes(o.value)} onClick={() => update({ preferredSurfaces: toggleArr(d.preferredSurfaces, o.value) })}>
+                    {o.label}
+                  </Pill>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel optional tight>Play style</FieldLabel>
+              <div className="grid grid-cols-3 gap-3">
+                {STYLE_OPTIONS.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => update({ playStyle: d.playStyle === o.value ? null : o.value })}
+                    className={`flex flex-col p-3 border text-left transition-colors ${
+                      d.playStyle === o.value
+                        ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                        : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
+                    }`}
+                  >
+                    <span className="text-[10px] tracking-[0.1em] uppercase font-semibold text-[#1a1a1a]">{o.label}</span>
+                    <span className={`text-[9px] mt-0.5 ${d.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
