@@ -225,12 +225,6 @@ async function ProfileContent() {
               </div>
             )}
             <LookingFor text={profile?.looking_for} />
-            <Link
-              href="/me/edit"
-              className="block w-full mt-4 py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors text-center"
-            >
-              Edit profile
-            </Link>
           </div>
         </div>
 
