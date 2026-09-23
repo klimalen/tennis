@@ -1370,31 +1370,6 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} vivid />
           ) : (
             <>
-              <DiscoverySection title="OPEN GAMES" onSeeAll={() => navigateTo('games')}>
-                {loadingPreviewGame ? (
-                  <GameCardSkeleton />
-                ) : previewGame ? (
-                  <OpenGameCard
-                    game={previewGame}
-                    userId={user?.id ?? null}
-                    joined={joinedGameIds.has(previewGame.id)}
-                    onJoin={handleJoin}
-                    onClick={() => setSelectedGame(previewGame)}
-                    vivid
-                  />
-                ) : (
-                  <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
-                    <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
-                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted in {userCityName} yet</p>
-                    {user && (
-                      <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
-                        <Plus size={12} /> Create a game
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </DiscoverySection>
-
               <DiscoverySection title="PLAYERS" onSeeAll={() => navigateTo('players')}>
                 {loadingPreviewPlayer ? (
                   <PlayerCardSkeleton />
@@ -1434,6 +1409,31 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                   <div className="rounded-[28px] bg-white px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO COURTS NEARBY</p>
                     <p className="font-fraunces italic text-[#85648F] mt-2">Try another area from the courts list</p>
+                  </div>
+                )}
+              </DiscoverySection>
+
+              <DiscoverySection title="OPEN GAMES" onSeeAll={() => navigateTo('games')}>
+                {loadingPreviewGame ? (
+                  <GameCardSkeleton />
+                ) : previewGame ? (
+                  <OpenGameCard
+                    game={previewGame}
+                    userId={user?.id ?? null}
+                    joined={joinedGameIds.has(previewGame.id)}
+                    onJoin={handleJoin}
+                    onClick={() => setSelectedGame(previewGame)}
+                    vivid
+                  />
+                ) : (
+                  <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
+                    <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
+                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted in {userCityName} yet</p>
+                    {user && (
+                      <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
+                        <Plus size={12} /> Create a game
+                      </Link>
+                    )}
                   </div>
                 )}
               </DiscoverySection>
