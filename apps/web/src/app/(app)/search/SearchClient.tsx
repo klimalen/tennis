@@ -1347,12 +1347,6 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       <div className="min-h-screen bg-[#FAF7F2] pb-20 md:pb-0">
         {sheets}
 
-        <div className="max-w-2xl mx-auto px-4 pt-8 pb-2">
-          <p className="text-[10px] tracking-[0.28em] uppercase text-[#85648F]">✦ The club</p>
-          <h1 className="font-display text-7xl leading-[0.9] tracking-wide text-[#1a1a1a] mt-1">DISCOVER</h1>
-          <p className="font-fraunces italic text-xl text-[#497250] mt-2">A game, a court, a partner</p>
-        </div>
-
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
           {!user && (
             <div className="rounded-[28px] bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">

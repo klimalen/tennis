@@ -21,7 +21,9 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-brand-divider">
         <Link href="/search" className="block">
-          <span className="font-display text-4xl leading-none tracking-wide text-brand-primary">TENNIS</span>
+          <p className="text-[10px] tracking-[0.28em] uppercase text-[#85648F]">✦ The club</p>
+          <p className="font-display text-5xl leading-[0.85] tracking-wide text-[#1a1a1a] mt-1">DISCOVER</p>
+          <p className="font-fraunces italic text-sm text-[#497250] mt-1.5 leading-snug">A game, a court, a partner</p>
         </Link>
       </div>
 
