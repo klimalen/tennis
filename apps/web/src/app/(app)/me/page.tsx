@@ -9,6 +9,7 @@ import { formatFollowers } from '@/lib/formatFollowers'
 import { formatPlayFormat, skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
@@ -219,7 +220,9 @@ async function ProfileContent() {
               </div>
             )}
             {profile?.bio && (
-              <p className="text-sm text-[#497250] mt-2 font-fraunces italic">{profile.bio}</p>
+              <div className="mt-2">
+                <ExpandableText text={profile.bio} className="text-sm text-[#497250] font-fraunces italic leading-snug" />
+              </div>
             )}
             <LookingFor text={profile?.looking_for} />
             <Link

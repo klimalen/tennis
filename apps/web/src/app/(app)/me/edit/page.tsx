@@ -54,7 +54,7 @@ const DISTANCE_OPTIONS = [
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <div className="flex items-center gap-3 pt-8">
+    <div className="flex items-center gap-3">
       <span className="text-brand-accent font-display text-lg">✦</span>
       <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">{children}</span>
       <div className="flex-1 h-px bg-brand-divider" />
@@ -62,9 +62,9 @@ function SectionTitle({ children }: { children: string }) {
   )
 }
 
-function FieldLabel({ children, optional, tight }: { children: string; optional?: boolean; tight?: boolean }) {
+function FieldLabel({ children, optional }: { children: string; optional?: boolean }) {
   return (
-    <label className={`flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] ${tight ? 'mb-2.5' : 'mb-4'}`}>
+    <label className="flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-2.5">
       {children}
       {optional && <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal text-[9px]">optional</span>}
     </label>
@@ -282,10 +282,11 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-10">
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-7">
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         {/* ── ABOUT ── */}
+        <section className="space-y-4">
         <div className="flex items-center gap-3">
           <span className="text-brand-accent font-display text-lg">✦</span>
           <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">About</span>
@@ -361,20 +362,21 @@ export default function EditProfilePage() {
             className="w-full min-h-[96px] px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="A few words about yourself..."
           />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-2">{d.bio.length}/300</p>
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.bio.length}/300</p>
         </div>
+        </section>
 
-        {/* ── YOUR GAME ── small choices, so the gaps stay tighter than the large fields */}
-        <div>
+        {/* ── YOUR GAME ── */}
+        <section>
           <div className="flex items-center gap-3">
             <span className="text-brand-accent font-display text-lg">✦</span>
             <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">Your game</span>
             <div className="flex-1 h-px bg-brand-divider" />
           </div>
 
-          <div className="mt-4 space-y-6">
+          <div className="mt-3 space-y-4">
             <div>
-              <FieldLabel optional tight>Level</FieldLabel>
+              <FieldLabel optional>Level</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
                 {SKILL_LEVELS.map((s) => (
                   <button
@@ -395,7 +397,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <FieldLabel optional tight>Playing since</FieldLabel>
+              <FieldLabel optional>Playing since</FieldLabel>
               <div className="flex flex-wrap gap-2.5">
                 {YEARS_OPTIONS.map((o) => (
                   <Pill key={o.value} active={d.yearsPlaying === o.value} onClick={() => update({ yearsPlaying: d.yearsPlaying === o.value ? null : o.value })}>
@@ -406,7 +408,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <FieldLabel optional tight>Preferred format</FieldLabel>
+              <FieldLabel optional>Preferred format</FieldLabel>
               <div className="flex flex-wrap gap-2.5">
                 {FORMAT_OPTIONS.map((o) => (
                   <Pill key={o.value} active={d.playFormats.includes(o.value)} onClick={() => update({ playFormats: toggleArr(d.playFormats, o.value) })}>
@@ -417,7 +419,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <FieldLabel optional tight>Court surfaces</FieldLabel>
+              <FieldLabel optional>Court surfaces</FieldLabel>
               <div className="flex flex-wrap gap-2.5">
                 {SURFACE_OPTIONS.map((o) => (
                   <Pill key={o.value} active={d.preferredSurfaces.includes(o.value)} onClick={() => update({ preferredSurfaces: toggleArr(d.preferredSurfaces, o.value) })}>
@@ -428,7 +430,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <FieldLabel optional tight>Play style</FieldLabel>
+              <FieldLabel optional>Play style</FieldLabel>
               <div className="grid grid-cols-3 gap-3">
                 {STYLE_OPTIONS.map((o) => (
                   <button
@@ -448,9 +450,10 @@ export default function EditProfilePage() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* ── SCHEDULE ── */}
+        <section className="space-y-4">
         <SectionTitle>Schedule</SectionTitle>
 
         {/* Days and the parts of those days */}
@@ -470,8 +473,10 @@ export default function EditProfilePage() {
             ))}
           </div>
         </div>
+        </section>
 
         {/* ── LOOKING FOR ── */}
+        <section className="space-y-4">
         <SectionTitle>Looking for</SectionTitle>
 
         <div>
@@ -484,10 +489,12 @@ export default function EditProfilePage() {
             className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
           />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-2">{d.lookingFor.length}/300</p>
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
         </div>
+        </section>
 
         {/* ── LOCATION ── */}
+        <section className="space-y-4">
         <SectionTitle>Location</SectionTitle>
 
         <div>
@@ -502,6 +509,7 @@ export default function EditProfilePage() {
             <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
           )}
         </div>
+        </section>
       </div>
     </div>
   )

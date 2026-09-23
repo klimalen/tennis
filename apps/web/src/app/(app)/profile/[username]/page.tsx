@@ -10,6 +10,7 @@ import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
@@ -298,7 +299,9 @@ export default async function PlayerProfilePage({
             )}
 
             {profile.bio && (
-              <p className="text-sm text-[#497250] font-fraunces italic pt-1">{profile.bio}</p>
+              <div className="pt-1">
+                <ExpandableText text={profile.bio} className="text-sm text-[#497250] font-fraunces italic leading-snug" />
+              </div>
             )}
             <LookingFor text={profile.looking_for} />
           </div>
