@@ -57,7 +57,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
       <button
         onClick={handleFollow}
         disabled={loading}
-        className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase font-medium text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50"
+        className="w-full justify-center flex items-center gap-1.5 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase font-medium text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50"
       >
         <UserPlus size={13} />
         Follow
@@ -66,11 +66,11 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
   }
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={menuRef} className="relative w-full">
       <button
         onClick={() => setShowMenu((v) => !v)}
         disabled={loading}
-        className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50"
+        className="w-full justify-center flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50"
       >
         <Check size={13} />
         Following

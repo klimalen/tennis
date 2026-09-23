@@ -53,7 +53,7 @@ function SkillBadge({ user }: { user: Sender }) {
   const label = skillLabel(rating)
   if (!label) return null
   return (
-    <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
+    <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
       {label}
     </span>
   )
@@ -73,7 +73,7 @@ function RequestCard({ req, onRespond }: { req: RequestItem; onRespond: (id: str
   }
 
   return (
-    <div className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white">
+    <div className="mx-4 mb-3 mt-3 px-4 py-4 rounded-[28px] bg-white">
       <div className="flex items-center gap-3">
         <Avatar user={s} />
         <div className="flex-1 min-w-0">
@@ -132,7 +132,7 @@ function FollowCard({ item, onFollowBack }: { item: FollowItem; onFollowBack: (i
   }
 
   return (
-    <div className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white">
+    <div className="mx-4 mb-3 mt-3 px-4 py-4 rounded-[28px] bg-white">
       <div className="flex items-center gap-3">
         <Avatar user={f} />
         <div className="flex-1 min-w-0">
@@ -155,10 +155,10 @@ function FollowCard({ item, onFollowBack }: { item: FollowItem; onFollowBack: (i
         <button
           onClick={handleFollowBack}
           disabled={loading || followingBack}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors disabled:opacity-60 ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors disabled:opacity-60 ${
             followingBack
-              ? 'border border-brand-primary text-brand-primary'
-              : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+              ? 'border border-brand-primary text-brand-primary bg-white'
+              : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
           }`}
         >
           {followingBack ? <UserCheck size={12} /> : <UserPlus size={12} />}

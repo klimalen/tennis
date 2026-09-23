@@ -69,7 +69,7 @@ const DISTANCE_OPTIONS = [
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <div className="flex items-center gap-3 pt-6 pb-4 border-t border-brand-divider">
+    <div className="flex items-center gap-3 mt-8 pt-2 pb-5">
       <span className="text-brand-accent font-display text-lg">✦</span>
       <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">{children}</span>
       <div className="flex-1 h-px bg-brand-divider" />
@@ -285,7 +285,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 md:pb-8 bg-brand-bg">
+    <div className="min-h-screen pb-32 md:pb-12 bg-brand-bg">
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
@@ -379,10 +379,10 @@ export default function EditProfilePage() {
             onChange={(e) => update({ bio: e.target.value })}
             rows={3}
             maxLength={300}
-            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
+            className="w-full min-h-[96px] px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
             placeholder="A few words about yourself..."
           />
-          <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right">{d.bio.length}/300</p>
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1.5">{d.bio.length}/300</p>
         </div>
 
         {/* ── YOUR GAME ── */}
