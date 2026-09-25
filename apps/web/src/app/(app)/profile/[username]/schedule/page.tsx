@@ -45,7 +45,7 @@ export default async function ProfileSchedulePage({
         </div>
       ) : (
         <div className="max-w-2xl mx-auto pt-2">
-          <ScheduleSections upcoming={upcoming} past={past} />
+          <ScheduleSections upcoming={upcoming} past={past} viewerId={viewer?.id ?? null} />
         </div>
       )}
     </div>

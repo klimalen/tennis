@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTabBarHidden } from '@/components/navigation/TabBarVisibility'
+import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
@@ -656,102 +657,6 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: {
   )
 }
 
-// ─── Open game sheet ──────────────────────────────────────────────────────────
-
-function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClose: () => void }) {
-  const spotsTaken = game.participants.filter((p) => p.status === 'accepted' || p.status === 'invited').length
-  const spotsLeft = game.max_players - spotsTaken
-  const isFull = spotsLeft <= 0
-  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId) : false
-  const alreadyIn = isParticipant || joined
-  const creatorSkill = game.creator.skill_level_computed ?? game.creator.skill_level_self
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">Open Game</span>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
-        </div>
-        <div className="p-5 pb-24 space-y-5">
-          <div>
-            <p className="font-display text-3xl tracking-wide leading-none text-[#1a1a1a]">
-              <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} />
-            </p>
-            <p className="font-display text-xl tracking-wide text-brand-primary mt-1"><LocalGameTime iso={game.scheduled_at} /></p>
-            <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <span className="text-[10px] tracking-[0.12em] uppercase font-medium text-[rgba(26,26,26,0.5)]">{OPEN_FORMAT_LABELS[game.format] ?? game.format}</span>
-              {game.neighborhood && <span className="text-[11px] text-[rgba(26,26,26,0.5)] flex items-center gap-1"><MapPin size={11} />{game.neighborhood}</span>}
-              <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 ${isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.4)]' : 'bg-brand-primary/10 text-brand-primary'}`}>
-                {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-              </span>
-            </div>
-            {game.notes && <p className="mt-2 text-sm text-[rgba(26,26,26,0.55)] italic">{game.notes}</p>}
-          </div>
-          <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">Organiser</p>
-            <Link href={`/profile/${game.creator.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
-                {game.creator.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={game.creator.avatar_url} alt={game.creator.full_name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-display text-sm text-[#1a1a1a]">{game.creator.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()}</span>
-                )}
-              </div>
-              <div>
-                <p className="font-display text-base tracking-wide leading-tight">{game.creator.full_name.toUpperCase()}</p>
-                {creatorSkill != null && (
-                  <span className="text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-1.5 py-0.5">
-                    {skillLabel(creatorSkill)}
-                  </span>
-                )}
-              </div>
-            </Link>
-          </div>
-          {game.participants.length > 0 && (
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">Players · {spotsTaken}/{game.max_players}</p>
-              <div className="space-y-2">
-                {game.participants.map((p) => {
-                  const pSkill = p.profile.skill_level_computed ?? p.profile.skill_level_self
-                  const pInitials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-                  return (
-                    <Link key={p.player_id} href={`/profile/${p.profile.username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
-                        {p.profile.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-display text-sm text-[#1a1a1a]">{pInitials}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profile.full_name}</p>
-                        <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profile.username}</p>
-                      </div>
-                      {pSkill != null && (
-                        <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
-                          {skillLabel(pSkill)}
-                        </span>
-                      )}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-          <button onClick={() => { if (!alreadyIn && !isFull) onJoin(game.id) }} disabled={alreadyIn || isFull}
-            className={`w-full py-4 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${alreadyIn || isFull ? 'bg-brand-field text-[rgba(26,26,26,0.55)] cursor-default' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
-            {alreadyIn ? "You're in" : isFull ? 'Game is full' : 'Join game'}
-          </button>
-        </div>
-      </div>
-    </>
-  )
-}
-
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function PlayerCardSkeleton() {
@@ -914,7 +819,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [requestStatuses, setRequestStatuses] = useState<Record<string, RequestStatus>>({})
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set())
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
-  const [selectedGame, setSelectedGame] = useState<OpenGame | null>(null)
+  const [selectedGame, setSelectedGame] = useState<GameDetail | null>(null)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
 
   // ── Discovery previews ──────────────────────────────────────────────────────
@@ -1319,6 +1224,12 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     if (v === 'games' && openGames.length === 0) loadGames()
   }
 
+  async function openGameDetail(gameId: string) {
+    const detail = await loadGameDetail(gameId)
+    if (!detail || !viewerCanOpenGame(detail, user?.id ?? null)) return
+    setSelectedGame(detail)
+  }
+
   async function handleJoin(gameId: string) {
     setJoinedGameIds((prev) => new Set(prev).add(gameId))
     const res = await fetch(`/api/games/${gameId}/join`, { method: 'POST' })
@@ -1402,11 +1313,13 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         />
       )}
       {selectedGame && (
-        <OpenGameSheet
+        <GameDetailSheet
           game={selectedGame}
-          userId={user?.id ?? null}
-          joined={joinedGameIds.has(selectedGame.id)}
-          onJoin={(id) => { void handleJoin(id); setSelectedGame(null) }}
+          currentUserId={user?.id ?? null}
+          onJoined={() => {
+            const id = selectedGame.id
+            setJoinedGameIds((prev) => new Set(prev).add(id))
+          }}
           onClose={() => setSelectedGame(null)}
         />
       )}
@@ -1495,7 +1408,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                     userId={user?.id ?? null}
                     joined={joinedGameIds.has(previewGame.id)}
                     onJoin={handleJoin}
-                    onClick={() => setSelectedGame(previewGame)}
+                    onClick={() => { void openGameDetail(previewGame.id) }}
                     vivid
                   />
                 ) : (
@@ -1634,7 +1547,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                   userId={user?.id ?? null}
                   joined={joinedGameIds.has(game.id)}
                   onJoin={handleJoin}
-                  onClick={() => setSelectedGame(game)}
+                  onClick={() => { void openGameDetail(game.id) }}
                 />
                     ))}
                   </>

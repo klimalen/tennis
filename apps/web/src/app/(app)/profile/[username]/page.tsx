@@ -322,6 +322,7 @@ export default async function PlayerProfilePage({
             <SchedulePreview
               items={schedule.preview}
               seeAllHref={`/profile/${profile.username}/schedule`}
+              viewerId={viewer?.id ?? null}
             />
           </div>
         )}
