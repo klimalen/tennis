@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
+import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
 import { CityInput } from '@/components/ui/CityInput'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { availabilityFromProfile, legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
@@ -90,7 +91,6 @@ interface ProfileData {
   bio: string
   avatarUrl: string | null
   avatarFile: File | null
-  avatarPreview: string | null
   skillLevel: number | null
   yearsPlaying: number | null
   playFormats: string[]
@@ -107,6 +107,7 @@ export default function EditProfilePage() {
   const router = useRouter()
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cropRef = useRef<SquarePhotoCropHandle>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -116,7 +117,7 @@ export default function EditProfilePage() {
   const [originalUsername, setOriginalUsername] = useState('')
 
   const [d, setD] = useState<ProfileData>({
-    fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null, avatarPreview: null,
+    fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null,
     skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], availability: {},
     lookingFor: '', city: '', cityLat: null, cityLng: null,
@@ -178,18 +179,14 @@ export default function EditProfilePage() {
     return () => clearTimeout(timer)
   }, [d.username, userId, originalUsername])
 
-  // Cleanup avatar preview
-  useEffect(() => {
-    return () => { if (d.avatarPreview) URL.revokeObjectURL(d.avatarPreview) }
-  }, [d.avatarPreview])
-
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
-    if (d.avatarPreview) URL.revokeObjectURL(d.avatarPreview)
-    update({
-      avatarFile: file,
-      avatarPreview: file ? URL.createObjectURL(file) : null,
-    })
+    update({ avatarFile: file })
+  }
+
+  function clearAvatarFile() {
+    update({ avatarFile: null })
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   function toggleArr<T>(arr: T[], val: T): T[] {
@@ -205,12 +202,16 @@ export default function EditProfilePage() {
     try {
       let avatarUrl = d.avatarUrl
       if (d.avatarFile) {
-        const ext = d.avatarFile.name.split('.').pop()
-        const path = `${userId}/avatar.${ext}`
-        const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, d.avatarFile, { upsert: true })
+        const square = await cropRef.current?.exportSquare()
+        if (!square) throw new Error('Could not prepare the photo. Try again.')
+        const path = `${userId}/avatar.jpg`
+        const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, square, {
+          upsert: true,
+          contentType: 'image/jpeg',
+        })
         if (uploadErr) throw uploadErr
         const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-        avatarUrl = publicUrl
+        avatarUrl = `${publicUrl}?v=${Date.now()}`
       }
 
       const schedule = legacySchedule(d.availability)
@@ -243,7 +244,7 @@ export default function EditProfilePage() {
     }
   }
 
-  const displayAvatar = d.avatarPreview || d.avatarUrl
+  const displayAvatar = d.avatarUrl
 
   if (loading) {
     return (
@@ -307,6 +308,9 @@ export default function EditProfilePage() {
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
+        {d.avatarFile && (
+          <SquarePhotoCrop ref={cropRef} file={d.avatarFile} shape="circle" onRemove={clearAvatarFile} />
+        )}
 
         {/* Name */}
         <div>

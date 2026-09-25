@@ -12,7 +12,8 @@ export type SquarePhotoCropHandle = {
 export const SquarePhotoCrop = forwardRef<SquarePhotoCropHandle, {
   file: File
   onRemove: () => void
-}>(function SquarePhotoCrop({ file, onRemove }, ref) {
+  shape?: 'square' | 'circle'
+}>(function SquarePhotoCrop({ file, onRemove, shape = 'square' }, ref) {
   const frameRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -160,6 +161,12 @@ export const SquarePhotoCrop = forwardRef<SquarePhotoCropHandle, {
             } : { visibility: 'hidden' }}
           />
         )}
+        {shape === 'circle' && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(circle closest-side, transparent 98%, rgba(26,26,26,0.55) 100%)' }}
+          />
+        )}
         <button
           type="button"
           onClick={onRemove}
@@ -181,7 +188,7 @@ export const SquarePhotoCrop = forwardRef<SquarePhotoCropHandle, {
         />
       </label>
       <p className="mt-2 text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.35)]">
-        Drag to choose the square
+        {shape === 'circle' ? 'Drag to position your photo' : 'Drag to choose the square'}
       </p>
     </div>
   )

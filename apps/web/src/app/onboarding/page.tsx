@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CityInput } from '@/components/ui/CityInput'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
+import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -373,33 +374,30 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken'
 
 function Step5({
-  data, onChange, userId,
+  data, onChange, userId, cropRef,
 }: {
   data: OnboardingData
   onChange: (d: Partial<OnboardingData>) => void
   userId: string
+  cropRef: React.RefObject<SquarePhotoCropHandle | null>
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [preview, setPreview] = useState<string | null>(null)
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle')
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
     onChange({ avatarFile: file })
-    if (preview) URL.revokeObjectURL(preview)
-    setPreview(file ? URL.createObjectURL(file) : null)
+  }
+
+  function clearPhoto() {
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    onChange({ avatarFile: null })
   }
 
   function handlePresetSelect(preset: string) {
-    if (preview) URL.revokeObjectURL(preview)
-    setPreview(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    clearPhoto()
     onChange({ avatarFile: null, presetAvatar: preset })
   }
-
-  useEffect(() => {
-    return () => { if (preview) URL.revokeObjectURL(preview) }
-  }, [preview])
 
   useEffect(() => {
     if (!userId) return
@@ -430,9 +428,9 @@ function Step5({
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={preview ?? data.presetAvatar}
+              src={data.presetAvatar}
               alt="Avatar preview"
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${data.avatarFile ? 'opacity-40' : ''}`}
             />
             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Camera size={18} className="text-white" />
@@ -440,7 +438,7 @@ function Step5({
           </button>
           <div>
             <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[10px] tracking-[0.15em] uppercase text-brand-primary font-medium hover:underline">
-              {preview ? 'Change photo' : 'Upload your photo'}
+              {data.avatarFile ? 'Change photo' : 'Upload your photo'}
             </button>
             <p className="text-[9px] text-[rgba(26,26,26,0.35)] mt-0.5">Optional — or pick a preset below</p>
           </div>
@@ -450,7 +448,7 @@ function Step5({
         {/* Preset avatars */}
         <div className="flex gap-3">
           {PRESET_AVATARS.map((src) => {
-            const isSelected = !preview && data.presetAvatar === src
+            const isSelected = !data.avatarFile && data.presetAvatar === src
             return (
               <button
                 key={src}
@@ -466,6 +464,9 @@ function Step5({
             )
           })}
         </div>
+        {data.avatarFile && (
+          <SquarePhotoCrop ref={cropRef} file={data.avatarFile} shape="circle" onRemove={clearPhoto} />
+        )}
       </div>
 
       {/* Username */}
@@ -519,6 +520,7 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false)
   const [savingMsg, setSavingMsg] = useState(SAVING_MESSAGES[0])
   const [userId, setUserId] = useState('')
+  const avatarCropRef = useRef<SquarePhotoCropHandle>(null)
 
   useEffect(() => {
     async function checkAuth() {
@@ -556,13 +558,16 @@ export default function OnboardingPage() {
 
     let avatarUrl: string | null = null
     if (data.avatarFile) {
-      const ext = data.avatarFile.name.split('.').pop()
-      const path = `${session.user.id}/avatar.${ext}`
-      const { data: upload } = await supabase.storage.from('avatars').upload(path, data.avatarFile, { upsert: true })
-      if (upload) {
-        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-        avatarUrl = publicUrl
-      }
+      const square = await avatarCropRef.current?.exportSquare()
+      if (!square) return false
+      const path = `${session.user.id}/avatar.jpg`
+      const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, square, {
+        upsert: true,
+        contentType: 'image/jpeg',
+      })
+      if (uploadErr) return false
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      avatarUrl = `${publicUrl}?v=${Date.now()}`
     }
 
     const schedule = legacySchedule(data.availability)
@@ -661,7 +666,7 @@ export default function OnboardingPage() {
           {step === 2 && <Step2 data={data} onChange={updateData} />}
           {step === 3 && <Step3 data={data} onChange={updateData} />}
           {step === 4 && <Step4 data={data} onChange={updateData} />}
-          {step === 5 && <Step5 data={data} onChange={updateData} userId={userId} />}
+          {step === 5 && <Step5 data={data} onChange={updateData} userId={userId} cropRef={avatarCropRef} />}
         </div>
       </div>
 
