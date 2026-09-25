@@ -206,12 +206,12 @@ function formatSummary(formats: string[]): string | null {
   const labels = formats.map((format) => FORMAT_LABELS[format] ?? format).filter(Boolean)
   if (labels.length === 0) return null
   if (labels.length === 1) return labels[0] ?? null
-  const last = labels[labels.length - 1]
-  return `${labels.slice(0, -1).join(', ')} & ${last}`
+  if (labels.length > 2) return 'All formats'
+  return `${labels[0]} & ${labels[1]}`
 }
 
 function styleSummary(style: string | null): string | null {
-  if (style === 'both') return 'Competitive + Recreational'
+  if (style === 'both') return 'Both'
   if (style === 'recreational') return 'Recreational'
   if (style === 'competitive') return 'Competitive'
   return null
@@ -228,7 +228,7 @@ function aboutLine(bio: string | null, lookingFor: string | null): string | null
 
 function FactPill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6F1EA] px-3 py-1.5 text-[13px] leading-none text-[#1a1a1a]">
+    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[#F6F1EA] px-1.5 py-1 text-[12px] leading-none text-[#1a1a1a]">
       {icon}
       {children}
     </span>
@@ -300,28 +300,28 @@ function PlayerCard({
               <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
             )}
           </div>
-          <div className="min-w-0">
-            <p className="font-display text-[28px] leading-[0.95] tracking-wide text-[#1a1a1a]">{player.full_name.toUpperCase()}</p>
-            <p className="font-fraunces italic text-sm text-[#85648F] mt-1">@{player.username}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[28px] leading-[0.95] tracking-wide text-[#1a1a1a] line-clamp-2">{player.full_name.toUpperCase()}</p>
+            <p className="font-fraunces italic text-sm text-[#85648F] mt-1 truncate">@{player.username}</p>
           </div>
+          {showSchedule && (
+            <AvailabilityButton
+              value={player.availability}
+              iconSize={16}
+              className="h-9 w-9 shrink-0 rounded-full bg-[#F6F1EA] flex items-center justify-center text-[#1a1a1a]"
+            />
+          )}
         </div>
-        {(skillText || formats || style || showSchedule) && (
-          <div className="flex flex-wrap items-center gap-2 mt-4">
+        {(skillText || formats || style) && (
+          <div data-player-tags className="mt-3 flex flex-nowrap items-center gap-1">
             {skillText && (
-              <FactPill icon={<ChartColumnIncreasing size={15} strokeWidth={1.75} />}>{skillText}</FactPill>
+              <FactPill icon={<ChartColumnIncreasing size={13} strokeWidth={1.75} />}>{skillText}</FactPill>
             )}
             {formats && (
-              <FactPill icon={<Users size={15} strokeWidth={1.75} />}>{formats}</FactPill>
+              <FactPill icon={<Users size={13} strokeWidth={1.75} />}>{formats}</FactPill>
             )}
             {style && (
-              <FactPill icon={<Trophy size={15} strokeWidth={1.75} />}>{style}</FactPill>
-            )}
-            {showSchedule && (
-              <AvailabilityButton
-                value={player.availability}
-                iconSize={15}
-                className="h-8 w-8 flex-shrink-0 rounded-full bg-[#F6F1EA] flex items-center justify-center text-[#1a1a1a]"
-              />
+              <FactPill icon={<Trophy size={13} strokeWidth={1.75} />}>{style}</FactPill>
             )}
           </div>
         )}
