@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Oswald, Anton, DM_Sans, Fraunces } from 'next/font/google'
+import { Oswald, Anton, Source_Sans_3, Fraunces } from 'next/font/google'
 import './globals.css'
 
 const bebasNeue = Oswald({
@@ -16,9 +16,10 @@ const anton = Anton({
   display: 'swap',
 })
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-dm-sans',
+const sourceSans = Source_Sans_3({
+  subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'],
+  style: ['normal', 'italic'],
+  variable: '--font-sans',
   display: 'swap',
 })
 
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${bebasNeue.variable} ${anton.variable} ${dmSans.variable} ${fraunces.variable}`}>
+    <html lang="en" className={`${bebasNeue.variable} ${anton.variable} ${sourceSans.variable} ${fraunces.variable}`}>
       <body className="min-h-screen bg-brand-bg text-[#1a1a1a] font-sans antialiased">
         {children}
       </body>

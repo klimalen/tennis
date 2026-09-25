@@ -302,7 +302,7 @@ function PlayerCard({
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-display text-[28px] leading-[0.95] tracking-wide text-[#1a1a1a] line-clamp-2">{player.full_name.toUpperCase()}</p>
-            <p className="font-fraunces italic text-sm text-[#85648F] mt-1 truncate">@{player.username}</p>
+            <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)] mt-1 truncate">@{player.username}</p>
           </div>
           {showSchedule && (
             <AvailabilityButton

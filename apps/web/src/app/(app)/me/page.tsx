@@ -163,7 +163,7 @@ async function ProfileContent() {
           <div className="mt-4">
             <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
             {username && (
-              <p className="font-fraunces italic text-sm text-[#85648F] mt-1">@{username}</p>
+              <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)] mt-1">@{username}</p>
             )}
             {profile?.city_name && (
               <p className="text-[11px] text-[rgba(26,26,26,0.4)] mt-0.5 flex items-center gap-1">
@@ -188,7 +188,7 @@ async function ProfileContent() {
             )}
             {profile?.bio && (
               <div className="mt-2">
-                <ExpandableText text={profile.bio} className="text-sm text-[#497250] font-fraunces italic leading-snug" />
+                <ExpandableText text={profile.bio} className="text-sm text-[#497250] italic leading-snug" />
               </div>
             )}
             <LookingFor text={profile?.looking_for} />

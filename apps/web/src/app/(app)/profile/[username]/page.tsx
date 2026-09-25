@@ -246,7 +246,7 @@ export default async function PlayerProfilePage({
           {/* Name + meta */}
           <div className="mt-4 space-y-1.5">
             <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
-            <p className="font-fraunces italic text-sm text-[#85648F]">@{profile.username}</p>
+            <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)]">@{profile.username}</p>
 
             {profile.city_name && (
               <p className="flex items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
@@ -273,7 +273,7 @@ export default async function PlayerProfilePage({
 
             {profile.bio && (
               <div className="pt-1">
-                <ExpandableText text={profile.bio} className="text-sm text-[#497250] font-fraunces italic leading-snug" />
+                <ExpandableText text={profile.bio} className="text-sm text-[#497250] italic leading-snug" />
               </div>
             )}
             <LookingFor text={profile.looking_for} />
