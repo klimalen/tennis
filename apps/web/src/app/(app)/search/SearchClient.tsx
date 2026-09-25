@@ -4,6 +4,7 @@ import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRig
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTabBarHidden } from '@/components/navigation/TabBarVisibility'
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
@@ -865,9 +866,15 @@ interface SavedCourtsCity {
 
 export function SearchClient({ user, userCityName, initialIncoming }: { user: User | null; userCityName: string | null; initialIncoming: IncomingRequest[] }) {
   const router = useRouter()
+  const { setHidden: setTabBarHidden } = useTabBarHidden()
 
   // Navigation
   const [view, setView] = useState<View>('discovery')
+
+  useEffect(() => {
+    setTabBarHidden(view !== 'discovery')
+    return () => setTabBarHidden(false)
+  }, [view, setTabBarHidden])
 
   // Incoming game requests
   const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>(initialIncoming)
@@ -1483,7 +1490,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   if (view === 'players') {
     return (
-      <div className="min-h-screen pb-20 md:pb-0">
+      <div className="min-h-screen pb-8">
         {sheets}
         {pageHeader('PLAYERS', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
@@ -1551,7 +1558,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   if (view === 'games') {
     return (
-      <div className="min-h-screen pb-20 md:pb-0">
+      <div className="min-h-screen pb-8">
         {sheets}
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
@@ -1612,7 +1619,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Courts full view ────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen pb-8">
       {sheets}
       {pageHeader('COURTS', () => setView('discovery'))}
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
