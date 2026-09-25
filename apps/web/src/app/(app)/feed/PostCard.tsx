@@ -378,7 +378,7 @@ export function PostCard({
 
       {/* Body text */}
       {post.body && (
-        <p className="text-sm text-[rgba(26,26,26,0.85)] leading-relaxed mb-3 whitespace-pre-wrap">{post.body}</p>
+        <p className="font-copy text-sm text-[rgba(26,26,26,0.85)] leading-relaxed mb-3 whitespace-pre-wrap">{post.body}</p>
       )}
 
       {/* Image */}

@@ -22,6 +22,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* User-written copy: one face for Latin and Cyrillic. */
+  .font-copy {
+    font-family: var(--font-sans), sans-serif;
+    font-style: normal;
+  }
+
   /* Thin scrollbar */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }

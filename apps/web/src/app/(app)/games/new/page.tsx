@@ -184,7 +184,7 @@ function NewGameForm() {
             </p>
             <textarea value={about} onChange={(e) => setAbout(e.target.value)}
               placeholder="Practice, match, group training..." rows={3} maxLength={500}
-              className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
+              className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
           {/* Pre-selected player from chat */}
