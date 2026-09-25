@@ -4,6 +4,7 @@ import { skillLabel } from '@/lib/skill'
 
 const PAGE_SIZE = 15
 const NEARBY_RADIUS_KM = 80
+const NEARBY_CAP = 300
 
 function boundingBox(lat: number, lng: number, radiusKm: number) {
   const earthKm = 6371
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     if (exclude) query = query.neq('id', exclude)
 
-    const { data, error } = await query
+    const { data, error } = await query.limit(NEARBY_CAP)
 
     if (error) {
       console.error('Players query error:', error)
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
   if (exclude) query = query.neq('id', exclude)
 
   if (!q && !skill) query = query.range(offset, offset + PAGE_SIZE - 1)
+  else query = query.limit(NEARBY_CAP)
 
   const { data, error } = await query
 

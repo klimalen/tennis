@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
 
 export async function POST(
@@ -21,32 +22,21 @@ export async function POST(
     return NextResponse.json({ error: 'Game not found or not public' }, { status: 404 })
   }
 
-  const { data: existing } = await supabase
-    .from('game_participants')
-    .select('player_id')
-    .eq('game_id', gameId)
-    .eq('player_id', user.id)
-    .maybeSingle()
+  const { data: joined, error } = await supabase.rpc('join_open_game', { p_game_id: gameId })
 
-  if (existing) {
+  if (error) {
+    if (error.message.includes('game full')) {
+      return NextResponse.json({ error: 'Game is full' }, { status: 409 })
+    }
+    if (error.message.includes('game not open')) {
+      return NextResponse.json({ error: 'Game not found or not public' }, { status: 404 })
+    }
+    return apiError(500, 'Could not join the game', error)
+  }
+
+  if (joined === 'already') {
     return NextResponse.json({ ok: true, already: true })
   }
-
-  const { count } = await supabase
-    .from('game_participants')
-    .select('*', { count: 'exact', head: true })
-    .eq('game_id', gameId)
-    .in('status', ['accepted', 'invited'])
-
-  if ((count ?? 0) >= game.max_players) {
-    return NextResponse.json({ error: 'Game is full' }, { status: 409 })
-  }
-
-  const { error } = await supabase
-    .from('game_participants')
-    .insert({ game_id: gameId, player_id: user.id, status: 'accepted' })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   if (game.creator_id !== user.id) {
     const { data: convId } = await supabase

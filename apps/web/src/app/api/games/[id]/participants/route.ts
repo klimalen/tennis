@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
 
 // PATCH /api/games/:id/participants  { status: 'accepted' | 'declined' }
@@ -18,16 +19,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'status must be accepted or declined' }, { status: 400 })
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('game_participants')
-    .upsert(
-      { game_id: gameId, player_id: user.id, status, responded_at: new Date().toISOString() },
-      { onConflict: 'game_id,player_id' },
-    )
+    .update({ status, responded_at: new Date().toISOString() })
+    .eq('game_id', gameId)
+    .eq('player_id', user.id)
+    .select('player_id')
 
-  if (error) {
-    console.error('[participants PATCH] upsert error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  if (error) return apiError(500, 'Could not update the invitation', error)
+  if (!data?.length) return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })
   return NextResponse.json({ ok: true })
 }

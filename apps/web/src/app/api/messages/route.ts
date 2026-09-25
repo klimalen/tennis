@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
 
 // POST /api/messages  { conversation_id, body }
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     .select('id, created_at')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not send the message', error)
 
   return NextResponse.json({ ok: true, id: data.id, created_at: data.created_at })
 }

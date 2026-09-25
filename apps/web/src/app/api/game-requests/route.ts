@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/game-requests?receiver_ids=id1,id2
@@ -84,13 +85,13 @@ export async function POST(request: Request) {
       .update({ status: 'matched' })
       .eq('id', reverse.id)
 
-    if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+    if (updateErr) return apiError(500, 'Could not answer the request', updateErr)
 
     // Atomically find-or-create conversation (prevents duplicates)
     const { data: convId, error: convErr } = await supabase
       .rpc('get_or_create_conversation', { other_user_id: receiverId })
 
-    if (convErr || !convId) return NextResponse.json({ error: convErr?.message ?? 'Failed to create conversation' }, { status: 500 })
+    if (convErr || !convId) return apiError(500, 'Could not open the chat', convErr)
 
     return NextResponse.json({ matched: true, conversation_id: convId })
   }
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
       .from('game_requests')
       .update({ status: 'pending' })
       .eq('id', existing.id)
-    if (reopenErr) return NextResponse.json({ error: reopenErr.message }, { status: 500 })
+    if (reopenErr) return apiError(500, 'Could not send the request', reopenErr)
     return NextResponse.json({ matched: false })
   }
 
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
     .from('game_requests')
     .insert({ sender_id: user.id, receiver_id: receiverId })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not send the request', error)
 
   return NextResponse.json({ matched: false })
 }
@@ -143,6 +144,6 @@ export async function DELETE(request: NextRequest) {
     .eq('receiver_id', receiverId)
     .eq('status', 'pending')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not update the request', error)
   return NextResponse.json({ ok: true })
 }
