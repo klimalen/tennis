@@ -217,12 +217,6 @@ function styleSummary(style: string | null): string | null {
   return null
 }
 
-function skillDetail(level: number | null | undefined): string | null {
-  const label = skillLabel(level)
-  if (!label || level == null || Number.isNaN(level)) return null
-  return `${label} · NTRP ${Number(level).toFixed(1)}`
-}
-
 function aboutLine(bio: string | null, lookingFor: string | null): string | null {
   const parts: string[] = []
   const bioText = bio?.trim()
@@ -278,7 +272,7 @@ function PlayerCard({
   }
 
   const actionClass = `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium transition-colors ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
-  const level = skillDetail(skill)
+  const level = skillLabel(skill)
   const meta = [formatSummary(player.preferred_formats), styleSummary(player.play_style)].filter(Boolean).join(' · ')
   const about = aboutLine(player.bio, player.looking_for)
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
