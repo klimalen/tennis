@@ -18,16 +18,26 @@ function boundingBox(lat: number, lng: number, radiusKm: number) {
   }
 }
 
+const SKILL_FILTERS = new Set(['Beginner', 'Intermediate', 'Advanced', 'Competitive'])
+
+function selectedSkills(value: string | null): string[] {
+  if (!value) return []
+  return value.split(',').map((part) => part.trim()).filter((part) => SKILL_FILTERS.has(part))
+}
+
 function matchesPlayer(
   player: { full_name: string | null; username: string | null; city_name: string | null; looking_for: string | null; skill_level_self: number | null; skill_level_computed: number | null },
   q: string,
-  skill: string | null,
+  skills: string[],
 ) {
   if (q) {
     const hay = `${player.full_name ?? ''} ${player.username ?? ''} ${player.city_name ?? ''} ${player.looking_for ?? ''}`.toLowerCase()
     if (!hay.includes(q)) return false
   }
-  if (skill && skillLabel(player.skill_level_computed ?? player.skill_level_self) !== skill) return false
+  if (skills.length > 0) {
+    const label = skillLabel(player.skill_level_computed ?? player.skill_level_self)
+    if (!label || !skills.includes(label)) return false
+  }
   return true
 }
 
@@ -50,8 +60,7 @@ export async function GET(request: NextRequest) {
   const lngStr = searchParams.get('lng')
   const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10))
   const q = (searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 80)
-  const skillParam = searchParams.get('skill')
-  const skill = skillParam && ['Beginner', 'Intermediate', 'Advanced', 'Competitive'].includes(skillParam) ? skillParam : null
+  const skills = selectedSkills(searchParams.get('skill'))
 
   const supabase = await createClient()
 
@@ -99,7 +108,7 @@ export async function GET(request: NextRequest) {
       return distA - distB
     })
 
-    const filtered = rows.filter((row) => matchesPlayer(row, q, skill))
+    const filtered = rows.filter((row) => matchesPlayer(row, q, skills))
     const page = filtered.slice(offset, offset + PAGE_SIZE)
     const hasMore = offset + PAGE_SIZE < filtered.length
 
@@ -123,7 +132,7 @@ export async function GET(request: NextRequest) {
 
   if (exclude) query = query.neq('id', exclude)
 
-  if (!q && !skill) query = query.range(offset, offset + PAGE_SIZE - 1)
+  if (!q && skills.length === 0) query = query.range(offset, offset + PAGE_SIZE - 1)
   else query = query.limit(NEARBY_CAP)
 
   const { data, error } = await query
@@ -133,8 +142,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ players: [], hasMore: false })
   }
 
-  if (q || skill) {
-    const filtered = (data ?? []).filter((row) => matchesPlayer(row, q, skill))
+  if (q || skills.length > 0) {
+    const filtered = (data ?? []).filter((row) => matchesPlayer(row, q, skills))
     const page = filtered.slice(offset, offset + PAGE_SIZE)
     return NextResponse.json({
       players: await withFollowing(supabase, page),
