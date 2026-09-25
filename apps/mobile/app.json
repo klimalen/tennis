@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Tennis",
+    "slug": "tennis",
+    "scheme": "tennis",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FAF7F2"
+    },
+    "ios": {
+      "bundleIdentifier": "com.klimalen.tennis",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Tennis uses the camera when you add a profile photo or a post.",
+        "NSPhotoLibraryUsageDescription": "Tennis uses your photos when you add a profile photo or a post."
+      }
+    },
+    "android": {
+      "package": "com.klimalen.tennis",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#3A8A7A"
+      }
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
