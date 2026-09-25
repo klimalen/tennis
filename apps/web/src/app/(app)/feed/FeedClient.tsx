@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { UserPlus, UserCheck } from 'lucide-react'
-import { formatPlayFormat, skillLabel } from '@/lib/skill'
+import { formatPlayFormat } from '@/lib/skill'
 import {
   NOTIFICATION_PAGE_SIZE,
   mapNotification,
@@ -29,17 +29,6 @@ function Avatar({ user }: { user: NotificationActor }) {
         <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
       )}
     </Link>
-  )
-}
-
-function SkillBadge({ user }: { user: NotificationActor }) {
-  const rating = user.skill_level_computed ?? user.skill_level_self
-  const label = skillLabel(rating)
-  if (!label) return null
-  return (
-    <span className="rounded-full text-[9px] tracking-[0.12em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5">
-      {label}
-    </span>
   )
 }
 
@@ -144,14 +133,6 @@ function NotificationCard({
             </Link>
           ) : (
             <p className="font-display text-base tracking-wide leading-tight">{name}</p>
-          )}
-          {actor && (
-            <div className="flex items-center gap-2 mt-0.5">
-              <SkillBadge user={actor} />
-              {actor.city_name && (
-                <span className="text-[10px] text-[rgba(26,26,26,0.4)]">{actor.city_name}</span>
-              )}
-            </div>
           )}
           {detail && (
             <p className="text-[12px] text-[rgba(26,26,26,0.55)] mt-1">{detail}</p>
