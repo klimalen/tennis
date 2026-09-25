@@ -13,16 +13,19 @@ export function ScheduleGameCard({
   game,
   past,
   editHref,
+  allowEdit = false,
   viewerId = null,
 }: {
   game: ScheduleGame
   past: boolean
   editHref?: string | null
+  allowEdit?: boolean
   viewerId?: string | null
 }) {
   const [detail, setDetail] = useState<GameDetail | null>(null)
   const endIso = new Date(gameEndMs(game.scheduled_at, game.duration_minutes)).toISOString()
   const canTry = game.is_open || Boolean(viewerId)
+  const resolvedEditHref = editHref ?? (allowEdit && !past && viewerId && game.creator_id === viewerId ? `/games/${game.id}/edit` : null)
 
   async function open() {
     const loaded = await loadGameDetail(game.id)
@@ -67,9 +70,9 @@ export function ScheduleGameCard({
           {game.neighborhood ? ` · ${game.neighborhood}` : ''}
         </p>
       </div>
-      {editHref && (
+      {resolvedEditHref && (
         <Link
-          href={editHref}
+          href={resolvedEditHref}
           onClick={(event) => event.stopPropagation()}
           className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.3)] hover:text-brand-primary transition-colors flex-shrink-0"
         >
@@ -88,13 +91,13 @@ export function SchedulePreview({
   items,
   seeAllHref,
   empty,
-  editFor,
+  allowEdit = false,
   viewerId = null,
 }: {
   items: SchedulePreviewItem[]
   seeAllHref: string
   empty?: ReactNode
-  editFor?: (game: SchedulePreviewItem) => string | null
+  allowEdit?: boolean
   viewerId?: string | null
 }) {
   if (items.length === 0) {
@@ -108,7 +111,7 @@ export function SchedulePreview({
           key={game.id}
           game={game}
           past={game.past}
-          editHref={editFor?.(game) ?? null}
+          allowEdit={allowEdit}
           viewerId={viewerId}
         />
       ))}
@@ -125,12 +128,12 @@ export function SchedulePreview({
 export function ScheduleSections({
   upcoming,
   past,
-  editFor,
+  allowEdit = false,
   viewerId = null,
 }: {
   upcoming: ScheduleGame[]
   past: ScheduleGame[]
-  editFor?: (game: ScheduleGame, past: boolean) => string | null
+  allowEdit?: boolean
   viewerId?: string | null
 }) {
   return (
@@ -141,7 +144,7 @@ export function ScheduleSections({
           <div className="max-w-2xl mx-auto">
             {upcoming.map((game) => (
               <div key={game.id} className="mx-4">
-                <ScheduleGameCard game={game} past={false} editHref={editFor?.(game, false) ?? null} viewerId={viewerId} />
+                <ScheduleGameCard game={game} past={false} allowEdit={allowEdit} viewerId={viewerId} />
               </div>
             ))}
           </div>
@@ -153,7 +156,7 @@ export function ScheduleSections({
           <div className="max-w-2xl mx-auto">
             {past.map((game) => (
               <div key={game.id} className="mx-4">
-                <ScheduleGameCard game={game} past editHref={editFor?.(game, true) ?? null} viewerId={viewerId} />
+                <ScheduleGameCard game={game} past allowEdit={allowEdit} viewerId={viewerId} />
               </div>
             ))}
           </div>

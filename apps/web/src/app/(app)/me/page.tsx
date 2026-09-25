@@ -208,7 +208,7 @@ async function ProfileContent() {
             items={schedule.preview}
             seeAllHref="/schedule"
             viewerId={user.id}
-            editFor={(game) => (!game.past && game.creator_id === user.id ? `/games/${game.id}/edit` : null)}
+            allowEdit
             empty={(
               <div className="px-1 pb-2">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No games yet</p>
