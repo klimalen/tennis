@@ -11,6 +11,10 @@
     color: #1a1a1a;
   }
 
+  .font-display {
+    font-weight: 600;
+  }
+
   body {
     background-color: #FAF7F2;
     color: #1a1a1a;
