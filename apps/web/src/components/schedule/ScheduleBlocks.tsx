@@ -85,7 +85,7 @@ export function SchedulePreview({
       ))}
       <Link
         href={seeAllHref}
-        className="block text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 pb-3"
+        className="block text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4"
       >
         See all
       </Link>
