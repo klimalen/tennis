@@ -5,16 +5,17 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../../SquarePhotoCrop'
 
 export default function EditPostPage() {
   const { id } = useParams<{ id: string }>()
   const [text, setText] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [newImageFile, setNewImageFile] = useState<File | null>(null)
-  const [newImagePreview, setNewImagePreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const cropRef = useRef<SquarePhotoCropHandle>(null)
   const router = useRouter()
   const supabase = useRef(createClient()).current
 
@@ -32,13 +33,11 @@ export default function EditPostPage() {
     const file = e.target.files?.[0]
     if (!file) return
     setNewImageFile(file)
-    setNewImagePreview(URL.createObjectURL(file))
   }
 
   function removeImage() {
     setImageUrl(null)
     setNewImageFile(null)
-    setNewImagePreview(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -51,9 +50,16 @@ export default function EditPostPage() {
     if (newImageFile) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setSubmitting(false); return }
-      const ext = newImageFile.name.split('.').pop() ?? 'jpg'
-      const path = `${user.id}/${Date.now()}.${ext}`
-      await supabase.storage.from('post-images').upload(path, newImageFile, { contentType: newImageFile.type })
+      let square: Blob
+      try {
+        square = await cropRef.current!.exportSquare()
+      } catch {
+        setSubmitting(false)
+        return
+      }
+      const path = `${user.id}/${Date.now()}.jpg`
+      const { error: uploadError } = await supabase.storage.from('post-images').upload(path, square, { contentType: 'image/jpeg' })
+      if (uploadError) { setSubmitting(false); return }
       const { data: { publicUrl } } = supabase.storage.from('post-images').getPublicUrl(path)
       finalImageUrl = publicUrl
     }
@@ -69,8 +75,9 @@ export default function EditPostPage() {
     setSubmitting(false)
   }
 
-  const displayImage = newImagePreview ?? imageUrl
-  const canPost = (text.trim().length > 0 || displayImage !== null) && !submitting
+  const displayImage = newImageFile ? null : imageUrl
+  const hasPhoto = newImageFile !== null || imageUrl !== null
+  const canPost = (text.trim().length > 0 || hasPhoto) && !submitting
 
   if (loading) {
     return (
@@ -108,8 +115,12 @@ export default function EditPostPage() {
           autoFocus
         />
 
+        {newImageFile && (
+          <SquarePhotoCrop ref={cropRef} file={newImageFile} onRemove={removeImage} />
+        )}
+
         {displayImage && (
-          <div className="relative mt-4 w-full aspect-video rounded-[20px] bg-brand-field overflow-hidden">
+          <div className="relative mt-4 w-full aspect-square rounded-[20px] bg-brand-field overflow-hidden">
             <Image src={displayImage} alt="Preview" fill className="object-cover" />
             <button onClick={removeImage} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white">
               <X size={14} />
@@ -124,7 +135,7 @@ export default function EditPostPage() {
           >
             <ImageIcon size={18} />
             <span className="text-[10px] tracking-[0.15em] uppercase font-medium">
-              {displayImage ? 'Change photo' : 'Add photo'}
+              {hasPhoto ? 'Change photo' : 'Add photo'}
             </span>
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />

@@ -2,17 +2,17 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react'
+import { ArrowLeft, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import Image from 'next/image'
+import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../SquarePhotoCrop'
 
 export default function NewPostPage() {
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const cropRef = useRef<SquarePhotoCropHandle>(null)
   const router = useRouter()
   const supabase = useRef(createClient()).current
 
@@ -20,12 +20,10 @@ export default function NewPostPage() {
     const file = e.target.files?.[0]
     if (!file) return
     setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
   }
 
   function removeImage() {
     setImageFile(null)
-    setImagePreview(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -45,11 +43,18 @@ export default function NewPostPage() {
     let imageUrl: string | null = null
 
     if (imageFile) {
-      const ext = imageFile.name.split('.').pop() ?? 'jpg'
-      const path = `${user.id}/${Date.now()}.${ext}`
+      let square: Blob
+      try {
+        square = await cropRef.current!.exportSquare()
+      } catch {
+        setError('Could not prepare the photo. Try again.')
+        setSubmitting(false)
+        return
+      }
+      const path = `${user.id}/${Date.now()}.jpg`
       const { error: uploadError } = await supabase.storage
         .from('post-images')
-        .upload(path, imageFile, { contentType: imageFile.type })
+        .upload(path, square, { contentType: 'image/jpeg' })
 
       if (uploadError) {
         setError('Could not upload the photo. Try again.')
@@ -118,16 +123,8 @@ export default function NewPostPage() {
         )}
 
         {/* Image preview */}
-        {imagePreview && (
-          <div className="relative mt-4 w-full aspect-video rounded-[20px] bg-brand-field overflow-hidden">
-            <Image src={imagePreview} alt="Preview" fill className="object-cover" />
-            <button
-              onClick={removeImage}
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white"
-            >
-              <X size={14} />
-            </button>
-          </div>
+        {imageFile && (
+          <SquarePhotoCrop ref={cropRef} file={imageFile} onRemove={removeImage} />
         )}
 
         {/* Divider */}

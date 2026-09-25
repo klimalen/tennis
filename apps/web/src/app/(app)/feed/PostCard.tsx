@@ -603,7 +603,7 @@ export function PostCard({
 
       {/* Image */}
       {post.image_url && (
-        <div className="relative w-full aspect-video rounded-[20px] bg-brand-field overflow-hidden mb-3">
+        <div className="relative w-full aspect-square rounded-[20px] bg-brand-field overflow-hidden mb-3">
           <Image src={post.image_url} alt="Post image" fill className="object-cover" />
         </div>
       )}
