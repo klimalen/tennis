@@ -55,14 +55,10 @@ export function CreateSheet({ variant, direct }: Props) {
       {variant === 'fab' ? (
         <button
           onClick={handleTrigger}
-          className="relative -mt-6 h-14 w-14 rounded-full transition-transform active:scale-95"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8748A] text-[#1a1a1a] transition-transform active:scale-95"
           aria-label="Create"
         >
-          <svg viewBox="0 0 64 64" className="h-full w-full" aria-hidden>
-            <circle cx="32" cy="32" r="28" fill="#D4E040" stroke="#1a1a1a" strokeWidth="2.5" />
-            <path d="M20 14c10 6 10 30 0 36" fill="none" stroke="#1a1a1a" strokeWidth="2.25" strokeLinecap="round" />
-            <path d="M44 14c-10 6-10 30 0 36" fill="none" stroke="#1a1a1a" strokeWidth="2.25" strokeLinecap="round" />
-          </svg>
+          <Plus size={22} strokeWidth={2.4} />
         </button>
       ) : variant === 'schedule' ? (
         <button

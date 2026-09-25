@@ -19,71 +19,48 @@ export function BottomTabBar() {
     return 0
   }
 
+  function itemLink(item: (typeof NAV_ITEMS)[number]) {
+    const isActive = pathname === item.href
+    const Icon = item.icon
+    const count = badge(item.href)
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className="flex flex-1 flex-col items-center gap-0.5 py-2"
+      >
+        <span className="relative">
+          <Icon
+            size={20}
+            className={isActive ? 'text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.4)]'}
+            strokeWidth={isActive ? 2.4 : 1.8}
+          />
+          {count > 0 && (
+            <span className="absolute -top-0.5 -right-1.5 h-2 w-2 rounded-full bg-[#E8748A]" />
+          )}
+        </span>
+        <span className={`text-[10px] font-medium ${isActive ? 'text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.4)]'}`}>
+          {item.label}
+        </span>
+      </Link>
+    )
+  }
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-[#1a1a1a]/10 safe-area-pb">
-      <div className="flex items-center justify-around h-16 px-2 max-w-lg mx-auto">
-        {leftItems.map((item) => {
-          const isActive = pathname === item.href
-          const Icon = item.icon
-          const count = badge(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-1 flex-1 py-2 relative"
-            >
-              <div className="relative">
-                <Icon
-                  size={20}
-                  className={isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'}
-                  strokeWidth={isActive ? 2.5 : 1.8}
-                />
-                {count > 0 && (
-                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-brand-primary" />
-                )}
-              </div>
-              <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${
-                isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'
-              }`}>
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-
-        {/* Center + button */}
-        <div className="flex flex-col items-center flex-1">
-          <CreateSheet variant="fab" />
+    <nav
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
+    >
+      <div className="pointer-events-auto mx-auto mb-2 w-[min(100%-1.25rem,32rem)]">
+        <div className="flex h-16 items-center rounded-full bg-white px-1.5 shadow-[0_8px_24px_rgba(26,26,26,0.12)]">
+          {leftItems.map(itemLink)}
+          <div className="flex flex-1 justify-center">
+            <div className="-mt-5">
+              <CreateSheet variant="fab" />
+            </div>
+          </div>
+          {rightItems.map(itemLink)}
         </div>
-
-        {rightItems.map((item) => {
-          const isActive = pathname === item.href
-          const Icon = item.icon
-          const count = badge(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-1 flex-1 py-2"
-            >
-              <div className="relative">
-                <Icon
-                  size={20}
-                  className={isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'}
-                  strokeWidth={isActive ? 2.5 : 1.8}
-                />
-                {count > 0 && (
-                  <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-brand-primary" />
-                )}
-              </div>
-              <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${
-                isActive ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.55)]'
-              }`}>
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
       </div>
     </nav>
   )
