@@ -86,7 +86,7 @@ export default function NewPostPage() {
   const canPost = (text.trim().length > 0 || imageFile !== null) && !submitting
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen pb-8">
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">

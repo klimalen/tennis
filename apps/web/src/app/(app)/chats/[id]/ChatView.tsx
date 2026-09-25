@@ -496,7 +496,7 @@ export function ChatView({
       </div>
 
       {showScrollBtn && (
-        <div className="absolute bottom-24 right-4 md:right-8 z-10">
+        <div className="absolute bottom-36 right-4 md:right-8 z-10">
           <button onClick={() => scrollToBottom()}
             className="w-9 h-9 rounded-full bg-[#E8748A] text-[#1a1a1a] flex items-center justify-center shadow-lg hover:bg-[#E8406A] transition-colors">
             <ChevronDown size={18} />
@@ -505,7 +505,7 @@ export function ChatView({
       )}
 
       {/* Input area */}
-      <div className="sticky bottom-20 md:bottom-0 bg-brand-bg border-t border-brand-divider px-4 pt-2 pb-3">
+      <div className="sticky bottom-0 bg-brand-bg border-t border-brand-divider px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto">
           {/* Propose game button */}
           {isMutual ? (

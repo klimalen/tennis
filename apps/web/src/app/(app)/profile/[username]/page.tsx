@@ -71,10 +71,16 @@ export default async function PlayerProfilePage({
   if (!profile) notFound()
   if (viewer && viewer.id === profile.id) redirect('/me')
 
-  const { count: followerCount } = await supabase
-    .from('follows')
-    .select('*', { count: 'exact', head: true })
-    .eq('following_id', profile.id)
+  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+    supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', profile.id),
+    supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', profile.id),
+  ])
 
   const schedule = summarizeSchedule(await loadPlayerGames(supabase, profile.id))
   const gamesPlayed = await playedGamesCount(supabase, profile.id, schedule.playedCount)
@@ -222,13 +228,17 @@ export default async function PlayerProfilePage({
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              <div className="flex flex-col items-center gap-0.5">
+              <Link href={`/profile/${profile.username}/schedule`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5">
+              </Link>
+              <div className="flex flex-col items-center gap-0.5 min-w-0 text-center">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 min-w-0 text-center">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followingCount ?? 0)}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Following</span>
               </div>
             </div>
           </div>

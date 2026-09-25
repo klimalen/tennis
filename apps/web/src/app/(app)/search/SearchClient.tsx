@@ -764,19 +764,7 @@ function GameCardSkeleton() {
 }
 
 function CourtCardSkeleton() {
-  return (
-    <div className="bg-white rounded-[28px] flex animate-pulse overflow-hidden">
-      <div className="w-20 h-20 bg-brand-surface-md flex-shrink-0" />
-      <div className="flex-1 p-3 space-y-2">
-        <div className="h-4 bg-brand-surface-md rounded w-1/2" />
-        <div className="h-3 bg-brand-surface rounded w-2/3" />
-        <div className="flex gap-2">
-          <div className="h-4 w-10 bg-brand-surface rounded" />
-          <div className="h-4 w-12 bg-brand-surface rounded" />
-        </div>
-      </div>
-    </div>
-  )
+  return <PlayerCardSkeleton />
 }
 
 // ─── Discovery section wrapper ─────────────────────────────────────────────────
@@ -1107,6 +1095,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [locating, setLocating] = useState(false)
   const [loadingMoreVenues, setLoadingMoreVenues] = useState(false)
   const [venuesHasMore, setVenuesHasMore] = useState(false)
+  const [venuePageFailed, setVenuePageFailed] = useState(false)
   const [venuesOffset, setVenuesOffset] = useState(0)
   const [currentBbox, setCurrentBbox] = useState<{ south: number; west: number; north: number; east: number } | null>(null)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -1173,6 +1162,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     setShowSuggestions(false)
     setVenuesOffset(0)
     setVenuesHasMore(false)
+    setVenuePageFailed(false)
     setCurrentBbox({ south, west, north, east })
     try {
       const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east) })
@@ -1205,12 +1195,22 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       setVenues((prev) => [...prev, ...(json.venues ?? [])])
       setVenuesHasMore(json.hasMore ?? false)
       setVenuesOffset((prev) => prev + (json.venues?.length ?? 0))
+      setVenuePageFailed(false)
     } catch {
-      // keep existing venues
+      setVenuePageFailed(true)
     } finally {
       setLoadingMoreVenues(false)
     }
   }
+
+  const courtFilterActive = courtQuery.trim().length > 0 || courtSurface !== null
+  useEffect(() => {
+    if (view !== 'courts' || !courtFilterActive || !venuesHasMore || venuePageFailed) return
+    if (loadingVenues || loadingMoreVenues || !currentBbox) return
+    const timer = setTimeout(() => { void loadMoreVenues() }, 400)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, courtFilterActive, venuesHasMore, venuePageFailed, loadingVenues, loadingMoreVenues, venuesOffset])
 
   function selectSuggestion(place: NominatimPlace) {
     skipAutocompleteRef.current = true
@@ -1663,12 +1663,18 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
         {courtsError && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{courtsError}</p>}
 
-        {(loadingVenues || locating) && (
+        {locating && !loadingVenues && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
             <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-              {locating ? 'Detecting your location...' : `Finding courts${cityLabel ? ` near ${cityLabel}` : ''}...`}
+              Detecting your location...
             </p>
+          </div>
+        )}
+
+        {loadingVenues && (
+          <div className="space-y-3">
+            {[0, 1, 2, 3].map((i) => <CourtCardSkeleton key={i} />)}
           </div>
         )}
 
@@ -1696,38 +1702,45 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             )}
             {(() => {
               const needle = courtQuery.trim().toLowerCase()
+              const filterActive = needle.length > 0 || courtSurface !== null
               const shown = venues.filter((venue) => {
                 if (courtSurface && (venue.surface ?? '').toLowerCase() !== courtSurface) return false
                 if (!needle) return true
                 const hay = `${courtTitle(venue)} ${venue.name} ${venue.address ?? ''} ${venueKindLabel(venue.kind)}`.toLowerCase()
                 return hay.includes(needle)
               })
-              if (shown.length === 0) {
-                return <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
-              }
-              return shown.map((venue) => (
-                <VenueCard
-                  key={venue.id}
-                  venue={venue}
-                  userLat={userCoords.lat}
-                  userLng={userCoords.lng}
-                  viewed={viewedVenues.has(venue.id)}
-                  onClick={() => {
-                    setSelectedVenue(venue)
-                    setViewedVenues((prev) => new Set(prev).add(venue.id))
-                  }}
-                />
-              ))
+              const showLoadMore = venuesHasMore && (!filterActive || venuePageFailed)
+              return (
+                <>
+                  {shown.length === 0 ? (
+                    <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
+                  ) : (
+                    shown.map((venue) => (
+                      <VenueCard
+                        key={venue.id}
+                        venue={venue}
+                        userLat={userCoords.lat}
+                        userLng={userCoords.lng}
+                        viewed={viewedVenues.has(venue.id)}
+                        onClick={() => {
+                          setSelectedVenue(venue)
+                          setViewedVenues((prev) => new Set(prev).add(venue.id))
+                        }}
+                      />
+                    ))
+                  )}
+                  {showLoadMore && (
+                    <button
+                      onClick={() => void loadMoreVenues()}
+                      disabled={loadingMoreVenues}
+                      className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors disabled:opacity-40"
+                    >
+                      {loadingMoreVenues ? 'Loading...' : 'Load more'}
+                    </button>
+                  )}
+                </>
+              )
             })()}
-            {venuesHasMore && (
-              <button
-                onClick={() => void loadMoreVenues()}
-                disabled={loadingMoreVenues}
-                className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors disabled:opacity-40"
-              >
-                {loadingMoreVenues ? 'Loading...' : 'Load more'}
-              </button>
-            )}
           </>
         )}
 

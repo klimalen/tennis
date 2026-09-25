@@ -35,7 +35,7 @@ export function ChatInput({ conversationId }: { conversationId: string }) {
   }
 
   return (
-    <div className="sticky bottom-20 md:bottom-0 bg-brand-bg border-t border-brand-divider px-4 py-3">
+    <div className="sticky bottom-0 bg-brand-bg border-t border-brand-divider px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="max-w-2xl mx-auto flex items-end gap-2">
         <textarea
           ref={inputRef}

@@ -113,7 +113,7 @@ export default async function ChatPage({
     : '?'
 
   return (
-    <div className="relative flex flex-col min-h-screen pb-20 md:pb-0">
+    <div className="relative flex flex-col min-h-screen">
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link href="/chats" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">

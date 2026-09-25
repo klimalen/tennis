@@ -122,7 +122,7 @@ function NewGameForm() {
       : 'Save game'
 
   return (
-    <div className="min-h-screen pb-24 md:pb-8">
+    <div className="min-h-screen pb-8">
       {/* Header with Save button */}
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm px-4 py-4 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">

@@ -33,10 +33,16 @@ async function ProfileContent() {
     .eq('id', user.id)
     .single()
 
-  const { count: followerCount } = await supabase
-    .from('follows')
-    .select('*', { count: 'exact', head: true })
-    .eq('following_id', user.id)
+  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+    supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', user.id),
+    supabase
+      .from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', user.id),
+  ])
 
   const schedule = summarizeSchedule(await loadPlayerGames(supabase, user.id))
   const gamesPlayed = await playedGamesCount(supabase, user.id, schedule.playedCount)
@@ -138,13 +144,17 @@ async function ProfileContent() {
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              <div className="flex flex-col items-center gap-0.5">
+              <Link href="/schedule" className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
-              </div>
-              <Link href="/me/followers" className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity">
+              </Link>
+              <Link href="/me/followers" className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
+              </Link>
+              <Link href="/me/following" className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followingCount ?? 0)}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Following</span>
               </Link>
             </div>
           </div>

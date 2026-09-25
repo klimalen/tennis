@@ -19,6 +19,14 @@ export function BottomTabBar() {
     return 0
   }
 
+  const hideBar =
+    pathname === '/games/new' ||
+    pathname === '/feed/new' ||
+    pathname === '/settings' ||
+    (pathname.startsWith('/chats/') && pathname.length > '/chats/'.length)
+
+  if (hideBar) return null
+
   function itemLink(item: (typeof NAV_ITEMS)[number]) {
     const isActive = pathname === item.href
     const Icon = item.icon
