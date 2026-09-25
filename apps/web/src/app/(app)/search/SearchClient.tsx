@@ -12,6 +12,7 @@ import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { ExpandableText } from '@/components/ui/ExpandableText'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -217,15 +218,6 @@ function styleSummary(style: string | null): string | null {
   return null
 }
 
-function aboutLine(bio: string | null, lookingFor: string | null): string | null {
-  const parts: string[] = []
-  const bioText = bio?.trim()
-  const looking = lookingFor?.trim()
-  if (bioText) parts.push(bioText)
-  if (looking) parts.push(/^looking for\b/i.test(looking) ? looking : `Looking for ${looking}`)
-  return parts.length > 0 ? parts.join(' ') : null
-}
-
 function PlayerCard({
   player,
   status,
@@ -274,7 +266,8 @@ function PlayerCard({
   const actionClass = `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium transition-colors ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
   const level = skillLabel(skill)
   const meta = [formatSummary(player.preferred_formats), styleSummary(player.play_style)].filter(Boolean).join(' · ')
-  const about = aboutLine(player.bio, player.looking_for)
+  const bio = player.bio?.trim() || null
+  const lookingFor = player.looking_for?.trim() || null
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
   void vivid
 
@@ -307,8 +300,18 @@ function PlayerCard({
             )}
           </div>
         </div>
-        {about && (
-          <p className="font-copy mt-3 text-[13px] leading-snug text-[rgba(26,26,26,0.55)] line-clamp-2">{about}</p>
+        {(bio || lookingFor) && (
+          <div className="mt-3 space-y-2">
+            {bio && (
+              <ExpandableText text={bio} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.55)]" />
+            )}
+            {lookingFor && (
+              <div className="space-y-0.5">
+                <p className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.45)]">Looking for</p>
+                <ExpandableText text={lookingFor} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.55)]" />
+              </div>
+            )}
+          </div>
         )}
       </div>
       <div className="px-4 pb-4">
