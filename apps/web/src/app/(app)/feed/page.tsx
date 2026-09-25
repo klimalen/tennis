@@ -1,37 +1,10 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { FeedTabs } from './FeedTabs'
-import { type RequestItem, type FollowItem } from './FeedClient'
 import type { PostItem } from './PostCard'
+import { NOTIFICATION_PAGE_SIZE, pageFromRows, type NotificationRow } from './notifications'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface RequestRow {
-  id: string
-  created_at: string
-  sender: {
-    id: string
-    full_name: string
-    username: string
-    avatar_url: string | null
-    skill_level_self: number | null
-    skill_level_computed: number | null
-    city_name: string | null
-  }
-}
-
-interface FollowRow {
-  created_at: string
-  follower: {
-    id: string
-    full_name: string
-    username: string
-    avatar_url: string | null
-    skill_level_self: number | null
-    skill_level_computed: number | null
-    city_name: string | null
-  }
-}
 
 interface PostRow {
   id: string
@@ -84,8 +57,7 @@ async function FeedContent() {
     .eq('follower_id', user.id)
   const followingIds = (followingRows ?? []).map((r) => r.following_id as string)
 
-  // Fetch all three data sources in parallel
-  const [postsResult, requestsResult, followsResult] = await Promise.all([
+  const [postsResult, notesResult] = await Promise.all([
     // Posts feed (own + following)
     (async () => {
       let query = supabase
@@ -117,37 +89,18 @@ async function FeedContent() {
       return query
     })(),
 
-    // Game requests (activity tab)
-    supabase
-      .from('game_requests')
-      .select(`id, created_at, sender:sender_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, city_name)`)
-      .eq('receiver_id', user.id)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false }),
-
-    // Follows (activity tab)
-    supabase
-      .from('follows')
-      .select(`created_at, follower:follower_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, city_name)`)
-      .eq('following_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(50),
+    supabase.rpc('list_notifications', {
+      p_before: null,
+      p_before_id: null,
+      p_limit: NOTIFICATION_PAGE_SIZE + 1,
+    }),
   ])
 
   const postRows = (postsResult.data ?? []) as unknown as PostRow[]
-  const requestRows = (requestsResult.data ?? []) as unknown as RequestRow[]
-  const followRows = (followsResult.data ?? []) as unknown as FollowRow[]
-
-  // Check which followers the current user follows back
-  const followerIds = followRows.map((f) => f.follower.id)
-  const { data: alreadyFollowing } = followerIds.length > 0
-    ? await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id)
-        .in('following_id', followerIds)
-    : { data: [] }
-  const followingSet = new Set((alreadyFollowing ?? []).map((r) => r.following_id as string))
+  if (notesResult.error) console.error('[feed] notifications', notesResult.error.message)
+  const { items: notifications, nextCursor } = pageFromRows(
+    (notesResult.error ? [] : notesResult.data ?? []) as NotificationRow[],
+  )
 
   // Check which posts the current user has liked
   const postIds = postRows.map((p) => p.id)
@@ -193,22 +146,7 @@ async function FeedContent() {
   const posts: PostItem[] = [...nonGamePosts, ...openGameMap.values()]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
 
-  // Transform activity
-  const followItems: FollowItem[] = followRows.map((f) => ({
-    followerId: f.follower.id,
-    created_at: f.created_at,
-    isFollowingBack: followingSet.has(f.follower.id),
-    follower: f.follower,
-  }))
-
-  // Latest timestamp across all notification items for badge logic
-  const allTimestamps = [
-    ...requestRows.map((r) => r.created_at),
-    ...followRows.map((f) => f.created_at),
-  ]
-  const latestNotificationAt = allTimestamps.length > 0
-    ? allTimestamps.reduce((a, b) => (a > b ? a : b))
-    : null
+  const latestNotificationAt = notifications[0]?.createdAt ?? null
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -223,8 +161,8 @@ async function FeedContent() {
         <FeedTabs
           userId={user.id}
           initialPosts={posts}
-          initialRequests={requestRows as RequestItem[]}
-          initialFollows={followItems}
+          initialNotifications={notifications}
+          initialNotificationCursor={nextCursor}
           latestNotificationAt={latestNotificationAt}
         />
       </div>

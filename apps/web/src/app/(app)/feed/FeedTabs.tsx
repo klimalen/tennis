@@ -2,23 +2,24 @@
 
 import { useState } from 'react'
 import { PostsFeed } from './PostsFeed'
-import { FeedClient, type RequestItem, type FollowItem } from './FeedClient'
+import { FeedClient } from './FeedClient'
 import { TourTab } from './TourTab'
 import type { PostItem } from './PostCard'
+import type { NotificationCursor, NotificationItem } from './notifications'
 
 type Tab = 'activity' | 'tour' | 'notifications'
 
 interface Props {
   userId: string
   initialPosts: PostItem[]
-  initialRequests: RequestItem[]
-  initialFollows: FollowItem[]
+  initialNotifications: NotificationItem[]
+  initialNotificationCursor: NotificationCursor | null
   latestNotificationAt: string | null
 }
 
 const LAST_SEEN_KEY = 'notifications_last_seen'
 
-export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows, latestNotificationAt }: Props) {
+export function FeedTabs({ userId, initialPosts, initialNotifications, initialNotificationCursor, latestNotificationAt }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('activity')
   const [notificationsSeen, setNotificationsSeen] = useState(() => {
     if (typeof window === 'undefined') return true
@@ -70,7 +71,7 @@ export function FeedTabs({ userId, initialPosts, initialRequests, initialFollows
       ) : activeTab === 'tour' ? (
         <TourTab />
       ) : (
-        <FeedClient userId={userId} initialRequests={initialRequests} initialFollows={initialFollows} />
+        <FeedClient userId={userId} initialItems={initialNotifications} initialCursor={initialNotificationCursor} />
       )}
     </div>
   )
