@@ -3,11 +3,10 @@
 import { useState } from 'react'
 import { PostsFeed } from './PostsFeed'
 import { FeedClient } from './FeedClient'
-import { TourTab } from './TourTab'
 import type { PostItem } from './PostCard'
 import type { NotificationCursor, NotificationItem } from './notifications'
 
-type Tab = 'activity' | 'tour' | 'notifications'
+type Tab = 'activity' | 'notifications'
 
 interface Props {
   userId: string
@@ -45,7 +44,6 @@ export function FeedTabs({ userId, initialPosts, initialNotifications, initialNo
       <div className="flex gap-2 px-4 pt-3 pb-1">
         {([
           { id: 'activity' as Tab, label: 'Activity' },
-          { id: 'tour' as Tab, label: 'Tour' },
           { id: 'notifications' as Tab, label: 'Notifications' },
         ]).map((tab) => (
           <button
@@ -68,8 +66,6 @@ export function FeedTabs({ userId, initialPosts, initialNotifications, initialNo
       {/* Content */}
       {activeTab === 'activity' ? (
         <PostsFeed userId={userId} initialPosts={initialPosts} />
-      ) : activeTab === 'tour' ? (
-        <TourTab />
       ) : (
         <FeedClient userId={userId} initialItems={initialNotifications} initialCursor={initialNotificationCursor} />
       )}

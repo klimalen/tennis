@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { WhenFields } from '@/components/games/WhenFields'
+import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
 
@@ -22,6 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 interface Game {
   id: string
   scheduled_at: string
+  duration_minutes: number | null
   format: string
   neighborhood: string | null
   notes: string | null
@@ -43,7 +46,8 @@ function toDateInput(iso: string) {
 }
 
 function toTimeInput(iso: string) {
-  return new Date(iso).toTimeString().slice(0, 5)
+  const dt = new Date(iso)
+  return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`
 }
 
 export function EditGameForm({
@@ -57,8 +61,10 @@ export function EditGameForm({
 }) {
   const router = useRouter()
 
+  const initialStart = toTimeInput(game.scheduled_at)
   const [date, setDate] = useState(toDateInput(game.scheduled_at))
-  const [time, setTime] = useState(toTimeInput(game.scheduled_at))
+  const [time, setTime] = useState(initialStart)
+  const [endTime, setEndTime] = useState(clockFromDuration(game.scheduled_at, game.duration_minutes ?? 90))
   const [format, setFormat] = useState<Format>(game.format as Format)
   const [location, setLocation] = useState(game.neighborhood ?? '')
   const [notes, setNotes] = useState(game.notes ?? '')
@@ -76,12 +82,14 @@ export function EditGameForm({
     setError(null)
 
     const scheduled_at = new Date(`${date}T${time}`).toISOString()
+    const duration_minutes = durationFromClock(date, time, endTime)
 
     const res = await fetch(`/api/games/${game.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         scheduled_at,
+        duration_minutes,
         format,
         location_name: location.trim() || null,
         notes: notes.trim() || null,
@@ -147,21 +155,17 @@ export function EditGameForm({
       <div className="max-w-2xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
-              </div>
-              <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
-                <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
-              </div>
-            </div>
-          </div>
+          <WhenFields
+            date={date}
+            start={time}
+            end={endTime}
+            onDate={setDate}
+            onStart={(value) => {
+              setTime(value)
+              setEndTime(plusMinutes(value, 60))
+            }}
+            onEnd={setEndTime}
+          />
 
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
@@ -235,17 +239,19 @@ export function EditGameForm({
                   const isGoing = p.status === 'accepted'
                   return (
                     <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
-                      <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
-                        {p.profiles.avatar_url ? (
-                          <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profiles.full_name}</p>
-                        <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
-                      </div>
+                      <Link href={`/profile/${p.profiles.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                        <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+                          {p.profiles.avatar_url ? (
+                            <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profiles.full_name}</p>
+                          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
+                        </div>
+                      </Link>
                       <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${isGoing ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.35)]'}`}>
                         {statusLabel}
                       </span>

@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { Bebas_Neue, Anton, DM_Sans, Fraunces } from 'next/font/google'
+import { Oswald, Anton, DM_Sans, Fraunces } from 'next/font/google'
 import './globals.css'
 
-const bebasNeue = Bebas_Neue({
-  weight: '400',
-  subsets: ['latin'],
+const bebasNeue = Oswald({
+  weight: '600',
+  subsets: ['latin', 'cyrillic'],
   variable: '--font-bebas',
   display: 'swap',
 })

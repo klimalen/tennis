@@ -1,10 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { AuthGate } from '@/components/auth/AuthGate'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { skillLabel } from '@/lib/skill'
+import { FollowersList, type FollowerProfile } from './FollowersList'
 
 async function FollowersContent() {
   const supabase = await createClient()
@@ -16,16 +15,6 @@ async function FollowersContent() {
     .select('follower_id, profiles!follows_follower_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self)')
     .eq('following_id', user.id)
     .order('created_at', { ascending: false })
-
-  type FollowerProfile = {
-    id: string
-    full_name: string
-    username: string | null
-    avatar_url: string | null
-    city_name: string | null
-    skill_level_computed: number | null
-    skill_level_self: number | null
-  }
 
   const followers = (rows ?? []).map((r) => r.profiles as unknown as FollowerProfile).filter(Boolean)
 
@@ -49,43 +38,7 @@ async function FollowersContent() {
             <p className="text-xs font-fraunces italic text-[#85648F]">When someone follows you, they appear here</p>
           </div>
         ) : (
-          <div>
-            {followers.map((f) => {
-              const rating = f.skill_level_computed ?? f.skill_level_self
-              const label = skillLabel(rating)
-              const initials = f.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-
-              return (
-                <Link
-                  key={f.id}
-                  href={f.username ? `/profile/${f.username}` : '#'}
-                  className="flex items-center gap-4 mx-4 mb-3 px-4 py-3 rounded-[28px] bg-white hover:bg-[#F4F1EC] transition-colors"
-                >
-                  <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {f.avatar_url ? (
-                      <Image src={f.avatar_url} alt={f.full_name} width={48} height={48} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-base tracking-wide leading-none text-[#1a1a1a]">{f.full_name.toUpperCase()}</p>
-                    {f.username && (
-                      <p className="text-[10px] tracking-[0.12em] text-[rgba(26,26,26,0.4)] mt-0.5">@{f.username}</p>
-                    )}
-                    {f.city_name && (
-                      <p className="text-[10px] text-[rgba(26,26,26,0.35)] mt-0.5">{f.city_name}</p>
-                    )}
-                  </div>
-                  {label && (
-                    <span className="text-[8px] tracking-[0.12em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
-                      {label}
-                    </span>
-                  )}
-                </Link>
-              )
-            })}
-          </div>
+          <FollowersList followers={followers} />
         )}
       </div>
     </div>

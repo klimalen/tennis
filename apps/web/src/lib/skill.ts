@@ -1,4 +1,6 @@
 /** Word labels aligned with onboarding presets: 1.5, 2.5, 4.0, 6.0. */
+export const SKILL_OPTIONS = ['Beginner', 'Intermediate', 'Advanced', 'Competitive'] as const
+
 export function skillLabel(level: number | null | undefined): string | null {
   if (level == null || Number.isNaN(level)) return null
   if (level < 2) return 'Beginner'

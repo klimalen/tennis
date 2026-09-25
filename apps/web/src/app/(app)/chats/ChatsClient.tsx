@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { SquarePen, X, Loader2 } from 'lucide-react'
+import { ListSearch } from '@/components/ui/ListSearch'
 
 export interface ChatItem {
   id: string
@@ -66,6 +66,7 @@ const SKILL_LABELS: Record<number, string> = {
 
 export function ChatsClient({ userId, initialChats }: Props) {
   const [chats, setChats] = useState<ChatItem[]>(initialChats)
+  const [query, setQuery] = useState('')
   const [showCompose, setShowCompose] = useState(false)
   const [connections, setConnections] = useState<MutualConnection[]>([])
   const [allChatsExist, setAllChatsExist] = useState(false)
@@ -159,9 +160,24 @@ export function ChatsClient({ userId, initialChats }: Props) {
     )
   }
 
+  const needle = query.trim().toLowerCase()
+  const visible = needle
+    ? chats.filter((chat) => {
+        const name = chat.other.full_name.toLowerCase()
+        const username = chat.other.username.toLowerCase()
+        return name.includes(needle) || username.includes(needle)
+      })
+    : chats
+
   return (
     <div>
-      {chats.map((chat) => {
+      <div className="px-4 pb-3">
+        <ListSearch value={query} onChange={setQuery} placeholder="Search chats" />
+      </div>
+      {visible.length === 0 ? (
+        <p className="px-4 py-8 text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No matches</p>
+      ) : null}
+      {visible.map((chat) => {
         const { other, lastMsg } = chat
         const initials = other.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
         let previewBody = lastMsg?.body ?? ''

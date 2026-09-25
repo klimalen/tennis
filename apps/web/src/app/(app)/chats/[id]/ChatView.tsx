@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface Message {
   id: string
@@ -36,6 +37,7 @@ interface Props {
   userId: string
   otherUserId: string
   otherName: string
+  otherUsername?: string
   initialMessages: Message[]
   initialOtherLastReadAt: string | null
   initialGameStatuses: Record<string, GameStatus>
@@ -194,6 +196,7 @@ export function ChatView({
   userId,
   otherUserId,
   otherName,
+  otherUsername,
   initialMessages,
   initialOtherLastReadAt,
   initialGameStatuses,
@@ -410,7 +413,12 @@ export function ChatView({
           <div className="rounded-[20px] bg-white px-4 py-4 text-center">
             <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
-              You matched with {otherName}
+              You matched with{' '}
+              {otherUsername ? (
+                <Link href={`/profile/${otherUsername}`} className="underline underline-offset-4 hover:text-brand-primary">
+                  {otherName}
+                </Link>
+              ) : otherName}
             </p>
             <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
             <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">Say hello and arrange a game</p>

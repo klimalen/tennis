@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { WhenFields } from '@/components/games/WhenFields'
+import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
 
@@ -18,19 +20,6 @@ interface Connection {
   full_name: string
   username: string
   avatar_url: string | null
-}
-
-function today() {
-  const dt = new Date()
-  const y = dt.getFullYear()
-  const m = String(dt.getMonth() + 1).padStart(2, '0')
-  const d = String(dt.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-function nowTime() {
-  const d = new Date()
-  d.setMinutes(Math.ceil(d.getMinutes() / 30) * 30, 0, 0)
-  return d.toTimeString().slice(0, 5)
 }
 
 export default function NewGamePage() {
@@ -49,8 +38,10 @@ function NewGameForm() {
   const preselectedId = searchParams.get('invite') ?? ''
   const preselectedName = searchParams.get('name') ?? ''
 
-  const [date, setDate] = useState(today())
-  const [time, setTime] = useState(nowTime())
+  const initialStart = nowTimeInput()
+  const [date, setDate] = useState(todayInput())
+  const [time, setTime] = useState(initialStart)
+  const [endTime, setEndTime] = useState(plusMinutes(initialStart, 60))
   const [format, setFormat] = useState<Format>('singles')
   const [location, setLocation] = useState('')
   const [about, setAbout] = useState('')
@@ -81,17 +72,18 @@ function NewGameForm() {
   }
 
   async function handleSubmit() {
-    if (!date || !time || submitting) return
+    if (!date || !time || !endTime || submitting) return
     setSubmitting(true)
     setError(null)
 
     const scheduled_at = new Date(`${date}T${time}`).toISOString()
+    const duration_minutes = durationFromClock(date, time, endTime)
 
     const res = await fetch('/api/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        scheduled_at, format,
+        scheduled_at, duration_minutes, format,
         location_name: location.trim() || undefined,
         notes: about.trim() || undefined,
         is_open: isOpen,
@@ -145,22 +137,18 @@ function NewGameForm() {
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
-          {/* When */}
-          <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
-                <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
-              </div>
-              <div>
-                <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
-                <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
-              </div>
-            </div>
-          </div>
+          <WhenFields
+            date={date}
+            start={time}
+            end={endTime}
+            minDate={todayInput()}
+            onDate={setDate}
+            onStart={(value) => {
+              setTime(value)
+              setEndTime(plusMinutes(value, 60))
+            }}
+            onEnd={setEndTime}
+          />
 
           {/* Format */}
           <div>
@@ -286,7 +274,7 @@ function NewGameForm() {
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <button onClick={handleSubmit} disabled={submitting || !date || !time}
+          <button onClick={handleSubmit} disabled={submitting || !date || !time || !endTime}
             className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
             {submitLabel}
           </button>

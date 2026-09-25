@@ -6,15 +6,16 @@ import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
 import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
+import { SchedulePreview } from '@/components/schedule/ScheduleBlocks'
 import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
+import { loadPlayerGames, playedGamesCount } from '@/lib/player-games'
+import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
-import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const SURFACE_LABELS: Record<string, string> = {
@@ -61,7 +62,7 @@ export default async function PlayerProfilePage({
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'id, full_name, username, avatar_url, bio, looking_for, city_name, skill_level_self, skill_level_computed, total_matches, preferred_formats, play_style, years_playing, preferred_surfaces, availability',
+      'id, full_name, username, avatar_url, bio, looking_for, city_name, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability',
     )
     .eq('username', username)
     .is('deleted_at', null)
@@ -70,17 +71,13 @@ export default async function PlayerProfilePage({
   if (!profile) notFound()
   if (viewer && viewer.id === profile.id) redirect('/me')
 
-  const [{ count: wins }, { count: followerCount }] = await Promise.all([
-    supabase
-      .from('match_results')
-      .select('*', { count: 'exact', head: true })
-      .eq('winner_id', profile.id)
-      .eq('status', 'confirmed'),
-    supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', profile.id),
-  ])
+  const { count: followerCount } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', profile.id)
+
+  const schedule = summarizeSchedule(await loadPlayerGames(supabase, profile.id))
+  const gamesPlayed = await playedGamesCount(supabase, profile.id, schedule.playedCount)
 
   const surfaces: string[] = profile.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile.availability)
@@ -149,39 +146,7 @@ export default async function PlayerProfilePage({
 
   const rating = profile.skill_level_computed ?? profile.skill_level_self
   const skill = skillLabel(rating)
-  const totalWins = wins ?? 0
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-
-  // Fetch upcoming games for this profile user
-  const now = new Date().toISOString()
-  const { data: profileCreatedGames } = await supabase
-    .from('games')
-    .select('id, scheduled_at, format, neighborhood, is_open')
-    .eq('creator_id', profile.id)
-    .eq('status', 'confirmed')
-    .gte('scheduled_at', now)
-    .order('scheduled_at', { ascending: true })
-
-  const { data: profileParticipations } = await supabase
-    .from('game_participants')
-    .select('game_id')
-    .eq('player_id', profile.id)
-    .eq('status', 'accepted')
-  const profileParticipantGameIds = (profileParticipations ?? []).map((r) => r.game_id as string)
-
-  const { data: profileInvitedGames } = profileParticipantGameIds.length > 0
-    ? await supabase
-        .from('games')
-        .select('id, scheduled_at, format, neighborhood, is_open')
-        .in('id', profileParticipantGameIds)
-        .neq('creator_id', profile.id)
-        .eq('status', 'confirmed')
-        .gte('scheduled_at', now)
-    : { data: [] }
-
-  const upcomingGames = [...(profileCreatedGames ?? []), ...(profileInvitedGames ?? [])]
-    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
-    .slice(0, 5)
 
   // Fetch user's posts
   const { data: postRows } = await supabase
@@ -257,16 +222,14 @@ export default async function PlayerProfilePage({
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              {[
-                { value: String(profile.total_matches ?? 0), label: 'Matches' },
-                { value: String(totalWins), label: 'Wins' },
-                { value: formatFollowers(followerCount ?? 0), label: 'Followers' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-0.5">
-                  <span className="font-numbers text-3xl leading-none text-brand-primary">{stat.value}</span>
-                  <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">{stat.label}</span>
-                </div>
-              ))}
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
+              </div>
             </div>
           </div>
 
@@ -342,38 +305,17 @@ export default async function PlayerProfilePage({
           )}
         </div>
 
-        {/* Schedule — only if user has upcoming games */}
-        {upcomingGames.length > 0 && (
+        {schedule.preview.length > 0 && (
           <div>
             <div className="px-1 pb-3 flex items-center gap-2">
               <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
               <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
               <div className="flex-1 h-px bg-brand-divider" />
             </div>
-            <div className="space-y-3">
-              {upcomingGames.map((game) => {
-                const formatLabel = game.format === 'singles' ? 'Singles' : game.format === 'doubles' ? 'Doubles' : 'Mixed'
-                return (
-                  <div key={game.id} className="px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 text-center">
-                      <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
-                      <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]"><LocalGameMonth iso={game.scheduled_at} /></p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-[#1a1a1a]">{formatLabel}</p>
-                        {game.is_open && (
-                          <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">Open</span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">
-                        <LocalGameTime iso={game.scheduled_at} />{game.neighborhood ? ` · ${game.neighborhood}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <SchedulePreview
+              items={schedule.preview}
+              seeAllHref={`/profile/${profile.username}/schedule`}
+            />
           </div>
         )}
 

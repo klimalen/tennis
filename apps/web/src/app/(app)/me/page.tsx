@@ -1,12 +1,14 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
-import { Settings, CalendarDays, Pencil } from 'lucide-react'
+import { Settings, CalendarDays } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
-import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { SchedulePreview } from '@/components/schedule/ScheduleBlocks'
 import { formatFollowers } from '@/lib/formatFollowers'
-import { formatPlayFormat, skillLabel } from '@/lib/skill'
+import { skillLabel } from '@/lib/skill'
+import { loadPlayerGames, playedGamesCount } from '@/lib/player-games'
+import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { ExpandableText } from '@/components/ui/ExpandableText'
@@ -27,56 +29,17 @@ async function ProfileContent() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, total_matches, bio, looking_for, city_name, preferred_surfaces, availability')
+    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, preferred_surfaces, availability')
     .eq('id', user.id)
     .single()
 
-  const [{ count: wins }, { count: followerCount }] = await Promise.all([
-    supabase
-      .from('match_results')
-      .select('*', { count: 'exact', head: true })
-      .eq('winner_id', user.id)
-      .eq('status', 'confirmed'),
-    supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', user.id),
-  ])
+  const { count: followerCount } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', user.id)
 
-  // Games created by user
-  const { data: createdGames } = await supabase
-    .from('games')
-    .select('id, scheduled_at, format, neighborhood, status, is_open')
-    .eq('creator_id', user.id)
-    .eq('status', 'confirmed')
-    .gte('scheduled_at', new Date().toISOString())
-    .order('scheduled_at', { ascending: true })
-
-  // Games where user is an accepted participant (invited by someone else)
-  const { data: acceptedParticipations } = await supabase
-    .from('game_participants')
-    .select('game_id')
-    .eq('player_id', user.id)
-    .eq('status', 'accepted')
-
-  const acceptedGameIds = (acceptedParticipations ?? []).map((r) => r.game_id as string)
-
-  const { data: invitedGames } = acceptedGameIds.length > 0
-    ? await supabase
-        .from('games')
-        .select('id, scheduled_at, format, neighborhood, status, is_open')
-        .in('id', acceptedGameIds)
-        .neq('creator_id', user.id)
-        .eq('status', 'confirmed')
-        .gte('scheduled_at', new Date().toISOString())
-    : { data: [] }
-
-  // Merge and sort
-  const now = new Date().toISOString()
-  const upcomingGames = [...(createdGames ?? []), ...(invitedGames ?? [])]
-    .filter((g) => g.scheduled_at >= now)
-    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
-    .slice(0, 5)
+  const schedule = summarizeSchedule(await loadPlayerGames(supabase, user.id))
+  const gamesPlayed = await playedGamesCount(supabase, user.id, schedule.playedCount)
 
   // Fetch own posts
   const { data: postRows } = await supabase
@@ -140,8 +103,6 @@ async function ProfileContent() {
   const fullName = profile?.full_name || 'Tennis Player'
   const username = profile?.username || ''
   const avatarUrl = profile?.avatar_url || null
-  const totalMatches = profile?.total_matches ?? 0
-  const totalWins = wins ?? 0
   const rating = profile?.skill_level_computed ?? profile?.skill_level_self ?? null
   const surfaces: string[] = profile?.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile?.availability)
@@ -178,12 +139,8 @@ async function ProfileContent() {
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
               <div className="flex flex-col items-center gap-0.5">
-                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalMatches}</span>
-                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Matches</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="font-numbers text-3xl leading-none text-brand-primary">{totalWins}</span>
-                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Wins</span>
+                <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
+                <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
               </div>
               <Link href="/me/followers" className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
@@ -237,47 +194,17 @@ async function ProfileContent() {
             <CreateSheet variant="schedule" direct="game" />
           </div>
 
-          {upcomingGames && upcomingGames.length > 0 ? (
-            <div className="pb-4">
-              {upcomingGames.map((game) => {
-                const formatLabel = formatPlayFormat(game.format)
-                return (
-                  <div key={game.id} className="mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 text-center">
-                      <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
-                      <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]">
-                        <LocalGameMonth iso={game.scheduled_at} />
-                      </p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-[#1a1a1a]">{formatLabel}</p>
-                        {game.is_open && (
-                          <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">Open</span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">
-                        <LocalGameTime iso={game.scheduled_at} />{game.neighborhood ? ` · ${game.neighborhood}` : ''}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/games/${game.id}/edit`}
-                      className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.3)] hover:text-brand-primary transition-colors flex-shrink-0"
-                    >
-                      <Pencil size={14} />
-                    </Link>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] mb-1">No upcoming games</p>
-              <p className="text-xs text-[#85648F] font-fraunces italic">
-                Tap + to add your first game
-              </p>
-            </div>
-          )}
+          <SchedulePreview
+            items={schedule.preview}
+            seeAllHref="/schedule"
+            editFor={(game) => (!game.past && game.creator_id === user.id ? `/games/${game.id}/edit` : null)}
+            empty={(
+              <div className="px-1 pb-2">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No games yet</p>
+                <p className="text-xs text-[#85648F] font-fraunces italic mt-0.5">Tap + to add your first game</p>
+              </div>
+            )}
+          />
         </div>
 
         <div>

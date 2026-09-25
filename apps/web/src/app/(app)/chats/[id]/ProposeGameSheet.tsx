@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
 import Image from 'next/image'
+import { WhenFields } from '@/components/games/WhenFields'
+import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
 
@@ -18,13 +20,6 @@ interface Connection {
   avatar_url: string | null
 }
 
-function today() { return new Date().toISOString().slice(0, 10) }
-function nowTime() {
-  const d = new Date()
-  d.setMinutes(Math.ceil(d.getMinutes() / 30) * 30, 0, 0)
-  return d.toTimeString().slice(0, 5)
-}
-
 interface Props {
   otherUserId: string
   otherName: string
@@ -33,8 +28,10 @@ interface Props {
 
 export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
   const [open, setOpen] = useState(false)
-  const [date, setDate] = useState(today())
-  const [time, setTime] = useState(nowTime())
+  const initialStart = nowTimeInput()
+  const [date, setDate] = useState(todayInput())
+  const [time, setTime] = useState(initialStart)
+  const [endTime, setEndTime] = useState(plusMinutes(initialStart, 60))
   const [format, setFormat] = useState<Format>('singles')
   const [location, setLocation] = useState('')
   const [about, setAbout] = useState('')
@@ -63,8 +60,10 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
   }
 
   function reset() {
-    setDate(today())
-    setTime(nowTime())
+    const start = nowTimeInput()
+    setDate(todayInput())
+    setTime(start)
+    setEndTime(plusMinutes(start, 60))
     setFormat('singles')
     setLocation('')
     setAbout('')
@@ -73,17 +72,18 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
   }
 
   async function handleSubmit() {
-    if (!date || !time || submitting) return
+    if (!date || !time || !endTime || submitting) return
     setSubmitting(true)
     setError(null)
 
     const scheduled_at = new Date(`${date}T${time}`).toISOString()
+    const duration_minutes = durationFromClock(date, time, endTime)
 
     const gameRes = await fetch('/api/games', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        scheduled_at, format,
+        scheduled_at, duration_minutes, format,
         location_name: location.trim() || undefined,
         notes: about.trim() || undefined,
       }),
@@ -134,22 +134,18 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-lg mx-auto w-full px-4 py-6 space-y-6">
 
-              {/* Date + Time */}
-              <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
-                    <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required
-                      className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
-                  </div>
-                  <div>
-                    <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Time</label>
-                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required
-                      className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors" />
-                  </div>
-                </div>
-              </div>
+              <WhenFields
+                date={date}
+                start={time}
+                end={endTime}
+                minDate={todayInput()}
+                onDate={setDate}
+                onStart={(value) => {
+                  setTime(value)
+                  setEndTime(plusMinutes(value, 60))
+                }}
+                onEnd={setEndTime}
+              />
 
               {/* Format */}
               <div>

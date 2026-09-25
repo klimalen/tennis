@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { skillLabel } from '@/lib/skill'
 
 const PAGE_SIZE = 15
 const NEARBY_RADIUS_KM = 80
@@ -14,6 +15,19 @@ function boundingBox(lat: number, lng: number, radiusKm: number) {
     west: lng - deltaLng,
     east: lng + deltaLng,
   }
+}
+
+function matchesPlayer(
+  player: { full_name: string | null; username: string | null; city_name: string | null; looking_for: string | null; skill_level_self: number | null; skill_level_computed: number | null },
+  q: string,
+  skill: string | null,
+) {
+  if (q) {
+    const hay = `${player.full_name ?? ''} ${player.username ?? ''} ${player.city_name ?? ''} ${player.looking_for ?? ''}`.toLowerCase()
+    if (!hay.includes(q)) return false
+  }
+  if (skill && skillLabel(player.skill_level_computed ?? player.skill_level_self) !== skill) return false
+  return true
 }
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -34,6 +48,9 @@ export async function GET(request: NextRequest) {
   const latStr = searchParams.get('lat')
   const lngStr = searchParams.get('lng')
   const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10))
+  const q = (searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 80)
+  const skillParam = searchParams.get('skill')
+  const skill = skillParam && ['Beginner', 'Intermediate', 'Advanced', 'Competitive'].includes(skillParam) ? skillParam : null
 
   const supabase = await createClient()
 
@@ -81,8 +98,9 @@ export async function GET(request: NextRequest) {
       return distA - distB
     })
 
-    const page = rows.slice(offset, offset + PAGE_SIZE)
-    const hasMore = offset + PAGE_SIZE < rows.length
+    const filtered = rows.filter((row) => matchesPlayer(row, q, skill))
+    const page = filtered.slice(offset, offset + PAGE_SIZE)
+    const hasMore = offset + PAGE_SIZE < filtered.length
 
     return NextResponse.json({ players: await withFollowing(supabase, page), hasMore })
   }
@@ -101,15 +119,25 @@ export async function GET(request: NextRequest) {
     .neq('full_name', '')
     .ilike('city_name', `%${city}%`)
     .order('last_active_at', { ascending: false, nullsFirst: false })
-    .range(offset, offset + PAGE_SIZE - 1)
 
   if (exclude) query = query.neq('id', exclude)
+
+  if (!q && !skill) query = query.range(offset, offset + PAGE_SIZE - 1)
 
   const { data, error } = await query
 
   if (error) {
     console.error('Players query error:', error)
     return NextResponse.json({ players: [], hasMore: false })
+  }
+
+  if (q || skill) {
+    const filtered = (data ?? []).filter((row) => matchesPlayer(row, q, skill))
+    const page = filtered.slice(offset, offset + PAGE_SIZE)
+    return NextResponse.json({
+      players: await withFollowing(supabase, page),
+      hasMore: offset + PAGE_SIZE < filtered.length,
+    })
   }
 
   const players = data ?? []

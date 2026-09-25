@@ -121,18 +121,20 @@ export default async function ChatPage({
           </Link>
           {otherProfile && (
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
-                {otherProfile.avatar_url ? (
-                  <Image src={otherProfile.avatar_url} alt={otherProfile.full_name} width={32} height={32} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-display text-xs text-[#1a1a1a]">{otherInitials}</span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <Link href={`/profile/${otherProfile.username}`} className="font-display text-xl tracking-wide hover:text-brand-primary transition-colors block leading-tight truncate">
-                  {otherProfile.full_name.toUpperCase()}
-                </Link>
-              </div>
+              <Link href={`/profile/${otherProfile.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+                  {otherProfile.avatar_url ? (
+                    <Image src={otherProfile.avatar_url} alt={otherProfile.full_name} width={32} height={32} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-display text-xs text-[#1a1a1a]">{otherInitials}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-display text-xl tracking-wide block leading-tight truncate">
+                    {otherProfile.full_name.toUpperCase()}
+                  </span>
+                </div>
+              </Link>
               {unreadCount > 0 && (
                 <span className="text-[9px] tracking-[0.15em] uppercase text-brand-primary font-medium border border-brand-primary px-2 py-0.5 flex-shrink-0">
                   {unreadCount} new
@@ -148,6 +150,7 @@ export default async function ChatPage({
         userId={user.id}
         otherUserId={otherUserId}
         otherName={otherProfile?.full_name ?? ''}
+        {...(otherProfile?.username ? { otherUsername: otherProfile.username } : {})}
         initialMessages={initialMessages}
         initialOtherLastReadAt={otherLastReadAt}
         initialGameStatuses={initialGameStatuses}

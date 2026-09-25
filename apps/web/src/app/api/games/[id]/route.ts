@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { parseDurationMinutes } from '@/lib/game-time'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -12,11 +13,13 @@ export async function PATCH(
   const { id } = await params
   const body = await request.json() as {
     scheduled_at?: string
+    duration_minutes?: number
     format?: string
     location_name?: string | null
     notes?: string | null
     is_open?: boolean
   }
+  const duration_minutes = parseDurationMinutes(body.duration_minutes)
 
   // Fetch current game to detect if scheduled_at is changing
   const { data: current } = await supabase
@@ -35,6 +38,7 @@ export async function PATCH(
     .from('games')
     .update({
       ...(body.scheduled_at && { scheduled_at: body.scheduled_at }),
+      ...(duration_minutes ? { duration_minutes } : {}),
       ...(body.format && { format: body.format }),
       neighborhood: body.location_name ?? null,
       notes: body.notes ?? null,

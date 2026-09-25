@@ -6,7 +6,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
-import { skillLabel } from '@/lib/skill'
+import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
+import { FilterChips, ListSearch } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { LookingFor } from '@/components/ui/LookingFor'
@@ -973,6 +974,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   // ── Full players view ───────────────────────────────────────────────────────
   const [players, setPlayers] = useState<Player[]>([])
+  const [playerQuery, setPlayerQuery] = useState('')
+  const [debouncedPlayerQuery, setDebouncedPlayerQuery] = useState('')
+  const [playerSkill, setPlayerSkill] = useState<string | null>(null)
+  const playerFilters = useRef({ q: '', skill: '' })
   const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [loadingMorePlayers, setLoadingMorePlayers] = useState(false)
   const [playersOffset, setPlayersOffset] = useState(0)
@@ -981,6 +986,13 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [geocodeDone, setGeocodeDone] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const playersQueryKey = useRef('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedPlayerQuery(playerQuery.trim()), 250)
+    return () => clearTimeout(timer)
+  }, [playerQuery])
+
+  playerFilters.current = { q: debouncedPlayerQuery, skill: playerSkill ?? '' }
 
   // Geocode user city once so the full list sorts by distance, same as the preview.
   useEffect(() => {
@@ -1017,6 +1029,8 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       params.set('lat', String(userGeoCoords.lat))
       params.set('lng', String(userGeoCoords.lng))
     }
+    if (playerFilters.current.q) params.set('q', playerFilters.current.q)
+    if (playerFilters.current.skill) params.set('skill', playerFilters.current.skill)
 
     try {
       const res = await fetch(`/api/players?${params}`)
@@ -1045,16 +1059,16 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   useEffect(() => {
     if (view !== 'players' || !userCityName || !geocodeDone) return
-    const key = userGeoCoords
+    const key = `${userGeoCoords
       ? `${userGeoCoords.lat.toFixed(4)},${userGeoCoords.lng.toFixed(4)}`
-      : 'city'
+      : 'city'}|${debouncedPlayerQuery}|${playerSkill ?? ''}`
     if (playersQueryKey.current === key) return
     playersQueryKey.current = key
     setPlayersOffset(0)
     setHasMorePlayers(false)
     void fetchPlayers(0, false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, userCityName, userGeoCoords, geocodeDone])
+  }, [view, userCityName, userGeoCoords, geocodeDone, debouncedPlayerQuery, playerSkill])
 
   // IntersectionObserver — load next page when sentinel is visible
   useEffect(() => {
@@ -1072,7 +1086,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   // ── Full games view ─────────────────────────────────────────────────────────
   const [openGames, setOpenGames] = useState<OpenGame[]>([])
+  const [gameQuery, setGameQuery] = useState('')
   const [loadingOpenGames, setLoadingOpenGames] = useState(false)
+  const [courtQuery, setCourtQuery] = useState('')
+  const [courtSurface, setCourtSurface] = useState<string | null>(null)
 
   function loadGames() {
     if (!userCityName) return
@@ -1470,14 +1487,28 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {sheets}
         {pageHeader('PLAYERS', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+          {userCityName && (
+            <>
+              <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or city" />
+              <FilterChips
+                options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
+                value={playerSkill}
+                onChange={setPlayerSkill}
+              />
+            </>
+          )}
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingPlayers || !geocodeDone ? (
             [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)
           ) : players.length === 0 ? (
             <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
-              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">No players found</p>
-              <p className="text-sm text-[rgba(26,26,26,0.5)]">No players in {userCityName} yet</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">
+                {debouncedPlayerQuery || playerSkill ? 'No matches' : 'No players found'}
+              </p>
+              <p className="text-sm text-[rgba(26,26,26,0.5)]">
+                {debouncedPlayerQuery || playerSkill ? 'Try another name or level' : `No players in ${userCityName} yet`}
+              </p>
             </div>
           ) : (
             <>
@@ -1524,6 +1555,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {sheets}
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+          {userCityName && openGames.length > 0 && (
+            <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
+          )}
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingOpenGames ? (
@@ -1539,10 +1573,23 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             </div>
           ) : (
             <>
-              <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                {openGames.length} game{openGames.length !== 1 ? 's' : ''} in {userCityName}
-              </p>
-              {openGames.map((game) => (
+              {(() => {
+                const needle = gameQuery.trim().toLowerCase()
+                const shown = needle
+                  ? openGames.filter((game) => {
+                      const hay = `${game.neighborhood ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
+                      return hay.includes(needle)
+                    })
+                  : openGames
+                if (shown.length === 0) {
+                  return <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
+                }
+                return (
+                  <>
+                    <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+                      {shown.length} game{shown.length !== 1 ? 's' : ''} in {userCityName}
+                    </p>
+                    {shown.map((game) => (
                 <OpenGameCard
                   key={game.id}
                   game={game}
@@ -1551,7 +1598,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                   onJoin={handleJoin}
                   onClick={() => setSelectedGame(game)}
                 />
-              ))}
+                    ))}
+                  </>
+                )
+              })()}
             </>
           )}
         </div>
@@ -1630,24 +1680,45 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
         {!loadingVenues && !locating && userCoords && venues.length > 0 && (
           <>
+            <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
+            <FilterChips
+              options={Array.from(new Set(venues.map((venue) => venue.surface).filter((surface): surface is string => !!surface))).map((surface) => ({
+                id: surface.toLowerCase(),
+                label: surfaceLabel(surface),
+              }))}
+              value={courtSurface}
+              onChange={setCourtSurface}
+            />
             {cityLabel && (
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
                 Courts near {cityLabel}
               </p>
             )}
-            {venues.map((venue) => (
-              <VenueCard
-                key={venue.id}
-                venue={venue}
-                userLat={userCoords.lat}
-                userLng={userCoords.lng}
-                viewed={viewedVenues.has(venue.id)}
-                onClick={() => {
-                  setSelectedVenue(venue)
-                  setViewedVenues((prev) => new Set(prev).add(venue.id))
-                }}
-              />
-            ))}
+            {(() => {
+              const needle = courtQuery.trim().toLowerCase()
+              const shown = venues.filter((venue) => {
+                if (courtSurface && (venue.surface ?? '').toLowerCase() !== courtSurface) return false
+                if (!needle) return true
+                const hay = `${courtTitle(venue)} ${venue.name} ${venue.address ?? ''} ${venueKindLabel(venue.kind)}`.toLowerCase()
+                return hay.includes(needle)
+              })
+              if (shown.length === 0) {
+                return <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
+              }
+              return shown.map((venue) => (
+                <VenueCard
+                  key={venue.id}
+                  venue={venue}
+                  userLat={userCoords.lat}
+                  userLng={userCoords.lng}
+                  viewed={viewedVenues.has(venue.id)}
+                  onClick={() => {
+                    setSelectedVenue(venue)
+                    setViewedVenues((prev) => new Set(prev).add(venue.id))
+                  }}
+                />
+              ))
+            })()}
             {venuesHasMore && (
               <button
                 onClick={() => void loadMoreVenues()}

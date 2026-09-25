@@ -1,8 +1,9 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { formatPlayFormat } from '@/lib/skill'
-import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { ScheduleSections } from '@/components/schedule/ScheduleBlocks'
+import { loadPlayerGames } from '@/lib/player-games'
+import { summarizeSchedule } from '@/lib/schedule'
 
 export default function SchedulePage() {
   return (
@@ -17,46 +18,24 @@ async function ScheduleContent() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const now = new Date().toISOString()
-
-  const { data: createdGames } = await supabase
-    .from('games')
-    .select('id, scheduled_at, format, neighborhood, is_open, creator_id')
-    .eq('creator_id', user.id)
-    .eq('status', 'confirmed')
-    .gte('scheduled_at', now)
-    .order('scheduled_at', { ascending: true })
-
-  const { data: acceptedParticipations } = await supabase
-    .from('game_participants')
-    .select('game_id')
-    .eq('player_id', user.id)
-    .eq('status', 'accepted')
-
-  const acceptedGameIds = (acceptedParticipations ?? []).map((r) => r.game_id as string)
-
-  const { data: invitedGames } = acceptedGameIds.length > 0
-    ? await supabase
-        .from('games')
-        .select('id, scheduled_at, format, neighborhood, is_open, creator_id')
-        .in('id', acceptedGameIds)
-        .neq('creator_id', user.id)
-        .eq('status', 'confirmed')
-        .gte('scheduled_at', now)
-    : { data: [] }
-
-  const upcomingGames = [...(createdGames ?? []), ...(invitedGames ?? [])]
-    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+  const { upcoming, past } = summarizeSchedule(await loadPlayerGames(supabase, user.id))
+  const hasGames = upcoming.length > 0 || past.length > 0
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
-        <div className="max-w-2xl mx-auto">
-          <span className="font-display text-5xl tracking-wide">UPCOMING</span>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <span className="font-display text-5xl tracking-wide">SCHEDULE</span>
+          <Link
+            href="/games/new"
+            className="text-[10px] tracking-[0.16em] uppercase font-medium text-brand-primary hover:underline"
+          >
+            New game
+          </Link>
         </div>
       </div>
 
-      {upcomingGames.length === 0 ? (
+      {!hasGames ? (
         <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
           <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
           <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No games yet</p>
@@ -79,36 +58,12 @@ async function ScheduleContent() {
           </div>
         </div>
       ) : (
-        <div className="max-w-2xl mx-auto">
-          {upcomingGames.map((game) => (
-            <div key={game.id} className="mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4">
-              <div className="flex-shrink-0 w-10 text-center">
-                <p className="font-numbers text-xl leading-none text-brand-primary"><LocalGameDay iso={game.scheduled_at} /></p>
-                <p className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.4)]">
-                  <LocalGameMonth iso={game.scheduled_at} />
-                </p>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-[#1a1a1a]">{formatPlayFormat(game.format)}</p>
-                  {game.is_open && (
-                    <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">Open</span>
-                  )}
-                </div>
-                <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">
-                  <LocalGameTime iso={game.scheduled_at} />{game.neighborhood ? ` · ${game.neighborhood}` : ''}
-                </p>
-              </div>
-              {game.creator_id === user.id && (
-                <Link
-                  href={`/games/${game.id}/edit`}
-                  className="text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.4)] hover:text-brand-primary"
-                >
-                  Edit
-                </Link>
-              )}
-            </div>
-          ))}
+        <div className="max-w-2xl mx-auto pt-2">
+          <ScheduleSections
+            upcoming={upcoming}
+            past={past}
+            editFor={(game, pastGame) => (!pastGame && game.creator_id === user.id ? `/games/${game.id}/edit` : null)}
+          />
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { parseDurationMinutes } from '@/lib/game-time'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -8,6 +9,7 @@ export async function POST(request: Request) {
 
   const body = await request.json() as {
     scheduled_at: string
+    duration_minutes?: number
     format: string
     location_name?: string
     notes?: string
@@ -15,6 +17,7 @@ export async function POST(request: Request) {
   }
 
   const { scheduled_at, format, location_name, notes, is_open } = body
+  const duration_minutes = parseDurationMinutes(body.duration_minutes)
 
   if (!scheduled_at || !format) {
     return NextResponse.json({ error: 'scheduled_at and format are required' }, { status: 400 })
@@ -30,6 +33,7 @@ export async function POST(request: Request) {
       creator_id: user.id,
       format,
       scheduled_at,
+      ...(duration_minutes ? { duration_minutes } : {}),
       neighborhood: location_name ?? null,
       notes: notes ?? null,
       is_open: is_open ?? false,
