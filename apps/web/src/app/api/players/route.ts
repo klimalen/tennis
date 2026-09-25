@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     const page = rows.slice(offset, offset + PAGE_SIZE)
     const hasMore = offset + PAGE_SIZE < rows.length
 
-    return NextResponse.json({ players: page, hasMore })
+    return NextResponse.json({ players: await withFollowing(supabase, page), hasMore })
   }
 
   // Fallback: city name ilike filter (for users without stored coords)
@@ -115,5 +115,24 @@ export async function GET(request: NextRequest) {
   const players = data ?? []
   const hasMore = players.length === PAGE_SIZE
 
-  return NextResponse.json({ players, hasMore })
+  return NextResponse.json({ players: await withFollowing(supabase, players), hasMore })
+}
+
+async function withFollowing<T extends { id: string }>(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  players: T[],
+) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || players.length === 0) {
+    return players.map((player) => ({ ...player, following: false }))
+  }
+
+  const { data } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', user.id)
+    .in('following_id', players.map((player) => player.id))
+
+  const following = new Set((data ?? []).map((row) => row.following_id as string))
+  return players.map((player) => ({ ...player, following: following.has(player.id) }))
 }

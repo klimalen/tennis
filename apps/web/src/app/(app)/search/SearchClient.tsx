@@ -45,6 +45,7 @@ export interface Player {
   bio: string | null
   looking_for: string | null
   availability: unknown
+  following?: boolean
 }
 
 export interface Venue {
@@ -235,11 +236,29 @@ function PlayerCard({
     else if (!pending) onRequest(player.id)
   }
 
+  const [added, setAdded] = useState(Boolean(player.following))
+  const [adding, setAdding] = useState(false)
   const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
 
+  async function handleAdd(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (adding) return
+    const next = !added
+    setAdding(true)
+    setAdded(next)
+    const res = await fetch('/api/follows', {
+      method: next ? 'POST' : 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ following_id: player.id }),
+    })
+    if (!res.ok) setAdded(!next)
+    setAdding(false)
+  }
+
   const actionClass = vivid
-    ? `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
-    : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors border-t border-brand-divider rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+    ? `flex-1 rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
+    : 'flex-1 py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
   const chipClass = vivid
     ? 'px-2.5 py-0.5 rounded-full border border-[#1a1a1a]/10 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]'
     : 'px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]'
@@ -294,24 +313,29 @@ function PlayerCard({
           )}
         </div>
       </div>
-      {pending ? (
-        <div className="px-4 pb-4">
-          <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
-        </div>
-      ) : vivid ? (
-        <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex items-stretch gap-2">
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={adding}
+          className={`flex-shrink-0 inline-flex items-center justify-center rounded-full px-4 text-[10px] tracking-[0.16em] uppercase font-medium border disabled:opacity-50 ${
+            added
+              ? 'border-transparent text-[rgba(26,26,26,0.4)]'
+              : 'border-[#1a1a1a]/15 text-[rgba(26,26,26,0.7)] hover:bg-[#FAF7F2]'
+          }`}
+        >
+          {added ? 'Added' : 'Add'}
+        </button>
+        {pending ? (
+          <div className="flex-1 min-w-0">
+            <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
+          </div>
+        ) : (
           <button onClick={handleRequest} className={actionClass}>
             {btnLabel}
           </button>
-        </div>
-      ) : (
-        <button
-          onClick={handleRequest}
-          className={actionClass}
-        >
-          {btnLabel}
-        </button>
-      )}
+        )}
+      </div>
     </Link>
   )
 }
