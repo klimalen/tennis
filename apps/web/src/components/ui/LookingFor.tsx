@@ -11,7 +11,7 @@ export function LookingFor({ text, dense = false }: { text: string | null | unde
       {dense ? (
         <p className="text-[11px] text-[rgba(26,26,26,0.55)] line-clamp-2 leading-relaxed">{value}</p>
       ) : (
-        <ExpandableText text={value} className="text-sm text-[#497250] font-fraunces italic leading-snug" />
+        <ExpandableText text={value} className="text-sm text-[#497250] italic leading-snug" />
       )}
     </div>
   )

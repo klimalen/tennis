@@ -27,7 +27,7 @@ const config: Config = {
         numbers:  ['var(--font-anton)', 'sans-serif'],
         script:   ['var(--font-fraunces)', 'serif'],
         fraunces: ['var(--font-fraunces)', 'serif'],
-        sans:     ['var(--font-dm-sans)', 'DM Sans', 'sans-serif'],
+        sans:     ['var(--font-sans)', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '16px',

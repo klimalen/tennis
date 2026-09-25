@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,7 @@ import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { FilterChips, ListSearch } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { LookingFor } from '@/components/ui/LookingFor'
+import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -203,12 +203,37 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
 
 // ─── Player card ──────────────────────────────────────────────────────────────
 
-function skillFill(level: number): string {
-  const label = skillLabel(level)
-  if (label === 'Beginner') return 'bg-[#E8E1D7] text-[#1a1a1a]'
-  if (label === 'Advanced') return 'bg-[#E8748A] text-[#1a1a1a]'
-  if (label === 'Competitive') return 'bg-[#D4A017] text-[#1E3A6E]'
-  return 'bg-[#3A8A7A] text-[#F0EBE3]'
+function formatSummary(formats: string[]): string | null {
+  const labels = formats.map((format) => FORMAT_LABELS[format] ?? format).filter(Boolean)
+  if (labels.length === 0) return null
+  if (labels.length === 1) return labels[0] ?? null
+  if (labels.length === 2) return `${labels[0]} & ${labels[1]}`
+  return 'All formats'
+}
+
+function styleSummary(style: string | null): string | null {
+  if (style === 'both') return 'Competitive & recreational'
+  if (style === 'recreational') return 'Recreational'
+  if (style === 'competitive') return 'Competitive'
+  return null
+}
+
+function aboutLine(bio: string | null, lookingFor: string | null): string | null {
+  const parts: string[] = []
+  const bioText = bio?.trim()
+  const looking = lookingFor?.trim()
+  if (bioText) parts.push(bioText)
+  if (looking) parts.push(/^looking for\b/i.test(looking) ? looking : `Looking for ${looking}`)
+  return parts.length > 0 ? parts.join(' ') : null
+}
+
+function FactPill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[#F6F1EA] px-1.5 py-1 text-[12px] leading-none text-[#1a1a1a]">
+      {icon}
+      {children}
+    </span>
+  )
 }
 
 function PlayerCard({
@@ -256,62 +281,53 @@ function PlayerCard({
     setFollowing(false)
   }
 
-  const actionClass = vivid
-    ? `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
-    : 'w-full py-2.5 text-[10px] tracking-[0.2em] uppercase font-medium transition-colors rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
-  const chipClass = vivid
-    ? 'px-2.5 py-0.5 rounded-full border border-[#1a1a1a]/10 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]'
-    : 'px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]'
+  const actionClass = `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium transition-colors ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
+  const skillText = skillLabel(skill)
+  const formats = formatSummary(player.preferred_formats)
+  const style = styleSummary(player.play_style)
+  const about = aboutLine(player.bio, player.looking_for)
+  const showSchedule = hasSlots(normalizeAvailability(player.availability))
+  void vivid
 
   return (
-    <Link href={`/profile/${player.username}`} className={vivid ? 'block rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'block bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
-      <div className="p-4 flex gap-3">
-        <div className={`w-14 h-14 flex-shrink-0 flex items-center justify-center overflow-hidden ${vivid ? 'rounded-full bg-[#E8748A]' : 'bg-brand-surface-md'}`}>
-          {player.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
-          ) : (
-            <span className={`font-display text-lg ${vivid ? 'text-[#1a1a1a]' : 'text-[rgba(26,26,26,0.4)]'}`}>{initials}</span>
-          )}
-        </div>
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div>
-            <p className={vivid ? 'font-display text-3xl tracking-wide leading-none text-[#1a1a1a]' : 'font-medium text-[14px] text-[#1a1a1a] leading-tight'}>{vivid ? player.full_name.toUpperCase() : player.full_name}</p>
-            <p className={vivid ? 'font-fraunces italic text-sm text-[#85648F] mt-0.5' : 'text-[11px] text-[rgba(26,26,26,0.4)]'}>@{player.username}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {skill != null && (
-              <span className={vivid ? `px-2.5 py-0.5 rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold ${skillFill(skill)}` : 'px-2 py-0.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[9px] tracking-[0.12em] uppercase font-semibold'}>
-                {skillLabel(skill)}
-              </span>
+    <Link href={`/profile/${player.username}`} className="block rounded-[28px] bg-white active:bg-[#F4F1EC]">
+      <div className="p-4 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-[#E8748A] flex items-center justify-center overflow-hidden">
+            {player.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
             )}
-            {player.preferred_formats.map((f) => (
-              <span key={f} className={chipClass}>
-                {FORMAT_LABELS[f] ?? f}
-              </span>
-            ))}
-            {player.play_style === 'both' ? (
-              <>
-                <span className={chipClass}>Recreational</span>
-                <span className={chipClass}>Competitive</span>
-              </>
-            ) : player.play_style ? (
-              <span className={chipClass}>
-                {player.play_style === 'recreational' ? 'Recreational' : 'Competitive'}
-              </span>
-            ) : null}
-            <AvailabilityButton value={player.availability} />
           </div>
-          {player.bio && (
-            <p className={vivid ? 'font-fraunces italic text-sm text-[#497250] line-clamp-2 leading-snug' : 'text-[11px] text-[rgba(26,26,26,0.5)] line-clamp-2 leading-relaxed'}>
-              {player.bio}
-            </p>
-          )}
-          <LookingFor text={player.looking_for} dense={!vivid} />
-          {player.total_matches > 0 && (
-            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">{player.total_matches} matches</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[28px] leading-[0.95] tracking-wide text-[#1a1a1a] line-clamp-2">{player.full_name.toUpperCase()}</p>
+            {skillText && (
+              <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1 truncate">{skillText}</p>
+            )}
+          </div>
+          {showSchedule && (
+            <AvailabilityButton
+              value={player.availability}
+              iconSize={16}
+              className="h-9 w-9 shrink-0 rounded-full bg-[#F6F1EA] flex items-center justify-center text-[#1a1a1a]"
+            />
           )}
         </div>
+        {(formats || style) && (
+          <div data-player-tags className="mt-3 flex flex-nowrap items-center gap-1">
+            {formats && (
+              <FactPill icon={<Users size={13} strokeWidth={1.75} />}>{formats}</FactPill>
+            )}
+            {style && (
+              <FactPill icon={<Trophy size={13} strokeWidth={1.75} />}>{style}</FactPill>
+            )}
+          </div>
+        )}
+        {about && (
+          <p className="mt-3 text-[15px] leading-snug text-[rgba(26,26,26,0.62)] line-clamp-2">{about}</p>
+        )}
       </div>
       <div className="px-4 pb-4">
         {pending ? (
@@ -326,7 +342,7 @@ function PlayerCard({
             type="button"
             onClick={handleFollow}
             disabled={following}
-            className="mt-3 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
+            className="mt-2.5 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
           >
             Follow
           </button>
@@ -740,16 +756,19 @@ function OpenGameSheet({ game, userId, joined, onJoin, onClose }: { game: OpenGa
 
 function PlayerCardSkeleton() {
   return (
-    <div className="bg-white rounded-[28px] p-4 flex gap-3 animate-pulse">
-      <div className="w-14 h-14 bg-brand-surface-md flex-shrink-0" />
-      <div className="flex-1 space-y-2 py-1">
-        <div className="h-3.5 bg-brand-surface-md rounded w-1/3" />
-        <div className="h-3 bg-brand-surface rounded w-1/2" />
-        <div className="flex gap-2 pt-1">
-          <div className="h-5 w-16 bg-brand-surface rounded" />
-          <div className="h-5 w-20 bg-brand-surface rounded" />
+    <div className="bg-white rounded-[28px] p-4 animate-pulse space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-[72px] h-[72px] rounded-full bg-brand-surface-md flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-6 bg-brand-surface-md rounded w-2/3" />
+          <div className="h-3 bg-brand-surface rounded w-1/3" />
         </div>
       </div>
+      <div className="flex gap-2">
+        <div className="h-8 w-24 rounded-full bg-brand-surface" />
+        <div className="h-8 w-36 rounded-full bg-brand-surface" />
+      </div>
+      <div className="h-11 rounded-full bg-brand-surface" />
     </div>
   )
 }
@@ -765,7 +784,19 @@ function GameCardSkeleton() {
 }
 
 function CourtCardSkeleton() {
-  return <PlayerCardSkeleton />
+  return (
+    <div className="bg-white rounded-[28px] p-4 flex gap-3 animate-pulse">
+      <div className="w-14 h-14 bg-brand-surface-md flex-shrink-0" />
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-3.5 bg-brand-surface-md rounded w-1/3" />
+        <div className="h-3 bg-brand-surface rounded w-1/2" />
+        <div className="flex gap-2 pt-1">
+          <div className="h-5 w-16 bg-brand-surface rounded" />
+          <div className="h-5 w-20 bg-brand-surface rounded" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ─── Discovery section wrapper ─────────────────────────────────────────────────
