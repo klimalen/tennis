@@ -12,6 +12,7 @@ import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { InstallHint } from '@/components/pwa/InstallHint'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1325,6 +1326,8 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {sheets}
 
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+          <InstallHint />
+
           {!user && (
             <div className="rounded-[28px] bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
               <div>
