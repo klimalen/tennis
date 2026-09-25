@@ -5,9 +5,11 @@ import { usePathname } from 'next/navigation'
 import { NAV_ITEMS } from './nav-config'
 import { useNavBadges } from './useNavBadges'
 import { CreateSheet } from './CreateSheet'
+import { useTabBarHidden } from './TabBarVisibility'
 
 export function BottomTabBar() {
   const pathname = usePathname()
+  const { hidden } = useTabBarHidden()
   const badges = useNavBadges()
 
   const leftItems = NAV_ITEMS.slice(0, 2)
@@ -20,6 +22,7 @@ export function BottomTabBar() {
   }
 
   const hideBar =
+    hidden ||
     pathname === '/games/new' ||
     pathname === '/feed/new' ||
     pathname === '/settings' ||
