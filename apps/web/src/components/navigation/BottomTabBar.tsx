@@ -52,14 +52,31 @@ export function BottomTabBar() {
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
     >
       <div className="pointer-events-auto mx-auto mb-2 w-[min(100%-1.25rem,32rem)]">
-        <div className="flex h-16 items-center rounded-full bg-white px-1.5 shadow-[0_8px_24px_rgba(26,26,26,0.12)]">
-          {leftItems.map(itemLink)}
-          <div className="flex flex-1 justify-center">
-            <div className="-mt-5">
-              <CreateSheet variant="fab" />
-            </div>
+        <div className="relative">
+          <div className="flex h-[62px] [filter:drop-shadow(0_8px_18px_rgba(26,26,26,0.12))]">
+            <div className="min-w-0 flex-1 rounded-l-full bg-white" />
+            <svg
+              width="112"
+              height="62"
+              viewBox="0 0 112 62"
+              className="-mx-px block shrink-0"
+              aria-hidden="true"
+            >
+              <path
+                fill="white"
+                d="M0 0H18C26 0 20 41 56 41C92 41 86 0 94 0H112V62H0Z"
+              />
+            </svg>
+            <div className="min-w-0 flex-1 rounded-r-full bg-white" />
           </div>
-          {rightItems.map(itemLink)}
+          <div className="absolute inset-0 flex items-center">
+            <div className="flex min-w-0 flex-1">{leftItems.map(itemLink)}</div>
+            <div className="w-[112px] shrink-0" aria-hidden="true" />
+            <div className="flex min-w-0 flex-1">{rightItems.map(itemLink)}</div>
+          </div>
+          <div className="absolute left-1/2 top-[-14px] -ml-6">
+            <CreateSheet variant="fab" />
+          </div>
         </div>
       </div>
     </nav>

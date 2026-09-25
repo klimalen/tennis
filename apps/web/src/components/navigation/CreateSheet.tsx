@@ -55,7 +55,7 @@ export function CreateSheet({ variant, direct }: Props) {
       {variant === 'fab' ? (
         <button
           onClick={handleTrigger}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8748A] text-[#1a1a1a] transition-transform active:scale-95"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E8748A] text-[#1a1a1a] shadow-[0_2px_6px_rgba(26,26,26,0.16)] transition-transform active:scale-95"
           aria-label="Create"
         >
           <Plus size={22} strokeWidth={2.4} />
