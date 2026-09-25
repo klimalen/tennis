@@ -11,7 +11,15 @@ import {
   normalizeAvailability,
 } from '@/lib/availability'
 
-export function AvailabilityButton({ value }: { value: unknown }) {
+export function AvailabilityButton({
+  value,
+  className,
+  iconSize = 13,
+}: {
+  value: unknown
+  className?: string
+  iconSize?: number
+}) {
   const availability = normalizeAvailability(value)
   const days = daysWithSlots(availability)
   const [open, setOpen] = useState(false)
@@ -62,9 +70,9 @@ export function AvailabilityButton({ value }: { value: unknown }) {
         aria-label="When they usually play"
         aria-expanded={open}
         onClick={toggle}
-        className="w-7 h-7 flex-shrink-0 rounded-full bg-brand-field border border-[#1a1a1a]/30 flex items-center justify-center text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors"
+        className={className ?? 'w-7 h-7 flex-shrink-0 rounded-full bg-brand-field border border-[#1a1a1a]/30 flex items-center justify-center text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors'}
       >
-        <CalendarDays size={13} />
+        <CalendarDays size={iconSize} />
       </button>
       {open && createPortal(
         <div
