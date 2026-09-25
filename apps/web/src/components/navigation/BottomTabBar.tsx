@@ -23,6 +23,7 @@ export function BottomTabBar() {
     pathname === '/games/new' ||
     pathname === '/feed/new' ||
     pathname === '/settings' ||
+    pathname === '/me/edit' ||
     (pathname.startsWith('/chats/') && pathname.length > '/chats/'.length)
 
   if (hideBar) return null

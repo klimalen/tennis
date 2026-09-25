@@ -110,7 +110,12 @@ export default function EditProfilePage() {
   const cropRef = useRef<SquarePhotoCropHandle>(null)
 
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [applying, setApplying] = useState(false)
+  const [cropError, setCropError] = useState('')
+  const [pendingAvatar, setPendingAvatar] = useState<Blob | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const previewRef = useRef<string | null>(null)
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
   const [error, setError] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
@@ -189,6 +194,32 @@ export default function EditProfilePage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  useEffect(() => {
+    return () => {
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    }
+  }, [])
+
+  async function handleApply() {
+    if (applying) return
+    setApplying(true)
+    setCropError('')
+    try {
+      const square = await cropRef.current?.exportSquare()
+      if (!square) throw new Error('Could not prepare the photo. Try again.')
+      const url = URL.createObjectURL(square)
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+      previewRef.current = url
+      setPreviewUrl(url)
+      setPendingAvatar(square)
+      clearAvatarFile()
+    } catch (err: unknown) {
+      setCropError(err instanceof Error ? err.message : 'Could not prepare the photo. Try again.')
+    } finally {
+      setApplying(false)
+    }
+  }
+
   function toggleArr<T>(arr: T[], val: T): T[] {
     return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]
   }
@@ -196,16 +227,14 @@ export default function EditProfilePage() {
   const canSave = d.fullName.trim().length > 0 && d.username.trim().length >= 3 && usernameStatus !== 'taken'
 
   async function handleSave() {
-    if (!canSave || !userId) return
-    setSaving(true)
+    if (!canSave || !userId || saveStatus === 'saving') return
+    setSaveStatus('saving')
     setError('')
     try {
       let avatarUrl = d.avatarUrl
-      if (d.avatarFile) {
-        const square = await cropRef.current?.exportSquare()
-        if (!square) throw new Error('Could not prepare the photo. Try again.')
+      if (pendingAvatar) {
         const path = `${userId}/avatar.jpg`
-        const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, square, {
+        const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, pendingAvatar, {
           upsert: true,
           contentType: 'image/jpeg',
         })
@@ -236,15 +265,15 @@ export default function EditProfilePage() {
       }).eq('id', userId)
 
       if (updateErr) throw updateErr
-      router.push('/me')
+      setSaveStatus('saved')
+      window.setTimeout(() => router.push('/me'), 1000)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save')
-    } finally {
-      setSaving(false)
+      setSaveStatus('error')
     }
   }
 
-  const displayAvatar = d.avatarUrl
+  const displayAvatar = previewUrl || d.avatarUrl
 
   if (loading) {
     return (
@@ -254,8 +283,35 @@ export default function EditProfilePage() {
     )
   }
 
+  if (d.avatarFile) {
+    return (
+      <div className="min-h-screen bg-brand-bg">
+        <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <button onClick={clearAvatarFile} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+              <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
+            </button>
+            <span className="font-display text-3xl tracking-wide flex-1">PHOTO</span>
+            <button
+              type="button"
+              onClick={() => void handleApply()}
+              disabled={applying}
+              className="px-4 py-1.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-40"
+            >
+              {applying ? <Loader2 size={12} className="animate-spin" /> : 'Apply'}
+            </button>
+          </div>
+        </div>
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <SquarePhotoCrop ref={cropRef} file={d.avatarFile} shape="circle" onRemove={clearAvatarFile} />
+          {cropError && <p className="text-sm text-red-600 mt-3">{cropError}</p>}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen pb-32 md:pb-12 bg-brand-bg">
+    <div className="min-h-screen pb-8 bg-brand-bg">
       {/* Header */}
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
@@ -264,17 +320,16 @@ export default function EditProfilePage() {
           </button>
           <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
           <button
-            onClick={handleSave}
-            disabled={saving || !canSave}
+            onClick={() => void handleSave()}
+            disabled={saveStatus === 'saving' || !canSave}
             className="px-4 py-1.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-40"
           >
-            {saving ? <Loader2 size={12} className="animate-spin" /> : 'Save'}
+            Save
           </button>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-7">
-        {error && <p className="text-sm text-red-600">{error}</p>}
 
         {/* ── ABOUT ── */}
         <section className="space-y-4">
@@ -308,9 +363,6 @@ export default function EditProfilePage() {
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
-        {d.avatarFile && (
-          <SquarePhotoCrop ref={cropRef} file={d.avatarFile} shape="circle" onRemove={clearAvatarFile} />
-        )}
 
         {/* Name */}
         <div>
@@ -492,6 +544,57 @@ export default function EditProfilePage() {
           )}
         </div>
         </section>
+      </div>
+      {saveStatus && (
+        <SaveNotice
+          status={saveStatus}
+          message={error}
+          onClose={() => setSaveStatus(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function SaveNotice({
+  status,
+  message,
+  onClose,
+}: {
+  status: 'saving' | 'saved' | 'error'
+  message: string
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-black/25">
+      <div className="w-full max-w-[220px] rounded-[24px] bg-white px-5 py-6 text-center shadow-[0_12px_40px_rgba(26,26,26,0.16)]">
+        {status === 'saving' && (
+          <>
+            <Loader2 size={22} className="mx-auto animate-spin text-[#E8748A]" />
+            <p className="mt-3 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a]">Saving</p>
+          </>
+        )}
+        {status === 'saved' && (
+          <>
+            <div className="mx-auto w-8 h-8 rounded-full bg-[#3A8A7A] flex items-center justify-center">
+              <Check size={16} className="text-[#F0EBE3]" />
+            </div>
+            <p className="mt-3 text-[10px] tracking-[0.18em] uppercase font-medium text-[#1a1a1a]">Saved</p>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <p className="text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a]">Something went wrong</p>
+            {message && <p className="mt-2 text-xs text-[rgba(26,26,26,0.55)]">{message}</p>}
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-4 px-4 py-1.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.16em] uppercase font-medium"
+            >
+              Close
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
