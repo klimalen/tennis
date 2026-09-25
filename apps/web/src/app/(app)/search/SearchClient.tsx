@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Users, Trophy } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -207,16 +207,20 @@ function SurfaceBadge({ surface }: { surface: string | null }) {
 function formatSummary(formats: string[]): string | null {
   const labels = formats.map((format) => FORMAT_LABELS[format] ?? format).filter(Boolean)
   if (labels.length === 0) return null
-  if (labels.length === 1) return labels[0] ?? null
-  if (labels.length === 2) return `${labels[0]} & ${labels[1]}`
-  return 'All formats'
+  return labels.join(', ')
 }
 
 function styleSummary(style: string | null): string | null {
-  if (style === 'both') return 'Competitive & recreational'
+  if (style === 'both') return 'Competitive, recreational'
   if (style === 'recreational') return 'Recreational'
   if (style === 'competitive') return 'Competitive'
   return null
+}
+
+function skillDetail(level: number | null | undefined): string | null {
+  const label = skillLabel(level)
+  if (!label || level == null || Number.isNaN(level)) return null
+  return `${label} · NTRP ${Number(level).toFixed(1)}`
 }
 
 function aboutLine(bio: string | null, lookingFor: string | null): string | null {
@@ -226,15 +230,6 @@ function aboutLine(bio: string | null, lookingFor: string | null): string | null
   if (bioText) parts.push(bioText)
   if (looking) parts.push(/^looking for\b/i.test(looking) ? looking : `Looking for ${looking}`)
   return parts.length > 0 ? parts.join(' ') : null
-}
-
-function FactPill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[#F6F1EA] px-1.5 py-1 text-[12px] leading-none text-[#1a1a1a]">
-      {icon}
-      {children}
-    </span>
-  )
 }
 
 function PlayerCard({
@@ -283,17 +278,23 @@ function PlayerCard({
   }
 
   const actionClass = `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium transition-colors ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
-  const skillText = skillLabel(skill)
-  const formats = formatSummary(player.preferred_formats)
-  const style = styleSummary(player.play_style)
+  const level = skillDetail(skill)
+  const meta = [formatSummary(player.preferred_formats), styleSummary(player.play_style)].filter(Boolean).join(' · ')
   const about = aboutLine(player.bio, player.looking_for)
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
   void vivid
 
   return (
-    <Link href={`/profile/${player.username}`} className="block rounded-[28px] bg-white active:bg-[#F4F1EC]">
+    <Link href={`/profile/${player.username}`} className="relative block rounded-[28px] bg-white active:bg-[#F4F1EC]">
+      {showSchedule && (
+        <AvailabilityButton
+          value={player.availability}
+          iconSize={16}
+          className="absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-[20px] bg-[#F6F1EA] text-[#1a1a1a]"
+        />
+      )}
       <div className="p-4 pb-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-[#E8748A] flex items-center justify-center overflow-hidden">
             {player.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -302,32 +303,18 @@ function PlayerCard({
               <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-[28px] leading-[0.95] tracking-wide text-[#1a1a1a] line-clamp-2">{player.full_name.toUpperCase()}</p>
-            {skillText && (
-              <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1 truncate">{skillText}</p>
+          <div className={`min-w-0 flex-1 ${showSchedule ? 'pr-12' : ''}`}>
+            <p className="font-display text-2xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2">{player.full_name}</p>
+            {level && (
+              <p className="mt-1.5 text-[11px] font-medium leading-none tracking-[0.14em] uppercase text-[#D4A017]">{level}</p>
+            )}
+            {meta && (
+              <p className="mt-1.5 text-[10px] leading-snug tracking-[0.12em] uppercase text-[rgba(26,26,26,0.45)]">{meta}</p>
             )}
           </div>
-          {showSchedule && (
-            <AvailabilityButton
-              value={player.availability}
-              iconSize={16}
-              className="h-9 w-9 shrink-0 rounded-full bg-[#F6F1EA] flex items-center justify-center text-[#1a1a1a]"
-            />
-          )}
         </div>
-        {(formats || style) && (
-          <div data-player-tags className="mt-3 flex flex-nowrap items-center gap-1">
-            {formats && (
-              <FactPill icon={<Users size={13} strokeWidth={1.75} />}>{formats}</FactPill>
-            )}
-            {style && (
-              <FactPill icon={<Trophy size={13} strokeWidth={1.75} />}>{style}</FactPill>
-            )}
-          </div>
-        )}
         {about && (
-          <p className="font-copy mt-3 text-[15px] leading-snug text-[rgba(26,26,26,0.62)] line-clamp-2">{about}</p>
+          <p className="font-copy mt-3 text-[13px] leading-snug text-[rgba(26,26,26,0.55)] line-clamp-2">{about}</p>
         )}
       </div>
       <div className="px-4 pb-4">
@@ -664,14 +651,11 @@ function PlayerCardSkeleton() {
     <div className="bg-white rounded-[28px] p-4 animate-pulse space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-[72px] h-[72px] rounded-full bg-brand-surface-md flex-shrink-0" />
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-2 pt-1 pr-12">
           <div className="h-6 bg-brand-surface-md rounded w-2/3" />
-          <div className="h-3 bg-brand-surface rounded w-1/3" />
+          <div className="h-3 bg-[#D4A017]/30 rounded w-1/2" />
+          <div className="h-3 bg-brand-surface rounded w-4/5" />
         </div>
-      </div>
-      <div className="flex gap-2">
-        <div className="h-8 w-24 rounded-full bg-brand-surface" />
-        <div className="h-8 w-36 rounded-full bg-brand-surface" />
       </div>
       <div className="h-11 rounded-full bg-brand-surface" />
     </div>
