@@ -185,37 +185,18 @@ function NotificationCard({
       )}
 
       {item.kind === 'follow' && actor && (
-        <div className="flex gap-2 mt-3">
-          <button
-            onClick={() => void handleFollowBack()}
-            disabled={followLoading || followingBack}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors disabled:opacity-60 ${
-              followingBack
-                ? 'border border-brand-primary text-brand-primary bg-white'
-                : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
-            }`}
-          >
-            {followingBack ? <UserCheck size={12} /> : <UserPlus size={12} />}
-            {followingBack ? 'Following' : 'Follow back'}
-          </button>
-          <Link
-            href={`/profile/${actor.username}`}
-            className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors text-center"
-          >
-            View profile
-          </Link>
-        </div>
-      )}
-
-      {item.kind !== 'follow' && item.kind !== 'request' && actor && (
-        <div className="mt-3">
-          <Link
-            href={`/profile/${actor.username}`}
-            className="block w-full py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors text-center"
-          >
-            View profile
-          </Link>
-        </div>
+        <button
+          onClick={() => void handleFollowBack()}
+          disabled={followLoading || followingBack}
+          className={`mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors disabled:opacity-60 ${
+            followingBack
+              ? 'border border-brand-primary text-brand-primary bg-white'
+              : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+          }`}
+        >
+          {followingBack ? <UserCheck size={12} /> : <UserPlus size={12} />}
+          {followingBack ? 'Following' : 'Follow back'}
+        </button>
       )}
     </div>
   )
