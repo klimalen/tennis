@@ -232,14 +232,14 @@ export default async function PlayerProfilePage({
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
               </Link>
-              <div className="flex flex-col items-center gap-0.5 min-w-0 text-center">
+              <Link href={`/profile/${profile.username}/followers`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
-              </div>
-              <div className="flex flex-col items-center gap-0.5 min-w-0 text-center">
+              </Link>
+              <Link href={`/profile/${profile.username}/following`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followingCount ?? 0)}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Following</span>
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -294,23 +294,20 @@ export default async function PlayerProfilePage({
           )}
 
           {viewer && viewer.id !== profile.id && (
-            <div className="mt-4 space-y-3">
+            <div className="mt-4">
               <ProposeMatchButton
                 receiverId={profile.id}
                 receiverName={profile.full_name}
                 existingStatus={existingRequestStatus}
-              />
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <FollowButton
-                    followingId={profile.id}
-                    initialFollowing={viewerIsFollowing}
-                  />
-                </div>
+              >
+                <FollowButton
+                  followingId={profile.id}
+                  initialFollowing={viewerIsFollowing}
+                />
                 {isMutual && (
                   <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
                 )}
-              </div>
+              </ProposeMatchButton>
             </div>
           )}
         </div>

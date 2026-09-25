@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 
-export function PlayRequestSentButton({ onCancel }: { onCancel: () => void }) {
+export function PlayRequestSentButton({
+  onCancel,
+  compact = false,
+}: {
+  onCancel: () => void
+  compact?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -25,15 +31,17 @@ export function PlayRequestSentButton({ onCancel }: { onCancel: () => void }) {
           e.stopPropagation()
           setOpen((v) => !v)
         }}
-        className="w-full justify-center flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
+        className={compact
+          ? 'w-full h-11 min-w-0 justify-center flex items-center gap-1 px-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.12em] uppercase font-medium hover:bg-[#E8406A] transition-colors'
+          : 'w-full justify-center flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors'}
       >
-        <Check size={13} />
-        Play request sent
-        <ChevronDown size={10} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        <Check size={13} className="shrink-0" />
+        <span className={compact ? 'truncate' : undefined}>Play request sent</span>
+        <ChevronDown size={10} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute top-full mt-1 right-0 left-0 bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 overflow-hidden">
+        <div className={`absolute top-full mt-1 bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 overflow-hidden ${compact ? 'right-0 w-max' : 'right-0 left-0'}`}>
           <button
             type="button"
             onClick={(e) => {
