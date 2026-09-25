@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, ChartColumnIncreasing, Users, Trophy } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Users, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -206,12 +206,12 @@ function formatSummary(formats: string[]): string | null {
   const labels = formats.map((format) => FORMAT_LABELS[format] ?? format).filter(Boolean)
   if (labels.length === 0) return null
   if (labels.length === 1) return labels[0] ?? null
-  if (labels.length > 2) return 'All formats'
-  return `${labels[0]} & ${labels[1]}`
+  if (labels.length === 2) return `${labels[0]} & ${labels[1]}`
+  return 'All formats'
 }
 
 function styleSummary(style: string | null): string | null {
-  if (style === 'both') return 'Both'
+  if (style === 'both') return 'Competitive & recreational'
   if (style === 'recreational') return 'Recreational'
   if (style === 'competitive') return 'Competitive'
   return null
@@ -302,7 +302,9 @@ function PlayerCard({
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-display text-[28px] leading-[0.95] tracking-wide text-[#1a1a1a] line-clamp-2">{player.full_name.toUpperCase()}</p>
-            <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)] mt-1 truncate">@{player.username}</p>
+            {skillText && (
+              <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1 truncate">{skillText}</p>
+            )}
           </div>
           {showSchedule && (
             <AvailabilityButton
@@ -312,11 +314,8 @@ function PlayerCard({
             />
           )}
         </div>
-        {(skillText || formats || style) && (
+        {(formats || style) && (
           <div data-player-tags className="mt-3 flex flex-nowrap items-center gap-1">
-            {skillText && (
-              <FactPill icon={<ChartColumnIncreasing size={13} strokeWidth={1.75} />}>{skillText}</FactPill>
-            )}
             {formats && (
               <FactPill icon={<Users size={13} strokeWidth={1.75} />}>{formats}</FactPill>
             )}
