@@ -218,7 +218,7 @@ async function ProfileContent() {
         </div>
 
         <div>
-          <div className="px-1 pb-3 flex items-center gap-2">
+          <div className="px-1 pt-2 pb-3 flex items-center gap-2">
             <span className="text-brand-accent font-display text-lg leading-none">✦</span>
             <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Posts</span>
             <div className="flex-1 h-px bg-brand-divider" />
