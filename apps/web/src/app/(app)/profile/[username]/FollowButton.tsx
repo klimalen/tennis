@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, UserPlus } from 'lucide-react'
+import { Check, UserPlus } from 'lucide-react'
 
 interface Props {
   followingId: string
   initialFollowing: boolean
 }
+
+const iconButton =
+  'h-11 rounded-full flex flex-col items-center justify-center gap-0.5 flex-shrink-0 transition-colors disabled:opacity-50'
 
 export function FollowButton({ followingId, initialFollowing }: Props) {
   const [following, setFollowing] = useState(initialFollowing)
@@ -55,31 +58,35 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
   if (!following) {
     return (
       <button
+        type="button"
         onClick={handleFollow}
         disabled={loading}
-        className="w-full justify-center flex items-center gap-1.5 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/40 text-[10px] tracking-[0.15em] uppercase font-medium text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50"
+        aria-label="Follow"
+        className={`${iconButton} px-3 bg-brand-field border border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60`}
       >
-        <UserPlus size={13} />
-        Follow
+        <UserPlus size={14} />
+        <span className="text-[8px] tracking-[0.12em] uppercase leading-none">Follow</span>
       </button>
     )
   }
 
   return (
-    <div ref={menuRef} className="relative w-full">
+    <div ref={menuRef} className="relative flex-shrink-0">
       <button
+        type="button"
         onClick={() => setShowMenu((v) => !v)}
         disabled={loading}
-        className="w-full justify-center flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50"
+        aria-label="Following"
+        aria-expanded={showMenu}
+        className={`${iconButton} w-11 bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]`}
       >
-        <Check size={13} />
-        Following
-        <ChevronDown size={10} className={`transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+        <Check size={14} />
       </button>
 
       {showMenu && (
-        <div className="absolute top-full mt-1 right-0 bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 min-w-full overflow-hidden">
+        <div className="absolute top-full mt-1 right-0 w-max bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 overflow-hidden">
           <button
+            type="button"
             onClick={handleUnfollow}
             className="w-full px-4 py-2.5 text-left text-[10px] tracking-[0.15em] uppercase font-medium text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"
           >
