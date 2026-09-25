@@ -9,7 +9,7 @@ import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } f
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
-import { FilterChips, ListSearch } from '@/components/ui/ListSearch'
+import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -586,6 +586,18 @@ function ParticipantAvatars({ participants, max = 3 }: { participants: OpenGameP
 
 const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
 
+const GAME_FILTERS = [
+  { id: 'spots', label: 'Open spots' },
+  { id: 'singles', label: 'Singles' },
+  { id: 'doubles', label: 'Doubles' },
+  { id: 'mixed_doubles', label: 'Mixed' },
+]
+
+function openGameSpotsLeft(game: OpenGame) {
+  const taken = game.participants.filter((participant) => participant.status === 'accepted' || participant.status === 'invited').length
+  return game.max_players - taken
+}
+
 // ─── Open game card ───────────────────────────────────────────────────────────
 
 function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
@@ -885,7 +897,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [players, setPlayers] = useState<Player[]>([])
   const [playerQuery, setPlayerQuery] = useState('')
   const [debouncedPlayerQuery, setDebouncedPlayerQuery] = useState('')
-  const [playerSkill, setPlayerSkill] = useState<string | null>(null)
+  const [playerSkills, setPlayerSkills] = useState<string[]>([])
   const playerFilters = useRef({ q: '', skill: '' })
   const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [loadingMorePlayers, setLoadingMorePlayers] = useState(false)
@@ -901,7 +913,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     return () => clearTimeout(timer)
   }, [playerQuery])
 
-  playerFilters.current = { q: debouncedPlayerQuery, skill: playerSkill ?? '' }
+  playerFilters.current = { q: debouncedPlayerQuery, skill: playerSkills.join(',') }
 
   // Geocode user city once so the full list sorts by distance, same as the preview.
   useEffect(() => {
@@ -970,14 +982,14 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     if (view !== 'players' || !userCityName || !geocodeDone) return
     const key = `${userGeoCoords
       ? `${userGeoCoords.lat.toFixed(4)},${userGeoCoords.lng.toFixed(4)}`
-      : 'city'}|${debouncedPlayerQuery}|${playerSkill ?? ''}`
+      : 'city'}|${debouncedPlayerQuery}|${playerSkills.join(',')}`
     if (playersQueryKey.current === key) return
     playersQueryKey.current = key
     setPlayersOffset(0)
     setHasMorePlayers(false)
     void fetchPlayers(0, false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, userCityName, userGeoCoords, geocodeDone, debouncedPlayerQuery, playerSkill])
+  }, [view, userCityName, userGeoCoords, geocodeDone, debouncedPlayerQuery, playerSkills])
 
   // IntersectionObserver — load next page when sentinel is visible
   useEffect(() => {
@@ -996,9 +1008,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Full games view ─────────────────────────────────────────────────────────
   const [openGames, setOpenGames] = useState<OpenGame[]>([])
   const [gameQuery, setGameQuery] = useState('')
+  const [gameFilters, setGameFilters] = useState<string[]>([])
   const [loadingOpenGames, setLoadingOpenGames] = useState(false)
   const [courtQuery, setCourtQuery] = useState('')
-  const [courtSurface, setCourtSurface] = useState<string | null>(null)
+  const [courtSurfaces, setCourtSurfaces] = useState<string[]>([])
 
   function loadGames() {
     if (!userCityName) return
@@ -1124,7 +1137,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     }
   }
 
-  const courtFilterActive = courtQuery.trim().length > 0 || courtSurface !== null
+  const courtFilterActive = courtQuery.trim().length > 0 || courtSurfaces.length > 0
   useEffect(() => {
     if (view !== 'courts' || !courtFilterActive || !venuesHasMore || venuePageFailed) return
     if (loadingVenues || loadingMoreVenues || !currentBbox) return
@@ -1419,10 +1432,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           {userCityName && (
             <>
               <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or city" />
-              <FilterChips
+              <MultiFilterChips
                 options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
-                value={playerSkill}
-                onChange={setPlayerSkill}
+                value={playerSkills}
+                onChange={setPlayerSkills}
               />
             </>
           )}
@@ -1433,10 +1446,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           ) : players.length === 0 ? (
             <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">
-                {debouncedPlayerQuery || playerSkill ? 'No matches' : 'No players found'}
+                {debouncedPlayerQuery || playerSkills.length > 0 ? 'No matches' : 'No players found'}
               </p>
               <p className="text-sm text-[rgba(26,26,26,0.5)]">
-                {debouncedPlayerQuery || playerSkill ? 'Try another name or level' : `No players in ${userCityName} yet`}
+                {debouncedPlayerQuery || playerSkills.length > 0 ? 'Try another name or level' : `No players in ${userCityName} yet`}
               </p>
             </div>
           ) : (
@@ -1485,7 +1498,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
           {userCityName && openGames.length > 0 && (
-            <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
+            <>
+              <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
+              <MultiFilterChips options={GAME_FILTERS} value={gameFilters} onChange={setGameFilters} />
+            </>
           )}
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
@@ -1504,12 +1520,14 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             <>
               {(() => {
                 const needle = gameQuery.trim().toLowerCase()
-                const shown = needle
-                  ? openGames.filter((game) => {
-                      const hay = `${game.neighborhood ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
-                      return hay.includes(needle)
-                    })
-                  : openGames
+                const formats = gameFilters.filter((id) => id !== 'spots')
+                const shown = openGames.filter((game) => {
+                  if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
+                  if (formats.length > 0 && !formats.includes(game.format)) return false
+                  if (!needle) return true
+                  const hay = `${game.neighborhood ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
+                  return hay.includes(needle)
+                })
                 if (shown.length === 0) {
                   return <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
                 }
@@ -1616,13 +1634,13 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {!loadingVenues && !locating && userCoords && venues.length > 0 && (
           <>
             <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
-            <FilterChips
+            <MultiFilterChips
               options={Array.from(new Set(venues.map((venue) => venue.surface).filter((surface): surface is string => !!surface))).map((surface) => ({
                 id: surface.toLowerCase(),
                 label: surfaceLabel(surface),
               }))}
-              value={courtSurface}
-              onChange={setCourtSurface}
+              value={courtSurfaces}
+              onChange={setCourtSurfaces}
             />
             {cityLabel && (
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
@@ -1631,9 +1649,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             )}
             {(() => {
               const needle = courtQuery.trim().toLowerCase()
-              const filterActive = needle.length > 0 || courtSurface !== null
+              const filterActive = needle.length > 0 || courtSurfaces.length > 0
               const shown = venues.filter((venue) => {
-                if (courtSurface && (venue.surface ?? '').toLowerCase() !== courtSurface) return false
+                if (courtSurfaces.length > 0 && !courtSurfaces.includes((venue.surface ?? '').toLowerCase())) return false
                 if (!needle) return true
                 const hay = `${courtTitle(venue)} ${venue.name} ${venue.address ?? ''} ${venueKindLabel(venue.kind)}`.toLowerCase()
                 return hay.includes(needle)
