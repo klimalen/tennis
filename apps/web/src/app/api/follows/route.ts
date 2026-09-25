@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 
 // POST /api/follows  { following_id }
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     .from('follows')
     .upsert({ follower_id: user.id, following_id }, { onConflict: 'follower_id,following_id', ignoreDuplicates: true })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not update the follow', error)
   return NextResponse.json({ ok: true })
 }
 
@@ -36,6 +37,6 @@ export async function DELETE(request: NextRequest) {
     .eq('follower_id', user.id)
     .eq('following_id', following_id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not update the follow', error)
   return NextResponse.json({ ok: true })
 }

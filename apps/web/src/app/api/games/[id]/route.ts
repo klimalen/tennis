@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { parseDurationMinutes } from '@/lib/game-time'
 import { NextResponse } from 'next/server'
 
@@ -29,24 +30,31 @@ export async function PATCH(
     .single()
 
   if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (current.creator_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const canChangeVisibility = current.creator_id === user.id && typeof body.is_open === 'boolean'
+  const canChangeVisibility = typeof body.is_open === 'boolean'
   const opening = canChangeVisibility && body.is_open === true && current.is_open === false
   const closing = canChangeVisibility && body.is_open === false && current.is_open === true
 
-  const { error } = await supabase
-    .from('games')
-    .update({
-      ...(body.scheduled_at && { scheduled_at: body.scheduled_at }),
-      ...(duration_minutes ? { duration_minutes } : {}),
-      ...(body.format && { format: body.format }),
-      neighborhood: body.location_name ?? null,
-      notes: body.notes ?? null,
-      ...(canChangeVisibility ? { is_open: body.is_open } : {}),
-    })
-    .eq('id', id)
+  const patch: {
+    scheduled_at?: string
+    duration_minutes?: number
+    format?: string
+    neighborhood?: string | null
+    notes?: string | null
+    is_open?: boolean
+  } = {}
+  if (body.scheduled_at) patch.scheduled_at = body.scheduled_at
+  if (duration_minutes) patch.duration_minutes = duration_minutes
+  if (body.format) patch.format = body.format
+  if ('location_name' in body) patch.neighborhood = body.location_name ?? null
+  if ('notes' in body) patch.notes = body.notes ?? null
+  if (typeof body.is_open === 'boolean') patch.is_open = body.is_open
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (Object.keys(patch).length > 0) {
+    const { error } = await supabase.from('games').update(patch).eq('id', id).eq('creator_id', user.id)
+    if (error) return apiError(500, 'Could not save the game', error)
+  }
 
   // Public games are announced the same way as when one is created as public.
   if (opening) {
@@ -162,6 +170,6 @@ export async function DELETE(
     .eq('id', id)
     .eq('creator_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not delete the game', error)
   return NextResponse.json({ ok: true })
 }

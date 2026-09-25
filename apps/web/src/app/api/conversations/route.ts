@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextRequest, NextResponse } from 'next/server'
 
 // POST /api/conversations  { other_user_id }
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
   const { data: convId, error } = await supabase
     .rpc('get_or_create_conversation', { other_user_id })
 
-  if (error || !convId) return NextResponse.json({ error: error?.message ?? 'Failed' }, { status: 500 })
+  if (error || !convId) return apiError(500, 'Could not open the chat', error)
 
   return NextResponse.json({ conversation_id: convId })
 }

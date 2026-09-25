@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { parseDurationMinutes } from '@/lib/game-time'
 import { NextResponse } from 'next/server'
 
@@ -42,8 +43,7 @@ export async function POST(request: Request) {
     })
 
   if (gameErr) {
-    console.error('[POST /api/games] insert error:', gameErr)
-    return NextResponse.json({ error: gameErr.message }, { status: 500 })
+    return apiError(500, 'Could not create the game', gameErr)
   }
 
   const { error: participantErr } = await supabase

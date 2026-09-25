@@ -19,7 +19,7 @@ export default async function EditGamePage({
     .eq('id', id)
     .single()
 
-  if (!game) notFound()
+  if (!game || game.creator_id !== user.id) notFound()
 
   // Load participants with profiles
   const { data: participants } = await supabase

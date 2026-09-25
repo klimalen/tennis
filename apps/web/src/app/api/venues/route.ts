@@ -1,57 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface OverpassTags {
-  name?: string
-  'name:en'?: string
-  surface?: string
-  lit?: string
-  access?: string
-  fee?: string
-  website?: string
-  url?: string
-  phone?: string
-  'contact:phone'?: string
-  operator?: string
-  opening_hours?: string
-  courts?: string
-  'addr:street'?: string
-  'addr:city'?: string
-}
-
-interface OverpassElement {
-  type: 'way' | 'node'
-  id: number
-  lat?: number
-  lon?: number
-  center?: { lat: number; lon: number }
-  tags: OverpassTags
-}
-
-interface OverpassResponse {
-  elements: OverpassElement[]
-}
-
-interface VenueUpsert {
-  osm_id: string
-  name: string
-  lat: number
-  lng: number
-  address: string | null
-  surface: string | null
-  court_count: number | null
-  lit: boolean
-  access: string | null
-  fee: boolean | null
-  website: string | null
-  phone: string | null
-  operator: string | null
-  opening_hours: string | null
-  osm_fetched_at: string
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function degreesToRadians(deg: number): number {
@@ -81,10 +30,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// If we already have this many venues in the bbox, skip Overpass entirely
-const CATALOG_SUFFICIENT_COUNT = 50
 // Max venues to return to the client
 const MAX_RESULTS = 20
+const MAX_RADIUS_KM = 25
+const QUERY_CAP = 200
 // Venues within this radius (metres) are considered the same physical location
 const CLUSTER_RADIUS_M = 250
 
@@ -228,72 +177,6 @@ function clusterUngrouped(cards: VenueCard[]): VenueCard[] {
   return result
 }
 
-function parseElement(el: OverpassElement): VenueUpsert | null {
-  const lat = el.type === 'node' ? el.lat : el.center?.lat
-  const lng = el.type === 'node' ? el.lon : el.center?.lon
-  if (lat == null || lng == null) return null
-
-  const tags = el.tags ?? {}
-  const feeRaw = tags.fee
-  const fee: boolean | null =
-    feeRaw === 'yes' ? true : feeRaw === 'no' ? false : null
-
-  const addressParts = [tags['addr:street'], tags['addr:city']].filter(Boolean)
-  const address = addressParts.length > 0 ? addressParts.join(', ') : null
-
-  return {
-    osm_id: `${el.type}/${el.id}`,
-    name: tags.name ?? tags['name:en'] ?? 'Tennis Court',
-    lat,
-    lng,
-    address,
-    surface: tags.surface ?? null,
-    court_count: tags.courts ? parseInt(tags.courts, 10) : null,
-    lit: tags.lit === 'yes',
-    access: tags.access ?? null,
-    fee,
-    website: tags.website ?? tags.url ?? null,
-    phone: tags.phone ?? tags['contact:phone'] ?? null,
-    operator: tags.operator ?? null,
-    opening_hours: tags.opening_hours ?? null,
-    osm_fetched_at: new Date().toISOString(),
-  }
-}
-
-async function fetchFromOverpass(
-  south: number,
-  west: number,
-  north: number,
-  east: number,
-): Promise<VenueUpsert[]> {
-  const query = `[out:json][timeout:40];
-(
-  way["leisure"="pitch"]["sport"="tennis"](${south},${west},${north},${east});
-  node["leisure"="pitch"]["sport"="tennis"](${south},${west},${north},${east});
-);
-out center tags;`
-
-  const res = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'TennisApp/1.0 (tennis-finder; contact@tennisapp.com)',
-    },
-    body: `data=${encodeURIComponent(query)}`,
-    signal: AbortSignal.timeout(45_000),
-  })
-
-  if (!res.ok) {
-    throw new Error(`Overpass returned ${res.status}`)
-  }
-
-  const json: OverpassResponse = await res.json()
-  return json.elements.flatMap((el) => {
-    const v = parseElement(el)
-    return v ? [v] : []
-  })
-}
-
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -315,7 +198,7 @@ export async function GET(request: NextRequest) {
     if ([south, west, north, east].some(isNaN)) {
       return NextResponse.json({ error: 'Invalid bbox params' }, { status: 400 })
     }
-    // Cap bbox to ~25 km radius to avoid Overpass timeouts on large cities
+    // Cap the box so one request cannot scan a whole region.
     const centerLat = (south + north) / 2
     const centerLng = (west + east) / 2
     const MAX_KM = 25
@@ -333,7 +216,7 @@ export async function GET(request: NextRequest) {
     }
     const lat = parseFloat(latParam)
     const lng = parseFloat(lngParam)
-    const radiusKm = radiusParam ? parseFloat(radiusParam) : 10
+    const radiusKm = Math.min(MAX_RADIUS_KM, Math.max(1, radiusParam ? parseFloat(radiusParam) : 10))
     if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
       return NextResponse.json({ error: 'Invalid lat/lng/radius' }, { status: 400 })
     }
@@ -341,58 +224,7 @@ export async function GET(request: NextRequest) {
   }
   const supabase = await createClient()
 
-  // Check how many venues we already have in this area
-  const { count: existingCount } = await supabase
-    .from('venues')
-    .select('*', { count: 'exact', head: true })
-    .gte('lat', south)
-    .lte('lat', north)
-    .gte('lng', west)
-    .lte('lng', east)
-
-  const catalogSufficient = (existingCount ?? 0) >= CATALOG_SUFFICIENT_COUNT
-
-  let overpassCount = 0
-  let overpassError: string | null = null
-
-  if (!catalogSufficient) {
-    // Fall back to Overpass for cities without a pre-populated catalog
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    const { data: recentCheck } = await supabase
-      .from('venues')
-      .select('id')
-      .gte('lat', south)
-      .lte('lat', north)
-      .gte('lng', west)
-      .lte('lng', east)
-      .gte('osm_fetched_at', thirtyDaysAgo)
-      .limit(1)
-
-    const isStale = !recentCheck || recentCheck.length === 0
-
-    if (isStale) {
-      try {
-        const fetched = await fetchFromOverpass(south, west, north, east)
-        overpassCount = fetched.length
-        if (fetched.length > 0) {
-          const { error: upsertError } = await supabase
-            .from('venues')
-            .upsert(fetched, { onConflict: 'osm_id', ignoreDuplicates: false })
-          if (upsertError) {
-            console.error('Venues upsert error:', upsertError)
-            overpassError = upsertError.message
-          }
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        console.error('Overpass fetch failed:', msg)
-        overpassError = msg
-      }
-    }
-  }
-
-  // 1. Organizations from the catalog pipeline (venue_groups)
-  // 2. Raw courts not yet attached to a group → runtime clustering fallback
+  // Catalog is filled by the venue scripts. This route only reads it.
   const [groupsResult, ungroupedResult] = await Promise.all([
     supabase
       .from('venue_groups')
@@ -400,20 +232,22 @@ export async function GET(request: NextRequest) {
       .gte('lat', south)
       .lte('lat', north)
       .gte('lng', west)
-      .lte('lng', east),
+      .lte('lng', east)
+      .limit(QUERY_CAP),
     supabase
       .from('venues')
-      .select('*')
+      .select('id, osm_id, name, lat, lng, address, surface, court_count, lit, access, fee, website, phone, operator, opening_hours, description, has_indoor, has_outdoor')
       .is('group_id', null)
       .gte('lat', south)
       .lte('lat', north)
       .gte('lng', west)
-      .lte('lng', east),
+      .lte('lng', east)
+      .limit(QUERY_CAP),
   ])
 
   if (ungroupedResult.error) {
     console.error('Venues query error:', ungroupedResult.error)
-    return NextResponse.json({ venues: [], _debug: { overpassError, queryError: ungroupedResult.error.message } })
+    return NextResponse.json({ venues: [], total: 0, hasMore: false })
   }
   if (groupsResult.error) {
     // Migration 037 not applied yet → degrade gracefully to raw clustering
@@ -442,14 +276,5 @@ export async function GET(request: NextRequest) {
     venues,
     total,
     hasMore: offset + MAX_RESULTS < total,
-    _debug: {
-      catalogSufficient,
-      existingCount,
-      groups: groupCards.length,
-      ungrouped: rawCards.length,
-      overpassCount,
-      overpassError,
-      bbox: { south, west, north, east },
-    },
   })
 }

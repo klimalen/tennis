@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { safeNext } from '@/lib/safe-next'
 
 function GoogleIcon() {
   return (
@@ -20,7 +21,7 @@ function GoogleIcon() {
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') ?? '/search'
+  const next = safeNext(searchParams.get('next'), '/search')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

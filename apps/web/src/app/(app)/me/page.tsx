@@ -27,13 +27,12 @@ async function ProfileContent() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, preferred_surfaces, availability')
-    .eq('id', user.id)
-    .single()
-
-  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+  const [profileResult, followerResult, followingResult, playerGames, postsResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, preferred_surfaces, availability')
+      .eq('id', user.id)
+      .single(),
     supabase
       .from('follows')
       .select('*', { count: 'exact', head: true })
@@ -42,13 +41,8 @@ async function ProfileContent() {
       .from('follows')
       .select('*', { count: 'exact', head: true })
       .eq('follower_id', user.id),
-  ])
-
-  const schedule = summarizeSchedule(await loadPlayerGames(supabase, user.id))
-  const gamesPlayed = await playedGamesCount(supabase, user.id, schedule.playedCount)
-
-  // Fetch own posts
-  const { data: postRows } = await supabase
+    loadPlayerGames(supabase, user.id),
+    supabase
     .from('posts')
     .select(`
       id, type, body, image_url, created_at, updated_at,
@@ -67,7 +61,15 @@ async function ProfileContent() {
     `)
     .eq('author_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(30)
+    .limit(30),
+  ])
+
+  const profile = profileResult.data
+  const followerCount = followerResult.count
+  const followingCount = followingResult.count
+  const schedule = summarizeSchedule(playerGames)
+  const postRows = postsResult.data
+  const gamesPlayed = await playedGamesCount(supabase, user.id, schedule.playedCount)
 
   const postIds = (postRows ?? []).map((p) => p.id as string)
   const { data: myLikes } = postIds.length > 0

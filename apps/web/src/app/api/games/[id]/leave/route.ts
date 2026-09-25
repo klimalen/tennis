@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 import { NextResponse } from 'next/server'
 
 // POST /api/games/:id/leave
@@ -21,7 +22,7 @@ export async function POST(
     .eq('game_id', gameId)
     .eq('player_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not leave the game', error)
 
   // Check if anyone is still in (invited or accepted)
   const { data: remaining } = await supabase

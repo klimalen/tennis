@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
+import { ownPostImageUrl } from '@/lib/post-image'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -11,14 +13,18 @@ export async function PATCH(
 
   const { id } = await params
   const body = await request.json() as { body?: string | null; image_url?: string | null }
+  const imageUrl = body.image_url ? ownPostImageUrl(body.image_url, user.id) : null
+  if (body.image_url && !imageUrl) {
+    return NextResponse.json({ error: 'Photo must be uploaded to your account' }, { status: 400 })
+  }
 
   const { error } = await supabase
     .from('posts')
-    .update({ body: body.body ?? null, image_url: body.image_url ?? null })
+    .update({ body: body.body ?? null, image_url: imageUrl })
     .eq('id', id)
     .eq('author_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not save the post', error)
   return NextResponse.json({ ok: true })
 }
 
@@ -55,6 +61,6 @@ export async function DELETE(
     .eq('id', id)
     .eq('author_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not delete the post', error)
   return NextResponse.json({ ok: true })
 }

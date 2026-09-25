@@ -1,11 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
+import { safeNext } from '@/lib/safe-next'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/onboarding'
+  const next = safeNext(searchParams.get('next'), '/onboarding')
 
   if (!code) {
     return NextResponse.redirect(`${origin}/sign-in?error=auth_callback_failed`)

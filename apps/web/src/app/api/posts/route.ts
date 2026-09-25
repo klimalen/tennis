@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
+import { ownPostImageUrl } from '@/lib/post-image'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -8,7 +10,10 @@ export async function POST(request: Request) {
 
   const body = await request.json() as { body?: string; image_url?: string }
   const text = body.body?.trim() ?? null
-  const imageUrl = body.image_url ?? null
+  const imageUrl = body.image_url ? ownPostImageUrl(body.image_url, user.id) : null
+  if (body.image_url && !imageUrl) {
+    return NextResponse.json({ error: 'Photo must be uploaded to your account' }, { status: 400 })
+  }
 
   if (!text && !imageUrl) {
     return NextResponse.json({ error: 'Post must have text or image' }, { status: 400 })
@@ -20,7 +25,7 @@ export async function POST(request: Request) {
     .select('id')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return apiError(500, 'Could not publish the post', error)
 
   return NextResponse.json({ post_id: data.id })
 }
