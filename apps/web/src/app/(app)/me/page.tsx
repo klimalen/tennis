@@ -188,7 +188,7 @@ async function ProfileContent() {
             )}
             {profile?.bio && (
               <div className="mt-2">
-                <ExpandableText text={profile.bio} className="text-sm text-[#497250] italic leading-snug" />
+                <ExpandableText text={profile.bio} className="font-copy text-sm text-[#497250] leading-snug" />
               </div>
             )}
             <LookingFor text={profile?.looking_for} />

@@ -341,7 +341,7 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="e.g. I love long baseline rallies and play a few times a week after work..."
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
+            className="font-copy w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.bio.length}/300</p>
         </div>
@@ -354,7 +354,7 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
             rows={3}
             maxLength={300}
-            className="w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
+            className="font-copy w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.lookingFor.length}/300</p>
         </div>

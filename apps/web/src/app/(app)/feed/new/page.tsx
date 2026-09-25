@@ -114,7 +114,7 @@ export default function NewPostPage() {
           onChange={(e) => setText(e.target.value)}
           placeholder="What's on your mind?"
           rows={5}
-          className="w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
+          className="font-copy w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
           autoFocus
         />
 

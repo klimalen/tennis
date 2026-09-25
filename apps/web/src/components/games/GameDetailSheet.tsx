@@ -177,7 +177,7 @@ export function GameDetailSheet({
               )}
             </div>
             {game.notes && (
-              <p className="mt-2 text-sm text-[rgba(26,26,26,0.55)] italic">{game.notes}</p>
+              <p className="font-copy mt-2 text-sm text-[rgba(26,26,26,0.55)]">{game.notes}</p>
             )}
           </div>
 

@@ -228,7 +228,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
                 )}
               </div>
               {preview ? (
-                <p className={`text-[11px] mt-0.5 truncate ${unread ? 'text-[rgba(26,26,26,0.7)] font-medium' : 'text-[rgba(26,26,26,0.45)]'}`}>
+                <p className={`font-copy text-[11px] mt-0.5 truncate ${unread ? 'text-[rgba(26,26,26,0.7)] font-medium' : 'text-[rgba(26,26,26,0.45)]'}`}>
                   {preview}
                 </p>
               ) : (

@@ -327,7 +327,7 @@ function PlayerCard({
           </div>
         )}
         {about && (
-          <p className="mt-3 text-[15px] leading-snug text-[rgba(26,26,26,0.62)] line-clamp-2">{about}</p>
+          <p className="font-copy mt-3 text-[15px] leading-snug text-[rgba(26,26,26,0.62)] line-clamp-2">{about}</p>
         )}
       </div>
       <div className="px-4 pb-4">
@@ -451,7 +451,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
             )}
           </div>
           {venue.description && (
-            <p className="text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
+            <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
           )}
           {venue.opening_hours && (
             <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">

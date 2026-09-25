@@ -85,7 +85,7 @@ export function MessageList({ conversationId, userId, initialMessages }: Props) 
         const isMe = msg.sender_id === userId
         return (
           <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
+            <div className={`font-copy max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
               isMe
                 ? 'rounded-[22px] bg-[#E8748A] text-[#1a1a1a]'
                 : 'bg-brand-surface border border-brand-divider text-[rgba(26,26,26,0.8)]'
