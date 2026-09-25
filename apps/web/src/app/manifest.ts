@@ -9,6 +9,9 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/search',
     scope: '/',
     display: 'standalone',
+    launch_handler: {
+      client_mode: ['focus-existing', 'auto'],
+    },
     background_color: '#FAF7F2',
     theme_color: '#FAF7F2',
     icons: [
