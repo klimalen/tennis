@@ -63,7 +63,7 @@ async function ScheduleContent() {
             upcoming={upcoming}
             past={past}
             viewerId={user.id}
-            editFor={(game, pastGame) => (!pastGame && game.creator_id === user.id ? `/games/${game.id}/edit` : null)}
+            allowEdit
           />
         </div>
       )}
