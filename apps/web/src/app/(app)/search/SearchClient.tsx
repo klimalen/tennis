@@ -9,7 +9,7 @@ import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } f
 import type { User } from '@supabase/supabase-js'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
-import { FilterChips, ListSearch } from '@/components/ui/ListSearch'
+import { FilterChips, ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -586,6 +586,18 @@ function ParticipantAvatars({ participants, max = 3 }: { participants: OpenGameP
 
 const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
 
+const GAME_FILTERS = [
+  { id: 'spots', label: 'Open spots' },
+  { id: 'singles', label: 'Singles' },
+  { id: 'doubles', label: 'Doubles' },
+  { id: 'mixed_doubles', label: 'Mixed' },
+]
+
+function openGameSpotsLeft(game: OpenGame) {
+  const taken = game.participants.filter((participant) => participant.status === 'accepted' || participant.status === 'invited').length
+  return game.max_players - taken
+}
+
 // ─── Open game card ───────────────────────────────────────────────────────────
 
 function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
@@ -996,6 +1008,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   // ── Full games view ─────────────────────────────────────────────────────────
   const [openGames, setOpenGames] = useState<OpenGame[]>([])
   const [gameQuery, setGameQuery] = useState('')
+  const [gameFilters, setGameFilters] = useState<string[]>([])
   const [loadingOpenGames, setLoadingOpenGames] = useState(false)
   const [courtQuery, setCourtQuery] = useState('')
   const [courtSurface, setCourtSurface] = useState<string | null>(null)
@@ -1485,7 +1498,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
           {userCityName && openGames.length > 0 && (
-            <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
+            <>
+              <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
+              <MultiFilterChips options={GAME_FILTERS} value={gameFilters} onChange={setGameFilters} />
+            </>
           )}
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
@@ -1504,12 +1520,14 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             <>
               {(() => {
                 const needle = gameQuery.trim().toLowerCase()
-                const shown = needle
-                  ? openGames.filter((game) => {
-                      const hay = `${game.neighborhood ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
-                      return hay.includes(needle)
-                    })
-                  : openGames
+                const formats = gameFilters.filter((id) => id !== 'spots')
+                const shown = openGames.filter((game) => {
+                  if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
+                  if (formats.length > 0 && !formats.includes(game.format)) return false
+                  if (!needle) return true
+                  const hay = `${game.neighborhood ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
+                  return hay.includes(needle)
+                })
                 if (shown.length === 0) {
                   return <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
                 }
