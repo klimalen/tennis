@@ -141,7 +141,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, city_name')
+        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, city_name, city_lat, city_lng')
         .eq('id', user.id)
         .single()
 
@@ -160,6 +160,8 @@ export default function EditProfilePage() {
           availability: availabilityFromProfile(p),
           lookingFor: p.looking_for || '',
           city: p.city_name || '',
+          cityLat: p.city_lat ?? null,
+          cityLng: p.city_lng ?? null,
         })
       }
       setLoading(false)
