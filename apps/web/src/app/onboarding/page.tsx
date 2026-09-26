@@ -642,7 +642,7 @@ export default function OnboardingPage() {
               <ArrowLeft size={18} />
             </button>
           ) : (
-            <span className="font-display text-xl tracking-widest text-brand-primary">TENNIS</span>
+            <span className="font-display text-xl tracking-widest text-brand-primary">GAME.</span>
           )}
           {/* Progress bars */}
           <div className="flex-1 flex gap-1">

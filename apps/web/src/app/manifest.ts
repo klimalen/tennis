@@ -3,9 +3,9 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'Tennis',
-    short_name: 'Tennis',
-    description: 'Find players, book courts, play.',
+    name: 'GAME. — Find & Play Tennis',
+    short_name: 'GAME.',
+    description: 'Find and play tennis. Players, games, courts, and more.',
     start_url: '/search',
     scope: '/',
     display: 'standalone',

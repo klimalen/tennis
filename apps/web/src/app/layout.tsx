@@ -33,27 +33,31 @@ const fraunces = Fraunces({
 
 const siteUrl = 'https://tennis-web-lime.vercel.app'
 
+const siteName = 'GAME.'
+const siteTitle = 'GAME. — Find & Play Tennis'
+const siteDescription = 'Find and play tennis. Players, games, courts, and more.'
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'Tennis — Find players, book courts, play.',
-  description: 'The social operating system for racket sports.',
-  applicationName: 'Tennis',
+  title: siteTitle,
+  description: siteDescription,
+  applicationName: siteName,
   openGraph: {
-    title: 'Play Tennis Together',
-    description: 'Find players, book courts, join events.',
+    title: siteTitle,
+    description: siteDescription,
     url: siteUrl,
-    siteName: 'Tennis',
+    siteName,
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Play Tennis Together',
-    description: 'Find players, book courts, join events.',
+    title: siteTitle,
+    description: siteDescription,
   },
   appleWebApp: {
     capable: true,
-    title: 'Tennis',
+    title: siteName,
     statusBarStyle: 'default',
   },
 }
