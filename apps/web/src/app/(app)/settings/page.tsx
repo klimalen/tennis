@@ -26,6 +26,13 @@ export default function SettingsPage() {
     setDeleting(true)
     setDeleteError('')
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: files } = await supabase.storage.from('support-images').list(user.id)
+      if (files?.length) {
+        await supabase.storage.from('support-images').remove(files.map((file) => `${user.id}/${file.name}`))
+      }
+    }
     const { error } = await supabase.rpc('delete_current_user')
     if (error) {
       setDeleteError(error.message)

@@ -71,7 +71,9 @@ CREATE POLICY support_images_owner_delete ON storage.objects
     AND auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- Account deletion already removes the row. Remove the private photo too.
+-- Do not delete storage.objects here. A statement trigger rejects that
+-- and would block every account deletion. The app removes the photo
+-- through the Storage API before calling this function.
 CREATE OR REPLACE FUNCTION delete_current_user()
 RETURNS void
 LANGUAGE plpgsql
@@ -82,10 +84,6 @@ BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'not authenticated';
   END IF;
-
-  DELETE FROM storage.objects
-  WHERE bucket_id = 'support-images'
-    AND (storage.foldername(name))[1] = auth.uid()::text;
 
   DELETE FROM auth.users WHERE id = auth.uid();
 END;
