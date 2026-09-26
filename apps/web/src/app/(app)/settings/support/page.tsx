@@ -1,21 +1,40 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, Image as ImageIcon, Loader2, X } from 'lucide-react'
+import { courtReportFromSearch, courtReportPreface, withCourtReport } from '@/lib/court-report'
 import { prepareSupportPhoto } from '@/lib/support-photo'
 
 const MAX_CHARS = 2000
 
 export default function SupportPage() {
+  return (
+    <Suspense fallback={null}>
+      <SupportForm />
+    </Suspense>
+  )
+}
+
+function SupportForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const court = useMemo(() => courtReportFromSearch(searchParams), [searchParams])
   const fileRef = useRef<HTMLInputElement>(null)
+  const appliedCourt = useRef<string | null>(null)
   const [text, setText] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!court || appliedCourt.current === court.id) return
+    appliedCourt.current = court.id
+    const preface = `${courtReportPreface(court)}\n\n`
+    setText((current) => (current.includes(court.id) ? current : `${preface}${current.trim()}`))
+  }, [court])
 
   useEffect(() => {
     if (!photo) {
@@ -45,8 +64,9 @@ export default function SupportPage() {
   }
 
   async function handleSubmit() {
-    const body = text.trim()
-    if (!body || sending) return
+    const note = text.trim()
+    if (!note || sending) return
+    const body = withCourtReport(note, court, MAX_CHARS)
     setSending(true)
     setError('')
 
@@ -62,15 +82,18 @@ export default function SupportPage() {
       return
     }
 
-    setText('')
+    setText(court ? `${courtReportPreface(court)}\n\n` : '')
     setPhoto(null)
     if (fileRef.current) fileRef.current.value = ''
     setSent(true)
     setSending(false)
   }
 
-  const count = Array.from(text.trim()).length
-  const canSend = count > 0 && count <= MAX_CHARS && !sending
+  const preface = court ? courtReportPreface(court) : ''
+  const trimmed = text.trim()
+  const ownNote = preface && trimmed.startsWith(preface) ? trimmed.slice(preface.length).trim() : trimmed
+  const count = Array.from(trimmed).length
+  const canSend = ownNote.length > 0 && count <= MAX_CHARS && !sending
 
   return (
     <div className="min-h-screen bg-brand-bg pb-8">

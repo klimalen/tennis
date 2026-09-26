@@ -37,8 +37,10 @@ export async function middleware(request: NextRequest) {
 
   if (PROTECTED.some((r) => pathname.startsWith(r)) && !user) {
     const url = request.nextUrl.clone()
+    const nextPath = `${pathname}${request.nextUrl.search}`
     url.pathname = '/sign-in'
-    url.searchParams.set('next', pathname)
+    url.search = ''
+    url.searchParams.set('next', nextPath)
     return NextResponse.redirect(url)
   }
 
