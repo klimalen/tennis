@@ -14,6 +14,7 @@ import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { InstallHint } from '@/components/pwa/InstallHint'
+import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -192,6 +193,14 @@ const SURFACE_STYLES: Record<string, string> = {
   grass: 'bg-brand-fern text-white',
   hard: 'bg-brand-navy text-white',
 }
+
+// Always offered. Chips used to come from courts already on screen, so clay
+// could stay hidden until a later page loaded.
+const COURT_SURFACE_FILTERS = [
+  { id: 'hard', label: 'Hard' },
+  { id: 'clay', label: 'Clay' },
+  { id: 'grass', label: 'Grass' },
+]
 
 function SurfaceBadge({ surface }: { surface: string | null }) {
   if (!surface) return null
@@ -464,6 +473,12 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
                 <Phone size={13} /> {venue.phone}
               </a>
             )}
+            <Link
+              href={courtReportHref({ id: venue.id, name: courtTitle(venue), address: venue.address })}
+              className="flex items-center justify-center px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-center font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.7)] hover:bg-white transition-colors"
+            >
+              Found an error? Write to support — we&apos;ll fix it.
+            </Link>
           </div>
         </div>
       </div>
@@ -1641,10 +1656,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           <>
             <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
             <MultiFilterChips
-              options={Array.from(new Set(venues.map((venue) => venue.surface).filter((surface): surface is string => !!surface))).map((surface) => ({
-                id: surface.toLowerCase(),
-                label: surfaceLabel(surface),
-              }))}
+              options={COURT_SURFACE_FILTERS}
               value={courtSurfaces}
               onChange={setCourtSurfaces}
             />
@@ -1663,9 +1675,15 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 return hay.includes(needle)
               })
               const showLoadMore = venuesHasMore && (!filterActive || venuePageFailed)
+              const stillLooking = filterActive && shown.length === 0 && (loadingMoreVenues || (venuesHasMore && !venuePageFailed))
               return (
                 <>
-                  {shown.length === 0 ? (
+                  {stillLooking ? (
+                    <div className="flex flex-col items-center justify-center py-8 gap-3">
+                      <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
+                      <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">Looking further out</p>
+                    </div>
+                  ) : shown.length === 0 ? (
                     <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
                   ) : (
                     shown.map((venue) => (
