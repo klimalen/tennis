@@ -7,13 +7,15 @@ export default async function SearchPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   let cityName: string | null = null
+  let cityLat: number | null = null
+  let cityLng: number | null = null
   let initialIncoming: IncomingRequest[] = []
 
   if (user) {
     const [{ data: profile }, { data: requestRows }] = await Promise.all([
       supabase
         .from('profiles')
-        .select('city_name')
+        .select('city_name, city_lat, city_lng')
         .eq('id', user.id)
         .single(),
       supabase
@@ -25,6 +27,8 @@ export default async function SearchPage() {
     ])
 
     cityName = profile?.city_name ?? null
+    cityLat = profile?.city_lat ?? null
+    cityLng = profile?.city_lng ?? null
     initialIncoming = (requestRows ?? []).map((r) => ({
       id: r.id,
       sender_id: r.sender_id,
@@ -33,5 +37,5 @@ export default async function SearchPage() {
     }))
   }
 
-  return <SearchClient user={user} userCityName={cityName} initialIncoming={initialIncoming} />
+  return <SearchClient user={user} userCityName={cityName} userCityLat={cityLat} userCityLng={cityLng} initialIncoming={initialIncoming} />
 }

@@ -1,39 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function degreesToRadians(deg: number): number {
-  return (deg * Math.PI) / 180
-}
-
-/** Returns a bounding box [south, west, north, east] from a centre + radius in km */
-function boundingBox(lat: number, lng: number, radiusKm: number) {
-  const earthKm = 6371
-  const deltaLat = (radiusKm / earthKm) * (180 / Math.PI)
-  const deltaLng = deltaLat / Math.cos(degreesToRadians(lat))
-  return {
-    south: lat - deltaLat,
-    north: lat + deltaLat,
-    west: lng - deltaLng,
-    east: lng + deltaLng,
-  }
-}
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
-  const dLat = degreesToRadians(lat2 - lat1)
-  const dLng = degreesToRadians(lng2 - lng1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(degreesToRadians(lat1)) * Math.cos(degreesToRadians(lat2)) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
+import { TRAVEL_RADIUS_KM, boundingBox, haversineKm } from '@/lib/travel'
 
 // Max venues to return to the client
 const MAX_RESULTS = 20
-const MAX_RADIUS_KM = 25
-const QUERY_CAP = 200
+const SCAN_PAGE = 1000
+const SCAN_CAP = 3000
 // Venues within this radius (metres) are considered the same physical location
 const CLUSTER_RADIUS_M = 250
 
@@ -177,6 +149,20 @@ function clusterUngrouped(cards: VenueCard[]): VenueCard[] {
   return result
 }
 
+async function scanRange<T>(
+  run: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+) {
+  const rows: T[] = []
+  for (let from = 0; from < SCAN_CAP; from += SCAN_PAGE) {
+    const { data, error } = await run(from, from + SCAN_PAGE - 1)
+    if (error) return { data: null, error }
+    const chunk = data ?? []
+    rows.push(...chunk)
+    if (chunk.length < SCAN_PAGE) break
+  }
+  return { data: rows, error: null }
+}
+
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -198,11 +184,10 @@ export async function GET(request: NextRequest) {
     if ([south, west, north, east].some(isNaN)) {
       return NextResponse.json({ error: 'Invalid bbox params' }, { status: 400 })
     }
-    // Cap the box so one request cannot scan a whole region.
+    // Cap the box at a travel radius so one request cannot scan a whole region.
     const centerLat = (south + north) / 2
     const centerLng = (west + east) / 2
-    const MAX_KM = 25
-    const capped = boundingBox(centerLat, centerLng, MAX_KM)
+    const capped = boundingBox(centerLat, centerLng, TRAVEL_RADIUS_KM)
     south = Math.max(south, capped.south)
     north = Math.min(north, capped.north)
     west = Math.max(west, capped.west)
@@ -216,7 +201,7 @@ export async function GET(request: NextRequest) {
     }
     const lat = parseFloat(latParam)
     const lng = parseFloat(lngParam)
-    const radiusKm = Math.min(MAX_RADIUS_KM, Math.max(1, radiusParam ? parseFloat(radiusParam) : 10))
+    const radiusKm = Math.min(TRAVEL_RADIUS_KM, Math.max(1, radiusParam ? parseFloat(radiusParam) : TRAVEL_RADIUS_KM))
     if (isNaN(lat) || isNaN(lng) || isNaN(radiusKm)) {
       return NextResponse.json({ error: 'Invalid lat/lng/radius' }, { status: 400 })
     }
@@ -224,17 +209,19 @@ export async function GET(request: NextRequest) {
   }
   const supabase = await createClient()
 
-  // Catalog is filled by the venue scripts. This route only reads it.
+  // Read every court in the box, then sort by distance. A small limit here would
+  // drop nearby courts in the next city before they could be ordered.
   const [groupsResult, ungroupedResult] = await Promise.all([
-    supabase
+    scanRange((from, to) => supabase
       .from('venue_groups')
       .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence')
       .gte('lat', south)
       .lte('lat', north)
       .gte('lng', west)
       .lte('lng', east)
-      .limit(QUERY_CAP),
-    supabase
+      .order('id')
+      .range(from, to)),
+    scanRange((from, to) => supabase
       .from('venues')
       .select('id, osm_id, name, lat, lng, address, surface, court_count, lit, access, fee, website, phone, operator, opening_hours, description, has_indoor, has_outdoor')
       .is('group_id', null)
@@ -242,7 +229,8 @@ export async function GET(request: NextRequest) {
       .lte('lat', north)
       .gte('lng', west)
       .lte('lng', east)
-      .limit(QUERY_CAP),
+      .order('id')
+      .range(from, to)),
   ])
 
   if (ungroupedResult.error) {

@@ -15,6 +15,7 @@ import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { InstallHint } from '@/components/pwa/InstallHint'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
+import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ export interface Player {
   city_name: string | null
   city_lat: number | null
   city_lng: number | null
+  distance_km?: number | null
   bio: string | null
   looking_for: string | null
   availability: unknown
@@ -137,6 +139,7 @@ interface OpenGame {
   max_players: number
   creator: OpenGameProfile & { city_name: string | null }
   participants: OpenGameParticipant[]
+  distance_km?: number | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -162,13 +165,6 @@ function surfaceLabel(surface: string): string {
 
 type RequestStatus = 'none' | 'pending' | 'accepted' | 'matched' | 'declined'
 
-function boundingBoxClient(lat: number, lng: number, radiusKm: number) {
-  const earthKm = 6371
-  const deltaLat = (radiusKm / earthKm) * (180 / Math.PI)
-  const deltaLng = deltaLat / Math.cos((lat * Math.PI) / 180)
-  return { south: lat - deltaLat, north: lat + deltaLat, west: lng - deltaLng, east: lng + deltaLng }
-}
-
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6_371_000
   const toRad = (d: number) => (d * Math.PI) / 180
@@ -183,6 +179,19 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
 function formatDistance(meters: number): string {
   if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(1)} km`
+}
+
+function formatKm(km: number): string {
+  if (km < 10) return `${km.toFixed(1)} km`
+  return `${Math.round(km)} km`
+}
+
+function placeLine(city: string | null | undefined, distanceKm: number | null | undefined): string | null {
+  const name = city?.trim()
+  const far = distanceKm != null && distanceKm >= 10
+  if (name && far) return `${name} · ${formatKm(distanceKm)}`
+  if (far) return formatKm(distanceKm!)
+  return name || null
 }
 
 // ─── Surface badge ────────────────────────────────────────────────────────────
@@ -295,6 +304,9 @@ function PlayerCard({
             <p className="font-display text-2xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2">{player.full_name}</p>
             {level && (
               <p className="mt-1.5 text-[11px] font-medium leading-none tracking-[0.14em] uppercase text-[#D4A017]">{level}</p>
+            )}
+            {placeLine(player.city_name, player.distance_km) && (
+              <p className="mt-1.5 text-[11px] leading-none text-[rgba(26,26,26,0.45)]">{placeLine(player.city_name, player.distance_km)}</p>
             )}
             {meta && (
               <p className="mt-1.5 text-[10px] leading-snug tracking-[0.12em] uppercase text-[rgba(26,26,26,0.45)]">{meta}</p>
@@ -626,6 +638,11 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: {
               {' · '}
               {OPEN_FORMAT_LABELS[game.format] ?? game.format}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
             </p>
+            {placeLine(game.creator.city_name, game.distance_km) && (
+              <p className={vivid ? 'mt-1 text-[11px] text-[#F0EBE3]/80' : 'mt-1 text-[11px] text-[rgba(26,26,26,0.45)]'}>
+                {placeLine(game.creator.city_name, game.distance_km)}
+              </p>
+            )}
             <div className={vivid ? 'hidden' : 'flex items-center gap-2 mt-1.5 flex-wrap'}>
               <span className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">{OPEN_FORMAT_LABELS[game.format] ?? game.format}</span>
               {game.neighborhood && (
@@ -794,7 +811,7 @@ interface SavedCourtsCity {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function SearchClient({ user, userCityName, initialIncoming }: { user: User | null; userCityName: string | null; initialIncoming: IncomingRequest[] }) {
+export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[] }) {
   const router = useRouter()
   const { setHidden: setTabBarHidden } = useTabBarHidden()
 
@@ -820,7 +837,9 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [previewPlayer, setPreviewPlayer] = useState<Player | null>(null)
   const [previewGame, setPreviewGame] = useState<OpenGame | null>(null)
   const [previewVenue, setPreviewVenue] = useState<Venue | null>(null)
-  const [previewCoords, setPreviewCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [previewCoords, setPreviewCoords] = useState<{ lat: number; lng: number } | null>(
+    userCityLat != null && userCityLng != null ? { lat: userCityLat, lng: userCityLng } : null,
+  )
   const [loadingPreviewPlayer, setLoadingPreviewPlayer] = useState(!!userCityName)
   const [loadingPreviewGame, setLoadingPreviewGame] = useState(!!userCityName)
   const [loadingPreviewVenue, setLoadingPreviewVenue] = useState(!!userCityName)
@@ -858,14 +877,41 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       }
     }
 
-    // Game preview
-    fetch(`/api/open-games?city=${encodeURIComponent(userCityName)}`)
-      .then((r) => r.json())
-      .then((json: { games: OpenGame[] }) => setPreviewGame(json.games?.[0] ?? null))
-      .catch(() => {})
-      .finally(() => setLoadingPreviewGame(false))
+    function loadPreviewGames(coords?: { lat: number; lng: number }) {
+      const params = new URLSearchParams({ city: userCityName! })
+      if (coords) {
+        params.set('lat', String(coords.lat))
+        params.set('lng', String(coords.lng))
+      }
+      fetch(`/api/open-games?${params}`)
+        .then((r) => r.json())
+        .then((json: { games: OpenGame[] }) => setPreviewGame(json.games?.[0] ?? null))
+        .catch(() => {})
+        .finally(() => setLoadingPreviewGame(false))
+    }
 
-    // Court preview — auto-geocode user's city
+    async function loadPreviewCourts(lat: number, lng: number) {
+      const box = boundingBox(lat, lng, TRAVEL_RADIUS_KM)
+      const res = await fetch(`/api/venues?south=${box.south}&west=${box.west}&north=${box.north}&east=${box.east}`)
+      if (!res.ok) return
+      const json = await res.json() as { venues: Venue[] }
+      const sorted = (json.venues ?? []).sort(
+        (a, b) => haversineMeters(lat, lng, a.lat, a.lng) - haversineMeters(lat, lng, b.lat, b.lng),
+      )
+      setPreviewVenue(sorted[0] ?? null)
+    }
+
+    if (userCityLat != null && userCityLng != null) {
+      const coords = { lat: userCityLat, lng: userCityLng }
+      void loadPreviewPlayer(coords)
+      loadPreviewGames(coords)
+      void loadPreviewCourts(coords.lat, coords.lng).finally(() => setLoadingPreviewVenue(false))
+      return
+    }
+
+    loadPreviewGames()
+
+    // Court preview — geocode the city name when the profile has no coordinates.
     fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=1&addressdetails=1`,
       { headers: { 'Accept-Language': 'en' } },
@@ -877,18 +923,11 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
           await loadPreviewPlayer()
           return
         }
-        const bb = place.boundingbox.map(Number) as [number, number, number, number]
-        const lat = (bb[0] + bb[1]) / 2
-        const lng = (bb[2] + bb[3]) / 2
+        const lat = parseFloat(place.lat)
+        const lng = parseFloat(place.lon)
         setPreviewCoords({ lat, lng })
         await loadPreviewPlayer({ lat, lng })
-        const res = await fetch(`/api/venues?south=${bb[0]}&west=${bb[2]}&north=${bb[1]}&east=${bb[3]}`)
-        if (!res.ok) return
-        const json = await res.json() as { venues: Venue[] }
-        const sorted = (json.venues ?? []).sort(
-          (a, b) => haversineMeters(lat, lng, a.lat, a.lng) - haversineMeters(lat, lng, b.lat, b.lng),
-        )
-        setPreviewVenue(sorted[0] ?? null)
+        await loadPreviewCourts(lat, lng)
       })
       .catch(async () => {
         if (!playerLoaded) await loadPreviewPlayer()
@@ -907,8 +946,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [loadingMorePlayers, setLoadingMorePlayers] = useState(false)
   const [playersOffset, setPlayersOffset] = useState(0)
   const [hasMorePlayers, setHasMorePlayers] = useState(false)
-  const [userGeoCoords, setUserGeoCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [geocodeDone, setGeocodeDone] = useState(false)
+  const [userGeoCoords, setUserGeoCoords] = useState<{ lat: number; lng: number } | null>(
+    userCityLat != null && userCityLng != null ? { lat: userCityLat, lng: userCityLng } : null,
+  )
+  const [geocodeDone, setGeocodeDone] = useState(userCityLat != null && userCityLng != null)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const playersQueryKey = useRef('')
 
@@ -1018,9 +1059,15 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
   const [courtSurfaces, setCourtSurfaces] = useState<string[]>([])
 
   function loadGames() {
-    if (!userCityName) return
+    if (!userCityName && !userGeoCoords) return
     setLoadingOpenGames(true)
-    fetch(`/api/open-games?city=${encodeURIComponent(userCityName)}`)
+    const params = new URLSearchParams()
+    if (userCityName) params.set('city', userCityName)
+    if (userGeoCoords) {
+      params.set('lat', String(userGeoCoords.lat))
+      params.set('lng', String(userGeoCoords.lng))
+    }
+    fetch(`/api/open-games?${params}`)
       .then((r) => r.json())
       .then((json: { games: OpenGame[] }) => setOpenGames(json.games ?? []))
       .catch(() => setOpenGames([]))
@@ -1060,7 +1107,8 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
       setCityInput(saved.name)
       setCityLabel(saved.label)
       setUserCoords(coords)
-      void loadVenuesByBbox(saved.south, saved.west, saved.north, saved.east, coords)
+      const box = boundingBox(saved.lat, saved.lng, TRAVEL_RADIUS_KM)
+      void loadVenuesByBbox(box.south, box.west, box.north, box.east, coords)
     } catch {
       // ignore malformed data
     }
@@ -1154,14 +1202,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     skipAutocompleteRef.current = true
     const name = place.name
     const label = place.name + (place.address?.country ? `, ${place.address.country}` : '')
-    const bb = place.boundingbox.map(Number)
-    const south = bb[0] ?? 0
-    const north = bb[1] ?? 0
-    const west = bb[2] ?? 0
-    const east = bb[3] ?? 0
-    const lat = (south + north) / 2
-    const lng = (west + east) / 2
+    const lat = parseFloat(place.lat)
+    const lng = parseFloat(place.lon)
     const coords = { lat, lng }
+    const box = boundingBox(lat, lng, TRAVEL_RADIUS_KM)
 
     setCityInput(name)
     setCityLabel(label)
@@ -1169,11 +1213,10 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
     setShowSuggestions(false)
     setUserCoords(coords)
 
-    // Persist for next session
-    const toSave: SavedCourtsCity = { name, label, lat, lng, south, north, west, east }
+    const toSave: SavedCourtsCity = { name, label, lat, lng, south: box.south, north: box.north, west: box.west, east: box.east }
     localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
 
-    void loadVenuesByBbox(south, west, north, east, coords)
+    void loadVenuesByBbox(box.south, box.west, box.north, box.east, coords)
   }
 
   function requestGeolocation() {
@@ -1195,7 +1238,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
         if (requestId !== venuesRequestRef.current) return
         const { latitude, longitude } = pos.coords
         const coords = { lat: latitude, lng: longitude }
-        const { south, west, north, east } = boundingBoxClient(latitude, longitude, 10)
+        const { south, west, north, east } = boundingBox(latitude, longitude, TRAVEL_RADIUS_KM)
         setUserCoords(coords)
         setCityLabel('your location')
         setLocating(false)
@@ -1216,8 +1259,13 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
 
   function navigateTo(v: View) {
     setView(v)
-    if (v === 'games' && openGames.length === 0) loadGames()
   }
+
+  useEffect(() => {
+    if (view !== 'games' || !geocodeDone) return
+    loadGames()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, geocodeDone, userGeoCoords])
 
   async function openGameDetail(gameId: string) {
     const detail = await loadGameDetail(gameId)
@@ -1368,7 +1416,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-white px-5 py-8">
                     <p className="font-display text-4xl leading-none text-[#1a1a1a]">NO PLAYERS YET</p>
-                    <p className="font-fraunces italic text-[#85648F] mt-2">Invite someone in {userCityName} onto the court</p>
+                    <p className="font-fraunces italic text-[#85648F] mt-2">Invite someone near {userCityName} onto the court</p>
                   </div>
                 )}
               </DiscoverySection>
@@ -1411,7 +1459,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 ) : (
                   <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
                     <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
-                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted in {userCityName} yet</p>
+                    <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted near {userCityName} yet</p>
                     {user && (
                       <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
                         <Plus size={12} /> Create a game
@@ -1455,7 +1503,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 {debouncedPlayerQuery || playerSkills.length > 0 ? 'No matches' : 'No players found'}
               </p>
               <p className="text-sm text-[rgba(26,26,26,0.5)]">
-                {debouncedPlayerQuery || playerSkills.length > 0 ? 'Try another name or level' : `No players in ${userCityName} yet`}
+                {debouncedPlayerQuery || playerSkills.length > 0 ? 'Try another name or level' : `No players near ${userCityName} yet`}
               </p>
             </div>
           ) : (
@@ -1515,7 +1563,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
             [...Array(3)].map((_, i) => <GameCardSkeleton key={i} />)
           ) : openGames.length === 0 ? (
             <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center space-y-3">
-              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No open games in {userCityName}</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No open games near {userCityName}</p>
               {user && (
                 <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
                   <Plus size={12} /> Create a game
@@ -1531,7 +1579,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                   if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
                   if (formats.length > 0 && !formats.includes(game.format)) return false
                   if (!needle) return true
-                  const hay = `${game.neighborhood ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
+                  const hay = `${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
                   return hay.includes(needle)
                 })
                 if (shown.length === 0) {
@@ -1540,7 +1588,7 @@ export function SearchClient({ user, userCityName, initialIncoming }: { user: Us
                 return (
                   <>
                     <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                      {shown.length} game{shown.length !== 1 ? 's' : ''} in {userCityName}
+                      {shown.length} game{shown.length !== 1 ? 's' : ''} near {userCityName}
                     </p>
                     {shown.map((game) => (
                 <OpenGameCard
