@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, Image as ImageIcon, Loader2, X } from 'lucide-react'
 import { prepareSupportPhoto } from '@/lib/support-photo'
 
-type Note = {
-  id: string
-  body: string
-  created_at: string
-  image_url: string | null
-}
-
 const MAX_CHARS = 2000
 
 export default function SupportPage() {
@@ -20,28 +13,9 @@ export default function SupportPage() {
   const [text, setText] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    let cancel = false
-    fetch('/api/support')
-      .then(async (res) => {
-        if (!res.ok) return
-        const data = await res.json() as { messages?: Note[] }
-        if (!cancel) setNotes(data.messages ?? [])
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancel) setLoading(false)
-      })
-    return () => {
-      cancel = true
-    }
-  }, [])
 
   useEffect(() => {
     if (!photo) {
@@ -81,7 +55,7 @@ export default function SupportPage() {
     if (photo) form.set('photo', photo, 'photo.jpg')
 
     const res = await fetch('/api/support', { method: 'POST', body: form })
-    const data = await res.json().catch(() => ({})) as { error?: string; id?: string; created_at?: string }
+    const data = await res.json().catch(() => ({})) as { error?: string; id?: string }
     if (!res.ok || !data.id) {
       setError(data.error || 'Could not send the note. Try again.')
       setSending(false)
@@ -91,11 +65,6 @@ export default function SupportPage() {
     setText('')
     setPhoto(null)
     if (fileRef.current) fileRef.current.value = ''
-    const list = await fetch('/api/support')
-    if (list.ok) {
-      const payload = await list.json() as { messages?: Note[] }
-      setNotes(payload.messages ?? [])
-    }
     setSent(true)
     setSending(false)
   }
@@ -192,23 +161,6 @@ export default function SupportPage() {
             </>
           )}
         </div>
-
-        {!loading && notes.length > 0 && (
-          <div className="space-y-3">
-            <p className="px-1 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Sent</p>
-            {notes.map((note) => (
-              <article key={note.id} className="bg-white rounded-[28px] px-4 py-4">
-                <p className="font-copy text-sm leading-relaxed text-[#1a1a1a] whitespace-pre-wrap">{note.body}</p>
-                {note.image_url && (
-                  <img src={note.image_url} alt="" className="mt-3 max-h-80 w-full rounded-[20px] object-contain bg-brand-field" />
-                )}
-                <p className="mt-3 text-[11px] text-[rgba(26,26,26,0.4)]">
-                  {new Date(note.created_at).toLocaleString()}
-                </p>
-              </article>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   )

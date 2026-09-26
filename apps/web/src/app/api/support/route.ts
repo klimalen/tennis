@@ -14,37 +14,6 @@ function isJpeg(bytes: Uint8Array) {
   return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
 }
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data, error } = await supabase
-    .from('support_messages')
-    .select('id, body, image_path, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(30)
-
-  if (error) return apiError(500, 'Could not load your notes', error)
-
-  const messages = await Promise.all((data ?? []).map(async (row) => {
-    let imageUrl: string | null = null
-    if (row.image_path) {
-      const signed = await supabase.storage.from('support-images').createSignedUrl(row.image_path, 60 * 60)
-      imageUrl = signed.data?.signedUrl ?? null
-    }
-    return {
-      id: row.id as string,
-      body: row.body as string,
-      created_at: row.created_at as string,
-      image_url: imageUrl,
-    }
-  }))
-
-  return NextResponse.json({ messages })
-}
-
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
