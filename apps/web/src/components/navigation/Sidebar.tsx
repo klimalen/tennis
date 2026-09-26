@@ -20,9 +20,9 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-[#1a1a1a]/10 z-40">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-brand-divider">
-        <Link href="/search" className="flex flex-col items-center text-center">
+        <Link href="/search" className="block text-left">
           <p className="text-[10px] tracking-[0.28em] uppercase text-[#85648F]">✦ GAME.</p>
-          <p className="font-display text-5xl leading-[0.85] tracking-wide text-[#1a1a1a] mt-1 whitespace-nowrap">DISCOVER</p>
+          <p className="font-display text-5xl leading-[0.85] tracking-wide text-[#1a1a1a] mt-1">DISCOVER</p>
           <p className="font-fraunces italic text-sm text-[#497250] mt-1.5 leading-snug">Players, games, courts &amp; more</p>
         </Link>
       </div>
