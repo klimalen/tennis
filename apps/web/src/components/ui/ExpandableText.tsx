@@ -26,10 +26,15 @@ export function ExpandableText({ text, className }: { text: string; className?: 
   return (
     <div
       className={`flex items-start gap-1.5 ${canToggle ? 'cursor-pointer' : ''}`}
-      onClick={canToggle ? () => setOpen((value) => !value) : undefined}
+      onClick={canToggle ? (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        setOpen((value) => !value)
+      } : undefined}
       onKeyDown={canToggle ? (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
+          event.stopPropagation()
           setOpen((value) => !value)
         }
       } : undefined}
@@ -37,7 +42,7 @@ export function ExpandableText({ text, className }: { text: string; className?: 
       tabIndex={canToggle ? 0 : undefined}
       aria-expanded={canToggle ? open : undefined}
     >
-      <p ref={ref} className={`${className ?? ''} min-w-0 flex-1 ${open ? '' : 'line-clamp-2'}`}>
+      <p ref={ref} className={`${className ?? ''} min-w-0 flex-1 ${open ? '' : 'line-clamp-1'}`}>
         {text}
       </p>
       {canToggle && (
