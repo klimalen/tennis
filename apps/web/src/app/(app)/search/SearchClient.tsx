@@ -485,13 +485,14 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
                 <Phone size={13} /> {venue.phone}
               </a>
             )}
-            <Link
-              href={courtReportHref({ id: venue.id, name: courtTitle(venue), address: venue.address })}
-              className="flex items-center justify-center px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-center font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.7)] hover:bg-white transition-colors"
-            >
-              Found an error? Write to support — we&apos;ll fix it.
-            </Link>
           </div>
+          <Link
+            href={courtReportHref({ id: venue.id, name: courtTitle(venue), address: venue.address })}
+            className="block px-2 text-center font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.45)] underline decoration-[rgba(26,26,26,0.28)] underline-offset-[3px] hover:text-[#1a1a1a]"
+          >
+            Found an error, or is this your court?<br />
+            Write to us — we&apos;ll fix it or add more detail.
+          </Link>
         </div>
       </div>
     </>
