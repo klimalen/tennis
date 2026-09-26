@@ -54,7 +54,7 @@ function copy(kind: Kind, russian: boolean) {
     }
     return {
       title: 'Установить приложение',
-      steps: ['Значок установки справа в адресной строке', 'Или меню браузера → «Установить Tennis»'],
+      steps: ['Значок установки справа в адресной строке', 'Или меню браузера → «Установить GAME.»'],
       button: 'Установить',
     }
   }
@@ -81,7 +81,7 @@ function copy(kind: Kind, russian: boolean) {
   }
   return {
     title: 'Install the app',
-    steps: ['Use the install icon at the right of the address bar', 'Or the browser menu, then Install Tennis'],
+    steps: ['Use the install icon at the right of the address bar', 'Or the browser menu, then Install GAME.'],
     button: 'Install',
   }
 }
