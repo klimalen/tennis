@@ -62,8 +62,8 @@ function SignInForm() {
 
   return (
     <div className="bg-white rounded-[28px] p-8">
-      <h1 className="font-display text-4xl tracking-wide mb-1">WELCOME BACK</h1>
-      <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">Sign in to your account</p>
+      <h1 className="font-display text-4xl tracking-wide text-center pl-[0.025em] mb-1">WELCOME BACK</h1>
+      <p className="text-[10px] tracking-[0.15em] pl-[0.15em] uppercase text-center text-[rgba(26,26,26,0.4)] mb-6">Sign in to your account</p>
 
       {/* Google */}
       <button
