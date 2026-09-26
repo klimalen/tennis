@@ -4,8 +4,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-10">
-          <span className="font-display text-5xl tracking-widest text-brand-primary">GAME.</span>
-          <p className="text-[10px] tracking-[0.3em] uppercase text-[rgba(26,26,26,0.4)] mt-1">Find · Play · Connect</p>
+          <span className="inline-block font-display text-5xl tracking-widest pl-[0.25em] text-brand-primary">GAME.</span>
+          <p className="text-[10px] tracking-[0.3em] pl-[0.3em] uppercase text-[rgba(26,26,26,0.4)] mt-1">Find · Play · Connect</p>
         </div>
         {children}
       </div>
