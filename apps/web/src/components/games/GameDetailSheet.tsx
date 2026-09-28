@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Loader2, MapPin, X } from 'lucide-react'
@@ -104,7 +104,23 @@ export function GameDetailSheet({
 }) {
   const [joining, setJoining] = useState(false)
   const [joined, setJoined] = useState(false)
+  const [chatId, setChatId] = useState<string | null>(null)
   useHideTabBar(true)
+
+  useEffect(() => {
+    let cancelled = false
+    const supabase = createClient()
+    void supabase
+      .from('conversations')
+      .select('id')
+      .eq('kind', 'game')
+      .eq('game_id', game.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setChatId(data?.id ?? null)
+      })
+    return () => { cancelled = true }
+  }, [game.id])
 
   const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status))
   const spotsTaken = accepted.length
@@ -239,6 +255,16 @@ export function GameDetailSheet({
                 })}
               </div>
             </div>
+          )}
+
+          {chatId && (
+            <Link
+              href={`/chats/${chatId}`}
+              onClick={onClose}
+              className="block w-full py-3 rounded-full text-center text-[10px] tracking-[0.2em] uppercase font-medium border border-[#1a1a1a]/20 text-[#1a1a1a] hover:border-[#1a1a1a]/50 transition-colors"
+            >
+              Game chat
+            </Link>
           )}
 
           <button

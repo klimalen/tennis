@@ -2,6 +2,7 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { ChatsClient, type ChatItem } from './ChatsClient'
 import { ComposeButton } from './ComposeButton'
+import { formatPlayFormat } from '@/lib/skill'
 
 interface ParticipantRow {
   user_id: string
@@ -17,6 +18,9 @@ interface ParticipantRow {
 interface ConversationRow {
   id: string
   created_at: string
+  kind: 'direct' | 'game'
+  closed_at: string | null
+  game: { format: string; scheduled_at: string; neighborhood: string | null; status: string } | null
   conversation_participants: ParticipantRow[]
 }
 
@@ -30,6 +34,9 @@ async function ChatsData() {
     .select(`
       id,
       created_at,
+      kind,
+      closed_at,
+      game:games ( format, scheduled_at, neighborhood, status ),
       conversation_participants (
         user_id,
         last_read_at,
@@ -56,19 +63,41 @@ async function ChatsData() {
     }),
   )
 
-  const chats: ChatItem[] = rows
-    .map((conv) => {
-      const myPart = conv.conversation_participants.find((p) => p.user_id === user.id)
-      const otherPart = conv.conversation_participants.find((p) => p.user_id !== user.id)
-      if (!otherPart) return null
-      return {
+  const chats: ChatItem[] = rows.flatMap((conv): ChatItem[] => {
+    const myPart = conv.conversation_participants.find((p) => p.user_id === user.id)
+    const others = conv.conversation_participants.filter((p) => p.user_id !== user.id)
+    const lastMsg = lastMessages.get(conv.id) ?? null
+    const myLastReadAt = myPart?.last_read_at ?? null
+    if (conv.kind === 'game') {
+      const title = conv.game ? formatPlayFormat(conv.game.format) : 'Game'
+      const names = others.map((person) => person.profiles.full_name).filter(Boolean)
+      return [{
         id: conv.id,
-        other: otherPart.profiles,
-        lastMsg: lastMessages.get(conv.id) ?? null,
-        myLastReadAt: myPart?.last_read_at ?? null,
-      }
-    })
-    .filter((c): c is ChatItem => c !== null)
+        kind: 'game' as const,
+        title: conv.closed_at || conv.game?.status === 'cancelled' ? `${title} · cancelled` : title,
+        username: null,
+        avatarUrl: null,
+        initials: title.slice(0, 1).toUpperCase() || 'G',
+        memberNames: names,
+        lastMsg,
+        myLastReadAt,
+      }]
+    }
+    const otherPart = others[0]
+    if (!otherPart) return []
+    const name = otherPart.profiles.full_name
+    return [{
+      id: conv.id,
+      kind: 'direct' as const,
+      title: name,
+      username: otherPart.profiles.username,
+      avatarUrl: otherPart.profiles.avatar_url,
+      initials: name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase() || '?',
+      memberNames: [],
+      lastMsg,
+      myLastReadAt,
+    }]
+  })
 
   return <ChatsClient userId={user.id} initialChats={chats} />
 }

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } from 'lucide-react'
+import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { formatPlayFormat } from '@/lib/skill'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -43,6 +45,13 @@ interface Props {
   initialGameStatuses: Record<string, GameStatus>
   initialGameDetails: Record<string, GameDetail>
   isMutual: boolean
+  gameChat?: {
+    format: string
+    scheduledAt: string
+    place: string | null
+    players: string[]
+    closed: boolean
+  } | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -202,7 +211,9 @@ export function ChatView({
   initialGameStatuses,
   initialGameDetails,
   isMutual,
+  gameChat = null,
 }: Props) {
+  const canCompose = gameChat ? !gameChat.closed : isMutual
   const [messages, setMessages] = useState<Message[]>(
     initialMessages.map((m) => ({ ...m, _status: 'sent' as const })),
   )
@@ -408,7 +419,27 @@ export function ChatView({
 
   return (
     <>
-      {messages.length === 0 && otherName && (
+      {gameChat && (
+        <div className="max-w-2xl w-full mx-auto px-4 pt-4">
+          <div className="rounded-[20px] bg-white px-4 py-3">
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Game chat</p>
+            <p className="font-display text-2xl tracking-wide leading-none mt-1">
+              {formatPlayFormat(gameChat.format)}
+            </p>
+            <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1">
+              <LocalGameDay iso={gameChat.scheduledAt} /> <LocalGameMonth iso={gameChat.scheduledAt} />
+              {' · '}
+              <LocalGameTime iso={gameChat.scheduledAt} />
+              {gameChat.place ? ` · ${gameChat.place}` : ''}
+            </p>
+            {gameChat.players.length > 0 && (
+              <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1">{gameChat.players.join(', ')}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {messages.length === 0 && otherName && !gameChat && (
         <div className="max-w-2xl w-full mx-auto px-4 pt-6">
           <div className="rounded-[20px] bg-white px-4 py-4 text-center">
             <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
@@ -508,8 +539,9 @@ export function ChatView({
       <div className="sticky bottom-0 bg-brand-bg border-t border-brand-divider px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="max-w-2xl mx-auto">
           {/* Propose game button */}
-          {isMutual ? (
+          {canCompose ? (
             <>
+              {!gameChat && (
               <div className="flex mb-2">
                 <button
                   onClick={() => router.push(`/games/new?invite=${otherUserId}&name=${encodeURIComponent(otherName)}`)}
@@ -519,6 +551,7 @@ export function ChatView({
                   Propose game
                 </button>
               </div>
+              )}
               <div className="flex items-end gap-2">
                 <textarea
                   ref={inputRef}
@@ -539,7 +572,7 @@ export function ChatView({
           ) : (
             <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-3 text-center">
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                Messaging requires a mutual follow
+                {gameChat ? 'This game was cancelled' : 'Messaging requires a mutual follow'}
               </p>
             </div>
           )}

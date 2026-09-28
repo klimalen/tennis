@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { ChatView } from './ChatView'
+import { formatPlayFormat } from '@/lib/skill'
+import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
 interface RawMessage {
   id: string
@@ -23,6 +25,21 @@ export default async function ChatPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
+
+  const { data: conversation } = await supabase
+    .from('conversations')
+    .select('kind, closed_at, game_id, game:games ( format, scheduled_at, neighborhood, status )')
+    .eq('id', id)
+    .maybeSingle()
+
+  const gameRow = (conversation?.game ?? null) as {
+    format: string
+    scheduled_at: string
+    neighborhood: string | null
+    status: string
+  } | null
+  const isGameChat = conversation?.kind === 'game'
+  const gameClosed = Boolean(conversation?.closed_at) || gameRow?.status === 'cancelled'
 
   const { data: participantsData } = await supabase
     .from('conversation_participants')
@@ -91,9 +108,9 @@ export default async function ChatPage({
     }
   }
 
-  // Check mutual follow — messaging requires both to follow each other
+  // Personal chats need a mutual follow. A game chat is open to whoever holds a seat.
   let isMutual = true // default true to not break existing chats before follows existed
-  if (otherUserId) {
+  if (!isGameChat && otherUserId) {
     const [{ data: f1 }, { data: f2 }] = await Promise.all([
       supabase.from('follows').select('follower_id').eq('follower_id', user.id).eq('following_id', otherUserId).maybeSingle(),
       supabase.from('follows').select('follower_id').eq('follower_id', otherUserId).eq('following_id', user.id).maybeSingle(),
@@ -119,7 +136,23 @@ export default async function ChatPage({
           <Link href="/chats" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
-          {otherProfile && (
+          {isGameChat && (
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Game chat</p>
+              <span className="font-display text-xl tracking-wide block leading-tight truncate">
+                {gameRow ? formatPlayFormat(gameRow.format).toUpperCase() : 'GAME'}
+                {gameClosed ? ' · CANCELLED' : ''}
+              </span>
+              {gameRow && (
+                <p className="text-[11px] text-[rgba(26,26,26,0.45)] truncate">
+                  <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
+                  {' · '}
+                  <LocalGameTime iso={gameRow.scheduled_at} />
+                </p>
+              )}
+            </div>
+          )}
+          {!isGameChat && otherProfile && (
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <Link href={`/profile/${otherProfile.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                 <div className="w-8 h-8 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
@@ -152,10 +185,19 @@ export default async function ChatPage({
         otherName={otherProfile?.full_name ?? ''}
         {...(otherProfile?.username ? { otherUsername: otherProfile.username } : {})}
         initialMessages={initialMessages}
-        initialOtherLastReadAt={otherLastReadAt}
+        initialOtherLastReadAt={isGameChat ? null : otherLastReadAt}
         initialGameStatuses={initialGameStatuses}
         initialGameDetails={initialGameDetails}
-        isMutual={isMutual}
+        isMutual={isGameChat ? !gameClosed : isMutual}
+        gameChat={isGameChat && gameRow ? {
+          format: gameRow.format,
+          scheduledAt: gameRow.scheduled_at,
+          place: gameRow.neighborhood,
+          players: (participantsData ?? [])
+            .map((person) => (person.profiles as { full_name?: string } | null)?.full_name ?? '')
+            .filter(Boolean),
+          closed: gameClosed,
+        } : null}
       />
     </div>
   )

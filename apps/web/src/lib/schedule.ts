@@ -12,6 +12,7 @@ export interface ScheduleGame {
   status: string
   creator_id: string
   participation: ScheduleParticipation
+  chatId: string | null
 }
 
 /** A seat in the game. Declined and cancelled players are not in it. */
