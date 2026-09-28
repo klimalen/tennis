@@ -1,5 +1,7 @@
 import { gameEndMs } from '@/lib/game-time'
 
+export type ScheduleParticipation = 'creator' | 'accepted' | 'invited'
+
 export interface ScheduleGame {
   id: string
   scheduled_at: string
@@ -9,6 +11,12 @@ export interface ScheduleGame {
   is_open: boolean
   status: string
   creator_id: string
+  participation: ScheduleParticipation
+}
+
+/** A seat in the game. Declined and cancelled players are not in it. */
+export function holdsGameSeat(status: string) {
+  return status === 'accepted' || status === 'invited'
 }
 
 export interface SchedulePreviewItem extends ScheduleGame {

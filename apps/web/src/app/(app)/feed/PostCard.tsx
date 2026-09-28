@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Calendar, Loader2, MapPin } from 'lucide-react'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { holdsGameSeat } from '@/lib/schedule'
 import { skillLabel } from '@/lib/skill'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 
@@ -121,11 +122,11 @@ function OpenGameCard({
     return () => { cancelled = true }
   }, [basicGame.id])
 
-  const accepted = gameDetail?.participants.filter((p) => p.status === 'accepted' || p.status === 'invited') ?? []
+  const accepted = gameDetail?.participants.filter((p) => holdsGameSeat(p.status)) ?? []
   const spotsTaken = accepted.length
   const spotsLeft = gameDetail ? gameDetail.max_players - spotsTaken : basicGame.max_players
   const isFull = spotsLeft <= 0
-  const isParticipant = gameDetail?.participants.some((p) => p.player_id === currentUserId) ?? false
+  const isParticipant = gameDetail?.participants.some((p) => p.player_id === currentUserId && holdsGameSeat(p.status)) ?? false
   const isCreator = gameDetail?.creator_id === currentUserId
   const alreadyIn = isParticipant || isCreator
 

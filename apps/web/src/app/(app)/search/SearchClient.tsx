@@ -17,6 +17,7 @@ import { InstallHint } from '@/components/pwa/InstallHint'
 import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
+import { holdsGameSeat } from '@/lib/schedule'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -626,17 +627,17 @@ const GAME_FILTERS = [
 ]
 
 function openGameSpotsLeft(game: OpenGame) {
-  const taken = game.participants.filter((participant) => participant.status === 'accepted' || participant.status === 'invited').length
+  const taken = game.participants.filter((participant) => holdsGameSeat(participant.status)).length
   return game.max_players - taken
 }
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
 function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
-  const spotsTaken = game.participants.filter((p) => p.status === 'accepted' || p.status === 'invited').length
+  const spotsTaken = game.participants.filter((p) => holdsGameSeat(p.status)).length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
-  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId) : false
+  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId && holdsGameSeat(p.status)) : false
   const alreadyIn = isParticipant || joined
 
   return (
