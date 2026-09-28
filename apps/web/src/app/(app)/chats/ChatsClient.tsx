@@ -6,11 +6,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ListSearch } from '@/components/ui/ListSearch'
+import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
 export interface ChatItem {
   id: string
   kind: 'direct' | 'game'
   title: string
+  scheduledAt: string | null
+  cancelled: boolean
   username: string | null
   avatarUrl: string | null
   initials: string
@@ -50,6 +53,19 @@ function formatChatTime(iso: string): string {
   yesterday.setDate(now.getDate() - 1)
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function gameSlotLabel(iso: string): string {
+  const dt = new Date(iso)
+  const month = dt.toLocaleDateString('en-GB', { month: 'short' })
+  const time = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  return `${dt.getDate()} ${month} ${time}`
+}
+
+function searchTitle(chat: ChatItem): string {
+  if (chat.kind !== 'game' || !chat.scheduledAt) return chat.title
+  const when = gameSlotLabel(chat.scheduledAt)
+  return chat.cancelled ? `${chat.title} ${when} cancelled` : `${chat.title} ${when}`
 }
 
 function hasUnread(chat: ChatItem, userId: string): boolean {
@@ -163,7 +179,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
   const needle = query.trim().toLowerCase()
   const visible = needle
     ? chats.filter((chat) => {
-        const haystack = [chat.title, chat.username ?? '', ...chat.memberNames].join(' ').toLowerCase()
+        const haystack = [searchTitle(chat), chat.username ?? '', ...chat.memberNames].join(' ').toLowerCase()
         return haystack.includes(needle)
       })
     : chats
@@ -218,9 +234,18 @@ export function ChatsClient({ userId, initialChats }: Props) {
 
             {/* Text */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className={`font-display text-base tracking-wide leading-tight truncate ${unread ? 'text-[#1a1a1a]' : ''}`}>
-                  {chat.title.toUpperCase()}
+              <div className="flex items-start justify-between gap-2">
+                <p className={`font-display text-base tracking-wide leading-tight uppercase ${chat.kind === 'game' ? '' : 'truncate'} ${unread ? 'text-[#1a1a1a]' : ''}`}>
+                  {chat.title}
+                  {chat.kind === 'game' && chat.scheduledAt && (
+                    <>
+                      {' · '}
+                      <LocalGameDay iso={chat.scheduledAt} /> <LocalGameMonth iso={chat.scheduledAt} />
+                      {' · '}
+                      <LocalGameTime iso={chat.scheduledAt} />
+                    </>
+                  )}
+                  {chat.cancelled ? ' · cancelled' : ''}
                 </p>
                 {lastMsg && (
                   <span className="text-[10px] text-[rgba(26,26,26,0.35)] flex-shrink-0">{formatChatTime(lastMsg.created_at)}</span>

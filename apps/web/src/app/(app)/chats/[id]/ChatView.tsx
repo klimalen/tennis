@@ -423,15 +423,16 @@ export function ChatView({
         <div className="max-w-2xl w-full mx-auto px-4 pt-4">
           <div className="rounded-[20px] bg-white px-4 py-3">
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Game chat</p>
-            <p className="font-display text-2xl tracking-wide leading-none mt-1">
+            <p className="font-display text-2xl tracking-wide leading-none mt-1 uppercase">
               {formatPlayFormat(gameChat.format)}
-            </p>
-            <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1">
+              {' · '}
               <LocalGameDay iso={gameChat.scheduledAt} /> <LocalGameMonth iso={gameChat.scheduledAt} />
               {' · '}
               <LocalGameTime iso={gameChat.scheduledAt} />
-              {gameChat.place ? ` · ${gameChat.place}` : ''}
             </p>
+            {gameChat.place ? (
+              <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1">{gameChat.place}</p>
+            ) : null}
             {gameChat.players.length > 0 && (
               <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1">{gameChat.players.join(', ')}</p>
             )}
