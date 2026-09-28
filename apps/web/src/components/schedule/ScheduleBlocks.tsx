@@ -57,6 +57,10 @@ export function ScheduleGameCard({
             <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.45)] border border-[#1a1a1a]/20 px-1.5 py-0.5">
               Past
             </span>
+          ) : game.participation === 'invited' ? (
+            <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.45)] border border-[#1a1a1a]/20 px-1.5 py-0.5">
+              Invited
+            </span>
           ) : game.is_open ? (
             <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">
               Open

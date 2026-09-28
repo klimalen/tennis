@@ -4,7 +4,7 @@ import type { ScheduleGame } from '@/lib/schedule'
 const GAME_COLUMNS = 'id, scheduled_at, duration_minutes, format, neighborhood, is_open, status, creator_id'
 
 export async function loadPlayerGames(supabase: SupabaseClient, playerId: string): Promise<ScheduleGame[]> {
-  const [{ data: created }, { data: participations }] = await Promise.all([
+  const [{ data: created, error: createdError }, { data: participations, error: participationError }] = await Promise.all([
     supabase
       .from('games')
       .select(GAME_COLUMNS)
@@ -13,26 +13,38 @@ export async function loadPlayerGames(supabase: SupabaseClient, playerId: string
       .neq('status', 'draft'),
     supabase
       .from('game_participants')
-      .select('game_id')
+      .select('game_id, status')
       .eq('player_id', playerId)
-      .eq('status', 'accepted'),
+      .in('status', ['accepted', 'invited']),
   ])
+  if (createdError) throw createdError
+  if (participationError) throw participationError
 
   const createdIds = new Set((created ?? []).map((game) => game.id as string))
-  const joinedIds = (participations ?? [])
-    .map((row) => row.game_id as string)
-    .filter((id) => !createdIds.has(id))
+  const seated = (participations ?? []).filter((row) => !createdIds.has(row.game_id as string))
+  const statusByGame = new Map(seated.map((row) => [row.game_id as string, row.status as string]))
 
-  const { data: joined } = joinedIds.length > 0
+  const joinedIds = seated.map((row) => row.game_id as string)
+  const { data: joined, error: joinedError } = joinedIds.length > 0
     ? await supabase
         .from('games')
         .select(GAME_COLUMNS)
         .in('id', joinedIds)
         .neq('status', 'cancelled')
         .neq('status', 'draft')
-    : { data: [] }
+    : { data: [], error: null }
+  if (joinedError) throw joinedError
 
-  return [...(created ?? []), ...(joined ?? [])] as ScheduleGame[]
+  const createdGames: ScheduleGame[] = (created ?? []).map((game) => ({
+    ...(game as Omit<ScheduleGame, 'participation'>),
+    participation: 'creator',
+  }))
+  const joinedGames: ScheduleGame[] = (joined ?? []).map((game) => ({
+    ...(game as Omit<ScheduleGame, 'participation'>),
+    participation: statusByGame.get(game.id as string) === 'invited' ? 'invited' : 'accepted',
+  }))
+
+  return [...createdGames, ...joinedGames]
 }
 
 export async function playedGamesCount(supabase: SupabaseClient, playerId: string, fallback: number): Promise<number> {

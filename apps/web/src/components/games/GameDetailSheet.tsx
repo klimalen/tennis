@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Loader2, MapPin, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { holdsGameSeat } from '@/lib/schedule'
 import { skillLabel } from '@/lib/skill'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 
@@ -69,7 +70,7 @@ export function viewerPlaysInGame(
 ) {
   if (!viewerId) return false
   if (game.creator_id === viewerId) return true
-  return game.participants.some((participant) => participant.player_id === viewerId && participant.status === 'accepted')
+  return game.participants.some((participant) => participant.player_id === viewerId && holdsGameSeat(participant.status))
 }
 
 export function viewerCanOpenGame(
@@ -105,7 +106,7 @@ export function GameDetailSheet({
   const [joined, setJoined] = useState(false)
   useHideTabBar(true)
 
-  const accepted = game.participants.filter((participant) => participant.status === 'accepted' || participant.status === 'invited')
+  const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status))
   const spotsTaken = accepted.length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
