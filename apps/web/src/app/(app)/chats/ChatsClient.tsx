@@ -9,12 +9,12 @@ import { ListSearch } from '@/components/ui/ListSearch'
 
 export interface ChatItem {
   id: string
-  other: {
-    id: string
-    full_name: string
-    username: string
-    avatar_url: string | null
-  }
+  kind: 'direct' | 'game'
+  title: string
+  username: string | null
+  avatarUrl: string | null
+  initials: string
+  memberNames: string[]
   lastMsg: {
     id: string
     body: string
@@ -163,9 +163,8 @@ export function ChatsClient({ userId, initialChats }: Props) {
   const needle = query.trim().toLowerCase()
   const visible = needle
     ? chats.filter((chat) => {
-        const name = chat.other.full_name.toLowerCase()
-        const username = chat.other.username.toLowerCase()
-        return name.includes(needle) || username.includes(needle)
+        const haystack = [chat.title, chat.username ?? '', ...chat.memberNames].join(' ').toLowerCase()
+        return haystack.includes(needle)
       })
     : chats
 
@@ -178,8 +177,8 @@ export function ChatsClient({ userId, initialChats }: Props) {
         <p className="px-4 py-8 text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No matches</p>
       ) : null}
       {visible.map((chat) => {
-        const { other, lastMsg } = chat
-        const initials = other.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+        const { lastMsg } = chat
+        const initials = chat.initials
         let previewBody = lastMsg?.body ?? ''
         if (lastMsg?.type === 'game_invite') {
           try {
@@ -210,8 +209,8 @@ export function ChatsClient({ userId, initialChats }: Props) {
           >
             {/* Avatar */}
             <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
-              {other.avatar_url ? (
-                <Image src={other.avatar_url} alt={other.full_name} width={48} height={48} className="w-full h-full object-cover" />
+              {chat.avatarUrl ? (
+                <Image src={chat.avatarUrl} alt={chat.title} width={48} height={48} className="w-full h-full object-cover" />
               ) : (
                 <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
               )}
@@ -221,7 +220,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2">
                 <p className={`font-display text-base tracking-wide leading-tight truncate ${unread ? 'text-[#1a1a1a]' : ''}`}>
-                  {other.full_name.toUpperCase()}
+                  {chat.title.toUpperCase()}
                 </p>
                 {lastMsg && (
                   <span className="text-[10px] text-[rgba(26,26,26,0.35)] flex-shrink-0">{formatChatTime(lastMsg.created_at)}</span>
@@ -232,7 +231,11 @@ export function ChatsClient({ userId, initialChats }: Props) {
                   {preview}
                 </p>
               ) : (
-                <p className="text-[10px] tracking-[0.1em] text-[rgba(26,26,26,0.3)] mt-0.5">@{other.username}</p>
+                <p className="text-[10px] tracking-[0.1em] text-[rgba(26,26,26,0.3)] mt-0.5">
+                  {chat.kind === 'game'
+                    ? (chat.memberNames.join(', ') || 'Game chat')
+                    : chat.username ? `@${chat.username}` : ''}
+                </p>
               )}
             </div>
 

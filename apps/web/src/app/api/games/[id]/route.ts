@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
 import { parseDurationMinutes } from '@/lib/game-time'
+import { postGameNotice } from '@/lib/game-notice'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -88,27 +89,7 @@ export async function PATCH(
       updated: true,
     })
 
-    // Get all other participants
-    const { data: participants } = await supabase
-      .from('game_participants')
-      .select('player_id')
-      .eq('game_id', id)
-      .neq('player_id', user.id)
-
-    for (const p of participants ?? []) {
-      const { data: convId, error: convErr } = await supabase
-        .rpc('shared_conversation_id', { other_user_id: p.player_id })
-
-      if (convErr || !convId) continue
-
-      await supabase.from('messages').insert({
-        conversation_id: convId,
-        sender_id: user.id,
-        body: snapshot,
-        type: 'game_invite',
-        game_id: id,
-      })
-    }
+    await postGameNotice(supabase, user.id, id, snapshot)
   }
 
   return NextResponse.json({ ok: true })
@@ -134,34 +115,14 @@ export async function DELETE(
 
   if (!game) return NextResponse.json({ error: 'Not found or not creator' }, { status: 404 })
 
-  // Notify all other participants before deletion.
-  // We insert a game_invite message now; ON DELETE SET NULL will flip game_id → null,
+  // Notify before deletion. ON DELETE SET NULL flips game_id → null,
   // which the card renders as "This game has been cancelled".
-  const { data: participants } = await supabase
-    .from('game_participants')
-    .select('player_id')
-    .eq('game_id', id)
-    .neq('player_id', user.id)
-
   const snapshot = JSON.stringify({
     scheduled_at: game.scheduled_at,
     format: game.format,
     location: game.neighborhood ?? null,
   })
-
-  for (const p of participants ?? []) {
-    const { data: convId } = await supabase
-      .rpc('shared_conversation_id', { other_user_id: p.player_id })
-    if (!convId) continue
-
-    await supabase.from('messages').insert({
-      conversation_id: convId,
-      sender_id: user.id,
-      body: snapshot,
-      type: 'game_invite',
-      game_id: id,
-    })
-  }
+  await postGameNotice(supabase, user.id, id, snapshot)
 
   // Delete the game — ON DELETE SET NULL propagates to messages.game_id
   const { error } = await supabase

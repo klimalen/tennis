@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { Pencil } from 'lucide-react'
+import { MessageCircle, Pencil } from 'lucide-react'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { gameEndMs } from '@/lib/game-time'
 import { formatPlayFormat } from '@/lib/skill'
@@ -74,14 +74,28 @@ export function ScheduleGameCard({
           {game.neighborhood ? ` · ${game.neighborhood}` : ''}
         </p>
       </div>
-      {resolvedEditHref && (
-        <Link
-          href={resolvedEditHref}
-          onClick={(event) => event.stopPropagation()}
-          className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.3)] hover:text-brand-primary transition-colors flex-shrink-0"
-        >
-          <Pencil size={14} />
-        </Link>
+      {(game.chatId || resolvedEditHref) && (
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {game.chatId && (
+            <Link
+              href={`/chats/${game.chatId}`}
+              aria-label="Game chat"
+              onClick={(event) => event.stopPropagation()}
+              className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.3)] hover:text-brand-primary transition-colors"
+            >
+              <MessageCircle size={16} />
+            </Link>
+          )}
+          {resolvedEditHref && (
+            <Link
+              href={resolvedEditHref}
+              onClick={(event) => event.stopPropagation()}
+              className="w-8 h-8 flex items-center justify-center text-[rgba(26,26,26,0.3)] hover:text-brand-primary transition-colors"
+            >
+              <Pencil size={14} />
+            </Link>
+          )}
+        </div>
       )}
     </div>
     {detail && (

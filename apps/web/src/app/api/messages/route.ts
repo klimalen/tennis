@@ -25,6 +25,16 @@ export async function POST(request: Request) {
 
   if (!membership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const { data: conversation } = await supabase
+    .from('conversations')
+    .select('kind, closed_at, game:games ( status )')
+    .eq('id', conversation_id)
+    .maybeSingle()
+  const gameStatus = (conversation?.game as { status?: string } | null)?.status
+  if (conversation?.kind === 'game' && (conversation.closed_at || gameStatus === 'cancelled')) {
+    return NextResponse.json({ error: 'This game was cancelled' }, { status: 403 })
+  }
+
   const { data, error } = await supabase
     .from('messages')
     .insert({ conversation_id, sender_id: user.id, body: text.trim() })

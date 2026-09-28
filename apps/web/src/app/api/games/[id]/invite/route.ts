@@ -50,15 +50,27 @@ export async function POST(
       if (pErr) console.error('[invite] participant insert error:', pErr)
     }
 
-    // Find shared conversation via SECURITY DEFINER function (bypasses RLS)
-    const { data: convId, error: convErr } = await supabase
+    // Friends can receive the invite in a personal chat even if they have not opened one yet.
+    let convId: string | null = null
+    const { data: existingConv, error: convErr } = await supabase
       .rpc('shared_conversation_id', { other_user_id: inviteeId })
-
     if (convErr) console.error('[invite] shared_conversation_id error:', convErr)
+    convId = (existingConv as string | null) ?? null
+
     if (!convId) {
-      console.error('[invite] no shared conversation for invitee', inviteeId)
-      continue
+      const [{ data: iFollow }, { data: theyFollow }] = await Promise.all([
+        supabase.from('follows').select('follower_id').eq('follower_id', user.id).eq('following_id', inviteeId).maybeSingle(),
+        supabase.from('follows').select('follower_id').eq('follower_id', inviteeId).eq('following_id', user.id).maybeSingle(),
+      ])
+      if (iFollow && theyFollow) {
+        const { data: createdConv, error: createErr } = await supabase
+          .rpc('get_or_create_conversation', { other_user_id: inviteeId })
+        if (createErr) console.error('[invite] get_or_create_conversation error:', createErr)
+        convId = (createdConv as string | null) ?? null
+      }
     }
+
+    if (!convId) continue
 
     // Check if game_invite already sent for this game in this conversation
     const { data: existingMsg } = await supabase

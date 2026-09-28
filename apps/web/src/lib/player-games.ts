@@ -36,15 +36,29 @@ export async function loadPlayerGames(supabase: SupabaseClient, playerId: string
   if (joinedError) throw joinedError
 
   const createdGames: ScheduleGame[] = (created ?? []).map((game) => ({
-    ...(game as Omit<ScheduleGame, 'participation'>),
+    ...(game as Omit<ScheduleGame, 'participation' | 'chatId'>),
     participation: 'creator',
+    chatId: null,
   }))
   const joinedGames: ScheduleGame[] = (joined ?? []).map((game) => ({
-    ...(game as Omit<ScheduleGame, 'participation'>),
+    ...(game as Omit<ScheduleGame, 'participation' | 'chatId'>),
     participation: statusByGame.get(game.id as string) === 'invited' ? 'invited' : 'accepted',
+    chatId: null,
   }))
 
-  return [...createdGames, ...joinedGames]
+  const games = [...createdGames, ...joinedGames]
+  const ids = games.map((game) => game.id)
+  if (ids.length === 0) return games
+
+  const { data: chats, error: chatError } = await supabase
+    .from('conversations')
+    .select('id, game_id')
+    .eq('kind', 'game')
+    .in('game_id', ids)
+  if (chatError) throw chatError
+
+  const chatByGame = new Map((chats ?? []).map((chat) => [chat.game_id as string, chat.id as string]))
+  return games.map((game) => ({ ...game, chatId: chatByGame.get(game.id) ?? null }))
 }
 
 export async function playedGamesCount(supabase: SupabaseClient, playerId: string, fallback: number): Promise<number> {
