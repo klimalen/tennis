@@ -1,5 +1,5 @@
 const fieldClass =
-  'block h-11 w-full min-w-0 max-w-full box-border appearance-none [-webkit-appearance:none] [-webkit-min-logical-width:0] px-2 border border-[#1a1a1a]/40 bg-brand-field rounded-full text-center text-sm leading-none text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors [&::-webkit-date-and-time-value]:m-0 [&::-webkit-date-and-time-value]:min-h-0 [&::-webkit-date-and-time-value]:p-0 [&::-webkit-date-and-time-value]:text-center [&::-webkit-datetime-edit]:p-0 [&::-webkit-datetime-edit-fields-wrapper]:p-0 [&::-webkit-calendar-picker-indicator]:hidden'
+  'flex h-11 w-full min-w-0 max-w-full items-center justify-center box-border appearance-none [-webkit-appearance:none] [-webkit-min-logical-width:0] overflow-hidden px-3 border border-[#1a1a1a]/40 bg-brand-field rounded-full text-center text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors [&::-webkit-date-and-time-value]:m-auto [&::-webkit-date-and-time-value]:h-auto [&::-webkit-date-and-time-value]:min-h-[1.25em] [&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-center [&::-webkit-datetime-edit]:m-auto [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:p-0 [&::-webkit-datetime-edit]:text-center [&::-webkit-datetime-edit-fields-wrapper]:p-0 [&::-webkit-calendar-picker-indicator]:hidden'
 
 export function WhenFields({
   date,
@@ -21,8 +21,8 @@ export function WhenFields({
   return (
     <div>
       <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
-      <div className="grid grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2">
-        <div className="min-w-0">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="col-span-2 min-w-0 overflow-hidden sm:col-span-1">
           <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>
           <input
             type="date"
@@ -33,7 +33,7 @@ export function WhenFields({
             className={fieldClass}
           />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 overflow-hidden">
           <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Starts</label>
           <input
             type="time"
@@ -43,7 +43,7 @@ export function WhenFields({
             className={fieldClass}
           />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 overflow-hidden">
           <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Ends</label>
           <input
             type="time"
