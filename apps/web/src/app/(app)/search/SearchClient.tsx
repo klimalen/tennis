@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -411,22 +411,64 @@ function googleMapsUrl(lat: number, lng: number, name: string): string {
   return `https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lng},17z`
 }
 
-function courtMapEmbed(venue: { lat: number; lng: number }): string {
-  // The key only chooses Google vs OpenStreetMap. The iframe is the classic
-  // embed (t=h): hybrid imagery with street labels and +/- zoom. Maps Embed
-  // API cannot do hybrid and does not show those controls.
+const COURT_MAP_ZOOM_MIN = 14
+const COURT_MAP_ZOOM_MAX = 20
+
+function courtMapEmbed(venue: { lat: number; lng: number }, zoom = 17): string {
+  // The key only chooses Google vs OpenStreetMap. Classic embed (t=h) is
+  // hybrid — satellite plus street labels. It does not include +/- controls,
+  // so those are drawn on top of the frame.
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
   if (key) {
     const q = encodeURIComponent(`${venue.lat},${venue.lng}`)
-    return `https://www.google.com/maps?q=${q}&z=17&t=h&output=embed`
+    return `https://www.google.com/maps?q=${q}&z=${zoom}&t=h&output=embed`
   }
   const delta = 0.008
   return `https://www.openstreetmap.org/export/embed.html?bbox=${venue.lng - delta},${venue.lat - delta},${venue.lng + delta},${venue.lat + delta}&layer=mapnik&marker=${venue.lat},${venue.lng}`
 }
 
+function CourtMap({ venue }: { venue: { lat: number; lng: number; name: string } }) {
+  const google = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+  const [zoom, setZoom] = useState(17)
+  return (
+    <div className="relative h-72 bg-brand-surface">
+      <iframe
+        src={courtMapEmbed(venue, zoom)}
+        className="h-full w-full border-0"
+        title={`Map of ${venue.name}`}
+        loading="lazy"
+        allowFullScreen
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+      {google && (
+        <div className="absolute left-3 top-3 z-10 flex flex-col overflow-hidden rounded-lg bg-white shadow-md">
+          <button
+            type="button"
+            aria-label="Zoom in"
+            disabled={zoom >= COURT_MAP_ZOOM_MAX}
+            onClick={() => setZoom((current) => Math.min(COURT_MAP_ZOOM_MAX, current + 1))}
+            className="flex h-9 w-9 items-center justify-center text-[#1a1a1a] disabled:opacity-30"
+          >
+            <Plus size={16} />
+          </button>
+          <div className="h-px bg-[#1a1a1a]/10" />
+          <button
+            type="button"
+            aria-label="Zoom out"
+            disabled={zoom <= COURT_MAP_ZOOM_MIN}
+            onClick={() => setZoom((current) => Math.max(COURT_MAP_ZOOM_MIN, current - 1))}
+            className="flex h-9 w-9 items-center justify-center text-[#1a1a1a] disabled:opacity-30"
+          >
+            <Minus size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLat: number; userLng: number; onClose: () => void }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
-  const mapEmbed = courtMapEmbed(venue)
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
@@ -435,16 +477,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{venueKindLabel(venue.kind)}</span>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
         </div>
-        <div className="h-72 bg-brand-surface">
-          <iframe
-            src={mapEmbed}
-            className="h-full w-full border-0"
-            title={`Map of ${venue.name}`}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
+        <CourtMap venue={venue} />
         <div className="p-5 pb-24 space-y-4">
           <div>
             <div className="flex items-start justify-between gap-3">
