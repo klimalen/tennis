@@ -98,6 +98,7 @@ interface ProfileData {
   preferredSurfaces: string[]
   availability: Availability
   lookingFor: string
+  isCoach: boolean
   city: string
   cityLat: number | null
   cityLng: number | null
@@ -125,7 +126,7 @@ export default function EditProfilePage() {
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null,
     skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], availability: {},
-    lookingFor: '', city: '', cityLat: null, cityLng: null,
+    lookingFor: '', isCoach: false, city: '', cityLat: null, cityLng: null,
   })
 
   function update(partial: Partial<ProfileData>) {
@@ -141,7 +142,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, city_name, city_lat, city_lng')
+        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
         .eq('id', user.id)
         .single()
 
@@ -159,6 +160,7 @@ export default function EditProfilePage() {
           preferredSurfaces: p.preferred_surfaces || [],
           availability: availabilityFromProfile(p),
           lookingFor: p.looking_for || '',
+          isCoach: Boolean(p.is_coach),
           city: p.city_name || '',
           cityLat: p.city_lat ?? null,
           cityLng: p.city_lng ?? null,
@@ -261,6 +263,7 @@ export default function EditProfilePage() {
         preferred_time_end: schedule.preferred_time_end,
         availability: storedAvailability(d.availability),
         looking_for: d.lookingFor.trim() || null,
+        is_coach: d.isCoach,
         city_name: d.city.trim() || null,
         city_lat: d.cityLat,
         city_lng: d.cityLng,
@@ -497,6 +500,22 @@ export default function EditProfilePage() {
                 ))}
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => update({ isCoach: !d.isCoach })}
+              className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
+                d.isCoach
+                  ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
+                  : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
+              }`}
+            >
+              <span>
+                <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
+                <span className={`block text-[11px] mt-0.5 ${d.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
+              </span>
+              <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{d.isCoach ? 'On' : 'Off'}</span>
+            </button>
           </div>
         </section>
 

@@ -13,6 +13,7 @@ import { loadPlayerGames, playedGamesCount } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -62,7 +63,7 @@ export default async function PlayerProfilePage({
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'id, full_name, username, avatar_url, bio, looking_for, city_name, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability',
+      'id, full_name, username, avatar_url, bio, looking_for, city_name, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach',
     )
     .eq('username', username)
     .is('deleted_at', null)
@@ -213,7 +214,8 @@ export default async function PlayerProfilePage({
 
       <div className="max-w-2xl mx-auto px-4 pt-2 pb-8 space-y-6">
         {/* Profile header */}
-        <div className="bg-white rounded-[28px] p-5">
+        <div className="relative bg-white rounded-[28px] p-5">
+          {profile.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">

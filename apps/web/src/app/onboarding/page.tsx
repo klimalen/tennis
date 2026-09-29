@@ -23,6 +23,7 @@ interface OnboardingData {
   availability: Availability
   bio: string
   lookingFor: string
+  isCoach: boolean
   username: string
   avatarFile: File | null
   presetAvatar: string
@@ -38,7 +39,7 @@ const PRESET_AVATARS = [
 const INITIAL_DATA: OnboardingData = {
   city: '', cityLat: null, cityLng: null, yearsPlaying: null, skillLevel: null,
   playFormats: [], playStyle: null, preferredSurfaces: [], availability: {},
-  bio: '', lookingFor: '', username: '', avatarFile: null,
+  bio: '', lookingFor: '', isCoach: false, username: '', avatarFile: null,
   presetAvatar: '/avatars/preset-4.jpg',
 }
 
@@ -305,6 +306,22 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             ))}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => onChange({ isCoach: !data.isCoach })}
+          className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
+            data.isCoach
+              ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
+              : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
+          }`}
+        >
+          <span>
+            <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
+            <span className={`block text-[11px] mt-0.5 ${data.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
+          </span>
+          <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{data.isCoach ? 'On' : 'Off'}</span>
+        </button>
       </div>
     </div>
   )
@@ -587,6 +604,7 @@ export default function OnboardingPage() {
       availability: storedAvailability(data.availability),
       bio: data.bio || null,
       looking_for: data.lookingFor || null,
+      is_coach: data.isCoach,
       ...(username.length >= 3 ? { username } : {}),
       avatar_url: avatarUrl ?? data.presetAvatar,
     }).eq('id', session.user.id)

@@ -11,6 +11,7 @@ import { loadPlayerGames, playedGamesCount } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -30,7 +31,7 @@ async function ProfileContent() {
   const [profileResult, followerResult, followingResult, playerGames, postsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, preferred_surfaces, availability')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, preferred_surfaces, availability, is_coach')
       .eq('id', user.id)
       .single(),
     supabase
@@ -129,7 +130,8 @@ async function ProfileContent() {
 
       <div className="max-w-2xl mx-auto px-4 pt-2 space-y-4">
         {/* Profile header */}
-        <div className="bg-white rounded-[28px] p-5">
+        <div className="relative bg-white rounded-[28px] p-5">
+          {profile?.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">
