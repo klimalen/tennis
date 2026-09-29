@@ -412,10 +412,13 @@ function googleMapsUrl(lat: number, lng: number, name: string): string {
 }
 
 function courtMapEmbed(venue: { lat: number; lng: number }): string {
+  // The key only chooses Google vs OpenStreetMap. The iframe is the classic
+  // embed (t=h): hybrid imagery with street labels and +/- zoom. Maps Embed
+  // API cannot do hybrid and does not show those controls.
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
   if (key) {
     const q = encodeURIComponent(`${venue.lat},${venue.lng}`)
-    return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(key)}&q=${q}&zoom=16`
+    return `https://www.google.com/maps?q=${q}&z=17&t=h&output=embed`
   }
   const delta = 0.008
   return `https://www.openstreetmap.org/export/embed.html?bbox=${venue.lng - delta},${venue.lat - delta},${venue.lng + delta},${venue.lat + delta}&layer=mapnik&marker=${venue.lat},${venue.lng}`
@@ -432,7 +435,7 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{venueKindLabel(venue.kind)}</span>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
         </div>
-        <div className="h-48 bg-brand-surface">
+        <div className="h-72 bg-brand-surface">
           <iframe
             src={mapEmbed}
             className="h-full w-full border-0"
