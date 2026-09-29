@@ -87,6 +87,13 @@ export default function SignUpPage() {
       <h1 className="font-display text-4xl tracking-wide text-center pl-[0.025em] mb-1">CREATE ACCOUNT</h1>
       <p className="text-[10px] tracking-[0.15em] pl-[0.15em] uppercase text-center text-[rgba(26,26,26,0.4)] mb-6">Join the tennis community</p>
 
+      <p className="text-center text-[11px] leading-relaxed text-[rgba(26,26,26,0.5)] mb-5">
+        By creating an account you confirm that you are at least 16 and agree to the{' '}
+        <Link href="/terms" className="underline underline-offset-2 text-[#1a1a1a]">Terms of Use</Link>
+        {' '}and the{' '}
+        <Link href="/privacy" className="underline underline-offset-2 text-[#1a1a1a]">Privacy Policy</Link>.
+      </p>
+
       {/* Google */}
       <button
         type="button"
