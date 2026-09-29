@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
   const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10))
   const q = (searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 80)
   const skills = selectedSkills(searchParams.get('skill'))
+  const coachesOnly = searchParams.get('coach') === '1'
 
   const supabase = await createClient()
 
@@ -55,13 +56,14 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('profiles')
       .select(
-        'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability',
+        'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability, is_coach',
       )
       .is('deleted_at', null)
       .neq('full_name', '')
       .or(`${nearby}${cityClause}`)
 
     if (exclude) query = query.neq('id', exclude)
+    if (coachesOnly) query = query.eq('is_coach', true)
 
     const { data, error } = await query.limit(NEARBY_CAP)
 
@@ -101,7 +103,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('profiles')
     .select(
-      'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability',
+      'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability, is_coach',
     )
     .is('deleted_at', null)
     .neq('full_name', '')
@@ -109,6 +111,7 @@ export async function GET(request: NextRequest) {
     .order('last_active_at', { ascending: false, nullsFirst: false })
 
   if (exclude) query = query.neq('id', exclude)
+  if (coachesOnly) query = query.eq('is_coach', true)
 
   if (!q && skills.length === 0) query = query.range(offset, offset + PAGE_SIZE - 1)
   else query = query.limit(NEARBY_CAP)

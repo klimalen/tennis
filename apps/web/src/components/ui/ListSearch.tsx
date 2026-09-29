@@ -22,14 +22,16 @@ export function MultiFilterChips({
   options,
   value,
   onChange,
+  className = '',
 }: {
   options: { id: string; label: string }[]
   value: string[]
   onChange: (value: string[]) => void
+  className?: string
 }) {
   if (options.length === 0) return null
   return (
-    <div className="flex gap-2 overflow-x-auto">
+    <div className={`flex gap-2 overflow-x-auto ${className}`}>
       {options.map((option) => {
         const active = value.includes(option.id)
         return (

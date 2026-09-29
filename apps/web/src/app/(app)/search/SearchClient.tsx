@@ -12,6 +12,7 @@ import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
+import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { InstallHint } from '@/components/pwa/InstallHint'
 import { courtReportHref } from '@/lib/court-report'
@@ -55,6 +56,7 @@ export interface Player {
   looking_for: string | null
   availability: unknown
   following?: boolean
+  is_coach?: boolean
 }
 
 export interface Venue {
@@ -289,10 +291,15 @@ function PlayerCard({
   const bio = player.bio?.trim() || null
   const lookingFor = player.looking_for?.trim() || null
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
+  const coach = Boolean(player.is_coach)
+  const namePad = showSchedule && coach ? 'pr-28' : showSchedule ? 'pr-12' : coach ? 'pr-16' : ''
   void vivid
 
   return (
     <Link href={`/profile/${player.username}`} className="relative block rounded-[28px] bg-white active:bg-[#F4F1EC]">
+      {coach && (
+        <CoachBadge className={`absolute z-20 shadow-sm ${showSchedule ? 'right-16 top-3' : '-top-2.5 right-4'}`} />
+      )}
       {showSchedule && (
         <AvailabilityButton
           value={player.availability}
@@ -310,7 +317,7 @@ function PlayerCard({
               <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
             )}
           </div>
-          <div className={`min-w-0 flex-1 ${showSchedule ? 'pr-12' : ''}`}>
+          <div className={`min-w-0 flex-1 ${namePad}`}>
             <p className="font-display text-2xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2">{player.full_name}</p>
             {level && (
               <p className="mt-1.5 text-[11px] font-medium leading-none tracking-[0.14em] uppercase text-[#D4A017]">{level}</p>
@@ -958,7 +965,8 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [playerQuery, setPlayerQuery] = useState('')
   const [debouncedPlayerQuery, setDebouncedPlayerQuery] = useState('')
   const [playerSkills, setPlayerSkills] = useState<string[]>([])
-  const playerFilters = useRef({ q: '', skill: '' })
+  const [coachesOnly, setCoachesOnly] = useState(false)
+  const playerFilters = useRef({ q: '', skill: '', coach: false })
   const [loadingPlayers, setLoadingPlayers] = useState(false)
   const [loadingMorePlayers, setLoadingMorePlayers] = useState(false)
   const [playersOffset, setPlayersOffset] = useState(0)
@@ -975,7 +983,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     return () => clearTimeout(timer)
   }, [playerQuery])
 
-  playerFilters.current = { q: debouncedPlayerQuery, skill: playerSkills.join(',') }
+  playerFilters.current = { q: debouncedPlayerQuery, skill: playerSkills.join(','), coach: coachesOnly }
 
   // Geocode user city once so the full list sorts by distance, same as the preview.
   useEffect(() => {
@@ -1014,6 +1022,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     }
     if (playerFilters.current.q) params.set('q', playerFilters.current.q)
     if (playerFilters.current.skill) params.set('skill', playerFilters.current.skill)
+    if (playerFilters.current.coach) params.set('coach', '1')
 
     try {
       const res = await fetch(`/api/players?${params}`)
@@ -1044,14 +1053,14 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     if (view !== 'players' || !userCityName || !geocodeDone) return
     const key = `${userGeoCoords
       ? `${userGeoCoords.lat.toFixed(4)},${userGeoCoords.lng.toFixed(4)}`
-      : 'city'}|${debouncedPlayerQuery}|${playerSkills.join(',')}`
+      : 'city'}|${debouncedPlayerQuery}|${playerSkills.join(',')}|${coachesOnly ? 'coach' : ''}`
     if (playersQueryKey.current === key) return
     playersQueryKey.current = key
     setPlayersOffset(0)
     setHasMorePlayers(false)
     void fetchPlayers(0, false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, userCityName, userGeoCoords, geocodeDone, debouncedPlayerQuery, playerSkills])
+  }, [view, userCityName, userGeoCoords, geocodeDone, debouncedPlayerQuery, playerSkills, coachesOnly])
 
   // IntersectionObserver — load next page when sentinel is visible
   useEffect(() => {
@@ -1503,11 +1512,25 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           {userCityName && (
             <>
               <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or city" />
-              <MultiFilterChips
-                options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
-                value={playerSkills}
-                onChange={setPlayerSkills}
-              />
+              <div className="flex gap-2 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setCoachesOnly((on) => !on)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
+                    coachesOnly
+                      ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
+                      : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
+                  }`}
+                >
+                  Coach
+                </button>
+                <MultiFilterChips
+                  className="contents"
+                  options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
+                  value={playerSkills}
+                  onChange={setPlayerSkills}
+                />
+              </div>
             </>
           )}
           {!userCityName ? (
@@ -1517,10 +1540,14 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           ) : players.length === 0 ? (
             <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">
-                {debouncedPlayerQuery || playerSkills.length > 0 ? 'No matches' : 'No players found'}
+                {debouncedPlayerQuery || playerSkills.length > 0 || coachesOnly ? 'No matches' : 'No players found'}
               </p>
               <p className="text-sm text-[rgba(26,26,26,0.5)]">
-                {debouncedPlayerQuery || playerSkills.length > 0 ? 'Try another name or level' : `No players near ${userCityName} yet`}
+                {coachesOnly && !debouncedPlayerQuery && playerSkills.length === 0
+                  ? `No coaches near ${userCityName} yet`
+                  : debouncedPlayerQuery || playerSkills.length > 0 || coachesOnly
+                    ? 'Try another name or level'
+                    : `No players near ${userCityName} yet`}
               </p>
             </div>
           ) : (
