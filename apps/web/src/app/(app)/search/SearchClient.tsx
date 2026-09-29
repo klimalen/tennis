@@ -411,10 +411,19 @@ function googleMapsUrl(lat: number, lng: number, name: string): string {
   return `https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lng},17z`
 }
 
+function courtMapEmbed(venue: { lat: number; lng: number }): string {
+  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  if (key) {
+    const q = encodeURIComponent(`${venue.lat},${venue.lng}`)
+    return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(key)}&q=${q}&zoom=16`
+  }
+  const delta = 0.008
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${venue.lng - delta},${venue.lat - delta},${venue.lng + delta},${venue.lat + delta}&layer=mapnik&marker=${venue.lat},${venue.lng}`
+}
+
 function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLat: number; userLng: number; onClose: () => void }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
-  const delta = 0.008
-  const osmEmbed = `https://www.openstreetmap.org/export/embed.html?bbox=${venue.lng - delta},${venue.lat - delta},${venue.lng + delta},${venue.lat + delta}&layer=mapnik&marker=${venue.lat},${venue.lng}`
+  const mapEmbed = courtMapEmbed(venue)
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
@@ -424,7 +433,14 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
         </div>
         <div className="h-48 bg-brand-surface">
-          <iframe src={osmEmbed} className="w-full h-full border-0" title={`Map of ${venue.name}`} />
+          <iframe
+            src={mapEmbed}
+            className="h-full w-full border-0"
+            title={`Map of ${venue.name}`}
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
         <div className="p-5 pb-24 space-y-4">
           <div>
