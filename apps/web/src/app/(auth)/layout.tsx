@@ -1,7 +1,7 @@
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-screen min-w-0 max-w-full flex-col items-center justify-center overflow-x-clip bg-brand-bg px-4 py-12">
+      <div className="w-full min-w-0 max-w-sm">
         {/* Logo */}
         <div className="text-center mb-10">
           <span className="inline-block font-display text-5xl tracking-widest text-brand-primary">
