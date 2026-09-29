@@ -32,6 +32,22 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  function redirectKeepingSession(url: URL) {
+    const redirectResponse = NextResponse.redirect(url)
+    for (const cookie of response.cookies.getAll()) {
+      redirectResponse.cookies.set(cookie)
+    }
+    return redirectResponse
+  }
+
+  // A signed-in player opening the login screen should land on Discover.
+  if (user && (pathname === '/sign-in' || pathname === '/sign-up')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/search'
+    url.search = ''
+    return redirectKeepingSession(url)
+  }
+
   // Protect routes that require auth
   const PROTECTED = ['/me/edit', '/create', '/schedule/book', '/settings', '/chats', '/games', '/feed/new']
 
@@ -41,7 +57,7 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/sign-in'
     url.search = ''
     url.searchParams.set('next', nextPath)
-    return NextResponse.redirect(url)
+    return redirectKeepingSession(url)
   }
 
   return response

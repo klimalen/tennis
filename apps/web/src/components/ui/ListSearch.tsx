@@ -31,7 +31,7 @@ export function MultiFilterChips({
 }) {
   if (options.length === 0) return null
   return (
-    <div className={`flex gap-2 overflow-x-auto ${className}`}>
+    <div className={`flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain ${className}`}>
       {options.map((option) => {
         const active = value.includes(option.id)
         return (
@@ -64,7 +64,7 @@ export function FilterChips({
 }) {
   if (options.length === 0) return null
   return (
-    <div className="flex gap-2 overflow-x-auto">
+    <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain">
       {options.map((option) => {
         const active = value === option.id
         return (

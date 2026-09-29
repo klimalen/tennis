@@ -296,7 +296,7 @@ function PlayerCard({
   void vivid
 
   return (
-    <Link href={`/profile/${player.username}`} className="relative block rounded-[28px] bg-white active:bg-[#F4F1EC]">
+    <Link href={`/profile/${player.username}`} className="relative block min-w-0 max-w-full rounded-[28px] bg-white active:bg-[#F4F1EC]">
       {coach && (
         <CoachBadge className={`absolute z-20 shadow-sm ${showSchedule ? 'right-16 top-3' : '-top-2.5 right-4'}`} />
       )}
@@ -318,12 +318,12 @@ function PlayerCard({
             )}
           </div>
           <div className={`min-w-0 flex-1 ${namePad}`}>
-            <p className="font-display text-2xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2">{player.full_name}</p>
+            <p className="font-display text-2xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2 break-words">{player.full_name}</p>
             {level && (
               <p className="mt-1.5 text-[11px] font-medium leading-none tracking-[0.14em] uppercase text-[#D4A017]">{level}</p>
             )}
             {placeLine(player.city_name, player.distance_km) && (
-              <p className="mt-1.5 text-[11px] leading-none text-[rgba(26,26,26,0.45)]">{placeLine(player.city_name, player.distance_km)}</p>
+              <p className="mt-1.5 break-words text-[11px] leading-none text-[rgba(26,26,26,0.45)]">{placeLine(player.city_name, player.distance_km)}</p>
             )}
             {meta && (
               <p className="mt-1.5 text-[10px] leading-snug tracking-[0.12em] uppercase text-[rgba(26,26,26,0.45)]">{meta}</p>
@@ -744,9 +744,9 @@ function CourtCardSkeleton() {
 function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeAll: () => void; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-end justify-between mb-3">
-        <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">{title}</span>
-        <button onClick={onSeeAll} className="flex items-center gap-1 text-[11px] tracking-[0.14em] uppercase text-[#1E3A6E] font-medium hover:underline pb-1">
+      <div className="mb-3 flex min-w-0 items-end justify-between gap-3">
+        <span className="min-w-0 font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">{title}</span>
+        <button onClick={onSeeAll} className="flex flex-shrink-0 items-center gap-1 pb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#1E3A6E] hover:underline">
           See all <ChevronRight size={11} />
         </button>
       </div>
@@ -1360,12 +1360,12 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const pageHeader = (title: string, onBack: () => void) => (
-    <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
-      <div className="max-w-2xl mx-auto flex items-center gap-3">
-        <button onClick={onBack} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+    <div className="sticky top-0 z-10 max-w-full bg-brand-bg/95 px-4 py-4 backdrop-blur-sm">
+      <div className="mx-auto flex min-w-0 max-w-2xl items-center gap-3">
+        <button onClick={onBack} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-white transition-colors hover:bg-brand-field">
           <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
         </button>
-        <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">{title}</span>
+        <span className="min-w-0 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">{title}</span>
       </div>
     </div>
   )
@@ -1399,15 +1399,15 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
   if (view === 'discovery') {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] pb-20 md:pb-0">
+      <div className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-[#FAF7F2] pb-20 md:pb-0">
         {sheets}
 
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+        <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
           <InstallHint />
 
           {!user && (
-            <div className="rounded-[28px] bg-[#1E3A6E] text-[#F0EBE3] px-5 py-5 flex items-end justify-between gap-4">
-              <div>
+            <div className="flex min-w-0 items-end justify-between gap-4 rounded-[28px] bg-[#1E3A6E] px-5 py-5 text-[#F0EBE3]">
+              <div className="min-w-0">
                 <p className="font-display text-4xl leading-none">JOIN FREE</p>
                 <p className="font-fraunces italic text-base text-[#D4E040] mt-1">Play with people near you</p>
               </div>
@@ -1505,14 +1505,14 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
   if (view === 'players') {
     return (
-      <div className="min-h-screen pb-8">
+      <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
         {sheets}
         {pageHeader('PLAYERS', () => setView('discovery'))}
-        <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+        <div className="mx-auto min-w-0 max-w-2xl space-y-3 px-4 py-4">
           {userCityName && (
             <>
               <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or city" />
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex w-full min-w-0 max-w-full items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setCoachesOnly((on) => !on)}
@@ -1525,7 +1525,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                   Coach
                 </button>
                 <MultiFilterChips
-                  className="contents"
+                  className="min-w-0 flex-1"
                   options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
                   value={playerSkills}
                   onChange={setPlayerSkills}
@@ -1591,10 +1591,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
   if (view === 'games') {
     return (
-      <div className="min-h-screen pb-8">
+      <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
         {sheets}
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
-        <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+        <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
           {userCityName && openGames.length > 0 && (
             <>
               <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
@@ -1657,10 +1657,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // ── Courts full view ────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen pb-8">
+    <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
       {sheets}
       {pageHeader('COURTS', () => setView('discovery'))}
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
+      <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
         {/* City search */}
         <div className="relative">
           <div className="flex gap-2">
@@ -1671,7 +1671,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               placeholder="Search city or area..."
-              className="flex-1 bg-brand-field border border-[#1a1a1a]/40 rounded-lg px-4 py-2.5 text-sm text-[#1a1a1a] outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.4)]"
+              className="min-w-0 flex-1 bg-brand-field border border-[#1a1a1a]/40 rounded-lg px-4 py-2.5 text-sm text-[#1a1a1a] outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.4)]"
             />
             {loadingSuggestions && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
