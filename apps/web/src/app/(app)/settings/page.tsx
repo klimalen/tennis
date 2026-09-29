@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, LogOut, Trash2, AlertTriangle, Pencil, LifeBuoy } from 'lucide-react'
+import { ChevronLeft, LogOut, Trash2, AlertTriangle, Pencil, LifeBuoy, Shield, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 export default function SettingsPage() {
@@ -105,6 +105,36 @@ export default function SettingsPage() {
             <div>
               <span className="block text-sm font-medium text-[#1a1a1a]">Support</span>
               <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">Send a note and a photo</span>
+            </div>
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-[28px] overflow-hidden">
+          <div className="px-4 py-3 border-b border-brand-divider">
+            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Legal</p>
+          </div>
+          <Link
+            href="/privacy"
+            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left border-b border-brand-divider"
+          >
+            <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
+              <Shield size={16} className="text-[#1a1a1a]" />
+            </div>
+            <div>
+              <span className="block text-sm font-medium text-[#1a1a1a]">Privacy Policy</span>
+              <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">What we collect and why</span>
+            </div>
+          </Link>
+          <Link
+            href="/terms"
+            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left"
+          >
+            <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
+              <FileText size={16} className="text-[#1a1a1a]" />
+            </div>
+            <div>
+              <span className="block text-sm font-medium text-[#1a1a1a]">Terms of Use</span>
+              <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">Rules for using GAME.</span>
             </div>
           </Link>
         </div>
