@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { safeNext } from '@/lib/safe-next'
+import { googleAuthEnabled } from '@/lib/google-auth'
 
 function GoogleIcon() {
   return (
@@ -65,24 +66,27 @@ function SignInForm() {
       <h1 className="font-display text-4xl tracking-wide text-center pl-[0.025em] mb-1">WELCOME BACK</h1>
       <p className="text-[10px] tracking-[0.15em] pl-[0.15em] uppercase text-center text-[rgba(26,26,26,0.4)] mb-6">Sign in to your account</p>
 
-      {/* Google */}
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        className="w-full flex items-center justify-center gap-3 py-2.5 border border-[#1a1a1a]/40 rounded-full bg-brand-field text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors mb-5"
-      >
-        <GoogleIcon />
-        Continue with Google
-      </button>
+      {googleAuthEnabled && (
+        <>
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-3 py-2.5 border border-[#1a1a1a]/40 rounded-full bg-brand-field text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors mb-5"
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
 
-      <div className="relative mb-5">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-brand-divider" />
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-[rgba(26,26,26,0.4)]">or</span>
-        </div>
-      </div>
+          <div className="relative mb-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-brand-divider" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-3 text-xs text-[rgba(26,26,26,0.4)]">or</span>
+            </div>
+          </div>
+        </>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email */}
