@@ -142,10 +142,11 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
+        .select('account_kind, full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
         .eq('id', user.id)
         .single()
 
+      if (p?.account_kind === 'court') { router.replace('/me'); return }
       if (p) {
         setOriginalUsername(p.username || '')
         update({

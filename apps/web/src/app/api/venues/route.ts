@@ -37,6 +37,7 @@ export interface VenueCard {
   google_maps_uri: string | null
   member_count: number
   confidence: 'low' | 'medium' | 'high'
+  profile_username: string | null
 }
 
 interface GroupRow {
@@ -61,9 +62,20 @@ interface GroupRow {
   fee: boolean | null
   google_maps_uri: string | null
   confidence: 'low' | 'medium' | 'high'
+  linked_profile: {
+    username: string
+    phone: string | null
+    website: string | null
+    bio: string | null
+    account_kind: string
+  } | null
 }
 
 function groupToCard(g: GroupRow): VenueCard {
+  const rawLinked = g.linked_profile as GroupRow['linked_profile'] | GroupRow['linked_profile'][] | null
+  const linkedRow = Array.isArray(rawLinked) ? rawLinked[0] ?? null : rawLinked
+  const linked = linkedRow?.account_kind === 'court' ? linkedRow : null
+  const profileBio = linked?.bio?.trim() ? linked.bio.trim() : null
   return {
     id: g.id,
     osm_id: null,
@@ -77,16 +89,17 @@ function groupToCard(g: GroupRow): VenueCard {
     lit: g.lit,
     access: g.access,
     fee: g.fee,
-    website: g.website,
-    phone: g.phone,
+    website: g.website || linked?.website || null,
+    phone: g.phone || linked?.phone || null,
     operator: null,
     opening_hours: g.opening_hours,
-    description: g.description,
+    description: profileBio ?? g.description,
     has_indoor: g.has_indoor,
     has_outdoor: g.has_outdoor,
     google_maps_uri: g.google_maps_uri,
     member_count: g.member_count,
     confidence: g.confidence,
+    profile_username: linked?.username ?? null,
   }
 }
 
@@ -115,6 +128,7 @@ function rawToCard(v: Record<string, unknown>): VenueCard {
     google_maps_uri: null,
     member_count: 1,
     confidence: 'low',
+    profile_username: null,
   }
 }
 
@@ -214,7 +228,7 @@ export async function GET(request: NextRequest) {
   const [groupsResult, ungroupedResult] = await Promise.all([
     scanRange((from, to) => supabase
       .from('venue_groups')
-      .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence')
+      .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence, linked_profile:profiles!profile_id(username, phone, website, bio, account_kind)')
       .gte('lat', south)
       .lte('lat', north)
       .gte('lng', west)
@@ -242,7 +256,7 @@ export async function GET(request: NextRequest) {
     console.error('Venue groups query error:', groupsResult.error)
   }
 
-  const groupCards = ((groupsResult.data ?? []) as GroupRow[]).map(groupToCard)
+  const groupCards = ((groupsResult.data ?? []) as unknown as GroupRow[]).map(groupToCard)
   const rawCards = clusterUngrouped((ungroupedResult.data ?? []).map(rawToCard))
 
   const offsetParam = searchParams.get('offset')

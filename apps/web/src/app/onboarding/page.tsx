@@ -546,9 +546,10 @@ export default function OnboardingPage() {
       if (!session) { router.replace('/sign-in'); return }
 
       const { data: profile } = await supabase
-        .from('profiles').select('skill_level_self, username')
+        .from('profiles').select('skill_level_self, username, account_kind')
         .eq('id', session.user.id).single()
 
+      if (profile?.account_kind === 'court') { router.replace('/me'); return }
       if (profile?.skill_level_self) { router.replace('/search'); return }
 
       setUserId(session.user.id)

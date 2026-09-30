@@ -41,10 +41,14 @@ export async function GET(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('skill_level_self')
+      .select('skill_level_self, account_kind')
       .eq('id', user.id)
       .single()
-    if (!profile?.skill_level_self) destination = '/onboarding'
+    if (profile?.account_kind === 'court') {
+      if (destination === '/onboarding') destination = '/me'
+    } else if (!profile?.skill_level_self) {
+      destination = '/onboarding'
+    }
   }
 
   const response = NextResponse.redirect(`${origin}${destination}`)

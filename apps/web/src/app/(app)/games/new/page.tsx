@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -51,6 +52,21 @@ function NewGameForm() {
   const [connectionsLoaded, setConnectionsLoaded] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isOpen, setIsOpen] = useState(false)
+  const [isCourt, setIsCourt] = useState(false)
+  const [accountReady, setAccountReady] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setAccountReady(true); return }
+      const { data } = await supabase.from('profiles').select('account_kind').eq('id', user.id).maybeSingle()
+      if (data?.account_kind === 'court') {
+        setIsCourt(true)
+        setIsOpen(true)
+      }
+      setAccountReady(true)
+    })
+  }, [])
 
   useEffect(() => {
     fetch('/api/connections')
@@ -86,7 +102,7 @@ function NewGameForm() {
         scheduled_at, duration_minutes, format,
         location_name: location.trim() || undefined,
         notes: about.trim() || undefined,
-        is_open: isOpen,
+        is_open: isCourt ? true : isOpen,
       }),
     })
 
@@ -103,7 +119,7 @@ function NewGameForm() {
       ...(preselectedId ? [preselectedId] : []),
       ...Array.from(selectedIds),
     ]
-    if (allInvitees.length > 0) {
+    if (!isCourt && allInvitees.length > 0) {
       await fetch(`/api/games/${gameId}/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,8 +203,14 @@ function NewGameForm() {
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
+          {isCourt && (
+            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
+              This game is public. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four.
+            </p>
+          )}
+
           {/* Pre-selected player from chat */}
-          {preselectedId && preselectedName && (
+          {!isCourt && preselectedId && preselectedName && (
             <div>
               <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
               <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA]">
@@ -200,7 +222,7 @@ function NewGameForm() {
           )}
 
           {/* Invite more players */}
-          {connections.length > 0 && (
+          {!isCourt && connections.length > 0 && (
             <div>
               <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
                 {preselectedId ? 'Add more players' : 'Invite players'}{' '}
@@ -238,13 +260,14 @@ function NewGameForm() {
             </div>
           )}
 
-          {connectionsLoaded && connections.length === 0 && !preselectedId && (
+          {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
               You can invite people after you have matched with them. Until then, this game stays on your profile.
             </p>
           )}
 
           {/* Visibility */}
+          {!isCourt && (
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
             <div className="flex gap-2">
@@ -271,10 +294,11 @@ function NewGameForm() {
               </p>
             )}
           </div>
+          )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <button onClick={handleSubmit} disabled={submitting || !date || !time || !endTime}
+          <button onClick={handleSubmit} disabled={submitting || !accountReady || !date || !time || !endTime}
             className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
             {submitLabel}
           </button>

@@ -26,6 +26,14 @@ export async function POST(request: Request) {
   if (!receiverId) return NextResponse.json({ error: 'receiver_id required' }, { status: 400 })
   if (receiverId === user.id) return NextResponse.json({ error: 'Cannot request yourself' }, { status: 400 })
 
+  const { data: pair } = await supabase
+    .from('profiles')
+    .select('id, account_kind')
+    .in('id', [user.id, receiverId])
+  if (pair?.some((row) => row.account_kind === 'court')) {
+    return NextResponse.json({ error: 'Courts do not send or receive match requests' }, { status: 400 })
+  }
+
   // If a conversation already exists between these two users, treat as matched
   const { data: existingConvId } = await supabase
     .rpc('shared_conversation_id', { other_user_id: receiverId })

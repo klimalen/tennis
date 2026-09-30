@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, CalendarDays, MapPin } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Globe, MapPin, Phone } from 'lucide-react'
 import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
@@ -63,7 +63,7 @@ export default async function PlayerProfilePage({
   const { data: profile } = await supabase
     .from('profiles')
     .select(
-      'id, full_name, username, avatar_url, bio, looking_for, city_name, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach',
+      'id, full_name, username, avatar_url, bio, looking_for, city_name, phone, website, account_kind, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach',
     )
     .eq('username', username)
     .is('deleted_at', null)
@@ -151,8 +151,12 @@ export default async function PlayerProfilePage({
     }
   }
 
+  const isCourt = profile.account_kind === 'court'
   const rating = profile.skill_level_computed ?? profile.skill_level_self
-  const skill = skillLabel(rating)
+  const skill = isCourt ? null : skillLabel(rating)
+  const websiteHref = profile.website
+    ? (profile.website.startsWith('http') ? profile.website : `https://${profile.website}`)
+    : null
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   // Fetch user's posts
@@ -215,7 +219,7 @@ export default async function PlayerProfilePage({
       <div className="max-w-2xl mx-auto px-4 pt-2 pb-8 space-y-6">
         {/* Profile header */}
         <div className="relative bg-white rounded-[28px] p-5">
-          {profile.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
+          {!isCourt && profile.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">
@@ -230,10 +234,12 @@ export default async function PlayerProfilePage({
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
+              {!isCourt && (
               <Link href={`/profile/${profile.username}/schedule`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
               </Link>
+              )}
               <Link href={`/profile/${profile.username}/followers`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
@@ -278,12 +284,26 @@ export default async function PlayerProfilePage({
                 <ExpandableText text={profile.bio} className="font-copy text-sm text-[#497250] leading-snug" />
               </div>
             )}
-            <LookingFor text={profile.looking_for} />
+            {(profile.phone || websiteHref) && (
+              <div className="pt-1 space-y-1">
+                {profile.phone && (
+                  <a href={`tel:${profile.phone}`} className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)]">
+                    <Phone size={12} /> {profile.phone}
+                  </a>
+                )}
+                {websiteHref && (
+                  <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)] underline underline-offset-2">
+                    <Globe size={12} /> {profile.website}
+                  </a>
+                )}
+              </div>
+            )}
+            {!isCourt && <LookingFor text={profile.looking_for} />}
           </div>
 
           {!viewer && (
             <div className="mt-4 rounded-[20px] bg-[#FAF7F2] px-4 py-4 space-y-3">
-              <p className="font-fraunces italic text-sm text-[#497250]">Sign in to follow this player and suggest a match</p>
+              <p className="font-fraunces italic text-sm text-[#497250]">{isCourt ? 'Sign in to message this court' : 'Sign in to follow this player and suggest a match'}</p>
               <div className="flex gap-2">
                 <Link href="/sign-up" className="flex-1 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.15em] uppercase font-medium text-center hover:bg-[#E8406A] transition-colors">
                   Create free account
@@ -297,6 +317,12 @@ export default async function PlayerProfilePage({
 
           {viewer && viewer.id !== profile.id && (
             <div className="mt-4">
+              {isCourt ? (
+                <div className="flex items-center gap-2">
+                  <FollowButton followingId={profile.id} initialFollowing={viewerIsFollowing} />
+                  <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
+                </div>
+              ) : (
               <ProposeMatchButton
                 receiverId={profile.id}
                 receiverName={profile.full_name}
@@ -310,6 +336,7 @@ export default async function PlayerProfilePage({
                   <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
                 )}
               </ProposeMatchButton>
+              )}
             </div>
           )}
         </div>
@@ -318,7 +345,7 @@ export default async function PlayerProfilePage({
           <div>
             <div className="px-1 pb-3 flex items-center gap-2">
               <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
+              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">{isCourt ? 'Sessions' : 'Schedule'}</span>
               <div className="flex-1 h-px bg-brand-divider" />
             </div>
             <SchedulePreview

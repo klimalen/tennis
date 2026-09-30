@@ -42,6 +42,7 @@ export interface GameDetail {
     avatar_url: string | null
     skill_level_self: number | null
     skill_level_computed: number | null
+    account_kind?: string | null
   }
   city: { name: string } | null
   participants: GameParticipant[]
@@ -56,7 +57,7 @@ const FORMAT_LABELS: Record<string, string> = {
 const DETAIL_SELECT = `
   id, format, scheduled_at, skill_level_min, skill_level_max,
   neighborhood, notes, status, max_players, is_open, creator_id,
-  creator:profiles!creator_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed),
+  creator:profiles!creator_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind),
   city:cities (name),
   participants:game_participants (
     player_id, status,
@@ -65,11 +66,16 @@ const DETAIL_SELECT = `
 `
 
 export function viewerPlaysInGame(
-  game: { creator_id: string; participants: { player_id: string; status: string }[] },
+  game: {
+    creator_id: string
+    participants: { player_id: string; status: string }[]
+    creator?: { account_kind?: string | null }
+  },
   viewerId: string | null,
 ) {
   if (!viewerId) return false
-  if (game.creator_id === viewerId) return true
+  const courtHost = game.creator?.account_kind === 'court'
+  if (game.creator_id === viewerId && !courtHost) return true
   return game.participants.some((participant) => participant.player_id === viewerId && holdsGameSeat(participant.status))
 }
 
@@ -128,7 +134,8 @@ export function GameDetailSheet({
   const spotsTaken = accepted.length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
-  const alreadyIn = viewerPlaysInGame(game, currentUserId) || joined
+  const isCourtHost = game.creator.account_kind === 'court' && currentUserId === game.creator_id
+  const alreadyIn = !isCourtHost && (viewerPlaysInGame(game, currentUserId) || joined)
   const isPast = new Date(game.scheduled_at) < new Date()
   const isCancelled = game.status === 'cancelled'
   const creatorSkill = game.creator.skill_level_computed ?? game.creator.skill_level_self
@@ -148,8 +155,8 @@ export function GameDetailSheet({
     setJoining(false)
   }
 
-  const joinLabel = alreadyIn ? "You're in" : isFull ? 'Game is full' : isPast ? 'Game passed' : isCancelled ? 'Cancelled' : 'Join game'
-  const joinDisabled = !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
+  const joinLabel = isCourtHost ? 'You organised this' : alreadyIn ? "You're in" : isFull ? 'Game is full' : isPast ? 'Game passed' : isCancelled ? 'Cancelled' : 'Join game'
+  const joinDisabled = isCourtHost || !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
 
   return (
     <>

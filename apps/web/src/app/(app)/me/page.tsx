@@ -15,6 +15,7 @@ import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
+import { CourtHome } from './CourtHome'
 
 const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
@@ -27,6 +28,13 @@ async function ProfileContent() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
+
+  const { data: kindRow } = await supabase
+    .from('profiles')
+    .select('account_kind')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (kindRow?.account_kind === 'court') return <CourtHome />
 
   const [profileResult, followerResult, followingResult, playerGames, postsResult] = await Promise.all([
     supabase

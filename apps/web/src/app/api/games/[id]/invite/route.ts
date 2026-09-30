@@ -27,6 +27,20 @@ export async function POST(
 
   if (!game) return NextResponse.json({ error: 'Game not found' }, { status: 404 })
 
+  const { data: involved } = await supabase
+    .from('profiles')
+    .select('id, account_kind')
+    .in('id', [user.id, ...userIds])
+  if (involved?.some((row) => row.account_kind === 'court')) {
+    const hostIsCourt = involved.some((row) => row.id === user.id && row.account_kind === 'court')
+    return NextResponse.json({
+      error: hostIsCourt
+        ? 'A court posts an open game. Players join it themselves.'
+        : 'A court cannot be invited as a player',
+    }, { status: 400 })
+  }
+  const invitees = userIds
+
   // Build message body (snapshot shown on card)
   const snapshot = JSON.stringify({
     scheduled_at: game.scheduled_at,
@@ -34,7 +48,7 @@ export async function POST(
     location: game.neighborhood ?? null,
   })
 
-  for (const inviteeId of userIds) {
+  for (const inviteeId of invitees) {
     // Add as participant if not already
     const { data: existing } = await supabase
       .from('game_participants')

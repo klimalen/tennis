@@ -65,7 +65,7 @@ export default async function ChatPage({
 
   const { data: participantsData } = await supabase
     .from('conversation_participants')
-    .select('user_id, last_read_at, profiles ( id, full_name, username, avatar_url )')
+    .select('user_id, last_read_at, profiles ( id, full_name, username, avatar_url, account_kind )')
     .eq('conversation_id', id)
 
   const myParticipant = participantsData?.find((p) => p.user_id === user.id)
@@ -130,9 +130,14 @@ export default async function ChatPage({
     }
   }
 
-  // Personal chats need a mutual follow. A game chat is open to whoever holds a seat.
+  const myProfile = participantsData?.find((p) => p.user_id === user.id)
+  const viewerIsCourt = (myProfile as unknown as { profiles: { account_kind?: string } | null } | undefined)?.profiles?.account_kind === 'court'
+  const otherIsCourt = (other?.profiles as { account_kind?: string } | null)?.account_kind === 'court'
+
+  // Personal chats need a mutual follow. A chat with a court does not.
+  // A game chat is open to whoever holds a seat.
   let isMutual = true // default true to not break existing chats before follows existed
-  if (!isGameChat && otherUserId) {
+  if (!isGameChat && otherUserId && !viewerIsCourt && !otherIsCourt) {
     const [{ data: f1 }, { data: f2 }] = await Promise.all([
       supabase.from('follows').select('follower_id').eq('follower_id', user.id).eq('following_id', otherUserId).maybeSingle(),
       supabase.from('follows').select('follower_id').eq('follower_id', otherUserId).eq('following_id', user.id).maybeSingle(),

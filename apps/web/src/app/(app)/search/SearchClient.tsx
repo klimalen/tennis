@@ -82,6 +82,7 @@ export interface Venue {
   google_maps_uri: string | null
   member_count: number
   confidence: 'low' | 'medium' | 'high'
+  profile_username?: string | null
 }
 
 const VENUE_KIND_LABELS: Record<string, string> = {
@@ -544,6 +545,14 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors">
                 <Phone size={13} /> {venue.phone}
               </a>
+            )}
+            {venue.profile_username && (
+              <Link
+                href={`/profile/${venue.profile_username}`}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors"
+              >
+                Open court profile
+              </Link>
             )}
           </div>
           <Link
