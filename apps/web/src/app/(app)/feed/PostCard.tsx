@@ -8,6 +8,7 @@ import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Calendar, Loader2, MapPi
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { holdsGameSeat } from '@/lib/schedule'
 import { skillLabel } from '@/lib/skill'
+import { createClient } from '@/lib/supabase/client'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ function OpenGameCard({
 }) {
   const [gameDetail, setGameDetail] = useState<GameDetail | null>(null)
   const [showSheet, setShowSheet] = useState(false)
+  const [canJoin, setCanJoin] = useState<boolean | null>(null)
 
   const isCancelled = basicGame.status === 'cancelled'
   const isPast = new Date(basicGame.scheduled_at) < new Date()
@@ -121,6 +123,24 @@ function OpenGameCard({
     })
     return () => { cancelled = true }
   }, [basicGame.id])
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setCanJoin(true)
+      return
+    }
+    let cancelled = false
+    const supabase = createClient()
+    void supabase
+      .from('profiles')
+      .select('account_kind')
+      .eq('id', currentUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setCanJoin(data?.account_kind !== 'court')
+      })
+    return () => { cancelled = true }
+  }, [currentUserId])
 
   const accepted = gameDetail?.participants.filter((p) => holdsGameSeat(p.status)) ?? []
   const spotsTaken = accepted.length
@@ -188,7 +208,7 @@ function OpenGameCard({
         </div>
 
         {/* Join / You're in strip */}
-        {!isCancelled && !isPast && (
+        {!isCancelled && !isPast && canJoin && (
           <div
             onClick={(e) => {
               if (alreadyIn || isFull || !gameDetail) return
@@ -212,6 +232,7 @@ function OpenGameCard({
         <GameDetailSheet
           game={gameDetail}
           currentUserId={currentUserId}
+          {...(canJoin == null ? {} : { viewerIsCourt: !canJoin })}
           onClose={() => setShowSheet(false)}
           onJoined={() => {
             setGameDetail((prev) => prev ? {

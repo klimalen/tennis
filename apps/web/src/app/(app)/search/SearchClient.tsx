@@ -717,7 +717,7 @@ function openGameSpotsLeft(game: OpenGame) {
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; vivid?: boolean }) {
+function OpenGameCard({ game, userId, joined, onJoin, onClick, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; canJoin?: boolean; vivid?: boolean }) {
   const spotsTaken = game.participants.filter((p) => holdsGameSeat(p.status)).length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
@@ -760,12 +760,14 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, vivid = true }: {
             <ParticipantAvatars participants={game.participants} />
             <span className={vivid ? 'text-[11px] text-[#F0EBE3]/80' : 'text-[10px] text-[rgba(26,26,26,0.4)]'}>{spotsTaken}/{game.max_players}</span>
           </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
-            disabled={alreadyIn || isFull}
-            className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]' : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
-            {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
-          </button>
+          {canJoin && (
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
+              disabled={alreadyIn || isFull}
+              className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]' : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
+              {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
+            </button>
+          )}
         </div>
       </div>
     </button>
@@ -1448,6 +1450,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         <GameDetailSheet
           game={selectedGame}
           currentUserId={user?.id ?? null}
+          viewerIsCourt={viewerIsCourt}
           onJoined={() => {
             const id = selectedGame.id
             setJoinedGameIds((prev) => new Set(prev).add(id))
@@ -1543,6 +1546,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                     userId={user?.id ?? null}
                     joined={joinedGameIds.has(previewGame.id)}
                     onJoin={handleJoin}
+                    canJoin={!viewerIsCourt}
                     onClick={() => { void openGameDetail(previewGame.id) }}
                     vivid
                   />
@@ -1706,6 +1710,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                   userId={user?.id ?? null}
                   joined={joinedGameIds.has(game.id)}
                   onJoin={handleJoin}
+                  canJoin={!viewerIsCourt}
                   onClick={() => { void openGameDetail(game.id) }}
                 />
                     ))}
