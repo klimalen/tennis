@@ -601,17 +601,19 @@ export function ChatView({
 
               if (showSender) {
                 return (
-                  <div key={item.key} className={`flex w-full items-end gap-2 ${isFirst ? 'mt-3' : 'mt-0.5'}`}>
-                    <div className="w-8 flex-shrink-0">
-                      {isLast ? <SenderAvatar member={member} /> : null}
+                  <div key={item.key} className={`w-full ${isFirst ? 'mt-3' : 'mt-0.5'}`}>
+                    <div className="flex items-end gap-2">
+                      <div className="w-8 flex-shrink-0">
+                        {isLast ? <SenderAvatar member={member} /> : null}
+                      </div>
+                      <div className="min-w-0 max-w-[75%] flex flex-col items-start">
+                        {isFirst && msg.type === 'game_invite' && (
+                          <SenderName member={member} />
+                        )}
+                        {bubble}
+                      </div>
                     </div>
-                    <div className="min-w-0 max-w-[75%] flex flex-col items-start">
-                      {showSender && isFirst && msg.type === 'game_invite' && (
-                        <SenderName member={member} />
-                      )}
-                      {bubble}
-                      {timeRow}
-                    </div>
+                    {timeRow && <div className="pl-10">{timeRow}</div>}
                   </div>
                 )
               }
