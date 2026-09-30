@@ -566,14 +566,9 @@ export function ChatView({
                   onRespond={handleGameRespond}
                 />
               ) : showSender ? (
-                <div className={`font-copy w-fit max-w-full overflow-hidden px-3 py-2 text-sm leading-relaxed rounded-[22px] bg-white text-[#1a1a1a] ${isSending ? 'opacity-60' : ''}`}>
+                <div className={`font-copy w-fit max-w-full px-3 py-2 text-sm leading-relaxed rounded-[22px] bg-white text-[#1a1a1a] ${isSending ? 'opacity-60' : ''}`}>
                   {isFirst && <SenderName member={member} />}
                   <span className="break-words">{msg.body}</span>
-                  {isLast && (
-                    <span className="float-right ml-2 mt-1 text-[10px] leading-none text-[rgba(26,26,26,0.45)]">
-                      {formatTime(msg.created_at)}
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div className={`font-copy max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
@@ -585,9 +580,8 @@ export function ChatView({
                 </div>
               )
 
-              const timeInsideBubble = showSender && msg.type !== 'game_invite'
-              const timeRow = isLast && !timeInsideBubble ? (
-                <div className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
+              const timeRow = isLast ? (
+                <div className={`flex w-fit items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
                   {isMe && (
                     <span className="flex items-center gap-0.5">
                       {isSending && <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sending…</span>}
@@ -607,17 +601,19 @@ export function ChatView({
 
               if (showSender) {
                 return (
-                  <div key={item.key} className={`flex w-full items-end gap-2 ${isFirst ? 'mt-3' : 'mt-0.5'}`}>
-                    <div className="w-8 flex-shrink-0">
-                      {isLast ? <SenderAvatar member={member} /> : null}
+                  <div key={item.key} className={`w-full ${isFirst ? 'mt-3' : 'mt-0.5'}`}>
+                    <div className="flex items-end gap-2">
+                      <div className="w-8 flex-shrink-0">
+                        {isLast ? <SenderAvatar member={member} /> : null}
+                      </div>
+                      <div className="min-w-0 max-w-[75%] flex flex-col items-start">
+                        {isFirst && msg.type === 'game_invite' && (
+                          <SenderName member={member} />
+                        )}
+                        {bubble}
+                      </div>
                     </div>
-                    <div className="min-w-0 max-w-[75%] flex flex-col items-start">
-                      {showSender && isFirst && msg.type === 'game_invite' && (
-                        <SenderName member={member} />
-                      )}
-                      {bubble}
-                      {timeRow}
-                    </div>
+                    {timeRow && <div className="pl-10">{timeRow}</div>}
                   </div>
                 )
               }
