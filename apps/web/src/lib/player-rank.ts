@@ -21,21 +21,18 @@ function activeAt(player: RankablePlayer): number {
 }
 
 // Same written city name is one city, whatever map point was saved with it.
-// Strangers come first. Friends (mutual follows) appear only when no stranger
-// matches, and then follow the same city order.
+// Everyone stays in the list. Mutual friends are ordered after strangers, and
+// both groups use the same city order: your city by last visit, then other
+// cities nearest first and, inside a city, by last visit.
 export function rankPlayers<T extends RankablePlayer>(
   players: T[],
   viewerCity: string | null,
   friendIds: ReadonlySet<string>,
 ): T[] {
   const viewer = normalizeCity(viewerCity)
-  const strangers = players.filter((player) => !friendIds.has(player.id))
-  const pool = strangers.length > 0
-    ? strangers
-    : players.filter((player) => friendIds.has(player.id))
 
   const cityDistance = new Map<string, number>()
-  for (const player of pool) {
+  for (const player of players) {
     const group = cityGroup(player)
     const distance = player.distance_km ?? Number.POSITIVE_INFINITY
     const current = cityDistance.get(group)
@@ -45,7 +42,11 @@ export function rankPlayers<T extends RankablePlayer>(
   const sameCity = (player: RankablePlayer) =>
     viewer.length > 0 && normalizeCity(player.city_name) === viewer
 
-  return [...pool].sort((a, b) => {
+  return [...players].sort((a, b) => {
+    const friendA = friendIds.has(a.id) ? 1 : 0
+    const friendB = friendIds.has(b.id) ? 1 : 0
+    if (friendA !== friendB) return friendA - friendB
+
     const sameA = sameCity(a) ? 0 : 1
     const sameB = sameCity(b) ? 0 : 1
     if (sameA !== sameB) return sameA - sameB
