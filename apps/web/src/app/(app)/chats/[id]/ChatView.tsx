@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } from 'lucide-react'
+import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin, IdCard, Loader2 } from 'lucide-react'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { formatPlayFormat } from '@/lib/skill'
+import { GameDetailSheet, loadGameDetail, type GameDetail as OpenGameDetail } from '@/components/games/GameDetailSheet'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 
 interface Message {
@@ -34,6 +36,13 @@ interface GameDetail {
   creator_id: string
 }
 
+interface ChatMember {
+  id: string
+  full_name: string
+  username: string
+  avatar_url: string | null
+}
+
 interface Props {
   conversationId: string
   userId: string
@@ -46,12 +55,49 @@ interface Props {
   initialGameDetails: Record<string, GameDetail>
   isMutual: boolean
   gameChat?: {
+    gameId: string
     format: string
     scheduledAt: string
     place: string | null
     players: string[]
+    members: ChatMember[]
     closed: boolean
   } | null
+}
+
+function memberInitials(name: string) {
+  const letters = name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
+  return letters || '?'
+}
+
+function SenderAvatar({ member }: { member: ChatMember | undefined }) {
+  const name = member?.full_name || 'Player'
+  const face = (
+    <div className="w-8 h-8 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center">
+      {member?.avatar_url ? (
+        <Image src={member.avatar_url} alt="" width={32} height={32} className="w-full h-full object-cover" />
+      ) : (
+        <span className="font-display text-[11px] text-[#1a1a1a]">{memberInitials(name)}</span>
+      )}
+    </div>
+  )
+  if (!member?.username) return face
+  return (
+    <Link href={`/profile/${member.username}`} aria-label={name} className="hover:opacity-80 transition-opacity">
+      {face}
+    </Link>
+  )
+}
+
+function SenderName({ member }: { member: ChatMember | undefined }) {
+  const name = member?.full_name || 'Player'
+  const className = 'block max-w-full truncate text-[13px] font-medium leading-tight text-brand-primary mb-0.5'
+  if (!member?.username) return <span className={className}>{name}</span>
+  return (
+    <Link href={`/profile/${member.username}`} className={`${className} hover:opacity-80`}>
+      {name}
+    </Link>
+  )
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -223,6 +269,14 @@ export function ChatView({
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const [openGame, setOpenGame] = useState<OpenGameDetail | null>(null)
+  const [openingGame, setOpeningGame] = useState(false)
+
+  const membersById = useMemo(() => {
+    const map = new Map<string, ChatMember>()
+    for (const member of gameChat?.members ?? []) map.set(member.id, member)
+    return map
+  }, [gameChat])
 
   const router = useRouter()
 
@@ -378,6 +432,14 @@ export function ChatView({
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
 
+  async function openGameCard() {
+    if (!gameChat || openingGame) return
+    setOpeningGame(true)
+    const detail = await loadGameDetail(gameChat.gameId)
+    setOpeningGame(false)
+    if (detail) setOpenGame(detail)
+  }
+
   async function handleGameRespond(gameId: string, status: 'accepted' | 'declined') {
     // Optimistic update
     setGameStatuses((prev) => ({
@@ -422,20 +484,33 @@ export function ChatView({
       {gameChat && (
         <div className="max-w-2xl w-full mx-auto px-4 pt-4">
           <div className="rounded-[20px] bg-white px-4 py-3">
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Game chat</p>
-            <p className="font-display text-2xl tracking-wide leading-none mt-1 uppercase">
-              {formatPlayFormat(gameChat.format)}
-              {' · '}
-              <LocalGameDay iso={gameChat.scheduledAt} /> <LocalGameMonth iso={gameChat.scheduledAt} />
-              {' · '}
-              <LocalGameTime iso={gameChat.scheduledAt} />
-            </p>
-            {gameChat.place ? (
-              <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1">{gameChat.place}</p>
-            ) : null}
-            {gameChat.players.length > 0 && (
-              <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1">{gameChat.players.join(', ')}</p>
-            )}
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Game chat</p>
+                <p className="font-display text-2xl tracking-wide leading-none mt-1 uppercase">
+                  {formatPlayFormat(gameChat.format)}
+                  {' · '}
+                  <LocalGameDay iso={gameChat.scheduledAt} /> <LocalGameMonth iso={gameChat.scheduledAt} />
+                  {' · '}
+                  <LocalGameTime iso={gameChat.scheduledAt} />
+                </p>
+                {gameChat.place ? (
+                  <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1">{gameChat.place}</p>
+                ) : null}
+                {gameChat.players.length > 0 && (
+                  <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1">{gameChat.players.join(', ')}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => void openGameCard()}
+                disabled={openingGame}
+                aria-label="Open game"
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-brand-field text-[rgba(26,26,26,0.7)] transition-colors hover:bg-[#F4F1EC] disabled:opacity-50"
+              >
+                {openingGame ? <Loader2 size={16} className="animate-spin" /> : <IdCard size={16} />}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -479,46 +554,78 @@ export function ChatView({
               const isError = msg._status === 'error'
               const isSending = msg._status === 'sending'
               const isReadByOther = msg.id === lastReadByOtherId
+              const showSender = Boolean(gameChat) && !isMe
+              const member = showSender ? membersById.get(msg.sender_id) : undefined
+
+              const bubble = msg.type === 'game_invite' ? (
+                <GameInviteCard
+                  msg={msg}
+                  isMe={isMe}
+                  gameStatus={msg.game_id ? gameStatuses[msg.game_id] : undefined}
+                  gameDetail={msg.game_id ? gameDetails[msg.game_id] : undefined}
+                  onRespond={handleGameRespond}
+                />
+              ) : showSender ? (
+                <div className={`font-copy w-fit max-w-full overflow-hidden px-3 py-2 text-sm leading-relaxed rounded-[22px] bg-white text-[#1a1a1a] ${isSending ? 'opacity-60' : ''}`}>
+                  {isFirst && <SenderName member={member} />}
+                  <span className="break-words">{msg.body}</span>
+                  {isLast && (
+                    <span className="float-right ml-2 mt-1 text-[10px] leading-none text-[rgba(26,26,26,0.45)]">
+                      {formatTime(msg.created_at)}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className={`font-copy max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
+                  isMe
+                    ? isError ? 'rounded-[22px] bg-red-50 text-red-700 border border-red-200' : 'rounded-[22px] bg-[#E8748A] text-[#1a1a1a]'
+                    : 'rounded-[22px] bg-white text-[#1a1a1a]'
+                } ${isSending ? 'opacity-60' : ''}`}>
+                  {msg.body}
+                </div>
+              )
+
+              const timeInsideBubble = showSender && msg.type !== 'game_invite'
+              const timeRow = isLast && !timeInsideBubble ? (
+                <div className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
+                  {isMe && (
+                    <span className="flex items-center gap-0.5">
+                      {isSending && <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sending…</span>}
+                      {!isSending && !isError && isReadByOther && <CheckCheck size={12} className="text-brand-primary" />}
+                      {!isSending && !isError && !isReadByOther && <Check size={12} className="text-[rgba(26,26,26,0.3)]" />}
+                      {isError && (
+                        <button onClick={() => { setMessages((p) => p.filter((m) => m._tempId !== msg._tempId)); sendMessage(msg.body) }}
+                          className="flex items-center gap-0.5 text-[10px] text-red-500 hover:text-red-700">
+                          <RotateCcw size={10} />Retry
+                        </button>
+                      )}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-[rgba(26,26,26,0.5)]">{formatTime(msg.created_at)}</span>
+                </div>
+              ) : null
+
+              if (showSender) {
+                return (
+                  <div key={item.key} className={`flex w-full items-end gap-2 ${isFirst ? 'mt-3' : 'mt-0.5'}`}>
+                    <div className="w-8 flex-shrink-0">
+                      {isLast ? <SenderAvatar member={member} /> : null}
+                    </div>
+                    <div className="min-w-0 max-w-[75%] flex flex-col items-start">
+                      {showSender && isFirst && msg.type === 'game_invite' && (
+                        <SenderName member={member} />
+                      )}
+                      {bubble}
+                      {timeRow}
+                    </div>
+                  </div>
+                )
+              }
 
               return (
                 <div key={item.key} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isFirst ? 'mt-3' : 'mt-0.5'}`}>
-
-                  {msg.type === 'game_invite' ? (
-                    <GameInviteCard
-                      msg={msg}
-                      isMe={isMe}
-                      gameStatus={msg.game_id ? gameStatuses[msg.game_id] : undefined}
-                      gameDetail={msg.game_id ? gameDetails[msg.game_id] : undefined}
-                      onRespond={handleGameRespond}
-                    />
-                  ) : (
-                    <div className={`font-copy max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
-                      isMe
-                        ? isError ? 'rounded-[22px] bg-red-50 text-red-700 border border-red-200' : 'rounded-[22px] bg-[#E8748A] text-[#1a1a1a]'
-                        : 'rounded-[22px] bg-white text-[#1a1a1a]'
-                    } ${isSending ? 'opacity-60' : ''}`}>
-                      {msg.body}
-                    </div>
-                  )}
-
-                  {isLast && (
-                    <div className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
-                      {isMe && (
-                        <span className="flex items-center gap-0.5">
-                          {isSending && <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sending…</span>}
-                          {!isSending && !isError && isReadByOther && <CheckCheck size={12} className="text-brand-primary" />}
-                          {!isSending && !isError && !isReadByOther && <Check size={12} className="text-[rgba(26,26,26,0.3)]" />}
-                          {isError && (
-                            <button onClick={() => { setMessages((p) => p.filter((m) => m._tempId !== msg._tempId)); sendMessage(msg.body) }}
-                              className="flex items-center gap-0.5 text-[10px] text-red-500 hover:text-red-700">
-                              <RotateCcw size={10} />Retry
-                            </button>
-                          )}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-[rgba(26,26,26,0.5)]">{formatTime(msg.created_at)}</span>
-                    </div>
-                  )}
+                  {bubble}
+                  {timeRow}
                 </div>
               )
             })}
@@ -579,6 +686,15 @@ export function ChatView({
           )}
         </div>
       </div>
+
+      {openGame && (
+        <GameDetailSheet
+          game={openGame}
+          currentUserId={userId}
+          activeConversationId={conversationId}
+          onClose={() => setOpenGame(null)}
+        />
+      )}
     </>
   )
 }

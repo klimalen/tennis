@@ -16,6 +16,28 @@ interface RawMessage {
   game_id: string | null
 }
 
+interface ChatMember {
+  id: string
+  full_name: string
+  username: string
+  avatar_url: string | null
+}
+
+function chatMember(person: { user_id: string; profiles: unknown }): ChatMember | null {
+  const profile = person.profiles as {
+    full_name?: string
+    username?: string
+    avatar_url?: string | null
+  } | null
+  if (!profile?.full_name) return null
+  return {
+    id: person.user_id,
+    full_name: profile.full_name,
+    username: profile.username ?? '',
+    avatar_url: profile.avatar_url ?? null,
+  }
+}
+
 export default async function ChatPage({
   params,
 }: {
@@ -190,13 +212,18 @@ export default async function ChatPage({
         initialGameStatuses={initialGameStatuses}
         initialGameDetails={initialGameDetails}
         isMutual={isGameChat ? !gameClosed : isMutual}
-        gameChat={isGameChat && gameRow ? {
+        gameChat={isGameChat && gameRow && conversation?.game_id ? {
+          gameId: conversation.game_id,
           format: gameRow.format,
           scheduledAt: gameRow.scheduled_at,
           place: gameRow.neighborhood,
           players: (participantsData ?? [])
-            .map((person) => (person.profiles as { full_name?: string } | null)?.full_name ?? '')
+            .map((person) => chatMember(person)?.full_name ?? '')
             .filter(Boolean),
+          members: (participantsData ?? []).flatMap((person) => {
+            const member = chatMember(person)
+            return member ? [member] : []
+          }),
           closed: gameClosed,
         } : null}
       />

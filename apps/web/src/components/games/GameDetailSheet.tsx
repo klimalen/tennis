@@ -96,11 +96,13 @@ export function GameDetailSheet({
   currentUserId,
   onClose,
   onJoined,
+  activeConversationId,
 }: {
   game: GameDetail
   currentUserId: string | null
   onClose: () => void
   onJoined?: () => void
+  activeConversationId?: string
 }) {
   const [joining, setJoining] = useState(false)
   const [joined, setJoined] = useState(false)
@@ -257,7 +259,7 @@ export function GameDetailSheet({
             </div>
           )}
 
-          {chatId && (
+          {chatId && chatId !== activeConversationId && (
             <Link
               href={`/chats/${chatId}`}
               onClick={onClose}
