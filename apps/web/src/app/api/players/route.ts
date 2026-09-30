@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { skillLabel } from '@/lib/skill'
 import { rankPlayers } from '@/lib/player-rank'
+import { requestStatuses } from '@/lib/request-status'
 import { TRAVEL_RADIUS_KM, boundingBox, haversineKm } from '@/lib/travel'
 
 const PAGE_SIZE = 15
@@ -42,6 +43,10 @@ export async function GET(request: NextRequest) {
   const coachesOnly = searchParams.get('coach') === '1'
 
   const supabase = await createClient()
+  const userPromise = supabase.auth.getUser()
+  const followsPromise = userPromise.then(({ data: { user } }) =>
+    user ? followSets(supabase, user.id) : Promise.resolve({ following: new Set<string>(), mutual: new Set<string>() }),
+  )
 
   const userLat = latStr ? parseFloat(latStr) : null
   const userLng = lngStr ? parseFloat(lngStr) : null
@@ -51,6 +56,7 @@ export async function GET(request: NextRequest) {
 
   // Same city name is included even when the saved point is far away. Other
   // cities inside the travel radius come back too; ranking places them after.
+  // The profile read runs alongside the session and follow lookup.
   let data: Array<Record<string, unknown>> | null = null
   let error: { message: string } | null = null
 
@@ -120,49 +126,31 @@ export async function GET(request: NextRequest) {
   })
 
   const filtered = rows.filter((row) => matchesPlayer(row, q, skills))
-  const { data: { user } } = await supabase.auth.getUser()
-  const friendIds = user ? await mutualFriendIds(supabase, user.id) : new Set<string>()
-  const ranked = rankPlayers(filtered, city, friendIds)
+  const [{ data: { user } }, follows] = await Promise.all([userPromise, followsPromise])
+  const ranked = rankPlayers(filtered, city, follows.mutual)
   const page = ranked.slice(offset, offset + PAGE_SIZE)
+  const statuses = user ? await requestStatuses(supabase, user.id, page.map((player) => player.id)) : {}
 
   return NextResponse.json({
-    players: await withFollowing(supabase, page, user?.id ?? null),
+    players: page.map((player) => ({ ...player, following: follows.following.has(player.id) })),
+    statuses,
     hasMore: offset + PAGE_SIZE < ranked.length,
   })
 }
 
-async function mutualFriendIds(
+async function followSets(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
-): Promise<Set<string>> {
+): Promise<{ following: Set<string>; mutual: Set<string> }> {
   const [{ data: outgoing }, { data: incoming }] = await Promise.all([
     supabase.from('follows').select('following_id').eq('follower_id', userId),
     supabase.from('follows').select('follower_id').eq('following_id', userId),
   ])
+  const following = new Set((outgoing ?? []).map((row) => row.following_id as string))
   const followsMe = new Set((incoming ?? []).map((row) => row.follower_id as string))
   const mutual = new Set<string>()
-  for (const row of outgoing ?? []) {
-    const id = row.following_id as string
+  for (const id of following) {
     if (followsMe.has(id)) mutual.add(id)
   }
-  return mutual
-}
-
-async function withFollowing<T extends { id: string }>(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  players: T[],
-  userId: string | null,
-) {
-  if (!userId || players.length === 0) {
-    return players.map((player) => ({ ...player, following: false }))
-  }
-
-  const { data } = await supabase
-    .from('follows')
-    .select('following_id')
-    .eq('follower_id', userId)
-    .in('following_id', players.map((player) => player.id))
-
-  const following = new Set((data ?? []).map((row) => row.following_id as string))
-  return players.map((player) => ({ ...player, following: following.has(player.id) }))
+  return { following, mutual }
 }

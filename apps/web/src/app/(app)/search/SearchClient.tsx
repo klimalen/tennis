@@ -936,16 +936,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       }
       try {
         const res = await fetch(`/api/players?${playerParams}`)
-        const json = await res.json() as { players: Player[] }
+        const json = await res.json() as { players: Player[]; statuses?: Record<string, RequestStatus> }
         const first = json.players?.[0] ?? null
+        if (json.statuses) setRequestStatuses((prev) => ({ ...prev, ...json.statuses }))
         setPreviewPlayer(first)
-        if (user && first) {
-          const statusRes = await fetch(`/api/game-requests?receiver_ids=${first.id}`)
-          if (statusRes.ok) {
-            const data = await statusRes.json() as { statuses: Record<string, string> }
-            setRequestStatuses(data.statuses as Record<string, RequestStatus>)
-          }
-        }
       } catch {
         setPreviewPlayer(null)
       } finally {
@@ -1078,22 +1072,13 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
     try {
       const res = await fetch(`/api/players?${params}`)
-      const json = await res.json() as { players: Player[]; hasMore: boolean }
+      const json = await res.json() as { players: Player[]; hasMore: boolean; statuses?: Record<string, RequestStatus> }
       const loaded = json.players ?? []
 
+      if (json.statuses) setRequestStatuses((prev) => ({ ...prev, ...json.statuses }))
       setPlayers((prev) => append ? [...prev, ...loaded] : loaded)
       setHasMorePlayers(json.hasMore ?? false)
       setPlayersOffset(offset + loaded.length)
-
-      // Fetch request statuses for newly loaded players
-      if (user && loaded.length > 0) {
-        const ids = loaded.map((p) => p.id).join(',')
-        const statusRes = await fetch(`/api/game-requests?receiver_ids=${ids}`)
-        if (statusRes.ok) {
-          const data = await statusRes.json() as { statuses: Record<string, string> }
-          setRequestStatuses((prev) => ({ ...prev, ...(data.statuses as Record<string, RequestStatus>) }))
-        }
-      }
     } catch {
       if (!append) setPlayers([])
     } finally {
