@@ -203,7 +203,7 @@ export function GameDetailSheet({
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-2">Organiser</p>
             <Link href={`/profile/${game.creator.username}`} onClick={onClose} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
                 {game.creator.avatar_url ? (
                   <Image src={game.creator.avatar_url} alt={game.creator.full_name} width={40} height={40} className="w-full h-full object-cover" />
                 ) : (
@@ -236,7 +236,7 @@ export function GameDetailSheet({
                       onClick={onClose}
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
-                      <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
                         {participant.profile.avatar_url ? (
                           <Image src={participant.profile.avatar_url} alt={participant.profile.full_name} width={36} height={36} className="w-full h-full object-cover" />
                         ) : (

@@ -73,7 +73,7 @@ function memberInitials(name: string) {
 function SenderAvatar({ member }: { member: ChatMember | undefined }) {
   const name = member?.full_name || 'Player'
   const face = (
-    <div className="w-8 h-8 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center">
+    <div className="w-8 h-8 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center">
       {member?.avatar_url ? (
         <Image src={member.avatar_url} alt="" width={32} height={32} className="w-full h-full object-cover" />
       ) : (

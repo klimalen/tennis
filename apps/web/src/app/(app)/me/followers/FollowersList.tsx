@@ -48,7 +48,7 @@ export function FollowersList({ followers }: { followers: FollowerProfile[] }) {
               href={follower.username ? `/profile/${follower.username}` : '#'}
               className="flex items-center gap-4 mx-4 mb-3 px-4 py-3 rounded-[28px] bg-white hover:bg-[#F4F1EC] transition-colors"
             >
-              <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
                 {follower.avatar_url ? (
                   <Image src={follower.avatar_url} alt={follower.full_name} width={48} height={48} className="w-full h-full object-cover" />
                 ) : (

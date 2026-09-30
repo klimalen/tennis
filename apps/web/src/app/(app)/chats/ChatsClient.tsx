@@ -229,7 +229,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
             className="flex items-center gap-4 mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white hover:bg-[#F4F1EC] transition-colors"
           >
             {/* Avatar */}
-            <div className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
               {chat.avatarUrl ? (
                 <Image src={chat.avatarUrl} alt={chat.title} width={48} height={48} className="w-full h-full object-cover" />
               ) : (

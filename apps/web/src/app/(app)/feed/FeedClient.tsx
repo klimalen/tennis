@@ -21,7 +21,7 @@ import {
 function Avatar({ user }: { user: NotificationActor }) {
   const initials = user.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
   return (
-    <Link href={`/profile/${user.username}`} className="w-12 h-12 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+    <Link href={`/profile/${user.username}`} className="w-12 h-12 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
       {user.avatar_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={user.avatar_url} alt={user.full_name} width={48} height={48} className="w-full h-full object-cover" />
@@ -124,7 +124,7 @@ function NotificationCard({
     <div className="mx-4 mb-3 mt-3 px-4 py-4 rounded-[28px] bg-white">
       <div className="flex items-center gap-3">
         {actor ? <Avatar user={actor} /> : (
-          <div className="w-12 h-12 rounded-full bg-[#E8748A] flex-shrink-0" />
+          <div className="w-12 h-12 rounded-full bg-brand-avatar flex-shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           {actor ? (
