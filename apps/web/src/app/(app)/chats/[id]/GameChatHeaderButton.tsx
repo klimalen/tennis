@@ -9,10 +9,12 @@ export function GameChatHeaderButton({
   gameId,
   userId,
   conversationId,
+  className,
 }: {
   gameId: string
   userId: string
   conversationId: string
+  className?: string
 }) {
   const [opening, setOpening] = useState(false)
   const [game, setGame] = useState<GameDetail | null>(null)
@@ -32,7 +34,7 @@ export function GameChatHeaderButton({
         onClick={() => void openGameCard()}
         disabled={opening}
         aria-label="Open game"
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-brand-field text-[rgba(26,26,26,0.7)] transition-colors hover:bg-[#F4F1EC] disabled:opacity-50"
+        className={`flex size-9 shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-white text-[rgba(26,26,26,0.6)] transition-colors hover:bg-brand-field disabled:opacity-50 ${className ?? ''}`}
       >
         {opening ? <Loader2 size={16} className="animate-spin" /> : <IdCard size={16} />}
       </button>

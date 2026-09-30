@@ -160,32 +160,36 @@ export default async function ChatPage({
   return (
     <div className="relative flex flex-col min-h-screen">
       <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/chats" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+        <div className={isGameChat
+          ? 'max-w-2xl mx-auto grid grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-x-3'
+          : 'max-w-2xl mx-auto flex items-center gap-3'}>
+          <Link
+            href="/chats"
+            className={`size-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors ${isGameChat ? 'col-start-1 row-start-2' : ''}`}
+          >
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           {isGameChat && (
             <>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Game chat</p>
-                <span className="font-display text-xl tracking-wide block leading-tight truncate uppercase">
-                  {gameRow ? formatPlayFormat(gameRow.format) : 'Game'}
-                  {gameRow && (
-                    <>
-                      {' · '}
-                      <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
-                      {' · '}
-                      <LocalGameTime iso={gameRow.scheduled_at} />
-                    </>
-                  )}
-                  {gameClosed ? ' · cancelled' : ''}
-                </span>
-              </div>
+              <p className="col-start-2 row-start-1 text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Game chat</p>
+              <span className="col-start-2 row-start-2 min-w-0 font-display text-xl tracking-wide block leading-tight truncate uppercase">
+                {gameRow ? formatPlayFormat(gameRow.format) : 'Game'}
+                {gameRow && (
+                  <>
+                    {' · '}
+                    <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
+                    {' · '}
+                    <LocalGameTime iso={gameRow.scheduled_at} />
+                  </>
+                )}
+                {gameClosed ? ' · cancelled' : ''}
+              </span>
               {conversation?.game_id && (
                 <GameChatHeaderButton
                   gameId={conversation.game_id}
                   userId={user.id}
                   conversationId={id}
+                  className="col-start-3 row-start-2"
                 />
               )}
             </>
