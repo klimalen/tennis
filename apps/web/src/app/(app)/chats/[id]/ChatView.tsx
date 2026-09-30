@@ -478,7 +478,9 @@ export function ChatView({
               ) : otherName}
             </p>
             <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
-            <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">Say hello and arrange a game</p>
+            <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">
+              {canPropose ? 'Say hello and arrange a game' : 'Say hello'}
+            </p>
           </div>
         </div>
       )}
