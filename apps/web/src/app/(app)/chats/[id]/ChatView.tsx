@@ -581,7 +581,7 @@ export function ChatView({
               )
 
               const timeRow = isLast ? (
-                <div className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
+                <div className={`flex w-fit items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
                   {isMe && (
                     <span className="flex items-center gap-0.5">
                       {isSending && <span className="text-[10px] text-[rgba(26,26,26,0.3)]">Sending…</span>}
