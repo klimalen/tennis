@@ -1,6 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
-import { Settings, CalendarDays } from 'lucide-react'
+import { Settings, CalendarDays, Globe, Phone } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
@@ -15,7 +15,8 @@ import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
-import { CourtHome } from './CourtHome'
+import { CourtDetailsEditor } from '@/components/court/CourtDetailsForm'
+import { CourtDetailsGate } from './CourtHome'
 
 const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
@@ -29,17 +30,10 @@ async function ProfileContent() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: kindRow } = await supabase
-    .from('profiles')
-    .select('account_kind')
-    .eq('id', user.id)
-    .maybeSingle()
-  if (kindRow?.account_kind === 'court') return <CourtHome />
-
   const [profileResult, followerResult, followingResult, playerGames, postsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, preferred_surfaces, availability, is_coach')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, phone, website, account_kind, preferred_surfaces, availability, is_coach')
       .eq('id', user.id)
       .single(),
     supabase
@@ -74,6 +68,10 @@ async function ProfileContent() {
   ])
 
   const profile = profileResult.data
+  const isCourt = profile?.account_kind === 'court'
+  if (isCourt && (!profile?.full_name?.trim() || !profile?.city_name?.trim())) {
+    return <CourtDetailsGate />
+  }
   const followerCount = followerResult.count
   const followingCount = followingResult.count
   const schedule = summarizeSchedule(playerGames)
@@ -117,7 +115,10 @@ async function ProfileContent() {
     liked_by_me: likedSet.has(row.id),
   }))
 
-  const fullName = profile?.full_name || 'Tennis Player'
+  const fullName = profile?.full_name || (isCourt ? 'Court' : 'Tennis Player')
+  const websiteHref = profile?.website
+    ? (profile.website.startsWith('http') ? profile.website : `https://${profile.website}`)
+    : null
   const username = profile?.username || ''
   const avatarUrl = profile?.avatar_url || null
   const rating = profile?.skill_level_computed ?? profile?.skill_level_self ?? null
@@ -139,7 +140,7 @@ async function ProfileContent() {
       <div className="max-w-2xl mx-auto px-4 pt-2 space-y-4">
         {/* Profile header */}
         <div className="relative bg-white rounded-[28px] p-5">
-          {profile?.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
+            {!isCourt && profile?.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">
@@ -183,7 +184,7 @@ async function ProfileContent() {
                 {profile.city_name}
               </p>
             )}
-            {(skillLabel(rating) || surfaces.length > 0 || hasSlots(availability)) && (
+            {!isCourt && (skillLabel(rating) || surfaces.length > 0 || hasSlots(availability)) && (
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
                 {skillLabel(rating) && (
                   <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
@@ -203,7 +204,37 @@ async function ProfileContent() {
                 <ExpandableText text={profile.bio} className="font-copy text-sm text-[#497250] leading-snug" />
               </div>
             )}
-            <LookingFor text={profile?.looking_for} />
+            {!isCourt && <LookingFor text={profile?.looking_for} />}
+            {isCourt && (profile?.phone || websiteHref) && (
+              <div className="mt-2 space-y-1">
+                {profile?.phone && (
+                  <a href={`tel:${profile.phone}`} className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)]">
+                    <Phone size={12} /> {profile.phone}
+                  </a>
+                )}
+                {websiteHref && (
+                  <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)] underline underline-offset-2">
+                    <Globe size={12} /> {profile?.website}
+                  </a>
+                )}
+              </div>
+            )}
+            {isCourt && (
+              <div className="mt-3">
+                <CourtDetailsEditor
+                  initial={{
+                    name: profile?.full_name ?? '',
+                    city: profile?.city_name ?? '',
+                    cityLat: profile?.city_lat ?? null,
+                    cityLng: profile?.city_lng ?? null,
+                    phone: profile?.phone ?? '',
+                    website: profile?.website ?? '',
+                    description: profile?.bio ?? '',
+                    avatarUrl: profile?.avatar_url ?? null,
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 

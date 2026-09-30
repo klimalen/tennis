@@ -14,12 +14,13 @@ export default async function SearchPage() {
   let initialPreviewPlayer: Player | null = null
   let initialRequestStatuses: Record<string, string> = {}
   let previewPlayerReady = false
+  let viewerIsCourt = false
 
   if (user) {
     const [{ data: profile }, { data: requestRows }, preview] = await Promise.all([
       supabase
         .from('profiles')
-        .select('city_name, city_lat, city_lng')
+        .select('city_name, city_lat, city_lng, account_kind')
         .eq('id', user.id)
         .single(),
       supabase
@@ -34,6 +35,7 @@ export default async function SearchPage() {
     initialRequestStatuses = preview.statuses
     previewPlayerReady = preview.ready
 
+    viewerIsCourt = profile?.account_kind === 'court'
     cityName = profile?.city_name ?? null
     cityLat = profile?.city_lat ?? null
     cityLng = profile?.city_lng ?? null
@@ -55,6 +57,7 @@ export default async function SearchPage() {
       initialPreviewPlayer={initialPreviewPlayer}
       initialRequestStatuses={initialRequestStatuses}
       previewPlayerReady={previewPlayerReady}
+      viewerIsCourt={viewerIsCourt}
     />
   )
 }

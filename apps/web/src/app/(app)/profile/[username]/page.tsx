@@ -93,16 +93,19 @@ export default async function PlayerProfilePage({
   let viewerIsFollowing = false
   let profileFollowsViewer = false
   let existingConvId: string | null = null
+  let viewerIsCourt = false
 
   if (viewer && viewer.id !== profile.id) {
-    const [{ data: f1 }, { data: f2 }, { data: convId }] = await Promise.all([
+    const [{ data: f1 }, { data: f2 }, { data: convId }, { data: viewerProfile }] = await Promise.all([
       supabase.from('follows').select('follower_id').eq('follower_id', viewer.id).eq('following_id', profile.id).maybeSingle(),
       supabase.from('follows').select('follower_id').eq('follower_id', profile.id).eq('following_id', viewer.id).maybeSingle(),
       supabase.rpc('shared_conversation_id', { other_user_id: profile.id }),
+      supabase.from('profiles').select('account_kind').eq('id', viewer.id).maybeSingle(),
     ])
     viewerIsFollowing = !!f1
     profileFollowsViewer = !!f2
     existingConvId = convId ?? null
+    viewerIsCourt = viewerProfile?.account_kind === 'court'
   }
 
   const isMutual = viewerIsFollowing && profileFollowsViewer
@@ -234,12 +237,10 @@ export default async function PlayerProfilePage({
 
             {/* Stats */}
             <div className="flex-1 flex items-center justify-around pt-1">
-              {!isCourt && (
               <Link href={`/profile/${profile.username}/schedule`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{gamesPlayed}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Games</span>
               </Link>
-              )}
               <Link href={`/profile/${profile.username}/followers`} className="flex flex-col items-center gap-0.5 min-w-0 text-center hover:opacity-70 transition-opacity">
                 <span className="font-numbers text-3xl leading-none text-brand-primary">{formatFollowers(followerCount ?? 0)}</span>
                 <span className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Followers</span>
@@ -317,10 +318,12 @@ export default async function PlayerProfilePage({
 
           {viewer && viewer.id !== profile.id && (
             <div className="mt-4">
-              {isCourt ? (
+              {isCourt || viewerIsCourt ? (
                 <div className="flex items-center gap-2">
                   <FollowButton followingId={profile.id} initialFollowing={viewerIsFollowing} />
-                  <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
+                  {(isCourt || isMutual) && (
+                    <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
+                  )}
                 </div>
               ) : (
               <ProposeMatchButton
@@ -345,7 +348,7 @@ export default async function PlayerProfilePage({
           <div>
             <div className="px-1 pb-3 flex items-center gap-2">
               <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">{isCourt ? 'Sessions' : 'Schedule'}</span>
+              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
               <div className="flex-1 h-px bg-brand-divider" />
             </div>
             <SchedulePreview
