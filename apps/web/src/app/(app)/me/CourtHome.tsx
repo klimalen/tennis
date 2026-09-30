@@ -3,6 +3,7 @@ import { Settings } from 'lucide-react'
 import Link from 'next/link'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { holdsGameSeat } from '@/lib/schedule'
+import { CourtDetailsContinue, CourtDetailsEditor } from '@/components/court/CourtDetailsForm'
 
 const FORMAT_LABELS: Record<string, string> = {
   singles: 'Singles',
@@ -31,9 +32,29 @@ export async function CourtHome() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, username, city_name, phone, website, bio')
+    .select('full_name, username, city_name, city_lat, city_lng, phone, website, bio')
     .eq('id', user.id)
     .single()
+
+  const needsDetails = !profile?.full_name?.trim() || !profile?.city_name?.trim()
+  if (needsDetails) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <div className="sticky top-0 bg-brand-bg/90 backdrop-blur-sm border-b border-brand-divider z-10 px-4 py-4">
+          <div className="max-w-2xl mx-auto">
+            <span className="font-display text-3xl tracking-wide text-[#1a1a1a]">COURT</span>
+          </div>
+        </div>
+        <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
+          <h1 className="font-display text-4xl tracking-wide mb-1">ABOUT THE COURT</h1>
+          <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">
+            Name, city, and how players reach you
+          </p>
+          <CourtDetailsContinue />
+        </div>
+      </div>
+    )
+  }
 
   const { data: games } = await supabase
     .from('games')
@@ -79,6 +100,19 @@ export async function CourtHome() {
                 {profile?.website}
               </a>
             )}
+          </div>
+          <div className="mt-4">
+            <CourtDetailsEditor
+              initial={{
+                name: profile?.full_name ?? '',
+                city: profile?.city_name ?? '',
+                cityLat: profile?.city_lat ?? null,
+                cityLng: profile?.city_lng ?? null,
+                phone: profile?.phone ?? '',
+                website: profile?.website ?? '',
+                description: profile?.bio ?? '',
+              }}
+            />
           </div>
         </div>
 

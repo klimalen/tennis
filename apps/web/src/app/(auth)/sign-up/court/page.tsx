@@ -1,54 +1,72 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { CityInput, type CityCoords } from '@/components/ui/CityInput'
+import { CourtDetailsForm } from '@/components/court/CourtDetailsForm'
 
 const inputClass = 'w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
 
 export default function CourtSignUpPage() {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [city, setCity] = useState('')
-  const [coords, setCoords] = useState<CityCoords | null>(null)
-  const [phone, setPhone] = useState('')
-  const [website, setWebsite] = useState('')
-  const [description, setDescription] = useState('')
+  const [step, setStep] = useState<'account' | 'details' | 'check-email'>('account')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [accountExists, setAccountExists] = useState(false)
-  const [checkEmail, setCheckEmail] = useState(false)
+  const [signedInAsPlayer, setSignedInAsPlayer] = useState(false)
 
   const passwordValid = password.length >= 8
 
-  async function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    let cancelled = false
+    async function resume() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        if (!cancelled) setReady(true)
+        return
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_kind, full_name, city_name')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (cancelled) return
+      if (profile?.account_kind === 'court') {
+        if (!profile.full_name?.trim() || !profile.city_name?.trim()) {
+          setStep('details')
+        } else {
+          router.replace('/me')
+          return
+        }
+      } else if (profile) {
+        setSignedInAsPlayer(true)
+      }
+      setReady(true)
+    }
+    void resume()
+    return () => { cancelled = true }
+  }, [router])
+
+  async function handleAccount(e: React.FormEvent) {
     e.preventDefault()
-    if (!passwordValid || !city.trim()) return
+    if (!passwordValid || !email.trim()) return
     setError(null)
     setAccountExists(false)
     setLoading(true)
 
     const supabase = createClient()
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
-        data: {
-          account_kind: 'court',
-          full_name: name.trim(),
-          city_name: city.trim(),
-          city_lat: coords ? String(coords.lat) : '',
-          city_lng: coords ? String(coords.lng) : '',
-          phone: phone.trim(),
-          website: website.trim(),
-          bio: description.trim(),
-        },
+        data: { account_kind: 'court' },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/me`,
       },
     })
@@ -63,22 +81,44 @@ export default function CourtSignUpPage() {
       return
     }
 
+    setLoading(false)
     if (!data.session) {
-      setCheckEmail(true)
-      setLoading(false)
+      setStep('check-email')
       return
     }
-
-    router.push('/me')
+    setStep('details')
   }
 
-  if (checkEmail) {
+  if (!ready) {
+    return (
+      <div className="bg-white border border-brand-divider p-8 flex justify-center">
+        <Loader2 size={18} className="animate-spin text-[rgba(26,26,26,0.4)]" />
+      </div>
+    )
+  }
+
+  if (step === 'check-email') {
     return (
       <div className="bg-white border border-brand-divider p-8">
         <h1 className="font-display text-4xl tracking-wide mb-2">CHECK YOUR EMAIL</h1>
         <p className="text-sm text-[rgba(26,26,26,0.6)]">
-          We sent a link to {email}. Open it to finish creating the court account, then sign in on the usual sign-in page.
+          We sent a link to {email}. Open it, then sign in. The next screen asks for the court name and city. You can change those details later.
         </p>
+      </div>
+    )
+  }
+
+  if (step === 'details') {
+    return (
+      <div className="bg-white border border-brand-divider p-8">
+        <h1 className="font-display text-4xl tracking-wide mb-1">ABOUT THE COURT</h1>
+        <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">
+          Name, city, and how players reach you
+        </p>
+        <CourtDetailsForm
+          submitLabel="Save and continue"
+          onSaved={() => router.push('/me')}
+        />
       </div>
     )
   }
@@ -87,64 +127,10 @@ export default function CourtSignUpPage() {
     <div className="bg-white border border-brand-divider p-8">
       <h1 className="font-display text-4xl tracking-wide mb-1">COURT ACCOUNT</h1>
       <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">
-        For a tennis center, club, or park
+        Email and password. Court details come next.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Court name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Caswell Tennis Center"
-            required
-            maxLength={80}
-            className={inputClass}
-          />
-        </div>
-
-        <div>
-          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">City</label>
-          <CityInput value={city} onChange={(next, nextCoords) => { setCity(next); setCoords(nextCoords ?? null) }} placeholder="Austin" />
-        </div>
-
-        <div>
-          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Phone</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="(512) 000-0000"
-            maxLength={40}
-            className={inputClass}
-          />
-        </div>
-
-        <div>
-          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Website</label>
-          <input
-            type="text"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            placeholder="https://"
-            maxLength={300}
-            className={inputClass}
-          />
-        </div>
-
-        <div>
-          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Short description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Public courts, lessons, and open play."
-            maxLength={600}
-            rows={3}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
-
+      <form onSubmit={handleAccount} className="space-y-4">
         <div>
           <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Email</label>
           <input
@@ -181,6 +167,12 @@ export default function CourtSignUpPage() {
           </div>
         </div>
 
+        {signedInAsPlayer && (
+          <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded text-sm text-amber-700">
+            This browser is signed in as a player. Sign out, then open this page again to register a court. One email cannot be both.
+          </div>
+        )}
+
         {accountExists && (
           <div className="px-4 py-3 bg-amber-50 border border-amber-100 rounded text-sm text-amber-700">
             This email is already registered. Sign in if it is already the court, or use a different email. One email cannot be both a player and a court.{' '}
@@ -196,11 +188,11 @@ export default function CourtSignUpPage() {
 
         <button
           type="submit"
-          disabled={loading || !name.trim() || !city.trim() || !email || !passwordValid}
+          disabled={loading || signedInAsPlayer || !email.trim() || !passwordValid}
           className="w-full py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] font-medium text-[10px] tracking-[0.2em] uppercase hover:bg-[#E8406A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-          {loading ? 'Creating account...' : 'Create court account'}
+          {loading ? 'Creating account...' : 'Continue'}
         </button>
       </form>
 
