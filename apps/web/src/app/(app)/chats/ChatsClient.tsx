@@ -68,6 +68,14 @@ function searchTitle(chat: ChatItem): string {
   return chat.cancelled ? `${chat.title} ${when} cancelled` : `${chat.title} ${when}`
 }
 
+function lastMessageTime(chat: ChatItem): number {
+  return chat.lastMsg ? Date.parse(chat.lastMsg.created_at) : 0
+}
+
+function byLatestMessage(a: ChatItem, b: ChatItem): number {
+  return lastMessageTime(b) - lastMessageTime(a)
+}
+
 function hasUnread(chat: ChatItem, userId: string): boolean {
   if (!chat.lastMsg) return false
   if (chat.lastMsg.sender_id === userId) return false
@@ -100,18 +108,14 @@ export function ChatsClient({ userId, initialChats }: Props) {
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
           const msg = payload.new as { id: string; conversation_id: string; body: string; created_at: string; sender_id: string; type?: string }
-          setChats((prev) => {
-            const idx = prev.findIndex((c) => c.id === msg.conversation_id)
-            if (idx === -1) return prev
-            const updated = [...prev]
-            updated[idx] = {
-              ...updated[idx]!,
-              lastMsg: { id: msg.id, body: msg.body, created_at: msg.created_at, sender_id: msg.sender_id, ...(msg.type ? { type: msg.type } : {}) },
-            }
-            // Bubble updated chat to top
-            const [chat] = updated.splice(idx, 1)
-            return [chat!, ...updated]
-          })
+          setChats((prev) => prev.map((chat) => (
+            chat.id === msg.conversation_id
+              ? {
+                  ...chat,
+                  lastMsg: { id: msg.id, body: msg.body, created_at: msg.created_at, sender_id: msg.sender_id, ...(msg.type ? { type: msg.type } : {}) },
+                }
+              : chat
+          )))
         },
       )
       // Track read status changes to clear unread dot
@@ -177,12 +181,13 @@ export function ChatsClient({ userId, initialChats }: Props) {
   }
 
   const needle = query.trim().toLowerCase()
+  const ordered = [...chats].sort(byLatestMessage)
   const visible = needle
-    ? chats.filter((chat) => {
+    ? ordered.filter((chat) => {
         const haystack = [searchTitle(chat), chat.username ?? '', ...chat.memberNames].join(' ').toLowerCase()
         return haystack.includes(needle)
       })
-    : chats
+    : ordered
 
   return (
     <div>
