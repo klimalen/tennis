@@ -988,15 +988,43 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         .finally(() => setLoadingPreviewGame(false))
     }
 
-    async function loadPreviewCourts(lat: number, lng: number) {
+    async function nearestVenue(lat: number, lng: number): Promise<Venue | null> {
       const box = boundingBox(lat, lng, TRAVEL_RADIUS_KM)
       const res = await fetch(`/api/venues?south=${box.south}&west=${box.west}&north=${box.north}&east=${box.east}`)
-      if (!res.ok) return
+      if (!res.ok) return null
       const json = await res.json() as { venues: Venue[] }
       const sorted = (json.venues ?? []).sort(
         (a, b) => haversineMeters(lat, lng, a.lat, a.lng) - haversineMeters(lat, lng, b.lat, b.lng),
       )
-      setPreviewVenue(sorted[0] ?? null)
+      return sorted[0] ?? null
+    }
+
+    async function showNearest(lat: number, lng: number): Promise<boolean> {
+      const venue = await nearestVenue(lat, lng)
+      if (!venue) return false
+      setPreviewCoords({ lat, lng })
+      setPreviewVenue(venue)
+      return true
+    }
+
+    // "Austin" is stored once as a name. The saved point can be a different
+    // Austin than the one that has courts, so try the city name when the
+    // point comes back empty.
+    async function loadPreviewCourts(lat: number | null, lng: number | null) {
+      if (lat != null && lng != null && await showNearest(lat, lng)) return
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName!)}&format=json&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } },
+      )
+      if (!res.ok) return
+      const places = await res.json() as NominatimPlace[]
+      for (const place of places) {
+        const plat = parseFloat(place.lat)
+        const plng = parseFloat(place.lon)
+        if (!Number.isFinite(plat) || !Number.isFinite(plng)) continue
+        if (lat != null && lng != null && haversineMeters(lat, lng, plat, plng) < 20_000) continue
+        if (await showNearest(plat, plng)) return
+      }
     }
 
     if (userCityLat != null && userCityLng != null) {
@@ -1009,9 +1037,9 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
     loadPreviewGames()
 
-    // Court preview — geocode the city name when the profile has no coordinates.
+    // No saved point — geocode the city, then pick the match that has courts.
     fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=1&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=5&addressdetails=1`,
       { headers: { 'Accept-Language': 'en' } },
     )
       .then((r) => r.json())
@@ -1025,7 +1053,13 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         const lng = parseFloat(place.lon)
         setPreviewCoords({ lat, lng })
         await loadPreviewPlayer({ lat, lng })
-        await loadPreviewCourts(lat, lng)
+        if (await showNearest(lat, lng)) return
+        for (const other of results.slice(1)) {
+          const otherLat = parseFloat(other.lat)
+          const otherLng = parseFloat(other.lon)
+          if (!Number.isFinite(otherLat) || !Number.isFinite(otherLng)) continue
+          if (await showNearest(otherLat, otherLng)) return
+        }
       })
       .catch(async () => {
         if (!playerLoaded) await loadPreviewPlayer()
