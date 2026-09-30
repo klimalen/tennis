@@ -1037,7 +1037,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
   playerFilters.current = { q: debouncedPlayerQuery, skill: playerSkills.join(','), coach: coachesOnly }
 
-  // Geocode user city once so the full list sorts by distance, same as the preview.
+  // Geocode the city once so other cities can be ordered by distance.
   useEffect(() => {
     if (!userCityName) return
     if (previewCoords) {
