@@ -887,7 +887,7 @@ interface SavedCourtsCity {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[] }) {
+export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming, initialPreviewPlayer = null, initialRequestStatuses = {}, previewPlayerReady = false }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[]; initialPreviewPlayer?: Player | null; initialRequestStatuses?: Record<string, string>; previewPlayerReady?: boolean }) {
   const router = useRouter()
   const { setHidden: setTabBarHidden } = useTabBarHidden()
 
@@ -903,20 +903,20 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [incomingRequests, setIncomingRequests] = useState<IncomingRequest[]>(initialIncoming)
 
   // Shared state (used by both discovery preview and full views)
-  const [requestStatuses, setRequestStatuses] = useState<Record<string, RequestStatus>>({})
+  const [requestStatuses, setRequestStatuses] = useState<Record<string, RequestStatus>>(initialRequestStatuses as Record<string, RequestStatus>)
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set())
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameDetail | null>(null)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
 
   // ── Discovery previews ──────────────────────────────────────────────────────
-  const [previewPlayer, setPreviewPlayer] = useState<Player | null>(null)
+  const [previewPlayer, setPreviewPlayer] = useState<Player | null>(initialPreviewPlayer)
   const [previewGame, setPreviewGame] = useState<OpenGame | null>(null)
   const [previewVenue, setPreviewVenue] = useState<Venue | null>(null)
   const [previewCoords, setPreviewCoords] = useState<{ lat: number; lng: number } | null>(
     userCityLat != null && userCityLng != null ? { lat: userCityLat, lng: userCityLng } : null,
   )
-  const [loadingPreviewPlayer, setLoadingPreviewPlayer] = useState(!!userCityName)
+  const [loadingPreviewPlayer, setLoadingPreviewPlayer] = useState(!previewPlayerReady && !!userCityName)
   const [loadingPreviewGame, setLoadingPreviewGame] = useState(!!userCityName)
   const [loadingPreviewVenue, setLoadingPreviewVenue] = useState(!!userCityName)
   const discoveryLoaded = useRef(false)
@@ -925,8 +925,9 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     if (discoveryLoaded.current || !userCityName) return
     discoveryLoaded.current = true
 
-    let playerLoaded = false
+    let playerLoaded = previewPlayerReady
     async function loadPreviewPlayer(coords?: { lat: number; lng: number }) {
+      if (previewPlayerReady) return
       playerLoaded = true
       const playerParams = new URLSearchParams({ city: userCityName! })
       if (user) playerParams.set('exclude', user.id)

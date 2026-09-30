@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { SearchClient } from './SearchClient'
+import { loadDiscoverPlayer } from '@/lib/load-players'
+import { SearchClient, type Player } from './SearchClient'
 import type { IncomingRequest } from '@/app/api/game-requests/incoming/route'
 
 export default async function SearchPage() {
@@ -10,9 +11,12 @@ export default async function SearchPage() {
   let cityLat: number | null = null
   let cityLng: number | null = null
   let initialIncoming: IncomingRequest[] = []
+  let initialPreviewPlayer: Player | null = null
+  let initialRequestStatuses: Record<string, string> = {}
+  let previewPlayerReady = false
 
   if (user) {
-    const [{ data: profile }, { data: requestRows }] = await Promise.all([
+    const [{ data: profile }, { data: requestRows }, preview] = await Promise.all([
       supabase
         .from('profiles')
         .select('city_name, city_lat, city_lng')
@@ -24,7 +28,11 @@ export default async function SearchPage() {
         .eq('receiver_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),
+      loadDiscoverPlayer(supabase, user.id),
     ])
+    initialPreviewPlayer = preview.player as Player | null
+    initialRequestStatuses = preview.statuses
+    previewPlayerReady = preview.ready
 
     cityName = profile?.city_name ?? null
     cityLat = profile?.city_lat ?? null
@@ -37,5 +45,16 @@ export default async function SearchPage() {
     }))
   }
 
-  return <SearchClient user={user} userCityName={cityName} userCityLat={cityLat} userCityLng={cityLng} initialIncoming={initialIncoming} />
+  return (
+    <SearchClient
+      user={user}
+      userCityName={cityName}
+      userCityLat={cityLat}
+      userCityLng={cityLng}
+      initialIncoming={initialIncoming}
+      initialPreviewPlayer={initialPreviewPlayer}
+      initialRequestStatuses={initialRequestStatuses}
+      previewPlayerReady={previewPlayerReady}
+    />
+  )
 }
