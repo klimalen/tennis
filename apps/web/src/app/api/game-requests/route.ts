@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
+import { requestStatuses } from '@/lib/request-status'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/game-requests?receiver_ids=id1,id2
@@ -11,44 +12,7 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ statuses: {} })
 
   const ids = request.nextUrl.searchParams.get('receiver_ids')?.split(',').filter(Boolean) ?? []
-  if (ids.length === 0) return NextResponse.json({ statuses: {} })
-
-  const [{ data: requests }, { data: myConvs }] = await Promise.all([
-    supabase
-      .from('game_requests')
-      .select('receiver_id, status')
-      .eq('sender_id', user.id)
-      .in('receiver_id', ids),
-    // Find all users who share a conversation with the current user
-    supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', user.id),
-  ])
-
-  const statuses: Record<string, string> = {}
-  for (const row of requests ?? []) {
-    // A cancelled request can be sent again — treat it as no request.
-    if (row.status === 'cancelled') continue
-    statuses[row.receiver_id] = row.status
-  }
-
-  // If a shared conversation exists → treat as matched regardless of request status
-  if (myConvs && myConvs.length > 0) {
-    const convIds = myConvs.map((c) => c.conversation_id)
-    const { data: sharedPartners } = await supabase
-      .from('conversation_participants')
-      .select('user_id')
-      .in('conversation_id', convIds)
-      .neq('user_id', user.id)
-      .in('user_id', ids)
-
-    for (const p of sharedPartners ?? []) {
-      statuses[p.user_id] = 'matched'
-    }
-  }
-
-  return NextResponse.json({ statuses })
+  return NextResponse.json({ statuses: await requestStatuses(supabase, user.id, ids) })
 }
 
 // POST /api/game-requests  { receiver_id }
