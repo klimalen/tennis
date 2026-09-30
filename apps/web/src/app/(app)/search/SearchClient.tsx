@@ -247,6 +247,7 @@ function PlayerCard({
   onRequest,
   onCancel,
   onPlan,
+  canPropose = true,
   vivid = true,
 }: {
   player: Player
@@ -254,6 +255,7 @@ function PlayerCard({
   onRequest: (id: string) => void
   onCancel: (id: string) => void
   onPlan: (player: Player) => void
+  canPropose?: boolean
   vivid?: boolean
 }) {
   const skill = player.skill_level_computed ?? player.skill_level_self
@@ -346,19 +348,34 @@ function PlayerCard({
         )}
       </div>
       <div className="px-4 pb-4">
-        {pending ? (
-          <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
+        {canPropose ? (
+          <>
+            {pending ? (
+              <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
+            ) : (
+              <button onClick={handleRequest} className={actionClass}>
+                {btnLabel}
+              </button>
+            )}
+            {!followed && (
+              <button
+                type="button"
+                onClick={handleFollow}
+                disabled={following}
+                className="mt-2.5 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
+              >
+                Follow
+              </button>
+            )}
+          </>
+        ) : followed ? (
+          <p className="py-3.5 text-center text-[11px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Following</p>
         ) : (
-          <button onClick={handleRequest} className={actionClass}>
-            {btnLabel}
-          </button>
-        )}
-        {!followed && (
           <button
             type="button"
             onClick={handleFollow}
             disabled={following}
-            className="mt-2.5 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
+            className={actionClass}
           >
             Follow
           </button>
@@ -895,7 +912,7 @@ interface SavedCourtsCity {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming, initialPreviewPlayer = null, initialRequestStatuses = {}, previewPlayerReady = false }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[]; initialPreviewPlayer?: Player | null; initialRequestStatuses?: Record<string, string>; previewPlayerReady?: boolean }) {
+export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming, initialPreviewPlayer = null, initialRequestStatuses = {}, previewPlayerReady = false, viewerIsCourt = false }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[]; initialPreviewPlayer?: Player | null; initialRequestStatuses?: Record<string, string>; previewPlayerReady?: boolean; viewerIsCourt?: boolean }) {
   const router = useRouter()
   const { setHidden: setTabBarHidden } = useTabBarHidden()
 
@@ -1483,6 +1500,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                     onRequest={handlePlayerRequest}
                     onCancel={handleCancelRequest}
                     onPlan={handlePlanGame}
+                    canPropose={!viewerIsCourt}
                     vivid
                   />
                 ) : (
@@ -1609,6 +1627,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                   onRequest={handlePlayerRequest}
                   onCancel={handleCancelRequest}
                   onPlan={handlePlanGame}
+                  canPropose={!viewerIsCourt}
                 />
               ))}
 
