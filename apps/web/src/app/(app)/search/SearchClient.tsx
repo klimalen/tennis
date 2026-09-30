@@ -682,7 +682,6 @@ const GAME_FILTERS = [
   { id: 'spots', label: 'Open spots' },
   { id: 'singles', label: 'Singles' },
   { id: 'doubles', label: 'Doubles' },
-  { id: 'mixed_doubles', label: 'Mixed' },
 ]
 
 function openGameSpotsLeft(game: OpenGame) {
