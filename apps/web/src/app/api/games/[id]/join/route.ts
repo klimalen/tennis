@@ -31,6 +31,9 @@ export async function POST(
     if (error.message.includes('game not open')) {
       return NextResponse.json({ error: 'Game not found or not public' }, { status: 404 })
     }
+    if (error.message.includes('court cannot join')) {
+      return NextResponse.json({ error: 'A court organises games and does not take a spot' }, { status: 403 })
+    }
     return apiError(500, 'Could not join the game', error)
   }
 

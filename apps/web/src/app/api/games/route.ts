@@ -24,6 +24,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'scheduled_at and format are required' }, { status: 400 })
   }
 
+  const { data: creator } = await supabase
+    .from('profiles')
+    .select('account_kind')
+    .eq('id', user.id)
+    .maybeSingle()
+  const isCourt = creator?.account_kind === 'court'
+
   const gameId = crypto.randomUUID()
   const max_players = format === 'singles' ? 2 : 4
 
@@ -37,7 +44,8 @@ export async function POST(request: Request) {
       ...(duration_minutes ? { duration_minutes } : {}),
       neighborhood: location_name ?? null,
       notes: notes ?? null,
-      is_open: is_open ?? false,
+      is_open: isCourt ? true : (is_open ?? false),
+      ...(isCourt ? { skill_level_min: null, skill_level_max: null } : {}),
       max_players,
       status: 'confirmed',
     })
@@ -46,12 +54,14 @@ export async function POST(request: Request) {
     return apiError(500, 'Could not create the game', gameErr)
   }
 
-  const { error: participantErr } = await supabase
-    .from('game_participants')
-    .insert({ game_id: gameId, player_id: user.id, status: 'accepted' })
+  if (!isCourt) {
+    const { error: participantErr } = await supabase
+      .from('game_participants')
+      .insert({ game_id: gameId, player_id: user.id, status: 'accepted' })
 
-  if (participantErr) {
-    console.error('[POST /api/games] participant insert error:', participantErr)
+    if (participantErr) {
+      console.error('[POST /api/games] participant insert error:', participantErr)
+    }
   }
 
   return NextResponse.json({ id: gameId }, { status: 201 })

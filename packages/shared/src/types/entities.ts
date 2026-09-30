@@ -57,6 +57,9 @@ export interface Profile {
   looking_for: string | null
   is_coach: boolean
   is_club_manager: boolean
+  account_kind: 'player' | 'court'
+  phone: string | null
+  website: string | null
   reliability_score: number | null
   total_matches: number
   identity_verified: boolean

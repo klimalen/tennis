@@ -44,7 +44,7 @@ function SignInForm() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
@@ -58,7 +58,17 @@ function SignInForm() {
       return
     }
 
-    router.push(next)
+    let destination = next
+    if (signedIn.user && (next === '/search' || next === '/onboarding')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_kind')
+        .eq('id', signedIn.user.id)
+        .maybeSingle()
+      if (profile?.account_kind === 'court') destination = '/me'
+    }
+
+    router.push(destination)
   }
 
   return (
