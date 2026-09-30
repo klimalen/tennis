@@ -566,14 +566,9 @@ export function ChatView({
                   onRespond={handleGameRespond}
                 />
               ) : showSender ? (
-                <div className={`font-copy w-fit max-w-full overflow-hidden px-3 py-2 text-sm leading-relaxed rounded-[22px] bg-white text-[#1a1a1a] ${isSending ? 'opacity-60' : ''}`}>
+                <div className={`font-copy w-fit max-w-full px-3 py-2 text-sm leading-relaxed rounded-[22px] bg-white text-[#1a1a1a] ${isSending ? 'opacity-60' : ''}`}>
                   {isFirst && <SenderName member={member} />}
                   <span className="break-words">{msg.body}</span>
-                  {isLast && (
-                    <span className="float-right ml-2 mt-1 text-[10px] leading-none text-[rgba(26,26,26,0.45)]">
-                      {formatTime(msg.created_at)}
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div className={`font-copy max-w-[75%] px-3 py-2 text-sm leading-relaxed ${
@@ -585,8 +580,7 @@ export function ChatView({
                 </div>
               )
 
-              const timeInsideBubble = showSender && msg.type !== 'game_invite'
-              const timeRow = isLast && !timeInsideBubble ? (
+              const timeRow = isLast ? (
                 <div className={`flex items-center gap-1 mt-0.5 ${isMe ? 'flex-row' : 'flex-row-reverse'}`}>
                   {isMe && (
                     <span className="flex items-center gap-0.5">
