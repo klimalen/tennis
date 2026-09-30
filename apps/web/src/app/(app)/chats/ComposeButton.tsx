@@ -114,7 +114,7 @@ export function ComposeButton() {
                       disabled={starting === c.id}
                       className="w-full flex items-center gap-4 px-4 py-3 border-b border-brand-divider hover:bg-brand-surface transition-colors text-left disabled:opacity-60"
                     >
-                      <div className="w-11 h-11 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <div className="w-11 h-11 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
                         {c.avatar_url ? (
                           <Image src={c.avatar_url} alt={c.full_name} width={44} height={44} className="w-full h-full object-cover" />
                         ) : (

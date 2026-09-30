@@ -309,7 +309,7 @@ function PlayerCard({
       )}
       <div className="p-4 pb-3">
         <div className="flex items-start gap-3">
-          <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-[#E8748A] flex items-center justify-center overflow-hidden">
+          <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
             {player.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />

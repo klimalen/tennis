@@ -77,7 +77,7 @@ function ParticipantAvatars({ participants, max = 4 }: { participants: GameDetai
       {shown.map((p) => {
         const initials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
         return (
-          <div key={p.player_id} className="w-6 h-6 rounded-full border-2 border-white bg-[#E8748A] overflow-hidden flex items-center justify-center">
+          <div key={p.player_id} className="w-6 h-6 rounded-full border-2 border-white bg-brand-avatar overflow-hidden flex items-center justify-center">
             {p.profile.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
@@ -88,7 +88,7 @@ function ParticipantAvatars({ participants, max = 4 }: { participants: GameDetai
         )
       })}
       {extra > 0 && (
-        <div className="w-6 h-6 rounded-full border-2 border-white bg-[#E8748A] flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-white bg-brand-avatar flex items-center justify-center">
           <span className="text-[7px] font-medium text-[rgba(26,26,26,0.5)]">+{extra}</span>
         </div>
       )}
@@ -348,7 +348,7 @@ export function PostCard({
       {/* Author header */}
       <div className="flex items-start gap-3 mb-3">
         <Link href={`/profile/${post.author.username}`} className="flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center">
             {post.author.avatar_url ? (
               <Image src={post.author.avatar_url} alt={post.author.full_name} width={40} height={40} className="w-full h-full object-cover" />
             ) : (

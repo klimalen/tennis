@@ -20,6 +20,7 @@ const config: Config = {
           conifer:        '#BCD85E',
           divider:        '#C4B8AE',
           field:          '#D9CFC3',
+          avatar:         '#A89078',
         },
       },
       fontFamily: {

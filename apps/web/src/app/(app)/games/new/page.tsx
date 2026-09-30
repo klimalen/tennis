@@ -215,7 +215,7 @@ function NewGameForm() {
                       className={`w-full flex items-center gap-3 px-3 py-3 border transition-colors text-left ${
                         selected ? 'rounded-[20px] border-[#E8748A] bg-[#F8E6EA]' : 'rounded-[20px] bg-brand-field border-[#1a1a1a]/15 hover:border-[#1a1a1a]/35'
                       }`}>
-                      <div className="w-9 h-9 rounded-full bg-[#E8748A] overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
                         {c.avatar_url ? (
                           <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
                         ) : (

@@ -219,7 +219,7 @@ export default async function PlayerProfilePage({
           <div className="flex items-start gap-5">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-[#E8748A] flex items-center justify-center overflow-hidden">
+              <div className="w-20 h-20 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
                 {profile.avatar_url ? (
                   <Image src={profile.avatar_url} alt={profile.full_name} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
