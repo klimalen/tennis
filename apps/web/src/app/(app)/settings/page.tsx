@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, LogOut, Trash2, AlertTriangle, Pencil, LifeBuoy, Shield, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -12,6 +12,19 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [signingOut, setSigningOut] = useState(false)
+  const [isCourt, setIsCourt] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) {
+        setIsCourt(false)
+        return
+      }
+      const { data } = await supabase.from('profiles').select('account_kind').eq('id', user.id).maybeSingle()
+      setIsCourt(data?.account_kind === 'court')
+    })
+  }, [])
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -65,18 +78,20 @@ export default function SettingsPage() {
           <div className="px-4 py-3 border-b border-brand-divider">
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Account</p>
           </div>
-          <Link
-            href="/me/edit"
-            className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left border-b border-brand-divider"
-          >
-            <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
-              <Pencil size={16} className="text-[#1a1a1a]" />
-            </div>
-            <div>
-              <span className="block text-sm font-medium text-[#1a1a1a]">Edit profile</span>
-              <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">City, level and schedule</span>
-            </div>
-          </Link>
+          {isCourt === false && (
+            <Link
+              href="/me/edit"
+              className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left border-b border-brand-divider"
+            >
+              <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
+                <Pencil size={16} className="text-[#1a1a1a]" />
+              </div>
+              <div>
+                <span className="block text-sm font-medium text-[#1a1a1a]">Edit profile</span>
+                <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">City, level and schedule</span>
+              </div>
+            </Link>
+          )}
           <button
             onClick={handleSignOut}
             disabled={signingOut}

@@ -103,17 +103,42 @@ export function GameDetailSheet({
   onClose,
   onJoined,
   activeConversationId,
+  viewerIsCourt,
 }: {
   game: GameDetail
   currentUserId: string | null
   onClose: () => void
   onJoined?: () => void
   activeConversationId?: string
+  viewerIsCourt?: boolean
 }) {
   const [joining, setJoining] = useState(false)
   const [joined, setJoined] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
+  const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
   useHideTabBar(true)
+
+  useEffect(() => {
+    if (viewerIsCourt != null) {
+      setCourtViewer(viewerIsCourt)
+      return
+    }
+    if (!currentUserId) {
+      setCourtViewer(false)
+      return
+    }
+    let cancelled = false
+    const supabase = createClient()
+    void supabase
+      .from('profiles')
+      .select('account_kind')
+      .eq('id', currentUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setCourtViewer(data?.account_kind === 'court')
+      })
+    return () => { cancelled = true }
+  }, [currentUserId, viewerIsCourt])
 
   useEffect(() => {
     let cancelled = false
@@ -276,17 +301,19 @@ export function GameDetailSheet({
             </Link>
           )}
 
-          <button
-            onClick={handleJoin}
-            disabled={joinDisabled}
-            className={`w-full py-4 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${
-              joinDisabled
-                ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
-                : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
-            }`}
-          >
-            {joining ? <Loader2 size={14} className="animate-spin mx-auto" /> : joinLabel}
-          </button>
+          {courtViewer === false && (
+            <button
+              onClick={handleJoin}
+              disabled={joinDisabled}
+              className={`w-full py-4 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${
+                joinDisabled
+                  ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
+                  : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+              }`}
+            >
+              {joining ? <Loader2 size={14} className="animate-spin mx-auto" /> : joinLabel}
+            </button>
+          )}
         </div>
       </div>
     </>
