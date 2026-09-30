@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin, IdCard, Loader2 } from 'lucide-react'
-import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
-import { formatPlayFormat } from '@/lib/skill'
-import { GameDetailSheet, loadGameDetail, type GameDetail as OpenGameDetail } from '@/components/games/GameDetailSheet'
+import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -55,11 +52,6 @@ interface Props {
   initialGameDetails: Record<string, GameDetail>
   isMutual: boolean
   gameChat?: {
-    gameId: string
-    format: string
-    scheduledAt: string
-    place: string | null
-    players: string[]
     members: ChatMember[]
     closed: boolean
   } | null
@@ -269,8 +261,6 @@ export function ChatView({
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
-  const [openGame, setOpenGame] = useState<OpenGameDetail | null>(null)
-  const [openingGame, setOpeningGame] = useState(false)
 
   const membersById = useMemo(() => {
     const map = new Map<string, ChatMember>()
@@ -432,14 +422,6 @@ export function ChatView({
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
 
-  async function openGameCard() {
-    if (!gameChat || openingGame) return
-    setOpeningGame(true)
-    const detail = await loadGameDetail(gameChat.gameId)
-    setOpeningGame(false)
-    if (detail) setOpenGame(detail)
-  }
-
   async function handleGameRespond(gameId: string, status: 'accepted' | 'declined') {
     // Optimistic update
     setGameStatuses((prev) => ({
@@ -481,40 +463,6 @@ export function ChatView({
 
   return (
     <>
-      {gameChat && (
-        <div className="max-w-2xl w-full mx-auto px-4 pt-4">
-          <div className="rounded-[20px] bg-white px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Game chat</p>
-                <p className="font-display text-2xl tracking-wide leading-none mt-1 uppercase">
-                  {formatPlayFormat(gameChat.format)}
-                  {' · '}
-                  <LocalGameDay iso={gameChat.scheduledAt} /> <LocalGameMonth iso={gameChat.scheduledAt} />
-                  {' · '}
-                  <LocalGameTime iso={gameChat.scheduledAt} />
-                </p>
-                {gameChat.place ? (
-                  <p className="text-sm text-[rgba(26,26,26,0.55)] mt-1">{gameChat.place}</p>
-                ) : null}
-                {gameChat.players.length > 0 && (
-                  <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1">{gameChat.players.join(', ')}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => void openGameCard()}
-                disabled={openingGame}
-                aria-label="Open game"
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-brand-field text-[rgba(26,26,26,0.7)] transition-colors hover:bg-[#F4F1EC] disabled:opacity-50"
-              >
-                {openingGame ? <Loader2 size={16} className="animate-spin" /> : <IdCard size={16} />}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {messages.length === 0 && otherName && !gameChat && (
         <div className="max-w-2xl w-full mx-auto px-4 pt-6">
           <div className="rounded-[20px] bg-white px-4 py-4 text-center">
@@ -683,14 +631,6 @@ export function ChatView({
         </div>
       </div>
 
-      {openGame && (
-        <GameDetailSheet
-          game={openGame}
-          currentUserId={userId}
-          activeConversationId={conversationId}
-          onClose={() => setOpenGame(null)}
-        />
-      )}
     </>
   )
 }
