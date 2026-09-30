@@ -484,7 +484,7 @@ export function ChatView({
       {gameChat && (
         <div className="max-w-2xl w-full mx-auto px-4 pt-4">
           <div className="rounded-[20px] bg-white px-4 py-3">
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Game chat</p>
                 <p className="font-display text-2xl tracking-wide leading-none mt-1 uppercase">
@@ -506,7 +506,7 @@ export function ChatView({
                 onClick={() => void openGameCard()}
                 disabled={openingGame}
                 aria-label="Open game"
-                className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-brand-field text-[rgba(26,26,26,0.7)] transition-colors hover:bg-[#F4F1EC] disabled:opacity-50"
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-brand-field text-[rgba(26,26,26,0.7)] transition-colors hover:bg-[#F4F1EC] disabled:opacity-50"
               >
                 {openingGame ? <Loader2 size={16} className="animate-spin" /> : <IdCard size={16} />}
               </button>
