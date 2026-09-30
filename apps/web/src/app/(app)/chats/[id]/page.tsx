@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { ChatView } from './ChatView'
+import { GameChatHeaderButton } from './GameChatHeaderButton'
 import { formatPlayFormat } from '@/lib/skill'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 
@@ -164,21 +165,30 @@ export default async function ChatPage({
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           {isGameChat && (
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Game chat</p>
-              <span className="font-display text-xl tracking-wide block leading-tight truncate uppercase">
-                {gameRow ? formatPlayFormat(gameRow.format) : 'Game'}
-                {gameRow && (
-                  <>
-                    {' · '}
-                    <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
-                    {' · '}
-                    <LocalGameTime iso={gameRow.scheduled_at} />
-                  </>
-                )}
-                {gameClosed ? ' · cancelled' : ''}
-              </span>
-            </div>
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Game chat</p>
+                <span className="font-display text-xl tracking-wide block leading-tight truncate uppercase">
+                  {gameRow ? formatPlayFormat(gameRow.format) : 'Game'}
+                  {gameRow && (
+                    <>
+                      {' · '}
+                      <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
+                      {' · '}
+                      <LocalGameTime iso={gameRow.scheduled_at} />
+                    </>
+                  )}
+                  {gameClosed ? ' · cancelled' : ''}
+                </span>
+              </div>
+              {conversation?.game_id && (
+                <GameChatHeaderButton
+                  gameId={conversation.game_id}
+                  userId={user.id}
+                  conversationId={id}
+                />
+              )}
+            </>
           )}
           {!isGameChat && otherProfile && (
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -217,14 +227,7 @@ export default async function ChatPage({
         initialGameStatuses={initialGameStatuses}
         initialGameDetails={initialGameDetails}
         isMutual={isGameChat ? !gameClosed : isMutual}
-        gameChat={isGameChat && gameRow && conversation?.game_id ? {
-          gameId: conversation.game_id,
-          format: gameRow.format,
-          scheduledAt: gameRow.scheduled_at,
-          place: gameRow.neighborhood,
-          players: (participantsData ?? [])
-            .map((person) => chatMember(person)?.full_name ?? '')
-            .filter(Boolean),
+        gameChat={isGameChat && gameRow ? {
           members: (participantsData ?? []).flatMap((person) => {
             const member = chatMember(person)
             return member ? [member] : []
