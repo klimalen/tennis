@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { skillLabel } from '@/lib/skill'
+import { rankPlayers } from '@/lib/player-rank'
 import { TRAVEL_RADIUS_KM, boundingBox, haversineKm } from '@/lib/travel'
 
 const PAGE_SIZE = 15
@@ -45,9 +46,15 @@ export async function GET(request: NextRequest) {
   const userLat = latStr ? parseFloat(latStr) : null
   const userLng = lngStr ? parseFloat(lngStr) : null
 
-  // Players in a travel radius around the viewer's city, plus anyone who named
-  // that same city. Other cities inside the radius stay in the list, nearest first.
-  if (userLat !== null && userLng !== null && !Number.isNaN(userLat) && !Number.isNaN(userLng)) {
+  const columns = 'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability, is_coach'
+  const hasCoords = userLat !== null && userLng !== null && !Number.isNaN(userLat) && !Number.isNaN(userLng)
+
+  // Same city name is included even when the saved point is far away. Other
+  // cities inside the travel radius come back too; ranking places them after.
+  let data: Array<Record<string, unknown>> | null = null
+  let error: { message: string } | null = null
+
+  if (hasCoords) {
     const box = boundingBox(userLat, userLng, TRAVEL_RADIUS_KM)
     const safeCity = (city ?? '').replace(/[%*,().]/g, '').trim()
     const nearby = `and(city_lat.gte.${box.south},city_lat.lte.${box.north},city_lng.gte.${box.west},city_lng.lte.${box.east})`
@@ -55,9 +62,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('profiles')
-      .select(
-        'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability, is_coach',
-      )
+      .select(columns)
       .is('deleted_at', null)
       .neq('full_name', '')
       .or(`${nearby}${cityClause}`)
@@ -65,92 +70,97 @@ export async function GET(request: NextRequest) {
     if (exclude) query = query.neq('id', exclude)
     if (coachesOnly) query = query.eq('is_coach', true)
 
-    const { data, error } = await query.limit(NEARBY_CAP)
+    const result = await query
+      .order('last_active_at', { ascending: false, nullsFirst: false })
+      .limit(NEARBY_CAP)
+    data = result.data
+    error = result.error
+  } else if (city) {
+    let query = supabase
+      .from('profiles')
+      .select(columns)
+      .is('deleted_at', null)
+      .neq('full_name', '')
+      .ilike('city_name', `%${city}%`)
 
-    if (error) {
-      console.error('Players query error:', error)
-      return NextResponse.json({ players: [], hasMore: false })
-    }
+    if (exclude) query = query.neq('id', exclude)
+    if (coachesOnly) query = query.eq('is_coach', true)
 
-    const rows = (data ?? []).map((row) => {
-      const distance_km = row.city_lat != null && row.city_lng != null
-        ? Math.round(haversineKm(userLat, userLng, row.city_lat, row.city_lng) * 10) / 10
-        : null
-      return { ...row, distance_km }
-    })
-
-    rows.sort((a, b) => {
-      const distA = a.distance_km ?? Number.POSITIVE_INFINITY
-      const distB = b.distance_km ?? Number.POSITIVE_INFINITY
-      if (Math.abs(distA - distB) > 0.05) return distA - distB
-      const activeA = a.last_active_at ? Date.parse(a.last_active_at) : 0
-      const activeB = b.last_active_at ? Date.parse(b.last_active_at) : 0
-      return activeB - activeA
-    })
-
-    const filtered = rows.filter((row) => matchesPlayer(row, q, skills))
-    const page = filtered.slice(offset, offset + PAGE_SIZE)
-    const hasMore = offset + PAGE_SIZE < filtered.length
-
-    return NextResponse.json({ players: await withFollowing(supabase, page), hasMore })
-  }
-
-  // Fallback: city name ilike filter (for users without stored coords)
-  if (!city) {
+    const result = await query
+      .order('last_active_at', { ascending: false, nullsFirst: false })
+      .limit(NEARBY_CAP)
+    data = result.data
+    error = result.error
+  } else {
     return NextResponse.json({ players: [], hasMore: false })
   }
-
-  let query = supabase
-    .from('profiles')
-    .select(
-      'id, username, full_name, avatar_url, skill_level_self, skill_level_computed, preferred_formats, play_style, total_matches, last_active_at, city_name, city_lat, city_lng, bio, looking_for, availability, is_coach',
-    )
-    .is('deleted_at', null)
-    .neq('full_name', '')
-    .ilike('city_name', `%${city}%`)
-    .order('last_active_at', { ascending: false, nullsFirst: false })
-
-  if (exclude) query = query.neq('id', exclude)
-  if (coachesOnly) query = query.eq('is_coach', true)
-
-  if (!q && skills.length === 0) query = query.range(offset, offset + PAGE_SIZE - 1)
-  else query = query.limit(NEARBY_CAP)
-
-  const { data, error } = await query
 
   if (error) {
     console.error('Players query error:', error)
     return NextResponse.json({ players: [], hasMore: false })
   }
 
-  if (q || skills.length > 0) {
-    const filtered = (data ?? []).filter((row) => matchesPlayer(row, q, skills))
-    const page = filtered.slice(offset, offset + PAGE_SIZE)
-    return NextResponse.json({
-      players: await withFollowing(supabase, page),
-      hasMore: offset + PAGE_SIZE < filtered.length,
-    })
+  const rows = (data ?? []).map((row) => {
+    const cityLat = typeof row.city_lat === 'number' ? row.city_lat : null
+    const cityLng = typeof row.city_lng === 'number' ? row.city_lng : null
+    const distance_km = hasCoords && cityLat != null && cityLng != null
+      ? Math.round(haversineKm(userLat, userLng, cityLat, cityLng) * 10) / 10
+      : null
+    return { ...row, distance_km } as typeof row & {
+      id: string
+      city_name: string | null
+      last_active_at: string | null
+      distance_km: number | null
+      full_name: string | null
+      username: string | null
+      looking_for: string | null
+      skill_level_self: number | null
+      skill_level_computed: number | null
+    }
+  })
+
+  const filtered = rows.filter((row) => matchesPlayer(row, q, skills))
+  const { data: { user } } = await supabase.auth.getUser()
+  const friendIds = user ? await mutualFriendIds(supabase, user.id) : new Set<string>()
+  const ranked = rankPlayers(filtered, city, friendIds)
+  const page = ranked.slice(offset, offset + PAGE_SIZE)
+
+  return NextResponse.json({
+    players: await withFollowing(supabase, page, user?.id ?? null),
+    hasMore: offset + PAGE_SIZE < ranked.length,
+  })
+}
+
+async function mutualFriendIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<Set<string>> {
+  const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+    supabase.from('follows').select('following_id').eq('follower_id', userId),
+    supabase.from('follows').select('follower_id').eq('following_id', userId),
+  ])
+  const followsMe = new Set((incoming ?? []).map((row) => row.follower_id as string))
+  const mutual = new Set<string>()
+  for (const row of outgoing ?? []) {
+    const id = row.following_id as string
+    if (followsMe.has(id)) mutual.add(id)
   }
-
-  const players = data ?? []
-  const hasMore = players.length === PAGE_SIZE
-
-  return NextResponse.json({ players: await withFollowing(supabase, players), hasMore })
+  return mutual
 }
 
 async function withFollowing<T extends { id: string }>(
   supabase: Awaited<ReturnType<typeof createClient>>,
   players: T[],
+  userId: string | null,
 ) {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || players.length === 0) {
+  if (!userId || players.length === 0) {
     return players.map((player) => ({ ...player, following: false }))
   }
 
   const { data } = await supabase
     .from('follows')
     .select('following_id')
-    .eq('follower_id', user.id)
+    .eq('follower_id', userId)
     .in('following_id', players.map((player) => player.id))
 
   const following = new Set((data ?? []).map((row) => row.following_id as string))
