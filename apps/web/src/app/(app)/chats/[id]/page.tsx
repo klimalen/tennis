@@ -139,17 +139,18 @@ export default async function ChatPage({
           {isGameChat && (
             <div className="flex-1 min-w-0">
               <p className="text-[10px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Game chat</p>
-              <span className="font-display text-xl tracking-wide block leading-tight truncate">
-                {gameRow ? formatPlayFormat(gameRow.format).toUpperCase() : 'GAME'}
-                {gameClosed ? ' · CANCELLED' : ''}
+              <span className="font-display text-xl tracking-wide block leading-tight truncate uppercase">
+                {gameRow ? formatPlayFormat(gameRow.format) : 'Game'}
+                {gameRow && (
+                  <>
+                    {' · '}
+                    <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
+                    {' · '}
+                    <LocalGameTime iso={gameRow.scheduled_at} />
+                  </>
+                )}
+                {gameClosed ? ' · cancelled' : ''}
               </span>
-              {gameRow && (
-                <p className="text-[11px] text-[rgba(26,26,26,0.45)] truncate">
-                  <LocalGameDay iso={gameRow.scheduled_at} /> <LocalGameMonth iso={gameRow.scheduled_at} />
-                  {' · '}
-                  <LocalGameTime iso={gameRow.scheduled_at} />
-                </p>
-              )}
             </div>
           )}
           {!isGameChat && otherProfile && (
