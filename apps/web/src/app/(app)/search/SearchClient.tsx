@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronDown, ChevronLeft, Plus, Minus, Star } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -502,7 +502,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
           <div className="flex items-center gap-1">
             {onToggleSave && (
               <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className="w-7 h-7 flex items-center justify-center text-[#1a1a1a]">
-                <Star size={16} fill={saved ? '#E8748A' : 'none'} />
+                <CourtStar saved={Boolean(saved)} />
               </button>
             )}
             <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
@@ -598,6 +598,17 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
   )
 }
 
+function CourtStar({ saved, size = 16 }: { saved?: boolean; size?: number }) {
+  return (
+    <Star
+      size={size}
+      fill={saved ? '#E8748A' : 'none'}
+      stroke={saved ? '#E8748A' : 'currentColor'}
+      strokeWidth={saved ? 1.25 : 1.75}
+    />
+  )
+}
+
 // ─── Venue card ───────────────────────────────────────────────────────────────
 
 function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSave, showDistance = true, vivid = true }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; saved?: boolean; onToggleSave?: (venue: Venue) => void; showDistance?: boolean; vivid?: boolean }) {
@@ -639,7 +650,7 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
               onClick={(event) => { event.stopPropagation(); onToggleSave(venue) }}
               className="text-[#1a1a1a]"
             >
-              <Star size={16} fill={saved ? '#E8748A' : 'none'} />
+              <CourtStar saved={Boolean(saved)} />
             </button>
           )}
           <ChevronRight size={14} className="text-[rgba(26,26,26,0.2)]" />
@@ -715,7 +726,7 @@ function openGameSpotsLeft(game: OpenGame) {
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, userId, joined, onJoin, onClick, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; canJoin?: boolean; vivid?: boolean }) {
+function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; onCourt?: () => void; canJoin?: boolean; vivid?: boolean }) {
   const seated = game.participants.filter((p) => holdsGameSeat(p.status) && p.player_id !== game.creator_id)
   const spotsTaken = game.participants.filter((p) => holdsGameSeat(p.status)).length
   const spotsLeft = game.max_players - spotsTaken
@@ -744,7 +755,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, canJoin = true, v
 
   return (
     <div className={vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3]' : 'w-full text-left bg-white rounded-[28px] border border-brand-divider'}>
-      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'p-5' : 'p-4'}`}>
+      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pt-5' : 'px-4 pt-4'}`}>
         <div className="flex items-center gap-3">
           <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${vivid ? 'bg-[#F0EBE3]/20' : 'bg-brand-avatar'}`}>
             {game.creator.avatar_url ? (
@@ -761,7 +772,26 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, canJoin = true, v
           {' · '}
           {OPEN_FORMAT_LABELS[game.format] ?? game.format}
         </p>
-        {placeName && (
+      </button>
+      {placeName && game.court && (
+        <button type="button" onClick={onCourt ?? onClick} className={`w-full text-left ${vivid ? 'px-5' : 'px-4'}`}>
+          <div className={`mt-2 rounded-[16px] px-3 py-2.5 ${vivid ? 'bg-[#F0EBE3]/15' : 'bg-brand-field'}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={`font-display text-xl leading-none tracking-wide uppercase ${ink}`}>{placeName}</p>
+                {placeDetail && <p className={`mt-1 text-[11px] truncate ${muted}`}>{placeDetail}</p>}
+              </div>
+              <span className="flex flex-shrink-0 items-center gap-2">
+                {price && <span className={`text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</span>}
+                <ChevronDown size={16} className={vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'} />
+              </span>
+            </div>
+            <p className={`mt-1.5 text-[10px] tracking-[0.14em] uppercase ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>Court info</p>
+          </div>
+        </button>
+      )}
+      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pb-4' : 'px-4 pb-4'}`}>
+        {placeName && !game.court && (
           <div className="mt-2 flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className={`font-display text-xl leading-none tracking-wide uppercase ${ink}`}>{placeName}</p>
@@ -963,6 +993,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set())
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameDetail | null>(null)
+  const [courtInfoOpen, setCourtInfoOpen] = useState(false)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
 
   // ── Discovery previews ──────────────────────────────────────────────────────
@@ -1465,9 +1496,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, geocodeDone, userGeoCoords])
 
-  async function openGameDetail(gameId: string) {
+  async function openGameDetail(gameId: string, options?: { court?: boolean }) {
     const detail = await loadGameDetail(gameId)
     if (!detail || !viewerCanOpenGame(detail, user?.id ?? null)) return
+    setCourtInfoOpen(Boolean(options?.court && detail.court))
     setSelectedGame(detail)
   }
 
@@ -1557,9 +1589,11 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       )}
       {selectedGame && (
         <GameDetailSheet
+          key={selectedGame.id}
           game={selectedGame}
           currentUserId={user?.id ?? null}
           viewerIsCourt={viewerIsCourt}
+          courtInfoOpen={courtInfoOpen}
           onJoined={() => {
             const id = selectedGame.id
             setJoinedGameIds((prev) => new Set(prev).add(id))
@@ -1659,6 +1693,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                     onJoin={handleJoin}
                     canJoin={!viewerIsCourt}
                     onClick={() => { void openGameDetail(previewGame.id) }}
+                    onCourt={() => { void openGameDetail(previewGame.id, { court: true }) }}
                     vivid
                   />
                 ) : (
@@ -1823,6 +1858,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                   onJoin={handleJoin}
                   canJoin={!viewerIsCourt}
                   onClick={() => { void openGameDetail(game.id) }}
+                  onCourt={() => { void openGameDetail(game.id, { court: true }) }}
                 />
                     ))}
                   </>

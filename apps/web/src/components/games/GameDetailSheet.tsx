@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { holdsGameSeat } from '@/lib/schedule'
@@ -113,6 +113,7 @@ export function GameDetailSheet({
   onJoined,
   activeConversationId,
   viewerIsCourt,
+  courtInfoOpen = false,
 }: {
   game: GameDetail
   currentUserId: string | null
@@ -120,12 +121,13 @@ export function GameDetailSheet({
   onJoined?: () => void
   activeConversationId?: string
   viewerIsCourt?: boolean
+  courtInfoOpen?: boolean
 }) {
   const router = useRouter()
   const [joining, setJoining] = useState(false)
   const [joined, setJoined] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
-  const [courtOpen, setCourtOpen] = useState(false)
+  const [courtOpen, setCourtOpen] = useState(courtInfoOpen)
   const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
   useHideTabBar(true)
 
@@ -244,19 +246,38 @@ export function GameDetailSheet({
               <LocalGameTimeRange iso={game.scheduled_at} durationMinutes={game.duration_minutes} />
               <span className="text-[rgba(26,26,26,0.45)]"> · {FORMAT_LABELS[game.format] ?? game.format}</span>
             </p>
-            {placeName && (
+            {placeName && game.court && (
               <button
                 type="button"
-                onClick={() => game.court && setCourtOpen((open) => !open)}
-                className={`mt-3 text-left ${game.court ? 'hover:opacity-80' : 'cursor-default'}`}
+                onClick={() => setCourtOpen((open) => !open)}
+                aria-expanded={courtOpen}
+                className="mt-3 w-full rounded-[16px] bg-[#F4F1EC] px-3 py-3 text-left"
               >
+                <span className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</span>
+                    {placeDetail && (
+                      <span className="mt-1 flex items-center gap-1 text-[12px] text-[rgba(26,26,26,0.5)]">
+                        <MapPin size={11} />{placeDetail}
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown size={16} className={`mt-1 flex-shrink-0 text-[#3A8A7A] transition-transform ${courtOpen ? 'rotate-180' : ''}`} />
+                </span>
+                <span className="mt-2 block text-[10px] tracking-[0.14em] uppercase text-[#3A8A7A]">
+                  {courtOpen ? 'Hide court info' : 'Court info'}
+                </span>
+              </button>
+            )}
+            {placeName && !game.court && (
+              <div className="mt-3 text-left">
                 <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
                 {placeDetail && (
                   <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)] flex items-center gap-1">
                     <MapPin size={11} />{placeDetail}
                   </p>
                 )}
-              </button>
+              </div>
             )}
             <div className="flex flex-wrap gap-1.5 mt-2">
               {lightsLabel(game.court?.lit) && <Fact>{lightsLabel(game.court?.lit)}</Fact>}

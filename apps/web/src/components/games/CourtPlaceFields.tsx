@@ -76,13 +76,19 @@ export function CourtPlaceFields({
 
   useEffect(() => {
     if (!coords || custom || value.venue) return
+    const q = query.trim()
+    if (!q) {
+      setResults([])
+      setSearching(false)
+      return
+    }
     const handle = setTimeout(() => {
       const params = new URLSearchParams({
         lat: String(coords.lat),
         lng: String(coords.lng),
         radius: '40',
+        q,
       })
-      if (query.trim()) params.set('q', query.trim())
       setSearching(true)
       void fetch(`/api/venues?${params.toString()}`)
         .then((res) => res.json() as Promise<{ venues?: VenueResult[] }>)
@@ -132,7 +138,12 @@ export function CourtPlaceFields({
   const showCost = Boolean(value.venue) || custom || value.locationName.trim().length > 0
   const priced = !lockedFree && value.courtCostCents != null && value.courtCostCents > 0
 
+  const needle = query.trim().toLowerCase()
+  const typing = needle.length > 0
   const favoriteIds = new Set(favorites.map((venue) => venue.id))
+  const matchedFavorites = typing
+    ? favorites.filter((venue) => `${venue.name} ${venue.address ?? ''}`.toLowerCase().includes(needle))
+    : []
   const listed = results.filter((venue) => !favoriteIds.has(venue.id))
 
   return (
@@ -178,24 +189,27 @@ export function CourtPlaceFields({
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search courts"
+            placeholder="Court name or address"
             className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary"
           />
           {!coords && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Add a city to your profile to search courts near you.</p>
           )}
-          {favorites.length > 0 && (
+          {typing && matchedFavorites.length > 0 && (
             <div className="space-y-1">
               <p className="text-[9px] tracking-[0.16em] uppercase text-[rgba(26,26,26,0.35)]">My courts</p>
-              {favorites.map((venue) => (
+              {matchedFavorites.map((venue) => (
                 <CourtRow key={venue.id} venue={venue} onPick={() => selectVenue(venue)} />
               ))}
             </div>
           )}
-          {searching && <p className="text-[11px] text-[rgba(26,26,26,0.4)]">Looking…</p>}
-          {listed.slice(0, 8).map((venue) => (
+          {typing && searching && <p className="text-[11px] text-[rgba(26,26,26,0.4)]">Looking…</p>}
+          {typing && listed.slice(0, 8).map((venue) => (
             <CourtRow key={venue.id} venue={venue} onPick={() => selectVenue(venue)} />
           ))}
+          {typing && !searching && matchedFavorites.length === 0 && listed.length === 0 && (
+            <p className="text-[12px] text-[rgba(26,26,26,0.5)]">No courts match that.</p>
+          )}
           <button type="button" onClick={() => setCustom(true)} className="text-[10px] tracking-[0.14em] uppercase text-[#1a1a1a] underline underline-offset-4">
             Court isn&apos;t listed
           </button>
@@ -215,7 +229,6 @@ export function CourtPlaceFields({
               </div>
               {pricing && (
                 <label className="flex items-center gap-2">
-                  <span className="text-sm text-[rgba(26,26,26,0.45)]">$</span>
                   <input
                     inputMode="decimal"
                     value={dollars}
@@ -223,6 +236,7 @@ export function CourtPlaceFields({
                     placeholder="24"
                     className="w-28 px-3 py-2 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary"
                   />
+                  <span className="text-sm text-[rgba(26,26,26,0.45)]">$</span>
                 </label>
               )}
               {priced && (
