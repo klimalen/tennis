@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
 import { parseDurationMinutes } from '@/lib/game-time'
+import { parseCourtOffer } from '@/lib/game-court'
 import { postGameNotice } from '@/lib/game-notice'
 import { NextResponse } from 'next/server'
 
@@ -18,6 +19,9 @@ export async function PATCH(
     duration_minutes?: number
     format?: string
     location_name?: string | null
+    venue_group_id?: string | null
+    court_cost_cents?: number | null
+    payment?: string | null
     notes?: string | null
     is_open?: boolean
   }
@@ -42,15 +46,39 @@ export async function PATCH(
     duration_minutes?: number
     format?: string
     neighborhood?: string | null
+    venue_group_id?: string | null
+    court_cost_cents?: number | null
+    payment?: string | null
     notes?: string | null
     is_open?: boolean
   } = {}
   if (body.scheduled_at) patch.scheduled_at = body.scheduled_at
   if (duration_minutes) patch.duration_minutes = duration_minutes
   if (body.format) patch.format = body.format
-  if ('location_name' in body) patch.neighborhood = body.location_name ?? null
   if ('notes' in body) patch.notes = body.notes ?? null
   if (typeof body.is_open === 'boolean') patch.is_open = body.is_open
+
+  if ('venue_group_id' in body || 'location_name' in body || 'court_cost_cents' in body || 'payment' in body) {
+    const venueGroupId = body.venue_group_id || null
+    let venueName: string | null = null
+    let venueFee: boolean | null = null
+    if (venueGroupId) {
+      const { data: venue } = await supabase
+        .from('venue_groups')
+        .select('id, name, fee')
+        .eq('id', venueGroupId)
+        .maybeSingle()
+      if (!venue) return NextResponse.json({ error: 'Court not found' }, { status: 400 })
+      venueName = venue.name
+      venueFee = venue.fee
+    }
+    const offer = parseCourtOffer(body.court_cost_cents, body.payment, venueFee)
+    if (offer.error) return NextResponse.json({ error: offer.error }, { status: 400 })
+    patch.venue_group_id = venueGroupId
+    patch.neighborhood = venueName ?? (body.location_name?.trim() || null)
+    patch.court_cost_cents = offer.court_cost_cents
+    patch.payment = offer.payment
+  }
 
   if (Object.keys(patch).length > 0) {
     const { error } = await supabase.from('games').update(patch).eq('id', id).eq('creator_id', user.id)
@@ -80,7 +108,7 @@ export async function PATCH(
   if (scheduledAtChanged) {
     const newScheduledAt = body.scheduled_at!
     const newFormat = body.format ?? current.format
-    const newNeighborhood = body.location_name !== undefined ? body.location_name : current.neighborhood
+    const newNeighborhood = patch.neighborhood !== undefined ? patch.neighborhood : current.neighborhood
 
     const snapshot = JSON.stringify({
       scheduled_at: newScheduledAt,

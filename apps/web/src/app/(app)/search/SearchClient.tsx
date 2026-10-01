@@ -1,13 +1,15 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Minus } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronDown, ChevronLeft, Plus, Minus, Star } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTabBarHidden } from '@/components/navigation/TabBarVisibility'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 import type { User } from '@supabase/supabase-js'
-import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { LocalGameTimeRange } from '@/components/ui/LocalGameTime'
+import { arrivalLabel, costLine, lightsLabel, type GameCourt } from '@/lib/game-court'
+import { GameFaceRow } from '@/components/games/GameFaceRow'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
@@ -137,9 +139,13 @@ interface OpenGameParticipant {
 interface OpenGame {
   id: string
   scheduled_at: string
+  duration_minutes?: number | null
   format: string
   neighborhood: string | null
   notes: string | null
+  court_cost_cents?: number | null
+  payment?: string | null
+  court?: GameCourt | null
   creator_id: string
   max_players: number
   creator: OpenGameProfile & { city_name: string | null }
@@ -485,7 +491,7 @@ function CourtMap({ venue }: { venue: { lat: number; lng: number; name: string }
   )
 }
 
-function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLat: number; userLng: number; onClose: () => void }) {
+function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: { venue: Venue; userLat: number; userLng: number; saved?: boolean; onToggleSave?: (venue: Venue) => void; onClose: () => void }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
     <>
@@ -493,7 +499,14 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{venueKindLabel(venue.kind)}</span>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
+          <div className="flex items-center gap-1">
+            {onToggleSave && (
+              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className="w-7 h-7 flex items-center justify-center text-[#1a1a1a]">
+                <CourtStar saved={Boolean(saved)} />
+              </button>
+            )}
+            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
+          </div>
         </div>
         <CourtMap venue={venue} />
         <div className="p-5 pb-24 space-y-4">
@@ -585,12 +598,23 @@ function VenueSheet({ venue, userLat, userLng, onClose }: { venue: Venue; userLa
   )
 }
 
+function CourtStar({ saved, size = 16 }: { saved?: boolean; size?: number }) {
+  return (
+    <Star
+      size={size}
+      fill={saved ? '#E8748A' : 'none'}
+      stroke={saved ? '#E8748A' : 'currentColor'}
+      strokeWidth={saved ? 1.25 : 1.75}
+    />
+  )
+}
+
 // ─── Venue card ───────────────────────────────────────────────────────────────
 
-function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = true }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; vivid?: boolean }) {
+function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSave, showDistance = true, vivid = true }: { venue: Venue; userLat: number; userLng: number; viewed: boolean; onClick: () => void; saved?: boolean; onToggleSave?: (venue: Venue) => void; showDistance?: boolean; vivid?: boolean }) {
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
-    <button onClick={onClick} className={`w-full text-left transition-colors ${vivid ? 'overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
+    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(event) => { if (event.key === 'Enter') onClick() }} className={`w-full text-left transition-colors ${vivid ? 'overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]' : 'bg-white border border-brand-divider hover:border-brand-primary/40 active:bg-brand-surface'} ${viewed ? 'opacity-55' : ''}`}>
       <div className="flex gap-0">
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
@@ -602,7 +626,7 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = true }: {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
-            <span className={`text-[11px] flex items-center gap-0.5 ${vivid ? 'text-[#D4A017]' : 'text-[rgba(26,26,26,0.4)]'}`}><MapPin size={10} />{formatDistance(distanceM)}</span>
+            {showDistance && <span className={`text-[11px] flex items-center gap-0.5 ${vivid ? 'text-[#D4A017]' : 'text-[rgba(26,26,26,0.4)]'}`}><MapPin size={10} />{formatDistance(distanceM)}</span>}
             <SurfaceBadge surface={venue.surface} />
             {venue.lit && <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]"><Zap size={9} />Lit</span>}
             {venue.has_indoor && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Indoor</span>}
@@ -618,9 +642,21 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, vivid = true }: {
             )}
           </div>
         </div>
-        <div className="flex items-center pr-3 text-[rgba(26,26,26,0.2)]"><ChevronRight size={14} /></div>
+        <div className="flex flex-col items-center justify-center pr-3 gap-2">
+          {onToggleSave && (
+            <button
+              type="button"
+              aria-label={saved ? 'Remove from my courts' : 'Save court'}
+              onClick={(event) => { event.stopPropagation(); onToggleSave(venue) }}
+              className="text-[#1a1a1a]"
+            >
+              <CourtStar saved={Boolean(saved)} />
+            </button>
+          )}
+          <ChevronRight size={14} className="text-[rgba(26,26,26,0.2)]" />
+        </div>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -675,33 +711,6 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
 
 // ─── Participant avatars ───────────────────────────────────────────────────────
 
-function ParticipantAvatars({ participants, max = 3 }: { participants: OpenGameParticipant[]; max?: number }) {
-  const shown = participants.slice(0, max)
-  const extra = participants.length - max
-  return (
-    <div className="flex items-center -space-x-2">
-      {shown.map((p) => {
-        const initials = p.profile.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-        return (
-          <div key={p.player_id} className="w-7 h-7 rounded-full border-2 border-white bg-brand-surface overflow-hidden flex items-center justify-center">
-            {p.profile.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.profile.avatar_url} alt={p.profile.full_name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[8px] font-medium text-[rgba(26,26,26,0.5)]">{initials}</span>
-            )}
-          </div>
-        )
-      })}
-      {extra > 0 && (
-        <div className="w-7 h-7 rounded-full border-2 border-white bg-brand-surface flex items-center justify-center">
-          <span className="text-[8px] font-medium text-[rgba(26,26,26,0.5)]">+{extra}</span>
-        </div>
-      )}
-    </div>
-  )
-}
-
 const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
 
 const GAME_FILTERS = [
@@ -717,60 +726,110 @@ function openGameSpotsLeft(game: OpenGame) {
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, userId, joined, onJoin, onClick, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; canJoin?: boolean; vivid?: boolean }) {
+function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; onCourt?: () => void; canJoin?: boolean; vivid?: boolean }) {
+  const seated = game.participants.filter((p) => holdsGameSeat(p.status) && p.player_id !== game.creator_id)
   const spotsTaken = game.participants.filter((p) => holdsGameSeat(p.status)).length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
   const isParticipant = userId ? game.participants.some((p) => p.player_id === userId && holdsGameSeat(p.status)) : false
   const alreadyIn = isParticipant || joined
+  const placeName = game.court?.name?.trim() || game.neighborhood
+  const placeDetail = game.court?.address && game.court.address !== placeName ? game.court.address : null
+  const price = game.court?.fee === false ? null : costLine(game.court_cost_cents, game.payment)
+  const faces = [
+    {
+      id: game.creator.id,
+      name: game.creator.full_name,
+      username: game.creator.username,
+      avatarUrl: game.creator.avatar_url,
+    },
+    ...seated.map((participant) => ({
+      id: participant.player_id,
+      name: participant.profile.full_name,
+      username: participant.profile.username,
+      avatarUrl: participant.profile.avatar_url,
+    })),
+  ]
+  const ink = vivid ? 'text-[#F0EBE3]' : 'text-[#1a1a1a]'
+  const muted = vivid ? 'text-[#F0EBE3]/75' : 'text-[rgba(26,26,26,0.5)]'
 
   return (
-    <button onClick={onClick} className={vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3] active:bg-[#2d7066]' : 'w-full text-left bg-white border border-brand-divider hover:border-brand-primary/40 transition-colors active:bg-brand-surface'}>
-      <div className={vivid ? 'p-5' : 'p-4'}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            {vivid && <p className="text-[10px] tracking-[0.22em] uppercase text-[#BCD85E] mb-2">✦ Open game</p>}
-            <p className={vivid ? 'font-display text-6xl tracking-wide leading-none' : 'font-display text-xl tracking-wide leading-none text-[#1a1a1a]'}>
-              <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} />
-              {vivid ? null : <> · <LocalGameTime iso={game.scheduled_at} /></>}
-            </p>
-            <p className={vivid ? 'font-fraunces italic text-lg text-[#F0EBE3] mt-2' : 'hidden'}>
-              <LocalGameTime iso={game.scheduled_at} />
-              {' · '}
-              {OPEN_FORMAT_LABELS[game.format] ?? game.format}{game.neighborhood ? ` · ${game.neighborhood}` : ''}
-            </p>
-            {placeLine(game.creator.city_name, game.distance_km) && (
-              <p className={vivid ? 'mt-1 text-[11px] text-[#F0EBE3]/80' : 'mt-1 text-[11px] text-[rgba(26,26,26,0.45)]'}>
-                {placeLine(game.creator.city_name, game.distance_km)}
-              </p>
+    <div className={vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3]' : 'w-full text-left bg-white rounded-[28px] border border-brand-divider'}>
+      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pt-5' : 'px-4 pt-4'}`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${vivid ? 'bg-[#F0EBE3]/20' : 'bg-brand-avatar'}`}>
+            {game.creator.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={game.creator.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className={`font-display text-sm ${ink}`}>{game.creator.full_name.slice(0, 1)}</span>
             )}
-            <div className={vivid ? 'hidden' : 'flex items-center gap-2 mt-1.5 flex-wrap'}>
-              <span className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">{OPEN_FORMAT_LABELS[game.format] ?? game.format}</span>
-              {game.neighborhood && (
-                <span className="text-[10px] text-[rgba(26,26,26,0.45)] flex items-center gap-0.5"><MapPin size={9} />{game.neighborhood}</span>
-              )}
+          </div>
+          <p className={`font-display text-2xl leading-none tracking-wide uppercase ${ink}`}>{game.creator.full_name}</p>
+        </div>
+        <p className={`mt-3 text-[13px] ${muted}`}>
+          <LocalGameTimeRange iso={game.scheduled_at} durationMinutes={game.duration_minutes ?? null} />
+          {' · '}
+          {OPEN_FORMAT_LABELS[game.format] ?? game.format}
+        </p>
+      </button>
+      {placeName && game.court && (
+        <button type="button" onClick={onCourt ?? onClick} className={`w-full text-left ${vivid ? 'px-5' : 'px-4'}`}>
+          <div className={`mt-2 rounded-[16px] px-3 py-2.5 ${vivid ? 'bg-[#F0EBE3]/15' : 'bg-brand-field'}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={`font-display text-xl leading-none tracking-wide uppercase ${ink}`}>{placeName}</p>
+                {placeDetail && <p className={`mt-1 text-[11px] truncate ${muted}`}>{placeDetail}</p>}
+              </div>
+              <span className="flex flex-shrink-0 items-center gap-2">
+                {price && <span className={`text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</span>}
+                <ChevronDown size={16} className={vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'} />
+              </span>
             </div>
+            <p className={`mt-1.5 text-[10px] tracking-[0.14em] uppercase ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>Court info</p>
           </div>
-          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium px-2 py-0.5 flex-shrink-0 ${vivid ? 'rounded-full px-3 bg-[#F0EBE3] text-[#3A8A7A]' : isFull ? 'bg-brand-surface text-[rgba(26,26,26,0.35)]' : 'bg-brand-primary/10 text-brand-primary'}`}>
-            {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}
-          </span>
-        </div>
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <ParticipantAvatars participants={game.participants} />
-            <span className={vivid ? 'text-[11px] text-[#F0EBE3]/80' : 'text-[10px] text-[rgba(26,26,26,0.4)]'}>{spotsTaken}/{game.max_players}</span>
+        </button>
+      )}
+      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pb-4' : 'px-4 pb-4'}`}>
+        {placeName && !game.court && (
+          <div className="mt-2 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={`font-display text-xl leading-none tracking-wide uppercase ${ink}`}>{placeName}</p>
+              {placeDetail && <p className={`mt-1 text-[11px] truncate ${muted}`}>{placeDetail}</p>}
+            </div>
+            {price && <p className={`flex-shrink-0 text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</p>}
           </div>
-          {canJoin && (
-            <button
-              onClick={(e) => { e.stopPropagation(); if (!alreadyIn && !isFull) onJoin(game.id) }}
-              disabled={alreadyIn || isFull}
-              className={`px-4 py-2 text-[10px] tracking-[0.15em] uppercase font-medium transition-colors ${vivid ? 'rounded-full px-5' : ''} ${alreadyIn || isFull ? (vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70 cursor-default' : 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default') : vivid ? 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]' : 'rounded-full bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`}>
-              {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
-            </button>
-          )}
+        )}
+        {!placeName && price && <p className={`mt-2 text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</p>}
+        {(game.court?.lit != null || game.court?.fee != null || arrivalLabel(game.court)) && (
+          <p className={`mt-1 text-[10px] tracking-[0.08em] uppercase ${muted}`}>
+            {[lightsLabel(game.court?.lit), game.court?.fee === false ? 'Free court' : game.court?.fee === true && !price ? 'Fee' : null, arrivalLabel(game.court)].filter(Boolean).join(' · ')}
+          </p>
+        )}
+        <div className="mt-4">
+          <GameFaceRow people={faces} spotsLeft={spotsLeft} light={vivid} />
+          <p className={`mt-2 text-[10px] tracking-[0.14em] uppercase ${muted}`}>
+            {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+          </p>
         </div>
-      </div>
-    </button>
+      </button>
+      {canJoin && (
+        <div className={vivid ? 'px-5 pb-5' : 'px-4 pb-4'}>
+          <button
+            type="button"
+            onClick={() => { if (!alreadyIn && !isFull) onJoin(game.id) }}
+            disabled={alreadyIn || isFull}
+            className={`w-full py-3 rounded-full text-[10px] tracking-[0.16em] uppercase font-medium ${
+              alreadyIn || isFull
+                ? vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70' : 'bg-brand-surface text-[rgba(26,26,26,0.35)]'
+                : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+            }`}
+          >
+            {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -934,6 +993,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set())
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameDetail | null>(null)
+  const [courtInfoOpen, setCourtInfoOpen] = useState(false)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
 
   // ── Discovery previews ──────────────────────────────────────────────────────
@@ -1199,8 +1259,52 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       .finally(() => setLoadingOpenGames(false))
   }
 
+  useEffect(() => {
+    if (!user) return
+    void fetch('/api/court-favorites')
+      .then((res) => res.json() as Promise<{ venues?: Venue[] }>)
+      .then((json) => {
+        const rows = json.venues ?? []
+        setFavoriteVenues(rows)
+        setFavoriteIds(new Set(rows.map((venue) => venue.id)))
+      })
+      .catch(() => {})
+  }, [user])
+
+  async function toggleFavorite(venue: Venue) {
+    if (!user) {
+      router.push('/sign-in')
+      return
+    }
+    const saved = favoriteIds.has(venue.id)
+    setFavoriteIds((prev) => {
+      const next = new Set(prev)
+      if (saved) next.delete(venue.id)
+      else next.add(venue.id)
+      return next
+    })
+    setFavoriteVenues((prev) => saved ? prev.filter((item) => item.id !== venue.id) : [venue, ...prev.filter((item) => item.id !== venue.id)])
+    const res = await fetch('/api/court-favorites', {
+      method: saved ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ venue_group_id: venue.id }),
+    })
+    if (!res.ok) {
+      setFavoriteIds((prev) => {
+        const next = new Set(prev)
+        if (saved) next.add(venue.id)
+        else next.delete(venue.id)
+        return next
+      })
+      setFavoriteVenues((prev) => saved ? [venue, ...prev] : prev.filter((item) => item.id !== venue.id))
+    }
+  }
+
   // ── Full courts view ────────────────────────────────────────────────────────
   const [venues, setVenues] = useState<Venue[]>([])
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
+  const [favoriteVenues, setFavoriteVenues] = useState<Venue[]>([])
+  const [courtList, setCourtList] = useState<'all' | 'mine'>('all')
   const [loadingVenues, setLoadingVenues] = useState(false)
   const [locating, setLocating] = useState(false)
   const [loadingMoreVenues, setLoadingMoreVenues] = useState(false)
@@ -1392,9 +1496,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, geocodeDone, userGeoCoords])
 
-  async function openGameDetail(gameId: string) {
+  async function openGameDetail(gameId: string, options?: { court?: boolean }) {
     const detail = await loadGameDetail(gameId)
     if (!detail || !viewerCanOpenGame(detail, user?.id ?? null)) return
+    setCourtInfoOpen(Boolean(options?.court && detail.court))
     setSelectedGame(detail)
   }
 
@@ -1472,19 +1577,23 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // ── Sheets (always rendered) ────────────────────────────────────────────────
   const sheets = (
     <>
-      {selectedVenue && (previewCoords || userCoords) && (
+      {selectedVenue && (
         <VenueSheet
           venue={selectedVenue}
-          userLat={(previewCoords ?? userCoords)!.lat}
-          userLng={(previewCoords ?? userCoords)!.lng}
+          userLat={(previewCoords ?? userCoords)?.lat ?? selectedVenue.lat}
+          userLng={(previewCoords ?? userCoords)?.lng ?? selectedVenue.lng}
+          saved={favoriteIds.has(selectedVenue.id)}
+          onToggleSave={(venue) => { void toggleFavorite(venue) }}
           onClose={() => setSelectedVenue(null)}
         />
       )}
       {selectedGame && (
         <GameDetailSheet
+          key={selectedGame.id}
           game={selectedGame}
           currentUserId={user?.id ?? null}
           viewerIsCourt={viewerIsCourt}
+          courtInfoOpen={courtInfoOpen}
           onJoined={() => {
             const id = selectedGame.id
             setJoinedGameIds((prev) => new Set(prev).add(id))
@@ -1557,6 +1666,8 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                     userLat={previewCoords.lat}
                     userLng={previewCoords.lng}
                     viewed={viewedVenues.has(previewVenue.id)}
+                    saved={favoriteIds.has(previewVenue.id)}
+                    onToggleSave={(venue) => { void toggleFavorite(venue) }}
                     vivid
                     onClick={() => {
                       setSelectedVenue(previewVenue)
@@ -1582,6 +1693,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                     onJoin={handleJoin}
                     canJoin={!viewerIsCourt}
                     onClick={() => { void openGameDetail(previewGame.id) }}
+                    onCourt={() => { void openGameDetail(previewGame.id, { court: true }) }}
                     vivid
                   />
                 ) : (
@@ -1726,7 +1838,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                   if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
                   if (formats.length > 0 && !formats.includes(game.format)) return false
                   if (!needle) return true
-                  const hay = `${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
+                  const hay = `${game.court?.name ?? ''} ${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
                   return hay.includes(needle)
                 })
                 if (shown.length === 0) {
@@ -1746,6 +1858,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                   onJoin={handleJoin}
                   canJoin={!viewerIsCourt}
                   onClick={() => { void openGameDetail(game.id) }}
+                  onCourt={() => { void openGameDetail(game.id, { court: true }) }}
                 />
                     ))}
                   </>
@@ -1812,7 +1925,40 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
         {courtsError && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{courtsError}</p>}
 
-        {locating && !loadingVenues && (
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setCourtList('all')} className={`px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border ${courtList === 'all' ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]' : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'}`}>All</button>
+          <button type="button" onClick={() => setCourtList('mine')} className={`px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border ${courtList === 'mine' ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]' : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'}`}>My courts</button>
+        </div>
+
+        {courtList === 'mine' && (
+          favoriteVenues.length === 0 ? (
+            <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center space-y-2">
+              <Star size={18} className="mx-auto text-[#E8748A]" />
+              <p className="text-sm text-[rgba(26,26,26,0.65)]">No saved courts yet</p>
+              <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Tap the star on a court you play at. It shows up here and when you create a game.</p>
+              <button type="button" onClick={() => setCourtList('all')} className="text-[11px] tracking-[0.12em] uppercase underline">Browse courts</button>
+            </div>
+          ) : (
+            favoriteVenues.map((venue) => (
+              <VenueCard
+                key={venue.id}
+                venue={venue}
+                userLat={userCoords?.lat ?? userCityLat ?? venue.lat}
+                userLng={userCoords?.lng ?? userCityLng ?? venue.lng}
+                showDistance={userCoords != null || userCityLat != null}
+                viewed={viewedVenues.has(venue.id)}
+                saved
+                onToggleSave={(item) => { void toggleFavorite(item) }}
+                onClick={() => {
+                  setSelectedVenue(venue)
+                  setViewedVenues((prev) => new Set(prev).add(venue.id))
+                }}
+              />
+            ))
+          )
+        )}
+
+        {courtList === 'all' && locating && !loadingVenues && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
             <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
@@ -1821,19 +1967,19 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           </div>
         )}
 
-        {loadingVenues && (
+        {courtList === 'all' && loadingVenues && (
           <div className="space-y-3">
             {[0, 1, 2, 3].map((i) => <CourtCardSkeleton key={i} />)}
           </div>
         )}
 
-        {!loadingVenues && !locating && userCoords && venues.length === 0 && !courtsError && (
+        {courtList === 'all' && !loadingVenues && !locating && userCoords && venues.length === 0 && !courtsError && (
           <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-6 text-center">
             <p className="text-sm text-[rgba(26,26,26,0.6)]">No courts found in this area</p>
           </div>
         )}
 
-        {!loadingVenues && !locating && userCoords && venues.length > 0 && (
+        {courtList === 'all' && !loadingVenues && !locating && userCoords && venues.length > 0 && (
           <>
             <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
             <MultiFilterChips
@@ -1874,6 +2020,8 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                         userLat={userCoords.lat}
                         userLng={userCoords.lng}
                         viewed={viewedVenues.has(venue.id)}
+                        saved={favoriteIds.has(venue.id)}
+                        onToggleSave={(venue) => { void toggleFavorite(venue) }}
                         onClick={() => {
                           setSelectedVenue(venue)
                           setViewedVenues((prev) => new Set(prev).add(venue.id))
@@ -1896,7 +2044,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           </>
         )}
 
-        {!loadingVenues && !locating && !userCoords && (
+        {courtList === 'all' && !loadingVenues && !locating && !userCoords && (
           <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">Enter a city to find courts</p>
             <p className="text-sm text-[rgba(26,26,26,0.5)]">Or use your location for the nearest courts</p>

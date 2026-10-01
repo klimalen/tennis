@@ -17,3 +17,10 @@ export function LocalGameTime({ iso }: { iso: string }) {
   const dt = new Date(iso)
   return <>{dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</>
 }
+
+export function LocalGameTimeRange({ iso, durationMinutes }: { iso: string; durationMinutes: number | null }) {
+  const start = new Date(iso)
+  const end = new Date(start.getTime() + (durationMinutes && durationMinutes > 0 ? durationMinutes : 90) * 60_000)
+  const fmt = (dt: Date) => dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  return <>{fmt(start)}–{fmt(end)}</>
+}
