@@ -186,10 +186,14 @@ export function CourtPlaceFields({
       ) : (
         <div className="space-y-2">
           <input
-            type="text"
+            type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Court name or address"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            name="court-query"
             className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary"
           />
           {!coords && (
