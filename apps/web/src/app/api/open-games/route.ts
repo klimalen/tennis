@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
+import type { GameCourt } from '@/lib/game-court'
 import { NextRequest, NextResponse } from 'next/server'
 
 export interface OpenGameProfile {
@@ -20,9 +21,13 @@ export interface OpenGameParticipant {
 export interface OpenGame {
   id: string
   scheduled_at: string
+  duration_minutes: number | null
   format: string
   neighborhood: string | null
   notes: string | null
+  court_cost_cents: number | null
+  payment: string | null
+  court: GameCourt | null
   creator_id: string
   max_players: number
   creator: OpenGameProfile & { city_name: string | null }
@@ -45,7 +50,9 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from('games')
     .select(`
-      id, scheduled_at, format, neighborhood, notes, creator_id, max_players,
+      id, scheduled_at, duration_minutes, format, neighborhood, notes, creator_id, max_players,
+      court_cost_cents, payment,
+      venue:venue_groups!games_venue_group_id_fkey ( id, name, address, lit, fee, access, phone, website, google_maps_uri, lat, lng ),
       creator:profiles!games_creator_id_fkey ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, city_name, city_lat, city_lng ),
       game_participants ( player_id, status, profiles ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed ) )
     `)
@@ -84,12 +91,18 @@ export async function GET(request: NextRequest) {
     const { city_lat: _lat, city_lng: _lng, ...creatorPublic } = creator
     void _lat
     void _lng
+    const venue = r.venue as unknown as GameCourt | GameCourt[] | null
+    const court = Array.isArray(venue) ? venue[0] ?? null : venue
     const game: OpenGame = {
       id: r.id,
       scheduled_at: r.scheduled_at,
+      duration_minutes: r.duration_minutes ?? null,
       format: r.format,
       neighborhood: r.neighborhood ?? null,
       notes: r.notes ?? null,
+      court_cost_cents: r.court_cost_cents ?? null,
+      payment: r.payment ?? null,
+      court: court?.id ? court : null,
       creator_id: r.creator_id,
       max_players: r.max_players,
       creator: creatorPublic,

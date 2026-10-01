@@ -156,6 +156,9 @@ export interface Game {
   city_id: string | null
   neighborhood: string | null
   court_id: string | null
+  venue_group_id: string | null
+  court_cost_cents: number | null
+  payment: 'split' | 'host' | 'at_court' | null
   court_booking_id: string | null
   status: GameStatus
   is_open: boolean
