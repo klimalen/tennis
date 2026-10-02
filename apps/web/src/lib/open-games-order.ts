@@ -39,7 +39,7 @@ export function compareOpenGames<T extends RankedOpenGame>(userId: string | null
   }
 }
 
-/** Local calendar day, so the chip matches the date printed on the card. */
+/** Local calendar day, so a picked range matches the date printed on the card. */
 export function localGameDayKey(iso: string) {
   const dt = new Date(iso)
   const month = String(dt.getMonth() + 1).padStart(2, '0')
@@ -47,16 +47,10 @@ export function localGameDayKey(iso: string) {
   return `${dt.getFullYear()}-${month}-${day}`
 }
 
-export function openGameDayLabel(iso: string, now = new Date()) {
-  const dt = new Date(iso)
-  const start = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate())
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const diff = Math.round((start.getTime() - today.getTime()) / 86_400_000)
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Tomorrow'
-  return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })
-}
-
-export function openGameDayHeading(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
+export function gameInDayRange(iso: string, range: { start: string; end: string } | null) {
+  if (!range) return true
+  const key = localGameDayKey(iso)
+  const start = range.start <= range.end ? range.start : range.end
+  const end = range.start <= range.end ? range.end : range.start
+  return key >= start && key <= end
 }
