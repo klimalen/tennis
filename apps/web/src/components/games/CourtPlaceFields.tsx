@@ -57,33 +57,33 @@ async function fetchCourts(lat: number, lng: number, q: string): Promise<VenueRe
   return json.venues ?? []
 }
 
-// "Austin" can be saved as a different city than the one with courts.
-// When the saved point has no matches, try the city name.
-async function findCourts(
-  q: string,
+// The profile stores one point for the city name. "Austin" can be the Minnesota
+// town while the catalog is Austin, Texas. Resolve that once, then every query
+// searches the city that actually has courts.
+async function resolveCourtAnchor(
   coords: { lat: number; lng: number } | null,
   cityName: string | null,
-): Promise<VenueResult[]> {
+): Promise<{ lat: number; lng: number } | null> {
   if (coords) {
-    const near = await fetchCourts(coords.lat, coords.lng, q)
-    if (near.length > 0) return near
+    const near = await fetchCourts(coords.lat, coords.lng, '')
+    if (near.length > 0) return coords
   }
-  if (!cityName) return []
+  if (!cityName) return coords
   const res = await fetch(
     `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=5`,
     { headers: { 'Accept-Language': 'en' } },
   )
-  if (!res.ok) return []
+  if (!res.ok) return coords
   const places = await res.json() as { lat: string; lon: string }[]
   for (const place of places) {
     const lat = Number(place.lat)
     const lng = Number(place.lon)
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
     if (coords && haversineKm(coords.lat, coords.lng, lat, lng) < 20) continue
-    const venues = await fetchCourts(lat, lng, q)
-    if (venues.length > 0) return venues
+    const venues = await fetchCourts(lat, lng, '')
+    if (venues.length > 0) return { lat, lng }
   }
-  return []
+  return coords
 }
 
 export function CourtPlaceFields({
@@ -100,6 +100,8 @@ export function CourtPlaceFields({
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [cityName, setCityName] = useState<string | null>(null)
   const [placeReady, setPlaceReady] = useState(false)
+  const [anchor, setAnchor] = useState<{ lat: number; lng: number } | null>(null)
+  const [anchorReady, setAnchorReady] = useState(false)
   const [searching, setSearching] = useState(false)
   const [dollars, setDollars] = useState(centsToDollars(value.courtCostCents))
   const [pricing, setPricing] = useState((value.courtCostCents ?? 0) > 0)
@@ -125,6 +127,18 @@ export function CourtPlaceFields({
   }, [])
 
   useEffect(() => {
+    if (!placeReady) return
+    let cancelled = false
+    void (async () => {
+      const point = await resolveCourtAnchor(coords, cityName)
+      if (cancelled) return
+      setAnchor(point)
+      setAnchorReady(true)
+    })()
+    return () => { cancelled = true }
+  }, [placeReady, coords, cityName])
+
+  useEffect(() => {
     if (custom || value.venue) return
     const q = query.trim()
     if (!q) {
@@ -132,12 +146,19 @@ export function CourtPlaceFields({
       setSearching(false)
       return
     }
-    if (!placeReady) return
+    if (!anchorReady) return
     let cancelled = false
     const handle = setTimeout(() => {
       void (async () => {
+        if (!anchor) {
+          if (!cancelled) {
+            setResults([])
+            setSearching(false)
+          }
+          return
+        }
         setSearching(true)
-        const found = await findCourts(q, coords, cityName)
+        const found = await fetchCourts(anchor.lat, anchor.lng, q)
         if (cancelled) return
         setResults(found)
         setSearching(false)
@@ -147,7 +168,7 @@ export function CourtPlaceFields({
       cancelled = true
       clearTimeout(handle)
     }
-  }, [coords, cityName, placeReady, query, custom, value.venue])
+  }, [anchor, anchorReady, query, custom, value.venue])
 
   function selectVenue(venue: VenueResult) {
     const free = venue.fee === false
@@ -253,7 +274,7 @@ export function CourtPlaceFields({
             name="court-query"
             className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary"
           />
-          {!placeReady ? null : !coords && !cityName && (
+          {placeReady && anchorReady && !anchor && !coords && !cityName && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Add a city to your profile to search courts near you.</p>
           )}
           {typing && matchedFavorites.length > 0 && (
@@ -264,11 +285,11 @@ export function CourtPlaceFields({
               ))}
             </div>
           )}
-          {typing && searching && <p className="text-[11px] text-[rgba(26,26,26,0.4)]">Looking…</p>}
+          {typing && (!anchorReady || searching) && <p className="text-[11px] text-[rgba(26,26,26,0.4)]">Looking…</p>}
           {typing && listed.slice(0, 8).map((venue) => (
             <CourtRow key={venue.id} venue={venue} onPick={() => selectVenue(venue)} />
           ))}
-          {typing && !searching && placeReady && matchedFavorites.length === 0 && listed.length === 0 && (coords || cityName) && (
+          {typing && anchorReady && !searching && matchedFavorites.length === 0 && listed.length === 0 && (anchor || coords || cityName) && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">No courts match that.</p>
           )}
           <button type="button" onClick={() => setCustom(true)} className="text-[10px] tracking-[0.14em] uppercase text-[#1a1a1a] underline underline-offset-4">

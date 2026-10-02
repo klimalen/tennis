@@ -642,18 +642,18 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
             )}
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center pr-3 gap-2">
+        <div className="relative w-9 flex-shrink-0 self-stretch">
           {onToggleSave && (
             <button
               type="button"
               aria-label={saved ? 'Remove from my courts' : 'Save court'}
               onClick={(event) => { event.stopPropagation(); onToggleSave(venue) }}
-              className="text-[#1a1a1a]"
+              className="absolute right-2 top-2.5 flex h-7 w-7 items-center justify-center text-[#1a1a1a]"
             >
               <CourtStar saved={Boolean(saved)} />
             </button>
           )}
-          <ChevronRight size={14} className="text-[rgba(26,26,26,0.2)]" />
+          <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.2)]" />
         </div>
       </div>
     </div>
