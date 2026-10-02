@@ -1,15 +1,14 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronDown, ChevronLeft, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTabBarHidden } from '@/components/navigation/TabBarVisibility'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 import type { User } from '@supabase/supabase-js'
-import { LocalGameTimeRange } from '@/components/ui/LocalGameTime'
-import { arrivalLabel, costLine, lightsLabel, type GameCourt } from '@/lib/game-court'
-import { GameFaceRow } from '@/components/games/GameFaceRow'
+import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
+import { formatCourtCost, type GameCourt } from '@/lib/game-court'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
@@ -128,6 +127,7 @@ interface OpenGameProfile {
   avatar_url: string | null
   skill_level_self: number | null
   skill_level_computed: number | null
+  account_kind?: string | null
 }
 
 interface OpenGameParticipant {
@@ -642,18 +642,18 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
             )}
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center pr-3 gap-2">
+        <div className="relative w-9 flex-shrink-0 self-stretch">
           {onToggleSave && (
             <button
               type="button"
               aria-label={saved ? 'Remove from my courts' : 'Save court'}
               onClick={(event) => { event.stopPropagation(); onToggleSave(venue) }}
-              className="text-[#1a1a1a]"
+              className="absolute right-2 top-2.5 flex h-7 w-7 items-center justify-center text-[#1a1a1a]"
             >
               <CourtStar saved={Boolean(saved)} />
             </button>
           )}
-          <ChevronRight size={14} className="text-[rgba(26,26,26,0.2)]" />
+          <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.2)]" />
         </div>
       </div>
     </div>
@@ -720,113 +720,166 @@ const GAME_FILTERS = [
 ]
 
 function openGameSpotsLeft(game: OpenGame) {
-  const taken = game.participants.filter((participant) => holdsGameSeat(participant.status)).length
+  const taken = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court').length
   return game.max_players - taken
 }
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
-function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; onCourt?: () => void; canJoin?: boolean; vivid?: boolean }) {
-  const seated = game.participants.filter((p) => holdsGameSeat(p.status) && p.player_id !== game.creator_id)
-  const spotsTaken = game.participants.filter((p) => holdsGameSeat(p.status)).length
+function ticketInitials(name: string) {
+  return name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
+}
+
+function TicketFaces({ people, spotsLeft }: { people: { id: string; name: string; avatarUrl: string | null }[]; spotsLeft: number }) {
+  const shown = people.slice(0, 4)
+  const extra = people.length - shown.length
+  return (
+    <span className="flex items-start gap-2 @[540px]:gap-3">
+      {shown.map((person) => (
+        <span key={person.id} className="flex w-8 flex-col items-center @[540px]:w-11">
+          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#F0EBE3]/20 @[540px]:h-10 @[540px]:w-10">
+            {person.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={person.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-display text-xs text-[#F0EBE3] @[540px]:text-sm">{ticketInitials(person.name)}</span>
+            )}
+          </span>
+          <span className="mt-1 max-w-[36px] truncate text-[10px] text-[#F0EBE3]/80 @[540px]:max-w-[48px]">{person.name.split(' ')[0]}</span>
+        </span>
+      ))}
+      {extra > 0 && (
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0EBE3]/15 text-[11px] text-[#F0EBE3] @[540px]:h-10 @[540px]:w-10">+{extra}</span>
+      )}
+      {spotsLeft > 0 && (
+        <span className="flex w-8 flex-col items-center @[540px]:w-11">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-[#F0EBE3]/70 text-base leading-none text-[#F0EBE3] @[540px]:h-10 @[540px]:w-10 @[540px]:text-lg">+</span>
+          <span className="mt-1 text-[10px] text-[#F0EBE3]/80">Open</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
+function BallArt() {
+  return (
+    <svg aria-hidden viewBox="0 0 72 72" className="h-14 w-14">
+      <circle cx="42" cy="44" r="22" fill="#85648F" />
+      <circle cx="32" cy="32" r="22" fill="#BCD85E" />
+      <path d="M16 28c10 9 20 9 32 0" fill="none" stroke="#F0EBE3" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M18 40c11-6 20-6 28 3" fill="none" stroke="#F0EBE3" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function CourtArt() {
+  return (
+    <svg aria-hidden viewBox="0 0 280 220" className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[48%] @[540px]:block" preserveAspectRatio="xMaxYMid slice">
+      <g transform="translate(70 18) rotate(-20 90 90)">
+        <rect x="0" y="20" width="230" height="150" fill="#2C6A5C" />
+        <rect x="16" y="36" width="198" height="118" fill="none" stroke="#F0EBE3" strokeWidth="3" />
+        <line x1="115" y1="36" x2="115" y2="154" stroke="#F0EBE3" strokeWidth="3" />
+        <line x1="16" y1="95" x2="214" y2="95" stroke="#F0EBE3" strokeWidth="3" />
+      </g>
+      <circle cx="214" cy="118" r="36" fill="#85648F" />
+      <circle cx="200" cy="102" r="36" fill="#BCD85E" />
+      <path d="M174 96c16 14 34 14 52 0" fill="none" stroke="#F0EBE3" strokeWidth="3" strokeLinecap="round" />
+      <path d="M178 118c18-10 32-10 46 4" fill="none" stroke="#F0EBE3" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; onCourt?: () => void; canJoin?: boolean }) {
+  const players = game.participants.filter((p) => holdsGameSeat(p.status) && p.profile.account_kind !== 'court')
+  const spotsTaken = players.length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
-  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId && holdsGameSeat(p.status)) : false
+  const isParticipant = userId ? players.some((p) => p.player_id === userId) : false
   const alreadyIn = isParticipant || joined
-  const placeName = game.court?.name?.trim() || game.neighborhood
-  const placeDetail = game.court?.address && game.court.address !== placeName ? game.court.address : null
-  const price = game.court?.fee === false ? null : costLine(game.court_cost_cents, game.payment)
+  const placeName = game.court?.name?.trim() || game.neighborhood?.trim() || ''
+  const courtHost = game.creator.account_kind === 'court'
   const faces = [
-    {
+    ...(courtHost ? [] : [{
       id: game.creator.id,
       name: game.creator.full_name,
-      username: game.creator.username,
       avatarUrl: game.creator.avatar_url,
-    },
-    ...seated.map((participant) => ({
-      id: participant.player_id,
-      name: participant.profile.full_name,
-      username: participant.profile.username,
-      avatarUrl: participant.profile.avatar_url,
-    })),
+    }]),
+    ...players
+      .filter((participant) => participant.player_id !== game.creator_id)
+      .map((participant) => ({
+        id: participant.player_id,
+        name: participant.profile.full_name,
+        avatarUrl: participant.profile.avatar_url,
+      })),
   ]
-  const ink = vivid ? 'text-[#F0EBE3]' : 'text-[#1a1a1a]'
-  const muted = vivid ? 'text-[#F0EBE3]/75' : 'text-[rgba(26,26,26,0.5)]'
+  const title = placeName || game.creator.full_name
+  const formatLabel = OPEN_FORMAT_LABELS[game.format] ?? game.format
+  const amount = game.court?.fee === false ? 'Free' : formatCourtCost(game.court_cost_cents)
+  const priceLabel = amount === 'Free' || game.court_cost_cents === 0
+    ? 'Free'
+    : amount
+      ? `${amount} total`
+      : null
+  const meta = [formatLabel, priceLabel].filter(Boolean).join(' · ')
+  const { dateLabel, startLabel, endLabel } = formatGameTicketTime(game.scheduled_at, game.duration_minutes ?? null)
+  const open = game.court ? (onCourt ?? onClick) : onClick
+
+  const spotsPill = isFull
+    ? 'bg-[#E8748A] text-[#1a1a1a]'
+    : 'bg-[#BCD85E] text-[#1a1a1a]'
 
   return (
-    <div className={vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3]' : 'w-full text-left bg-white rounded-[28px] border border-brand-divider'}>
-      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pt-5' : 'px-4 pt-4'}`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${vivid ? 'bg-[#F0EBE3]/20' : 'bg-brand-avatar'}`}>
-            {game.creator.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={game.creator.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className={`font-display text-sm ${ink}`}>{game.creator.full_name.slice(0, 1)}</span>
-            )}
-          </div>
-          <p className={`font-display text-2xl leading-none tracking-wide uppercase ${ink}`}>{game.creator.full_name}</p>
-        </div>
-        <p className={`mt-3 text-[13px] ${muted}`}>
-          <LocalGameTimeRange iso={game.scheduled_at} durationMinutes={game.duration_minutes ?? null} />
-          {' · '}
-          {OPEN_FORMAT_LABELS[game.format] ?? game.format}
-        </p>
-      </button>
-      {placeName && game.court && (
-        <button type="button" onClick={onCourt ?? onClick} className={`w-full text-left ${vivid ? 'px-5' : 'px-4'}`}>
-          <div className={`mt-2 rounded-[16px] px-3 py-2.5 ${vivid ? 'bg-[#F0EBE3]/15' : 'bg-brand-field'}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className={`font-display text-xl leading-none tracking-wide uppercase ${ink}`}>{placeName}</p>
-                {placeDetail && <p className={`mt-1 text-[11px] truncate ${muted}`}>{placeDetail}</p>}
-              </div>
-              <span className="flex flex-shrink-0 items-center gap-2">
-                {price && <span className={`text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</span>}
-                <ChevronDown size={16} className={vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'} />
-              </span>
-            </div>
-            <p className={`mt-1.5 text-[10px] tracking-[0.14em] uppercase ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>Court info</p>
-          </div>
-        </button>
-      )}
-      <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pb-4' : 'px-4 pb-4'}`}>
-        {placeName && !game.court && (
-          <div className="mt-2 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className={`font-display text-xl leading-none tracking-wide uppercase ${ink}`}>{placeName}</p>
-              {placeDetail && <p className={`mt-1 text-[11px] truncate ${muted}`}>{placeDetail}</p>}
-            </div>
-            {price && <p className={`flex-shrink-0 text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</p>}
-          </div>
-        )}
-        {!placeName && price && <p className={`mt-2 text-[13px] font-medium ${vivid ? 'text-[#BCD85E]' : 'text-[#3A8A7A]'}`}>{price}</p>}
-        {(game.court?.lit != null || game.court?.fee != null || arrivalLabel(game.court)) && (
-          <p className={`mt-1 text-[10px] tracking-[0.08em] uppercase ${muted}`}>
-            {[lightsLabel(game.court?.lit), game.court?.fee === false ? 'Free court' : game.court?.fee === true && !price ? 'Fee' : null, arrivalLabel(game.court)].filter(Boolean).join(' · ')}
-          </p>
-        )}
-        <div className="mt-4">
-          <GameFaceRow people={faces} spotsLeft={spotsLeft} light={vivid} />
-          <p className={`mt-2 text-[10px] tracking-[0.14em] uppercase ${muted}`}>
-            {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-          </p>
-        </div>
+    <div className="@container relative overflow-hidden rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3]">
+      <CourtArt />
+      <span className={`pointer-events-none absolute right-3 top-3 z-10 hidden rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] @[540px]:inline-flex ${spotsPill}`}>
+        {isFull ? 'Full' : `${spotsLeft} left`}
+      </span>
+      <button type="button" onClick={open} className="relative flex w-full items-stretch text-left">
+        <span className="flex w-[4.25rem] flex-shrink-0 flex-col items-center justify-center gap-0.5 bg-[#2C6A5C] py-4 @[540px]:w-[4.75rem]">
+          <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#F0EBE3]/70">{dateLabel}</span>
+          <span className="font-display text-lg leading-none tracking-wide @[540px]:text-xl">{startLabel}</span>
+          <ArrowDown size={14} strokeWidth={1.75} className="my-0.5 text-[#F0EBE3]/80" />
+          <span className="font-display text-lg leading-none tracking-wide @[540px]:text-xl">{endLabel}</span>
+        </span>
+        <span className="relative w-px flex-shrink-0 self-stretch" aria-hidden>
+          <span className="absolute inset-y-3 left-0 border-l border-dashed border-[#F0EBE3]/45" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col overflow-hidden py-3.5 pl-3 pr-2 @[540px]:pr-3">
+          <span className="truncate font-display text-2xl leading-none tracking-wide uppercase @[540px]:pr-16 @[540px]:text-3xl">{title}</span>
+          <span className="mt-1.5 truncate text-[13px] text-[#F0EBE3]/80">{meta}</span>
+          <span className="mt-3">
+            <TicketFaces people={faces} spotsLeft={spotsLeft} />
+          </span>
+        </span>
+        <span className="flex w-[4.5rem] flex-shrink-0 flex-col items-center self-stretch px-1 pb-2 pt-3 @[540px]:hidden">
+          <span className={`rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${spotsPill}`}>
+            {isFull ? 'Full' : `${spotsLeft} left`}
+          </span>
+          <span className="flex flex-1 items-center">
+            <BallArt />
+          </span>
+        </span>
       </button>
       {canJoin && (
-        <div className={vivid ? 'px-5 pb-5' : 'px-4 pb-4'}>
-          <button
-            type="button"
-            onClick={() => { if (!alreadyIn && !isFull) onJoin(game.id) }}
-            disabled={alreadyIn || isFull}
-            className={`w-full py-3 rounded-full text-[10px] tracking-[0.16em] uppercase font-medium ${
-              alreadyIn || isFull
-                ? vivid ? 'bg-[#F0EBE3]/20 text-[#F0EBE3]/70' : 'bg-brand-surface text-[rgba(26,26,26,0.35)]'
-                : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
-            }`}
-          >
-            {alreadyIn ? "You're in" : isFull ? 'Full' : 'Join'}
-          </button>
+        <div className="relative px-3 pb-3">
+          {alreadyIn ? (
+            <div className="flex w-full items-center justify-center rounded-full bg-[#F0EBE3]/20 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#F0EBE3]/75">
+              You&apos;re in
+            </div>
+          ) : isFull ? (
+            <div className="flex w-full items-center justify-center rounded-full bg-[#F0EBE3]/15 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#F0EBE3]/55">
+              Full
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onJoin(game.id)}
+              className="relative flex w-full items-center justify-center rounded-full bg-[#BCD85E] py-3 text-[12px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] hover:bg-[#A8C44A]"
+            >
+              Join
+              <ArrowRight size={16} strokeWidth={1.75} className="absolute right-4" />
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -853,11 +906,7 @@ function PlayerCardSkeleton() {
 
 function GameCardSkeleton() {
   return (
-    <div className="bg-white rounded-[28px] p-4 animate-pulse space-y-2">
-      <div className="h-5 bg-brand-surface-md w-2/5 rounded" />
-      <div className="h-3 bg-brand-surface w-1/3 rounded" />
-      <div className="h-8 bg-brand-surface w-full rounded mt-3" />
-    </div>
+    <div className="h-[176px] animate-pulse overflow-hidden rounded-[28px] bg-[#3A8A7A]/35" />
   )
 }
 
@@ -1694,7 +1743,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
                     canJoin={!viewerIsCourt}
                     onClick={() => { void openGameDetail(previewGame.id) }}
                     onCourt={() => { void openGameDetail(previewGame.id, { court: true }) }}
-                    vivid
                   />
                 ) : (
                   <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">

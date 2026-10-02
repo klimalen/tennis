@@ -113,7 +113,7 @@ function OpenGameCard({
     return () => { cancelled = true }
   }, [currentUserId])
 
-  const accepted = gameDetail?.participants.filter((p) => holdsGameSeat(p.status)) ?? []
+  const accepted = gameDetail?.participants.filter((p) => holdsGameSeat(p.status) && p.profile.account_kind !== 'court') ?? []
   const spotsTaken = accepted.length
   const spotsLeft = gameDetail ? gameDetail.max_players - spotsTaken : basicGame.max_players
   const isFull = spotsLeft <= 0
@@ -161,8 +161,8 @@ function OpenGameCard({
             <div className="mt-3">
               <GameFaceRow
                 people={[
-                  { id: gameDetail.creator.id, name: gameDetail.creator.full_name, username: gameDetail.creator.username, avatarUrl: gameDetail.creator.avatar_url },
-                  ...accepted.filter((person) => person.player_id !== gameDetail.creator_id).map((person) => ({
+                  ...(gameDetail.creator.account_kind === 'court' ? [] : [{ id: gameDetail.creator.id, name: gameDetail.creator.full_name, username: gameDetail.creator.username, avatarUrl: gameDetail.creator.avatar_url }]),
+                  ...accepted.filter((person) => person.player_id !== gameDetail.creator_id && person.profile.account_kind !== 'court').map((person) => ({
                     id: person.player_id,
                     name: person.profile.full_name,
                     username: person.profile.username,

@@ -17,11 +17,11 @@ export async function GET() {
 
   const { data: others } = await supabase
     .from('conversation_participants')
-    .select('user_id, profiles ( id, full_name, username, avatar_url )')
+    .select('user_id, profiles ( id, full_name, username, avatar_url, account_kind )')
     .in('conversation_id', myConvIds)
     .neq('user_id', user.id)
 
-  // Deduplicate by user_id
+  // Deduplicate by user_id. A court organises games; it is not a player you can invite.
   const seen = new Set<string>()
   const connections = (others ?? [])
     .filter((o) => {
@@ -29,8 +29,9 @@ export async function GET() {
       seen.add(o.user_id)
       return true
     })
-    .map((o) => (o as unknown as { user_id: string; profiles: { id: string; full_name: string; username: string; avatar_url: string | null } }).profiles)
-    .filter(Boolean)
+    .map((o) => (o as unknown as { user_id: string; profiles: { id: string; full_name: string; username: string; avatar_url: string | null; account_kind: string | null } | null }).profiles)
+    .filter((profile): profile is { id: string; full_name: string; username: string; avatar_url: string | null; account_kind: string | null } => !!profile && profile.account_kind !== 'court')
+    .map(({ account_kind: _kind, ...profile }) => profile)
 
   return NextResponse.json({ connections })
 }

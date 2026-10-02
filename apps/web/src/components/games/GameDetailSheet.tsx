@@ -21,6 +21,7 @@ export interface GameParticipant {
     avatar_url: string | null
     skill_level_self: number | null
     skill_level_computed: number | null
+    account_kind?: string | null
   }
 }
 
@@ -67,7 +68,7 @@ const DETAIL_SELECT = `
   city:cities (name),
   participants:game_participants (
     player_id, status,
-    profile:profiles!player_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed)
+    profile:profiles!player_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind)
   )
 `
 
@@ -168,7 +169,7 @@ export function GameDetailSheet({
     return () => { cancelled = true }
   }, [game.id])
 
-  const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status))
+  const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court')
   const spotsLeft = game.max_players - accepted.length
   const isFull = spotsLeft <= 0
   const isCourtHost = game.creator.account_kind === 'court' && currentUserId === game.creator_id
@@ -185,14 +186,14 @@ export function GameDetailSheet({
     avatarUrl: game.creator.avatar_url,
   }
   const otherFaces: GameFace[] = accepted
-    .filter((participant) => participant.player_id !== game.creator.id)
+    .filter((participant) => participant.player_id !== game.creator.id && participant.profile.account_kind !== 'court')
     .map((participant) => ({
       id: participant.player_id,
       name: participant.profile.full_name,
       username: participant.profile.username,
       avatarUrl: participant.profile.avatar_url,
     }))
-  const faces = [hostFace, ...otherFaces]
+  const faces = game.creator.account_kind === 'court' ? otherFaces : [hostFace, ...otherFaces]
 
   async function handleJoin() {
     if (!game.is_open || joining || alreadyIn || isFull || isPast || isCancelled) return

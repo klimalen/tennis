@@ -28,20 +28,23 @@ export default async function EditGamePage({
   // Load participants with profiles
   const { data: participants } = await supabase
     .from('game_participants')
-    .select('player_id, status, profiles ( full_name, username, avatar_url )')
+    .select('player_id, status, profiles ( full_name, username, avatar_url, account_kind )')
     .eq('game_id', id)
 
   type Participant = {
     player_id: string
     status: string
-    profiles: { full_name: string; username: string; avatar_url: string | null }
+    profiles: { full_name: string; username: string; avatar_url: string | null; account_kind?: string | null }
   }
+
+  const players = ((participants ?? []) as unknown as Participant[])
+    .filter((participant) => participant.profiles?.account_kind !== 'court')
 
   return (
     <EditGameForm
       game={{ ...game, court }}
       isCreator={game.creator_id === user.id}
-      participants={(participants ?? []) as unknown as Participant[]}
+      participants={players}
     />
   )
 }
