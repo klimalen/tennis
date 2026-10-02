@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Calendar, Loader2, MapPin } from 'lucide-react'
-import { LocalGameTimeRange } from '@/components/ui/LocalGameTime'
+import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
 import { holdsGameSeat } from '@/lib/schedule'
 import { costLine } from '@/lib/game-court'
 import { GameFaceRow } from '@/components/games/GameFaceRow'
@@ -85,6 +85,7 @@ function OpenGameCard({
   const isCancelled = basicGame.status === 'cancelled'
   const isPast = new Date(basicGame.scheduled_at) < new Date()
   const placeName = gameDetail?.court?.name?.trim() || basicGame.neighborhood
+  const gameWhen = formatGameTicketTime(basicGame.scheduled_at, gameDetail?.duration_minutes ?? null)
   const price = gameDetail?.court?.fee === false ? null : costLine(gameDetail?.court_cost_cents, gameDetail?.payment)
 
   useEffect(() => {
@@ -142,13 +143,11 @@ function OpenGameCard({
             )}
           </div>
 
-          {/* Date + format */}
-          {gameDetail && (
-            <p className="font-display text-xl leading-none tracking-wide uppercase text-[#1a1a1a] mb-2">{gameDetail.creator.full_name}</p>
-          )}
-          <p className="text-[13px] text-[rgba(26,26,26,0.55)] mb-1">
-            <LocalGameTimeRange iso={basicGame.scheduled_at} durationMinutes={gameDetail?.duration_minutes ?? null} />
-            {' · '}
+          <p className="font-display text-3xl leading-[0.85] tracking-wide uppercase text-[#1a1a1a]">
+            {gameWhen.dateLabel}
+            <span className="mt-1 block">{gameWhen.startLabel}–{gameWhen.endLabel}</span>
+          </p>
+          <p className="mt-2 text-[13px] text-[rgba(26,26,26,0.55)]">
             {FORMAT_LABELS[basicGame.format] ?? basicGame.format}
           </p>
           {placeName && (

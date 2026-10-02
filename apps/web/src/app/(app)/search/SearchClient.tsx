@@ -826,7 +826,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
     : 'bg-[#BCD85E] text-[#1a1a1a]'
 
   const beard = !canJoin ? null : alreadyIn ? 'in' : isFull ? 'full' : 'join'
-  const beardBg = beard === 'join' ? 'bg-[#BCD85E]' : 'bg-[#2C6A5C]'
+  const beardBg = beard === 'join' ? 'bg-[#BCD85E]' : beard === 'full' ? 'bg-[#163A32]' : 'bg-[#2C6A5C]'
 
   return (
     <div className={beard ? `overflow-hidden rounded-[28px] ${beardBg}` : undefined}>
