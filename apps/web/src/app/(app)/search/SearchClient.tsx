@@ -734,22 +734,47 @@ function TicketFaces({ people, spotsLeft }: { people: { id: string; name: string
   const shown = people.slice(0, 4)
   const extra = people.length - shown.length
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="flex items-start gap-3">
       {shown.map((person) => (
-        <span key={person.id} className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E7E0D6]">
-          {person.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={person.avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="font-display text-[10px] text-[#1a1a1a]">{ticketInitials(person.name)}</span>
-          )}
+        <span key={person.id} className="flex w-11 flex-col items-center">
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#F0EBE3]/20">
+            {person.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={person.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-display text-sm text-[#F0EBE3]">{ticketInitials(person.name)}</span>
+            )}
+          </span>
+          <span className="mt-1 max-w-[48px] truncate text-[10px] text-[#F0EBE3]/80">{person.name.split(' ')[0]}</span>
         </span>
       ))}
-      {extra > 0 && <span className="text-[10px] text-[rgba(26,26,26,0.5)]">+{extra}</span>}
+      {extra > 0 && (
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F0EBE3]/15 text-[11px] text-[#F0EBE3]">+{extra}</span>
+      )}
       {spotsLeft > 0 && (
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-dashed border-[#1a1a1a]/30 text-sm leading-none text-[rgba(26,26,26,0.45)]">+</span>
+        <span className="flex w-11 flex-col items-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-[#F0EBE3]/70 text-lg leading-none text-[#F0EBE3]">+</span>
+          <span className="mt-1 text-[10px] text-[#F0EBE3]/80">Open</span>
+        </span>
       )}
     </span>
+  )
+}
+
+function CourtArt() {
+  return (
+    <svg aria-hidden viewBox="0 0 280 220" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[48%]" preserveAspectRatio="xMaxYMid slice">
+      <g transform="translate(70 18) rotate(-20 90 90)">
+        <rect x="0" y="20" width="230" height="150" fill="#2C6A5C" />
+        <rect x="16" y="36" width="198" height="118" fill="none" stroke="#F0EBE3" strokeWidth="3" />
+        <line x1="115" y1="36" x2="115" y2="154" stroke="#F0EBE3" strokeWidth="3" />
+        <line x1="16" y1="95" x2="214" y2="95" stroke="#F0EBE3" strokeWidth="3" />
+      </g>
+      <circle cx="214" cy="118" r="36" fill="#85648F" />
+      <circle cx="200" cy="102" r="36" fill="#BCD85E" />
+      <path d="M174 96c16 14 34 14 52 0" fill="none" stroke="#F0EBE3" strokeWidth="3" strokeLinecap="round" />
+      <path d="M178 118c18-10 32-10 46 4" fill="none" stroke="#F0EBE3" strokeWidth="3" strokeLinecap="round" />
+    </svg>
   )
 }
 
@@ -788,54 +813,56 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
   const { dateLabel, startLabel, endLabel } = formatGameTicketTime(game.scheduled_at, game.duration_minutes ?? null)
   const open = game.court ? (onCourt ?? onClick) : onClick
 
+  const spotsPill = isFull
+    ? 'bg-[#E8748A] text-[#1a1a1a]'
+    : 'bg-[#BCD85E] text-[#1a1a1a]'
+
   return (
-    <div className="relative flex w-full items-stretch rounded-[2px] border border-[#1a1a1a]/15 bg-[#FBF8F3]">
-      <button type="button" onClick={open} className="flex min-w-0 flex-1 items-stretch text-left">
-        <span className="flex w-[4.5rem] flex-shrink-0 flex-col items-center justify-center gap-0.5 bg-[#3A8A7A] py-3 text-[#F0EBE3]">
-          <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#F0EBE3]/75">{dateLabel}</span>
-          <span className="font-display text-sm leading-none tracking-wide">{startLabel}</span>
-          <ArrowDown size={12} strokeWidth={1.75} className="my-0.5 text-[#F0EBE3]/80" />
-          <span className="font-display text-sm leading-none tracking-wide">{endLabel}</span>
+    <div className="relative overflow-hidden rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3]">
+      <CourtArt />
+      <span className={`pointer-events-none absolute right-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${spotsPill}`}>
+        {isFull ? 'Full' : `${spotsLeft} left`}
+      </span>
+      <button type="button" onClick={open} className="relative flex w-full items-stretch text-left">
+        <span className="flex w-[4.75rem] flex-shrink-0 flex-col items-center justify-center gap-0.5 bg-[#2C6A5C] py-4">
+          <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#F0EBE3]/70">{dateLabel}</span>
+          <span className="font-display text-xl leading-none tracking-wide">{startLabel}</span>
+          <ArrowDown size={14} strokeWidth={1.75} className="my-0.5 text-[#F0EBE3]/80" />
+          <span className="font-display text-xl leading-none tracking-wide">{endLabel}</span>
         </span>
-        <span className="relative w-3 flex-shrink-0" aria-hidden>
-          <span className="absolute inset-y-3 left-1/2 -translate-x-1/2 border-l border-dashed border-[#3A8A7A]/50" />
+        <span className="relative w-px flex-shrink-0 self-stretch" aria-hidden>
+          <span className="absolute inset-y-3 left-0 border-l border-dashed border-[#F0EBE3]/45" />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col justify-center py-2.5 pr-3">
-          <span className="flex items-baseline justify-between gap-3">
-            <span className="truncate font-display text-xl leading-none tracking-wide uppercase text-[#1a1a1a]">{title}</span>
-            {spotsLeft > 0 ? (
-              <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(26,26,26,0.55)]">
-                {spotsLeft} left
-              </span>
-            ) : !canJoin ? (
-              <span className="flex-shrink-0 text-[10px] font-medium uppercase tracking-[0.14em] text-[#E8748A]">Full</span>
-            ) : null}
-          </span>
-          <span className="mt-1 truncate text-[12px] text-[rgba(26,26,26,0.62)]">{meta}</span>
-          <span className={`mt-2 flex ${canJoin ? 'pr-16' : ''}`}>
+        <span className="flex min-w-0 flex-1 flex-col py-3.5 pl-3 pr-3">
+          <span className="truncate pr-16 font-display text-2xl leading-none tracking-wide uppercase sm:text-3xl">{title}</span>
+          <span className="mt-1.5 truncate pr-10 text-[13px] text-[#F0EBE3]/80">{meta}</span>
+          <span className="mt-3">
             <TicketFaces people={faces} spotsLeft={spotsLeft} />
           </span>
         </span>
       </button>
       {canJoin && (
-        <div className="absolute bottom-2.5 right-3 z-10">
+        <div className="relative px-3 pb-3">
           {alreadyIn ? (
-            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(26,26,26,0.4)]">You&apos;re in</span>
+            <div className="flex w-full items-center justify-center rounded-full bg-[#F0EBE3]/20 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#F0EBE3]/75">
+              You&apos;re in
+            </div>
           ) : isFull ? (
-            <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#E8748A]">Full</span>
+            <div className="flex w-full items-center justify-center rounded-full bg-[#F0EBE3]/15 py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#F0EBE3]/55">
+              Full
+            </div>
           ) : (
             <button
               type="button"
               onClick={() => onJoin(game.id)}
-              className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#E8748A] hover:text-[#E8406A]"
+              className="relative flex w-full items-center justify-center rounded-full bg-[#BCD85E] py-3 text-[12px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] hover:bg-[#A8C44A]"
             >
-              Join <ArrowRight size={13} strokeWidth={1.75} />
+              Join
+              <ArrowRight size={16} strokeWidth={1.75} className="absolute right-4" />
             </button>
           )}
         </div>
       )}
-      <span aria-hidden className="pointer-events-none absolute left-[calc(4.5rem+0.375rem)] top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-bg ring-1 ring-[#1a1a1a]/15" />
-      <span aria-hidden className="pointer-events-none absolute left-[calc(4.5rem+0.375rem)] bottom-0 h-2.5 w-2.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-brand-bg ring-1 ring-[#1a1a1a]/15" />
     </div>
   )
 }
@@ -860,14 +887,7 @@ function PlayerCardSkeleton() {
 
 function GameCardSkeleton() {
   return (
-    <div className="flex h-[92px] animate-pulse overflow-hidden rounded-[2px] border border-[#1a1a1a]/10">
-      <div className="w-[4.5rem] bg-[#3A8A7A]/25" />
-      <div className="flex flex-1 flex-col justify-center gap-2 bg-[#FBF8F3] px-3">
-        <div className="h-4 w-1/2 rounded-sm bg-[#1a1a1a]/10" />
-        <div className="h-3 w-1/3 rounded-sm bg-[#1a1a1a]/10" />
-        <div className="h-7 w-24 rounded-full bg-[#1a1a1a]/10" />
-      </div>
-    </div>
+    <div className="h-[176px] animate-pulse overflow-hidden rounded-[28px] bg-[#3A8A7A]/35" />
   )
 }
 
