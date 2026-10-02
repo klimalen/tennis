@@ -20,6 +20,7 @@ import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
 import { holdsGameSeat } from '@/lib/schedule'
+import { compareOpenGames, localGameDayKey, openGameDayHeading, openGameDayLabel, openGameSpotsLeft } from '@/lib/open-games-order'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -719,10 +720,40 @@ const GAME_FILTERS = [
   { id: 'doubles', label: 'Doubles' },
 ]
 
-function openGameSpotsLeft(game: OpenGame) {
-  const taken = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court').length
-  return game.max_players - taken
+function GameDayChips({
+  days,
+  value,
+  onChange,
+}: {
+  days: { id: string; label: string }[]
+  value: string | null
+  onChange: (value: string | null) => void
+}) {
+  if (days.length === 0) return null
+  const options = [{ id: 'all', label: 'All dates' }, ...days]
+  return (
+    <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain">
+      {options.map((option) => {
+        const active = option.id === 'all' ? value == null : value === option.id
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onChange(option.id === 'all' ? null : option.id)}
+            className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.12em] transition-colors ${
+              active
+                ? 'border-[#1a1a1a] bg-[#1a1a1a] text-[#FAF7F2]'
+                : 'border-[#1a1a1a]/15 bg-brand-field text-[#1a1a1a]'
+            }`}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
+
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
@@ -1288,6 +1319,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [openGames, setOpenGames] = useState<OpenGame[]>([])
   const [gameQuery, setGameQuery] = useState('')
   const [gameFilters, setGameFilters] = useState<string[]>([])
+  const [gameDay, setGameDay] = useState<string | null>(null)
   const [loadingOpenGames, setLoadingOpenGames] = useState(false)
   const [courtQuery, setCourtQuery] = useState('')
   const [courtSurfaces, setCourtSurfaces] = useState<string[]>([])
@@ -1653,6 +1685,33 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     </>
   )
 
+  const gamesMatchingSearch = openGames.filter((game) => {
+    const formats = gameFilters.filter((id) => id !== 'spots')
+    if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
+    if (formats.length > 0 && !formats.includes(game.format)) return false
+    const needle = gameQuery.trim().toLowerCase()
+    if (!needle) return true
+    const hay = `${game.court?.name ?? ''} ${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
+    return hay.includes(needle)
+  })
+  const gameDays = [...gamesMatchingSearch]
+    .sort((a, b) => Date.parse(a.scheduled_at) - Date.parse(b.scheduled_at))
+    .reduce<{ id: string; label: string; heading: string }[]>((days, game) => {
+      const id = localGameDayKey(game.scheduled_at)
+      if (days.some((day) => day.id === id)) return days
+      days.push({ id, label: openGameDayLabel(game.scheduled_at), heading: openGameDayHeading(game.scheduled_at) })
+      return days
+    }, [])
+  const gameDayKey = gameDays.map((day) => day.id).join('|')
+  useEffect(() => {
+    if (gameDay && !gameDayKey.split('|').filter(Boolean).includes(gameDay)) setGameDay(null)
+  }, [gameDay, gameDayKey])
+  const selectedGameDay = gameDays.find((day) => day.id === gameDay) ?? null
+  const rankedOpenGames = [...(gameDay
+    ? gamesMatchingSearch.filter((game) => localGameDayKey(game.scheduled_at) === gameDay)
+    : gamesMatchingSearch
+  )].sort(compareOpenGames(user?.id ?? null, joinedGameIds))
+
   // ── Discovery view ──────────────────────────────────────────────────────────
 
   if (view === 'discovery') {
@@ -1862,6 +1921,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
             <>
               <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
               <MultiFilterChips options={GAME_FILTERS} value={gameFilters} onChange={setGameFilters} />
+              <GameDayChips days={gameDays} value={gameDay} onChange={setGameDay} />
             </>
           )}
           {!userCityName ? (
@@ -1879,39 +1939,30 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
             </div>
           ) : (
             <>
-              {(() => {
-                const needle = gameQuery.trim().toLowerCase()
-                const formats = gameFilters.filter((id) => id !== 'spots')
-                const shown = openGames.filter((game) => {
-                  if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
-                  if (formats.length > 0 && !formats.includes(game.format)) return false
-                  if (!needle) return true
-                  const hay = `${game.court?.name ?? ''} ${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
-                  return hay.includes(needle)
-                })
-                if (shown.length === 0) {
-                  return <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
-                }
-                return (
-                  <>
-                    <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                      {shown.length} game{shown.length !== 1 ? 's' : ''} near {userCityName}
-                    </p>
-                    {shown.map((game) => (
-                <OpenGameCard
-                  key={game.id}
-                  game={game}
-                  userId={user?.id ?? null}
-                  joined={joinedGameIds.has(game.id)}
-                  onJoin={handleJoin}
-                  canJoin={!viewerIsCourt}
-                  onClick={() => { void openGameDetail(game.id) }}
-                  onCourt={() => { void openGameDetail(game.id, { court: true }) }}
-                />
-                    ))}
-                  </>
-                )
-              })()}
+              {rankedOpenGames.length === 0 ? (
+                <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
+              ) : (
+                <>
+                  {selectedGameDay && (
+                    <p className="font-display text-4xl leading-none tracking-wide uppercase">{selectedGameDay.heading}</p>
+                  )}
+                  <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
+                    {rankedOpenGames.length} game{rankedOpenGames.length !== 1 ? 's' : ''} near {userCityName}
+                  </p>
+                  {rankedOpenGames.map((game) => (
+                    <OpenGameCard
+                      key={game.id}
+                      game={game}
+                      userId={user?.id ?? null}
+                      joined={joinedGameIds.has(game.id)}
+                      onJoin={handleJoin}
+                      canJoin={!viewerIsCourt}
+                      onClick={() => { void openGameDetail(game.id) }}
+                      onCourt={() => { void openGameDetail(game.id, { court: true }) }}
+                    />
+                  ))}
+                </>
+              )}
             </>
           )}
         </div>

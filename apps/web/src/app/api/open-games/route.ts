@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
 import type { GameCourt } from '@/lib/game-court'
+import { compareOpenGames } from '@/lib/open-games-order'
 import { NextRequest, NextResponse } from 'next/server'
 
 export interface OpenGameProfile {
@@ -113,12 +114,7 @@ export async function GET(request: NextRequest) {
     return [game]
   })
 
-  ranked.sort((a, b) => {
-    const distA = a.distance_km ?? Number.POSITIVE_INFINITY
-    const distB = b.distance_km ?? Number.POSITIVE_INFINITY
-    if (distA !== distB) return distA - distB
-    return Date.parse(a.scheduled_at) - Date.parse(b.scheduled_at)
-  })
+  ranked.sort(compareOpenGames(user.id))
 
   const games = ranked
 
