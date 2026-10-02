@@ -10,6 +10,7 @@ export interface OpenGameProfile {
   avatar_url: string | null
   skill_level_self: number | null
   skill_level_computed: number | null
+  account_kind: string | null
 }
 
 export interface OpenGameParticipant {
@@ -53,8 +54,8 @@ export async function GET(request: NextRequest) {
       id, scheduled_at, duration_minutes, format, neighborhood, notes, creator_id, max_players,
       court_cost_cents, payment,
       venue:venue_groups!games_venue_group_id_fkey ( id, name, address, lit, fee, access, phone, website, google_maps_uri, lat, lng ),
-      creator:profiles!games_creator_id_fkey ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, city_name, city_lat, city_lng ),
-      game_participants ( player_id, status, profiles ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed ) )
+      creator:profiles!games_creator_id_fkey ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind, city_name, city_lat, city_lng ),
+      game_participants ( player_id, status, profiles ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind ) )
     `)
     .eq('is_open', true)
     .gt('scheduled_at', new Date().toISOString())

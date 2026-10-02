@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { arrivalLabel, dollarsToCents, lightsLabel, PAYMENT_OPTIONS, type CourtPayment } from '@/lib/game-court'
+import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
 
 export interface CourtPick {
   id: string
@@ -43,6 +44,48 @@ function centsToDollars(cents: number | null): string {
   return Number.isInteger(dollars) ? String(dollars) : dollars.toFixed(2)
 }
 
+async function fetchCourts(lat: number, lng: number, q: string): Promise<VenueResult[]> {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+    radius: String(TRAVEL_RADIUS_KM),
+    q,
+  })
+  const res = await fetch(`/api/venues?${params.toString()}`)
+  if (!res.ok) return []
+  const json = await res.json() as { venues?: VenueResult[] }
+  return json.venues ?? []
+}
+
+// "Austin" can be saved as a different city than the one with courts.
+// When the saved point has no matches, try the city name.
+async function findCourts(
+  q: string,
+  coords: { lat: number; lng: number } | null,
+  cityName: string | null,
+): Promise<VenueResult[]> {
+  if (coords) {
+    const near = await fetchCourts(coords.lat, coords.lng, q)
+    if (near.length > 0) return near
+  }
+  if (!cityName) return []
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=5`,
+    { headers: { 'Accept-Language': 'en' } },
+  )
+  if (!res.ok) return []
+  const places = await res.json() as { lat: string; lon: string }[]
+  for (const place of places) {
+    const lat = Number(place.lat)
+    const lng = Number(place.lon)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
+    if (coords && haversineKm(coords.lat, coords.lng, lat, lng) < 20) continue
+    const venues = await fetchCourts(lat, lng, q)
+    if (venues.length > 0) return venues
+  }
+  return []
+}
+
 export function CourtPlaceFields({
   value,
   onChange,
@@ -55,6 +98,8 @@ export function CourtPlaceFields({
   const [query, setQuery] = useState('')
   const [custom, setCustom] = useState(value.venueId == null && value.locationName.length > 0)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [cityName, setCityName] = useState<string | null>(null)
+  const [placeReady, setPlaceReady] = useState(false)
   const [searching, setSearching] = useState(false)
   const [dollars, setDollars] = useState(centsToDollars(value.courtCostCents))
   const [pricing, setPricing] = useState((value.courtCostCents ?? 0) > 0)
@@ -62,11 +107,16 @@ export function CourtPlaceFields({
   useEffect(() => {
     const supabase = createClient()
     void supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const { data } = await supabase.from('profiles').select('city_lat, city_lng').eq('id', user.id).maybeSingle()
+      if (!user) {
+        setPlaceReady(true)
+        return
+      }
+      const { data } = await supabase.from('profiles').select('city_name, city_lat, city_lng').eq('id', user.id).maybeSingle()
       if (data?.city_lat != null && data.city_lng != null) {
         setCoords({ lat: data.city_lat, lng: data.city_lng })
       }
+      setCityName(data?.city_name?.trim() || null)
+      setPlaceReady(true)
     })
     void fetch('/api/court-favorites')
       .then((res) => res.json() as Promise<{ venues?: VenueResult[] }>)
@@ -75,29 +125,29 @@ export function CourtPlaceFields({
   }, [])
 
   useEffect(() => {
-    if (!coords || custom || value.venue) return
+    if (custom || value.venue) return
     const q = query.trim()
     if (!q) {
       setResults([])
       setSearching(false)
       return
     }
+    if (!placeReady) return
+    let cancelled = false
     const handle = setTimeout(() => {
-      const params = new URLSearchParams({
-        lat: String(coords.lat),
-        lng: String(coords.lng),
-        radius: '40',
-        q,
-      })
-      setSearching(true)
-      void fetch(`/api/venues?${params.toString()}`)
-        .then((res) => res.json() as Promise<{ venues?: VenueResult[] }>)
-        .then((json) => setResults(json.venues ?? []))
-        .catch(() => setResults([]))
-        .finally(() => setSearching(false))
+      void (async () => {
+        setSearching(true)
+        const found = await findCourts(q, coords, cityName)
+        if (cancelled) return
+        setResults(found)
+        setSearching(false)
+      })()
     }, 250)
-    return () => clearTimeout(handle)
-  }, [coords, query, custom, value.venue])
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+  }, [coords, cityName, placeReady, query, custom, value.venue])
 
   function selectVenue(venue: VenueResult) {
     const free = venue.fee === false
@@ -105,17 +155,25 @@ export function CourtPlaceFields({
       venueId: venue.id,
       venue,
       locationName: '',
-      courtCostCents: free ? 0 : null,
-      payment: null,
+      courtCostCents: free ? 0 : value.courtCostCents,
+      payment: free ? null : value.payment,
     })
-    setDollars('')
-    setPricing(false)
+    if (free) {
+      setDollars('')
+      setPricing(false)
+    }
     setCustom(false)
   }
 
   function clearVenue() {
-    onChange(emptyCourtPlace())
-    setDollars('')
+    onChange({
+      venueId: null,
+      venue: null,
+      locationName: '',
+      courtCostCents: value.courtCostCents,
+      payment: value.payment,
+    })
+    setCustom(false)
   }
 
   function chooseFree() {
@@ -135,7 +193,6 @@ export function CourtPlaceFields({
   }
 
   const lockedFree = value.venue?.fee === false
-  const showCost = Boolean(value.venue) || custom || value.locationName.trim().length > 0
   const priced = !lockedFree && value.courtCostCents != null && value.courtCostCents > 0
 
   const needle = query.trim().toLowerCase()
@@ -196,7 +253,7 @@ export function CourtPlaceFields({
             name="court-query"
             className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary"
           />
-          {!coords && (
+          {!placeReady ? null : !coords && !cityName && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Add a city to your profile to search courts near you.</p>
           )}
           {typing && matchedFavorites.length > 0 && (
@@ -211,7 +268,7 @@ export function CourtPlaceFields({
           {typing && listed.slice(0, 8).map((venue) => (
             <CourtRow key={venue.id} venue={venue} onPick={() => selectVenue(venue)} />
           ))}
-          {typing && !searching && matchedFavorites.length === 0 && listed.length === 0 && (
+          {typing && !searching && placeReady && matchedFavorites.length === 0 && listed.length === 0 && (coords || cityName) && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">No courts match that.</p>
           )}
           <button type="button" onClick={() => setCustom(true)} className="text-[10px] tracking-[0.14em] uppercase text-[#1a1a1a] underline underline-offset-4">
@@ -220,14 +277,16 @@ export function CourtPlaceFields({
         </div>
       )}
 
-      {showCost && (
-        <div className="space-y-2">
-          <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Court cost</p>
-          {lockedFree ? (
-            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">This court is free. Nothing to pay.</p>
-          ) : (
-            <>
-              <div className="flex gap-2">
+      <div className="space-y-2">
+        <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Court cost</p>
+        {lockedFree ? (
+          <p className="text-[12px] text-[rgba(26,26,26,0.55)]">This court is free. Nothing to pay.</p>
+        ) : (
+          <>
+            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
+              Total for the whole court, for this whole session. Not per hour, and not per player.
+            </p>
+            <div className="flex gap-2">
                 <Pill active={value.courtCostCents === 0} onClick={chooseFree}>Free</Pill>
                 <Pill active={pricing} onClick={() => { setPricing(true); if (!dollars) onChange({ ...value, courtCostCents: null, payment: null }) }}>Set a price</Pill>
               </div>
@@ -261,7 +320,6 @@ export function CourtPlaceFields({
             </>
           )}
         </div>
-      )}
     </div>
   )
 }

@@ -128,6 +128,7 @@ interface OpenGameProfile {
   avatar_url: string | null
   skill_level_self: number | null
   skill_level_computed: number | null
+  account_kind?: string | null
 }
 
 interface OpenGameParticipant {
@@ -720,43 +721,49 @@ const GAME_FILTERS = [
 ]
 
 function openGameSpotsLeft(game: OpenGame) {
-  const taken = game.participants.filter((participant) => holdsGameSeat(participant.status)).length
+  const taken = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court').length
   return game.max_players - taken
 }
 
 // ─── Open game card ───────────────────────────────────────────────────────────
 
 function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin = true, vivid = true }: { game: OpenGame; userId: string | null; joined: boolean; onJoin: (id: string) => void; onClick: () => void; onCourt?: () => void; canJoin?: boolean; vivid?: boolean }) {
-  const seated = game.participants.filter((p) => holdsGameSeat(p.status) && p.player_id !== game.creator_id)
-  const spotsTaken = game.participants.filter((p) => holdsGameSeat(p.status)).length
+  const players = game.participants.filter((p) => holdsGameSeat(p.status) && p.profile.account_kind !== 'court')
+  const spotsTaken = players.length
   const spotsLeft = game.max_players - spotsTaken
   const isFull = spotsLeft <= 0
-  const isParticipant = userId ? game.participants.some((p) => p.player_id === userId && holdsGameSeat(p.status)) : false
+  const isParticipant = userId ? players.some((p) => p.player_id === userId) : false
   const alreadyIn = isParticipant || joined
   const placeName = game.court?.name?.trim() || game.neighborhood
   const placeDetail = game.court?.address && game.court.address !== placeName ? game.court.address : null
   const price = game.court?.fee === false ? null : costLine(game.court_cost_cents, game.payment)
+  const courtHost = game.creator.account_kind === 'court'
   const faces = [
-    {
+    ...(courtHost ? [] : [{
       id: game.creator.id,
       name: game.creator.full_name,
       username: game.creator.username,
       avatarUrl: game.creator.avatar_url,
-    },
-    ...seated.map((participant) => ({
-      id: participant.player_id,
-      name: participant.profile.full_name,
-      username: participant.profile.username,
-      avatarUrl: participant.profile.avatar_url,
-    })),
+    }]),
+    ...players
+      .filter((participant) => participant.player_id !== game.creator_id)
+      .map((participant) => ({
+        id: participant.player_id,
+        name: participant.profile.full_name,
+        username: participant.profile.username,
+        avatarUrl: participant.profile.avatar_url,
+      })),
   ]
   const ink = vivid ? 'text-[#F0EBE3]' : 'text-[#1a1a1a]'
   const muted = vivid ? 'text-[#F0EBE3]/75' : 'text-[rgba(26,26,26,0.5)]'
 
   return (
-    <div className={vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3]' : 'w-full text-left bg-white rounded-[28px] border border-brand-divider'}>
+    <div className={`relative ${vivid ? 'w-full overflow-hidden rounded-[28px] text-left bg-[#3A8A7A] text-[#F0EBE3]' : 'w-full text-left bg-white rounded-[28px] border border-brand-divider'}`}>
+      <span className={`pointer-events-none absolute right-4 top-4 z-10 rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] ${isFull ? 'bg-[#E8748A] text-[#1a1a1a]' : 'bg-[#BCD85E] text-[#1a1a1a]'}`}>
+        {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left`}
+      </span>
       <button type="button" onClick={onClick} className={`w-full text-left ${vivid ? 'px-5 pt-5' : 'px-4 pt-4'}`}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pr-28">
           <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${vivid ? 'bg-[#F0EBE3]/20' : 'bg-brand-avatar'}`}>
             {game.creator.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -808,9 +815,6 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
         )}
         <div className="mt-4">
           <GameFaceRow people={faces} spotsLeft={spotsLeft} light={vivid} />
-          <p className={`mt-2 text-[10px] tracking-[0.14em] uppercase ${muted}`}>
-            {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-          </p>
         </div>
       </button>
       {canJoin && (

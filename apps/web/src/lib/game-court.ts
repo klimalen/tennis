@@ -15,9 +15,9 @@ export interface GameCourt {
 }
 
 export const PAYMENT_OPTIONS: { value: CourtPayment; label: string; hint: string }[] = [
-  { value: 'split', label: 'Split', hint: 'Divide the court between players' },
-  { value: 'host', label: 'Host pays', hint: 'The host covers the hour' },
-  { value: 'at_court', label: 'Pay at the court', hint: 'Each player pays on site' },
+  { value: 'split', label: 'Split', hint: 'Players divide this total between themselves' },
+  { value: 'host', label: 'Host pays', hint: 'The host covers this total' },
+  { value: 'at_court', label: 'Pay at the court', hint: 'Players pay this total at the court' },
 ]
 
 const MAX_CENTS = 100_000
@@ -42,7 +42,8 @@ export function costLine(cents: number | null | undefined, payment: string | nul
   if (!cost) return null
   if (cents === 0) return 'Free'
   const how = paymentLabel(payment)
-  return how ? `${cost} · ${how}` : cost
+  const total = `${cost} total`
+  return how ? `${total} · ${how}` : total
 }
 
 /** How you get on court. Unknown fee stays blank rather than guessing. */
