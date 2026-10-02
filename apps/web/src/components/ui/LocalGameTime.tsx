@@ -18,9 +18,22 @@ export function LocalGameTime({ iso }: { iso: string }) {
   return <>{dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</>
 }
 
-export function LocalGameTimeRange({ iso, durationMinutes }: { iso: string; durationMinutes: number | null }) {
+function gameClock(iso: string, durationMinutes: number | null) {
   const start = new Date(iso)
-  const end = new Date(start.getTime() + (durationMinutes && durationMinutes > 0 ? durationMinutes : 90) * 60_000)
+  const minutes = durationMinutes && durationMinutes > 0 ? durationMinutes : 90
+  const end = new Date(start.getTime() + minutes * 60_000)
   const fmt = (dt: Date) => dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  return <>{fmt(start)}–{fmt(end)}</>
+  return { start, end, startLabel: fmt(start), endLabel: fmt(end) }
+}
+
+export function LocalGameTimeRange({ iso, durationMinutes }: { iso: string; durationMinutes: number | null }) {
+  const { startLabel, endLabel } = gameClock(iso, durationMinutes)
+  return <>{startLabel}–{endLabel}</>
+}
+
+/** Date plus start and end, for the ticket stub on an open-game card. */
+export function formatGameTicketTime(iso: string, durationMinutes: number | null) {
+  const { start, startLabel, endLabel } = gameClock(iso, durationMinutes)
+  const dateLabel = start.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase()
+  return { dateLabel, startLabel, endLabel }
 }
