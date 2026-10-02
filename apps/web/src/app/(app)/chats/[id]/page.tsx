@@ -231,6 +231,7 @@ export default async function ChatPage({
         initialGameStatuses={initialGameStatuses}
         initialGameDetails={initialGameDetails}
         isMutual={isGameChat ? !gameClosed : isMutual}
+        canPropose={!viewerIsCourt && !otherIsCourt}
         gameChat={isGameChat && gameRow ? {
           members: (participantsData ?? []).flatMap((person) => {
             const member = chatMember(person)
