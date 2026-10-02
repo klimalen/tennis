@@ -734,26 +734,26 @@ function TicketFaces({ people, spotsLeft }: { people: { id: string; name: string
   const shown = people.slice(0, 4)
   const extra = people.length - shown.length
   return (
-    <span className="flex items-start gap-3">
+    <span className="flex items-start gap-2 @[540px]:gap-3">
       {shown.map((person) => (
-        <span key={person.id} className="flex w-11 flex-col items-center">
-          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#F0EBE3]/20">
+        <span key={person.id} className="flex w-8 flex-col items-center @[540px]:w-11">
+          <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#F0EBE3]/20 @[540px]:h-10 @[540px]:w-10">
             {person.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={person.avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="font-display text-sm text-[#F0EBE3]">{ticketInitials(person.name)}</span>
+              <span className="font-display text-xs text-[#F0EBE3] @[540px]:text-sm">{ticketInitials(person.name)}</span>
             )}
           </span>
-          <span className="mt-1 max-w-[48px] truncate text-[10px] text-[#F0EBE3]/80">{person.name.split(' ')[0]}</span>
+          <span className="mt-1 max-w-[36px] truncate text-[10px] text-[#F0EBE3]/80 @[540px]:max-w-[48px]">{person.name.split(' ')[0]}</span>
         </span>
       ))}
       {extra > 0 && (
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F0EBE3]/15 text-[11px] text-[#F0EBE3]">+{extra}</span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0EBE3]/15 text-[11px] text-[#F0EBE3] @[540px]:h-10 @[540px]:w-10">+{extra}</span>
       )}
       {spotsLeft > 0 && (
-        <span className="flex w-11 flex-col items-center">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-[#F0EBE3]/70 text-lg leading-none text-[#F0EBE3]">+</span>
+        <span className="flex w-8 flex-col items-center @[540px]:w-11">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-[#F0EBE3]/70 text-base leading-none text-[#F0EBE3] @[540px]:h-10 @[540px]:w-10 @[540px]:text-lg">+</span>
           <span className="mt-1 text-[10px] text-[#F0EBE3]/80">Open</span>
         </span>
       )}
@@ -761,9 +761,20 @@ function TicketFaces({ people, spotsLeft }: { people: { id: string; name: string
   )
 }
 
+function BallArt() {
+  return (
+    <svg aria-hidden viewBox="0 0 72 72" className="h-14 w-14">
+      <circle cx="42" cy="44" r="22" fill="#85648F" />
+      <circle cx="32" cy="32" r="22" fill="#BCD85E" />
+      <path d="M16 28c10 9 20 9 32 0" fill="none" stroke="#F0EBE3" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M18 40c11-6 20-6 28 3" fill="none" stroke="#F0EBE3" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function CourtArt() {
   return (
-    <svg aria-hidden viewBox="0 0 280 220" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[48%]" preserveAspectRatio="xMaxYMid slice">
+    <svg aria-hidden viewBox="0 0 280 220" className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[48%] @[540px]:block" preserveAspectRatio="xMaxYMid slice">
       <g transform="translate(70 18) rotate(-20 90 90)">
         <rect x="0" y="20" width="230" height="150" fill="#2C6A5C" />
         <rect x="16" y="36" width="198" height="118" fill="none" stroke="#F0EBE3" strokeWidth="3" />
@@ -818,26 +829,34 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
     : 'bg-[#BCD85E] text-[#1a1a1a]'
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3]">
+    <div className="@container relative overflow-hidden rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3]">
       <CourtArt />
-      <span className={`pointer-events-none absolute right-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${spotsPill}`}>
+      <span className={`pointer-events-none absolute right-3 top-3 z-10 hidden rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] @[540px]:inline-flex ${spotsPill}`}>
         {isFull ? 'Full' : `${spotsLeft} left`}
       </span>
       <button type="button" onClick={open} className="relative flex w-full items-stretch text-left">
-        <span className="flex w-[4.75rem] flex-shrink-0 flex-col items-center justify-center gap-0.5 bg-[#2C6A5C] py-4">
+        <span className="flex w-[4.25rem] flex-shrink-0 flex-col items-center justify-center gap-0.5 bg-[#2C6A5C] py-4 @[540px]:w-[4.75rem]">
           <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-[#F0EBE3]/70">{dateLabel}</span>
-          <span className="font-display text-xl leading-none tracking-wide">{startLabel}</span>
+          <span className="font-display text-lg leading-none tracking-wide @[540px]:text-xl">{startLabel}</span>
           <ArrowDown size={14} strokeWidth={1.75} className="my-0.5 text-[#F0EBE3]/80" />
-          <span className="font-display text-xl leading-none tracking-wide">{endLabel}</span>
+          <span className="font-display text-lg leading-none tracking-wide @[540px]:text-xl">{endLabel}</span>
         </span>
         <span className="relative w-px flex-shrink-0 self-stretch" aria-hidden>
           <span className="absolute inset-y-3 left-0 border-l border-dashed border-[#F0EBE3]/45" />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col py-3.5 pl-3 pr-3">
-          <span className="truncate pr-16 font-display text-2xl leading-none tracking-wide uppercase sm:text-3xl">{title}</span>
-          <span className="mt-1.5 truncate pr-10 text-[13px] text-[#F0EBE3]/80">{meta}</span>
+        <span className="flex min-w-0 flex-1 flex-col overflow-hidden py-3.5 pl-3 pr-2 @[540px]:pr-3">
+          <span className="truncate font-display text-2xl leading-none tracking-wide uppercase @[540px]:pr-16 @[540px]:text-3xl">{title}</span>
+          <span className="mt-1.5 truncate text-[13px] text-[#F0EBE3]/80">{meta}</span>
           <span className="mt-3">
             <TicketFaces people={faces} spotsLeft={spotsLeft} />
+          </span>
+        </span>
+        <span className="flex w-[4.5rem] flex-shrink-0 flex-col items-center self-stretch px-1 pb-2 pt-3 @[540px]:hidden">
+          <span className={`rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${spotsPill}`}>
+            {isFull ? 'Full' : `${spotsLeft} left`}
+          </span>
+          <span className="flex flex-1 items-center">
+            <BallArt />
           </span>
         </span>
       </button>
