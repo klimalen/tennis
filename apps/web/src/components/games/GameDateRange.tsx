@@ -166,7 +166,7 @@ export function GameDateRange({
               </button>
             </div>
             <p className="mt-2 text-center font-fraunces text-sm italic text-[#497250]">
-              {awaitingEnd ? 'Now tap the last day' : 'Tap the first day, then the last'}
+              {awaitingEnd ? 'Now tap the last day' : draft ? 'Tap a day to start over' : 'Tap the first day, then the last'}
             </p>
             <div className="mt-3 grid grid-cols-7 gap-y-1">
               {WEEKDAYS.map((day) => (
@@ -181,7 +181,9 @@ export function GameDateRange({
                   <button
                     key={cell.key}
                     type="button"
+                    data-date={cell.key}
                     disabled={past}
+                    aria-label={parseKey(cell.key).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                     onClick={() => pick(cell.key)}
                     className={`relative flex h-10 items-center justify-center text-sm ${past ? 'cursor-default text-[rgba(26,26,26,0.25)]' : 'text-[#1a1a1a]'} ${cell.inMonth ? '' : 'text-[rgba(26,26,26,0.35)]'}`}
                   >
