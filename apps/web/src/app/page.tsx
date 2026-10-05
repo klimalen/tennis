@@ -3,6 +3,7 @@ import { Calendar, MapPin, Users } from 'lucide-react'
 
 // Static and public on purpose. The first visit, including Google's brand check,
 // must render without a session. Do not call Supabase or redirect from this page.
+// The account sentence stays in the footer, with the other public notes.
 
 const appName = 'GAME. — Find and Play Tennis'
 
