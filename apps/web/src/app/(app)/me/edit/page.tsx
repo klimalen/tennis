@@ -292,7 +292,7 @@ export default function EditProfilePage() {
   if (d.avatarFile) {
     return (
       <div className="min-h-screen bg-brand-bg">
-        <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
+        <div className="page-header">
           <div className="max-w-2xl mx-auto flex items-center gap-3">
             <button onClick={clearAvatarFile} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
               <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
@@ -319,7 +319,7 @@ export default function EditProfilePage() {
   return (
     <div className="min-h-screen pb-8 bg-brand-bg">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
+      <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />

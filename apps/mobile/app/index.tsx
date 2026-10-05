@@ -5,6 +5,35 @@ import { WebView } from 'react-native-webview'
 
 const WEB_URL = 'https://www.game-tennis.space'
 
+const HIDE_PWA_HINT = `(function(){
+  var titles = {
+    'Add to your home screen': 1,
+    'Open in Safari': 1,
+    'Install the app': 1,
+    'На экран «Домой»': 1,
+    'Откройте в Safari': 1,
+    'Установить приложение': 1
+  };
+  function hide() {
+    var nodes = document.querySelectorAll('p');
+    for (var i = 0; i < nodes.length; i++) {
+      var text = (nodes[i].textContent || '').trim();
+      if (!titles[text]) continue;
+      var el = nodes[i];
+      for (var j = 0; j < 6 && el; j++) {
+        if (el.className && String(el.className).indexOf('rounded-[28px]') !== -1) {
+          el.style.display = 'none';
+          break;
+        }
+        el = el.parentElement;
+      }
+    }
+  }
+  hide();
+  new MutationObserver(hide).observe(document.documentElement, { childList: true, subtree: true });
+})();
+true;`
+
 function isAppUrl(url: string): boolean {
   return /^(tel:|mailto:|sms:|geo:|itms-apps:)/i.test(url)
 }
@@ -25,7 +54,7 @@ export default function Index() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       {failed ? (
         <View style={styles.offline}>
           <Text style={styles.title}>No connection</Text>
@@ -58,6 +87,7 @@ export default function Index() {
             geolocationEnabled
             sharedCookiesEnabled
             decelerationRate="normal"
+            injectedJavaScript={HIDE_PWA_HINT}
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}

@@ -53,6 +53,20 @@
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
 }
 
+/* Sticky titles sit under the iPhone status bar in the native app and in Safari. */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: rgb(250 247 242 / 0.95);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
 /* Built CSS is unlayered, so a utility like .text-sm beats a bare element.
    Each :not() adds enough weight to keep the field at 16px. iOS Safari
    zooms the page when a focused field is under 16px. */

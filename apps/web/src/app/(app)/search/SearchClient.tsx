@@ -15,7 +15,6 @@ import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
-import { InstallHint } from '@/components/pwa/InstallHint'
 import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
@@ -1617,7 +1616,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const pageHeader = (title: string, onBack: () => void) => (
-    <div className="sticky top-0 z-10 max-w-full bg-brand-bg/95 px-4 py-4 backdrop-blur-sm">
+    <div className="page-header max-w-full">
       <div className="mx-auto flex min-w-0 max-w-2xl items-center gap-3">
         <button onClick={onBack} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-white transition-colors hover:bg-brand-field">
           <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
@@ -1678,8 +1677,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         {sheets}
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
-          <InstallHint />
-
           {!user && (
             <div className="flex min-w-0 items-end justify-between gap-4 rounded-[28px] bg-[#1E3A6E] px-5 py-5 text-[#F0EBE3]">
               <div className="min-w-0">

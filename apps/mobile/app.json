@@ -16,7 +16,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.klimalen.tennis",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
