@@ -53,6 +53,63 @@
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
 }
 
+/* Sticky titles sit under the iPhone status bar in Safari / PWA. */
+:root {
+  --app-safe-top: env(safe-area-inset-top, 0px);
+}
+
+/* Native WebView is already inset by SafeAreaView — do not add the notch twice. */
+html.game-native {
+  --app-safe-top: 0px;
+}
+
+html.game-native,
+html.game-native body {
+  overscroll-behavior: none;
+}
+
+@keyframes native-welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.native-welcome-in {
+  animation: native-welcome-in 420ms ease-out both;
+}
+
+.native-welcome-in-delay {
+  animation-delay: 90ms;
+}
+
+.native-welcome-in-delay-2 {
+  animation-delay: 160ms;
+}
+
+@media (max-height: 700px) {
+  .native-welcome-extra {
+    display: none;
+  }
+}
+
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: rgb(250 247 242 / 0.95);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  padding-top: calc(1rem + var(--app-safe-top));
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
 /* Built CSS is unlayered, so a utility like .text-sm beats a bare element.
    Each :not() adds enough weight to keep the field at 16px. iOS Safari
    zooms the page when a focused field is under 16px. */

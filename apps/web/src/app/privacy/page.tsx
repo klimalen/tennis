@@ -27,7 +27,8 @@ export default function PrivacyPage() {
         <p>We collect only what the app needs to find a game:</p>
         <p>Account. If you register with email, we store your email address and a password. The password is kept by our sign-in provider in a form we cannot read. If you continue with Google, Google sends us the name, email address, and profile photo on that Google account. We do not receive your Google password, your contacts, or anything else from your Google account.</p>
         <p>Profile. You can add a name, username, photo, short bio, city, playing level, how long you have played, preferred format, surface and style, the days and times you are free, and who you want to play with.</p>
-        <p>Location. The city on your profile. If you ask the app to use your location, the browser requests permission and we use that position for the search. We do not follow your location in the background. A city or a recent search area may stay on your device so the next visit opens where you left it.</p>
+        <p>Location. The city on your profile. If you ask the app to use your location, the device or browser requests permission and we use that position for the search. We do not follow your location in the background. A city or a recent search area may stay on your device so the next visit opens where you left it.</p>
+        <p>iOS app. The GAME. app on iPhone opens this same service. Camera, photos, and location are requested only when you use a feature that needs them (a profile photo, a post, or nearby search).</p>
         <p>Activity. Games you create or join, messages you send, posts and photos you publish, and support messages you write, including a photo you attach.</p>
         <p>Cookies. A cookie that keeps you signed in. We do not use advertising cookies or analytics cookies.</p>
       </LegalSection>

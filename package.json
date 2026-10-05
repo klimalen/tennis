@@ -12,7 +12,8 @@
     "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
     "ingest:austin": "tsx scripts/ingest-venues-austin.ts",
     "ingest:austin:dry": "tsx scripts/ingest-venues-austin.ts --dry-run",
-    "venues": "tsx scripts/venue-pipeline.ts"
+    "venues": "tsx scripts/venue-pipeline.ts",
+    "eas:ios": "pnpm --filter mobile eas:build:ios"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

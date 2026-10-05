@@ -1,9 +1,12 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { Calendar, MapPin, Users } from 'lucide-react'
+import { NativeWelcome } from '@/components/native/NativeWelcome'
+import { isNativeGameAppUa } from '@/lib/native-app'
 
-// Static and public on purpose. The first visit, including Google's brand check,
-// must render without a session. Do not call Supabase or redirect from this page.
-// The account sentence stays in the footer, with the other public notes.
+// Static and public on purpose for the web. The first visit, including Google's
+// brand check, must render without a session. The native app gets a dedicated
+// one-screen welcome; signed-in users are redirected away in middleware.
 
 const appName = 'GAME. — Find and Play Tennis'
 
@@ -13,7 +16,7 @@ const ways = [
   { title: 'Courts', line: 'Find a place to hit', icon: MapPin },
 ]
 
-export default function RootPage() {
+function WebLanding() {
   return (
     <div className="min-h-screen bg-brand-bg text-[#1a1a1a]">
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-14 sm:pt-20">
@@ -87,4 +90,12 @@ export default function RootPage() {
       </main>
     </div>
   )
+}
+
+export default async function RootPage() {
+  const ua = (await headers()).get('user-agent')
+  if (isNativeGameAppUa(ua)) {
+    return <NativeWelcome />
+  }
+  return <WebLanding />
 }

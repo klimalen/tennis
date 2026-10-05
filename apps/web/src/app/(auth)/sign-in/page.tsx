@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { safeNext } from '@/lib/safe-next'
-import { googleAuthEnabled } from '@/lib/google-auth'
+import { isGoogleAuthVisible } from '@/lib/google-auth'
 
 function GoogleIcon() {
   return (
@@ -76,7 +76,7 @@ function SignInForm() {
       <h1 className="font-display text-4xl tracking-wide text-center pl-[0.025em] mb-1">WELCOME BACK</h1>
       <p className="text-[10px] tracking-[0.15em] pl-[0.15em] uppercase text-center text-[rgba(26,26,26,0.4)] mb-6">Sign in to your account</p>
 
-      {googleAuthEnabled && (
+      {isGoogleAuthVisible() && (
         <>
           <button
             type="button"

@@ -63,7 +63,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-brand-bg pb-8">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
+      <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             onClick={() => router.back()}

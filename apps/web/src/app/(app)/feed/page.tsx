@@ -151,7 +151,7 @@ async function FeedContent() {
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
+      <div className="page-header">
         <div className="max-w-2xl mx-auto">
           <span className="font-display text-5xl tracking-wide">FEED</span>
         </div>

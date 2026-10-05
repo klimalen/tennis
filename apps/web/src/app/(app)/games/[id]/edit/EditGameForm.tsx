@@ -150,7 +150,7 @@ export function EditGameForm({
   return (
     <div className="min-h-screen pb-24 md:pb-8">
       {/* Header */}
-      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm px-4 py-4 z-10">
+      <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">

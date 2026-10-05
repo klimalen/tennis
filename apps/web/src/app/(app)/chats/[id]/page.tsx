@@ -159,7 +159,7 @@ export default async function ChatPage({
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-3">
+      <div className="page-header">
         <div className={isGameChat
           ? 'max-w-2xl mx-auto grid grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-x-3'
           : 'max-w-2xl mx-auto flex items-center gap-3'}>

@@ -25,6 +25,7 @@ export function BottomTabBar() {
     hidden ||
     pathname === '/games/new' ||
     pathname === '/feed/new' ||
+    /^\/feed\/[^/]+\/edit$/.test(pathname) ||
     pathname.startsWith('/settings') ||
     pathname === '/me/edit' ||
     (pathname.startsWith('/chats/') && pathname.length > '/chats/'.length)

@@ -110,7 +110,7 @@ export default async function ChatsPage() {
   return (
     <AuthGate section="chats">
       <div className="min-h-screen pb-20 md:pb-0">
-        <div className="sticky top-0 bg-brand-bg/95 backdrop-blur-sm z-10 px-4 py-4">
+        <div className="page-header">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <span className="font-display text-5xl tracking-wide">CHATS</span>
             <ComposeButton />

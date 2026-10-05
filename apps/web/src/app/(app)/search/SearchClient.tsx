@@ -4,7 +4,7 @@ import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRig
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTabBarHidden } from '@/components/navigation/TabBarVisibility'
+import { useHideTabBar, useTabBarHidden } from '@/components/navigation/TabBarVisibility'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 import type { User } from '@supabase/supabase-js'
 import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
@@ -15,7 +15,6 @@ import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
-import { InstallHint } from '@/components/pwa/InstallHint'
 import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
 import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
@@ -494,106 +493,109 @@ function CourtMap({ venue }: { venue: { lat: number; lng: number; name: string }
 }
 
 function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: { venue: Venue; userLat: number; userLng: number; saved?: boolean; onToggleSave?: (venue: Venue) => void; onClose: () => void }) {
+  useHideTabBar(true)
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-30" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{venueKindLabel(venue.kind)}</span>
+      <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[28px] bg-white md:bottom-8 md:left-1/2 md:max-w-lg md:-translate-x-1/2 md:rounded-[28px] md:shadow-xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-brand-divider bg-white px-4 py-3">
+          <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(venue.kind)}</span>
           <div className="flex items-center gap-1">
             {onToggleSave && (
-              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className="w-7 h-7 flex items-center justify-center text-[#1a1a1a]">
+              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className="flex h-7 w-7 items-center justify-center text-[#1a1a1a]">
                 <CourtStar saved={Boolean(saved)} />
               </button>
             )}
-            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
+            <button onClick={onClose} className="flex h-7 w-7 items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
           </div>
         </div>
-        <CourtMap venue={venue} />
-        <div className="p-5 pb-24 space-y-4">
-          <div>
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{courtTitle(venue)}</h2>
-              <span className="text-[11px] text-[rgba(26,26,26,0.45)] flex items-center gap-1 flex-shrink-0 mt-1">
-                <MapPin size={11} />{formatDistance(distanceM)}
-              </span>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <CourtMap venue={venue} />
+          <div className="space-y-4 p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <div>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{courtTitle(venue)}</h2>
+                <span className="mt-1 flex flex-shrink-0 items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
+                  <MapPin size={11} />{formatDistance(distanceM)}
+                </span>
+              </div>
+              {venue.address && courtTitle(venue) !== venue.address && (
+                <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)]">{venue.address}</p>
+              )}
             </div>
-            {venue.address && courtTitle(venue) !== venue.address && (
-              <p className="text-[12px] text-[rgba(26,26,26,0.5)] mt-1">{venue.address}</p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <SurfaceBadge surface={venue.surface} />
-            {venue.court_count != null && (
-              <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-                {venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}
-              </span>
-            )}
-            {venue.lit && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-                <Zap size={9} /> Floodlit
-              </span>
-            )}
-            {venue.has_indoor && <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">Indoor</span>}
-            {venue.has_outdoor && venue.has_indoor && <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">Outdoor</span>}
-            {venue.fee === false && <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">Free</span>}
-            {venue.fee === true && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-                <DollarSign size={9} /> Fee
-              </span>
-            )}
-            {isPrivateVenue(venue) && (
-              <span className="px-2 py-0.5 bg-brand-surface-md text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">
-                {venue.access === 'members' ? 'Members only' : 'Private'}
-              </span>
-            )}
-          </div>
-          {venue.description && (
-            <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
-          )}
-          {venue.opening_hours && (
-            <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
-              <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
-              <span>{venue.opening_hours}</span>
+            <div className="flex flex-wrap gap-2">
+              <SurfaceBadge surface={venue.surface} />
+              {venue.court_count != null && (
+                <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
+                  {venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}
+                </span>
+              )}
+              {venue.lit && (
+                <span className="inline-flex items-center gap-1 border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
+                  <Zap size={9} /> Floodlit
+                </span>
+              )}
+              {venue.has_indoor && <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">Indoor</span>}
+              {venue.has_outdoor && venue.has_indoor && <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">Outdoor</span>}
+              {venue.fee === false && <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">Free</span>}
+              {venue.fee === true && (
+                <span className="inline-flex items-center gap-1 border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
+                  <DollarSign size={9} /> Fee
+                </span>
+              )}
+              {isPrivateVenue(venue) && (
+                <span className="bg-brand-surface-md px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
+                  {venue.access === 'members' ? 'Members only' : 'Private'}
+                </span>
+              )}
             </div>
-          )}
-          <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
-            Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
-          </p>
-          <div className="grid grid-cols-1 gap-2 pt-1">
-            <a href={venue.google_maps_uri ?? googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
-              <Navigation size={13} /> View on Google Maps
-            </a>
-            {venue.website && (
-              <a href={venue.website.startsWith('http') ? venue.website : `https://${venue.website}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors">
-                <Globe size={13} /> Website
+            {venue.description && (
+              <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
+            )}
+            {venue.opening_hours && (
+              <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
+                <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
+                <span>{venue.opening_hours}</span>
+              </div>
+            )}
+            <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
+              Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
+            </p>
+            <div className="grid grid-cols-1 gap-2 pt-1">
+              {venue.website && (
+                <a href={venue.website.startsWith('http') ? venue.website : `https://${venue.website}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-white">
+                  <Globe size={13} /> Website
+                </a>
+              )}
+              {venue.phone && (
+                <a href={`tel:${venue.phone}`}
+                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-white">
+                  <Phone size={13} /> {venue.phone}
+                </a>
+              )}
+              {venue.profile_username && (
+                <Link
+                  href={`/profile/${venue.profile_username}`}
+                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-white"
+                >
+                  Open court profile
+                </Link>
+              )}
+              <a href={venue.google_maps_uri ?? googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-full bg-[#E8748A] px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A]">
+                <Navigation size={13} /> View on Google Maps
               </a>
-            )}
-            {venue.phone && (
-              <a href={`tel:${venue.phone}`}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors">
-                <Phone size={13} /> {venue.phone}
-              </a>
-            )}
-            {venue.profile_username && (
-              <Link
-                href={`/profile/${venue.profile_username}`}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors"
-              >
-                Open court profile
-              </Link>
-            )}
+            </div>
+            <Link
+              href={courtReportHref({ id: venue.id, name: courtTitle(venue), address: venue.address })}
+              className="block px-2 text-center font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.45)] underline decoration-[rgba(26,26,26,0.28)] underline-offset-[3px] hover:text-[#1a1a1a]"
+            >
+              Found an error, or is this your court?<br />
+              Write to us — we&apos;ll fix it or add more detail.
+            </Link>
           </div>
-          <Link
-            href={courtReportHref({ id: venue.id, name: courtTitle(venue), address: venue.address })}
-            className="block px-2 text-center font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.45)] underline decoration-[rgba(26,26,26,0.28)] underline-offset-[3px] hover:text-[#1a1a1a]"
-          >
-            Found an error, or is this your court?<br />
-            Write to us — we&apos;ll fix it or add more detail.
-          </Link>
         </div>
       </div>
     </>
@@ -1617,7 +1619,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const pageHeader = (title: string, onBack: () => void) => (
-    <div className="sticky top-0 z-10 max-w-full bg-brand-bg/95 px-4 py-4 backdrop-blur-sm">
+    <div className="page-header max-w-full">
       <div className="mx-auto flex min-w-0 max-w-2xl items-center gap-3">
         <button onClick={onBack} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-white transition-colors hover:bg-brand-field">
           <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
@@ -1678,8 +1680,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         {sheets}
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
-          <InstallHint />
-
           {!user && (
             <div className="flex min-w-0 items-end justify-between gap-4 rounded-[28px] bg-[#1E3A6E] px-5 py-5 text-[#F0EBE3]">
               <div className="min-w-0">
