@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../SquarePhotoCrop'
+import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 
 export default function NewPostPage() {
+  useHideTabBar(true)
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)

@@ -6,8 +6,10 @@ import { ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../../SquarePhotoCrop'
+import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 
 export default function EditPostPage() {
+  useHideTabBar(true)
   const { id } = useParams<{ id: string }>()
   const [text, setText] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
@@ -88,7 +90,7 @@ export default function EditPostPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen pb-8">
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
