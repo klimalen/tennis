@@ -21,8 +21,8 @@ port = 54324
 enabled = true
 
 [auth]
-site_url = "https://tennis-web-lime.vercel.app"
-additional_redirect_urls = ["http://localhost:3000", "https://localhost:3000", "https://tennis-web-lime.vercel.app/**"]
+site_url = "https://www.game-tennis.space"
+additional_redirect_urls = ["http://localhost:3000", "https://localhost:3000", "https://www.game-tennis.space/**", "https://game-tennis.space/**", "https://tennis-web-lime.vercel.app/**"]
 jwt_expiry = 3600
 enable_signup = true
 
