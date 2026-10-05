@@ -51,6 +51,7 @@ interface Props {
   initialGameStatuses: Record<string, GameStatus>
   initialGameDetails: Record<string, GameDetail>
   isMutual: boolean
+  canPropose?: boolean
   gameChat?: {
     members: ChatMember[]
     closed: boolean
@@ -249,6 +250,7 @@ export function ChatView({
   initialGameStatuses,
   initialGameDetails,
   isMutual,
+  canPropose = true,
   gameChat = null,
 }: Props) {
   const canCompose = gameChat ? !gameChat.closed : isMutual
@@ -476,7 +478,9 @@ export function ChatView({
               ) : otherName}
             </p>
             <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
-            <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">Say hello and arrange a game</p>
+            <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">
+              {canPropose ? 'Say hello and arrange a game' : 'Say hello'}
+            </p>
           </div>
         </div>
       )}
@@ -593,7 +597,7 @@ export function ChatView({
           {/* Propose game button */}
           {canCompose ? (
             <>
-              {!gameChat && (
+              {!gameChat && canPropose && (
               <div className="flex mb-2">
                 <button
                   onClick={() => router.push(`/games/new?invite=${otherUserId}&name=${encodeURIComponent(otherName)}`)}
