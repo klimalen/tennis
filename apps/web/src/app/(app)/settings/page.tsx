@@ -13,14 +13,17 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [isCourt, setIsCourt] = useState<boolean | null>(null)
+  const [email, setEmail] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
     void supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         setIsCourt(false)
+        setEmail(null)
         return
       }
+      setEmail(user.email ?? null)
       const { data } = await supabase.from('profiles').select('account_kind').eq('id', user.id).maybeSingle()
       setIsCourt(data?.account_kind === 'court')
     })
@@ -100,9 +103,14 @@ export default function SettingsPage() {
             <div className="w-9 h-9 rounded-full bg-brand-field flex items-center justify-center flex-shrink-0">
               <LogOut size={16} className="text-[#1a1a1a]" />
             </div>
-            <span className="text-sm font-medium text-[#1a1a1a]">
-              {signingOut ? 'Signing out...' : 'Sign out'}
-            </span>
+            <div className="min-w-0">
+              <span className="block text-sm font-medium text-[#1a1a1a]">
+                {signingOut ? 'Signing out...' : 'Sign out'}
+              </span>
+              {email && (
+                <span className="block truncate text-[11px] text-[rgba(26,26,26,0.45)]">{email}</span>
+              )}
+            </div>
           </button>
         </div>
 
