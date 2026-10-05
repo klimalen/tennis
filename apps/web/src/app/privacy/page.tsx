@@ -3,13 +3,13 @@ import Link from 'next/link'
 import { LegalDocument, LegalSection } from '@/components/legal/LegalDocument'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — GAME.',
-  description: 'What GAME. collects and how Klimova Alena uses it.',
+  title: 'Privacy Policy — GAME. — Find and Play Tennis',
+  description: 'How GAME. — Find and Play Tennis accesses, uses, stores, and shares Google user data and other account information.',
 }
 
 export default function PrivacyPage() {
   return (
-    <LegalDocument title="PRIVACY" updated="Updated 5 October 2026">
+    <LegalDocument title="PRIVACY POLICY" updated="Updated 5 October 2026">
       <LegalSection title="WHO WE ARE">
         <p>
           GAME. — Find and Play Tennis (“GAME.”) is operated by Klimova Alena. This policy describes the information the app collects, why it is collected, and the choices you have.
@@ -37,9 +37,17 @@ export default function PrivacyPage() {
         <p>We do not sell personal information. We do not use it for advertising. We do not use it to train models, and we do not use it to generate images of any kind.</p>
       </LegalSection>
 
-      <LegalSection title="GOOGLE">
+      <LegalSection title="GOOGLE USER DATA">
         <p>
-          If you choose Continue with Google, we use your Google name, email address, and profile photo only to create or open your GAME. account and to show your name and photo to other players. Use of information received from Google APIs follows the <a className="underline underline-offset-2 text-[#1a1a1a]" href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.
+          This section describes how GAME. — Find and Play Tennis accesses, uses, stores, and shares Google user data. The only Google service in the app is Sign in with Google. We request your name, email address, and profile photo. We do not request Gmail, Drive, Calendar, Contacts, or any other Google data. We do not use Google user data to generate images, including non-consensual intimate imagery.
+        </p>
+        <p>Access. When you choose Continue with Google, Google gives us the name, email address, and profile photo of the account you pick. We do not receive your Google password.</p>
+        <p>Use. We use that name, email address, and profile photo only to create or open your GAME. account and to show your name and photo to other players. We do not use Google user data for advertising, for sale, or to train a model.</p>
+        <p>Store. We store the name, email address, and profile photo in your account for as long as the account exists. The account is stored by Supabase. The website is hosted by Vercel.</p>
+        <p>Share. Other players can see the name and photo on your profile. We do not share your Google email address with other players. We do not sell Google user data. Google receives the sign-in request only because you chose Continue with Google.</p>
+        <p>Delete. In Settings, choose Delete account and confirm. That deletes the Google name, email address, and profile photo we stored, together with the rest of the account.</p>
+        <p>
+          Use of information received from Google APIs follows the <a className="underline underline-offset-2 text-[#1a1a1a]" href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.
         </p>
       </LegalSection>
 

@@ -33,7 +33,7 @@ const fraunces = Fraunces({
 
 const siteUrl = 'https://www.game-tennis.space'
 
-const siteName = 'GAME.'
+const siteName = 'GAME. — Find and Play Tennis'
 const siteTitle = 'GAME. — Find and Play Tennis'
 const siteDescription = 'Find and play tennis. Players, games, courts, and more.'
 
