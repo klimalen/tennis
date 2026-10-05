@@ -63,6 +63,9 @@
     },
     "plugins": ["expo-router"],
     "extra": {
+      "eas": {
+        "projectId": "299cd76c-57f3-478a-9c98-a9bc0fb2a8ef"
+      },
       "privacyPolicyUrl": "https://www.game-tennis.space/privacy",
       "termsOfUseUrl": "https://www.game-tennis.space/terms"
     },
