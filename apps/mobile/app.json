@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "GAME.",
-    "slug": "tennis",
+    "slug": "game-find-and-play-tennis",
+    "owner": "alenaklimovas-team",
     "scheme": "tennis",
     "version": "1.0.0",
     "orientation": "portrait",
