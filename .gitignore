@@ -26,6 +26,7 @@ scripts/.cache/
 ios/
 android/
 **/credentials.json
+**/credentials/
 **/*.p12
 **/*.p8
 **/*.mobileprovision
