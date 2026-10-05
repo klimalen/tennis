@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
 import Image from 'next/image'
 import { WhenFields } from '@/components/games/WhenFields'
+import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
@@ -33,7 +34,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
   const [time, setTime] = useState(initialStart)
   const [endTime, setEndTime] = useState(plusMinutes(initialStart, 60))
   const [format, setFormat] = useState<Format>('singles')
-  const [location, setLocation] = useState('')
+  const [place, setPlace] = useState<CourtPlaceValue>(emptyCourtPlace())
   const [about, setAbout] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,7 +66,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
     setTime(start)
     setEndTime(plusMinutes(start, 60))
     setFormat('singles')
-    setLocation('')
+    setPlace(emptyCourtPlace())
     setAbout('')
     setExtraIds(new Set())
     setError(null)
@@ -84,13 +85,17 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         scheduled_at, duration_minutes, format,
-        location_name: location.trim() || undefined,
+        location_name: place.locationName.trim() || undefined,
+        venue_group_id: place.venueId,
+        court_cost_cents: place.courtCostCents,
+        payment: place.payment,
         notes: about.trim() || undefined,
       }),
     })
 
     if (!gameRes.ok) {
-      setError('Failed to create game')
+      const data = await gameRes.json().catch(() => ({})) as { error?: string }
+      setError(data.error ?? 'Failed to create game')
       setSubmitting(false)
       return
     }
@@ -164,15 +169,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                 </div>
               </div>
 
-              {/* Where */}
-              <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-                  Where <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-                </p>
-                <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Court name or address" maxLength={200}
-                  className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
-              </div>
+              <CourtPlaceFields value={place} onChange={setPlace} />
 
               {/* About */}
               <div>

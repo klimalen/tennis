@@ -6,6 +6,8 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { WhenFields } from '@/components/games/WhenFields'
+import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
+import type { CourtPayment } from '@/lib/game-court'
 import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
@@ -29,6 +31,10 @@ interface Game {
   neighborhood: string | null
   notes: string | null
   is_open: boolean
+  venue_group_id: string | null
+  court_cost_cents: number | null
+  payment: string | null
+  court: CourtPick | null
 }
 
 interface Participant {
@@ -66,7 +72,13 @@ export function EditGameForm({
   const [time, setTime] = useState(initialStart)
   const [endTime, setEndTime] = useState(clockFromDuration(game.scheduled_at, game.duration_minutes ?? 90))
   const [format, setFormat] = useState<Format>(game.format as Format)
-  const [location, setLocation] = useState(game.neighborhood ?? '')
+  const [place, setPlace] = useState<CourtPlaceValue>({
+    venueId: game.venue_group_id,
+    venue: game.court,
+    locationName: game.court ? '' : (game.neighborhood ?? ''),
+    courtCostCents: game.court_cost_cents,
+    payment: (game.payment as CourtPayment | null) ?? null,
+  })
   const [notes, setNotes] = useState(game.notes ?? '')
   const [isOpen, setIsOpen] = useState(game.is_open)
   const [submitting, setSubmitting] = useState(false)
@@ -91,7 +103,10 @@ export function EditGameForm({
         scheduled_at,
         duration_minutes,
         format,
-        location_name: location.trim() || null,
+        location_name: place.locationName.trim() || null,
+        venue_group_id: place.venueId,
+        court_cost_cents: place.courtCostCents,
+        payment: place.payment,
         notes: notes.trim() || null,
         ...(isCreator ? { is_open: isOpen } : {}),
       }),
@@ -181,14 +196,7 @@ export function EditGameForm({
             </div>
           </div>
 
-          <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              Where <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-            </p>
-            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-              placeholder="Court name or address" maxLength={200}
-              className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors" />
-          </div>
+          <CourtPlaceFields value={place} onChange={setPlace} />
 
           <div>
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">

@@ -262,11 +262,17 @@ export async function GET(request: NextRequest) {
   const offsetParam = searchParams.get('offset')
   const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0
   const includePrivate = searchParams.get('include_private') === '1'
+  const query = searchParams.get('q')?.trim().toLowerCase() ?? ''
 
   const centerLat = (south + north) / 2
   const centerLng = (west + east) / 2
   const sorted = [...groupCards, ...rawCards]
     .filter((c) => includePrivate || c.kind !== 'residential')
+    .filter((c) => {
+      if (!query) return true
+      const hay = `${c.name} ${c.address ?? ''}`.toLowerCase()
+      return hay.includes(query)
+    })
     .sort(
       (a, b) =>
         haversineKm(centerLat, centerLng, a.lat, a.lng) - haversineKm(centerLat, centerLng, b.lat, b.lng),
