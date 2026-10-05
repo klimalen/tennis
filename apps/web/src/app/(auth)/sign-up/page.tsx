@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { googleAuthEnabled } from '@/lib/google-auth'
+import { isGoogleAuthVisible } from '@/lib/google-auth'
 
 function GoogleIcon() {
   return (
@@ -88,7 +88,7 @@ export default function SignUpPage() {
       <h1 className="font-display text-4xl tracking-wide text-center pl-[0.025em] mb-1">CREATE ACCOUNT</h1>
       <p className="text-[10px] tracking-[0.15em] pl-[0.15em] uppercase text-center text-[rgba(26,26,26,0.4)] mb-6">Join the tennis community</p>
 
-      {googleAuthEnabled && (
+      {isGoogleAuthVisible() && (
         <>
           <button
             type="button"
