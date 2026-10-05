@@ -63,6 +63,40 @@ html.game-native {
   --app-safe-top: 0px;
 }
 
+html.game-native,
+html.game-native body {
+  overscroll-behavior: none;
+}
+
+@keyframes native-welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.native-welcome-in {
+  animation: native-welcome-in 420ms ease-out both;
+}
+
+.native-welcome-in-delay {
+  animation-delay: 90ms;
+}
+
+.native-welcome-in-delay-2 {
+  animation-delay: 160ms;
+}
+
+@media (max-height: 700px) {
+  .native-welcome-extra {
+    display: none;
+  }
+}
+
 .page-header {
   position: sticky;
   top: 0;

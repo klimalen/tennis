@@ -87,6 +87,9 @@ export default function Index() {
             mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
             geolocationEnabled
             sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+            domStorageEnabled
+            cacheEnabled
             decelerationRate="normal"
             contentInsetAdjustmentBehavior="never"
             injectedJavaScriptBeforeContentLoaded={NATIVE_BOOT}

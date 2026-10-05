@@ -40,8 +40,9 @@ export async function middleware(request: NextRequest) {
     return redirectResponse
   }
 
-  // A signed-in player opening the login screen should land on Discover.
-  if (user && (pathname === '/sign-in' || pathname === '/sign-up')) {
+  // Signed-in players should never see the public welcome or auth screens again.
+  // The native app always opens `/`, so this is what restores the session on relaunch.
+  if (user && (pathname === '/' || pathname === '/sign-in' || pathname === '/sign-up')) {
     const url = request.nextUrl.clone()
     url.pathname = '/search'
     url.search = ''

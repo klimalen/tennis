@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { Oswald, Anton, Source_Sans_3, Fraunces } from 'next/font/google'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
+import { isNativeGameAppUa } from '@/lib/native-app'
 import './globals.css'
 
 const bebasNeue = Oswald({
@@ -69,9 +71,20 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const native = isNativeGameAppUa((await headers()).get('user-agent'))
+  const htmlClass = [
+    bebasNeue.variable,
+    anton.variable,
+    sourceSans.variable,
+    fraunces.variable,
+    native ? 'game-native' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <html lang="en" className={`${bebasNeue.variable} ${anton.variable} ${sourceSans.variable} ${fraunces.variable}`}>
+    <html lang="en" className={htmlClass}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
