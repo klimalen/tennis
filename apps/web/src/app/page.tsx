@@ -53,9 +53,6 @@ export default function RootPage() {
 
         <section className="mt-3 rounded-[28px] bg-[#1E3A6E] px-6 py-7 text-[#F0EBE3]">
           <p className="font-display text-4xl leading-none tracking-wide">THEN TAKE A SEAT</p>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-[#F0EBE3]/85">
-            An account is for a profile, a message, and a place in the game
-          </p>
           <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
             <Link
               href="/sign-up"
@@ -74,7 +71,7 @@ export default function RootPage() {
 
         <footer className="mt-10 max-w-xl space-y-3 text-[13px] leading-relaxed text-[rgba(26,26,26,0.5)]">
           <p>
-            This page is public. You can read it without signing in. {appName} does not generate images. Sign in with Google only opens your account with your name, email address, and profile photo.
+            This page is public. You can read it without signing in. An account is for a profile, a message, and a place in the game. {appName} does not generate images. Sign in with Google only opens your account with your name, email address, and profile photo.
           </p>
           <p>
             <Link href="https://www.game-tennis.space/privacy" className="underline underline-offset-2 text-[#1a1a1a]">
