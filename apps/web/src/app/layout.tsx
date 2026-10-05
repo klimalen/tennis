@@ -31,10 +31,10 @@ const fraunces = Fraunces({
   display: 'swap',
 })
 
-const siteUrl = 'https://tennis-web-lime.vercel.app'
+const siteUrl = 'https://www.game-tennis.space'
 
 const siteName = 'GAME.'
-const siteTitle = 'GAME. — Find & Play Tennis'
+const siteTitle = 'GAME. — Find and Play Tennis'
 const siteDescription = 'Find and play tennis. Players, games, courts, and more.'
 
 export const metadata: Metadata = {
