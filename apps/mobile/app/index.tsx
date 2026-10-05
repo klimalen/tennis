@@ -5,7 +5,8 @@ import { WebView } from 'react-native-webview'
 
 const WEB_URL = 'https://www.game-tennis.space'
 
-const HIDE_PWA_HINT = `(function(){
+const NATIVE_BOOT = `(function(){
+  document.documentElement.classList.add('game-native');
   var titles = {
     'Add to your home screen': 1,
     'Open in Safari': 1,
@@ -14,23 +15,23 @@ const HIDE_PWA_HINT = `(function(){
     'Откройте в Safari': 1,
     'Установить приложение': 1
   };
-  function hide() {
-    var nodes = document.querySelectorAll('p');
+  function hidePwa() {
+    var nodes = document.querySelectorAll('p,h1,h2,h3,span');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
       if (!titles[text]) continue;
       var el = nodes[i];
-      for (var j = 0; j < 6 && el; j++) {
+      for (var j = 0; j < 8 && el; j++) {
         if (el.className && String(el.className).indexOf('rounded-[28px]') !== -1) {
-          el.style.display = 'none';
+          el.style.setProperty('display', 'none', 'important');
           break;
         }
         el = el.parentElement;
       }
     }
   }
-  hide();
-  new MutationObserver(hide).observe(document.documentElement, { childList: true, subtree: true });
+  hidePwa();
+  new MutationObserver(hidePwa).observe(document.documentElement, { childList: true, subtree: true });
 })();
 true;`
 
@@ -87,7 +88,9 @@ export default function Index() {
             geolocationEnabled
             sharedCookiesEnabled
             decelerationRate="normal"
-            injectedJavaScript={HIDE_PWA_HINT}
+            contentInsetAdjustmentBehavior="never"
+            injectedJavaScriptBeforeContentLoaded={NATIVE_BOOT}
+            injectedJavaScript={NATIVE_BOOT}
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}

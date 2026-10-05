@@ -654,7 +654,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-brand-bg flex flex-col">
       {/* Top bar */}
-      <div className="bg-brand-bg px-4 py-4">
+      <div className="bg-brand-bg px-4 pb-4 pt-[calc(1rem+var(--app-safe-top,0px))]">
         <div className="max-w-lg mx-auto flex items-center gap-4">
           {step > 1 ? (
             <button onClick={() => setStep(step - 1)} className="text-[rgba(26,26,26,0.4)] hover:text-[#1a1a1a] transition-colors">

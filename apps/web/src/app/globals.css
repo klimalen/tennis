@@ -53,7 +53,16 @@
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
 }
 
-/* Sticky titles sit under the iPhone status bar in the native app and in Safari. */
+/* Sticky titles sit under the iPhone status bar in Safari / PWA. */
+:root {
+  --app-safe-top: env(safe-area-inset-top, 0px);
+}
+
+/* Native WebView is already inset by SafeAreaView — do not add the notch twice. */
+html.game-native {
+  --app-safe-top: 0px;
+}
+
 .page-header {
   position: sticky;
   top: 0;
@@ -62,7 +71,7 @@
   padding-left: 1rem;
   padding-right: 1rem;
   padding-bottom: 1rem;
-  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-top: calc(1rem + var(--app-safe-top));
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
