@@ -25,6 +25,10 @@ scripts/.cache/
 .expo/
 ios/
 android/
+**/credentials.json
+**/*.p12
+**/*.p8
+**/*.mobileprovision
 
 # Claude
 .claude/
