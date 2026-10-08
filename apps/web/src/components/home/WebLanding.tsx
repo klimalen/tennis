@@ -5,39 +5,35 @@ const appName = 'GAME. — Find and Play Tennis'
 const players = [
   {
     name: 'Mike',
-    level: 'Advanced',
+    level: 'Beginner',
     about: 'Singles · Weekends',
-    more: 'Competitive matches',
-    head: '#f4d6d7',
-    body: '#9bb2c0',
-    bg: '#d7dee4',
+    more: 'First matches',
+    face: 'bg-[#111111] text-[#f4efe9]',
+    chip: 'bg-[#E8E1D7] text-[#111111]',
   },
   {
     name: 'Sarah',
     level: 'Intermediate',
     about: 'Singles / Doubles',
     more: 'Evenings after work',
-    head: '#f7e2c2',
-    body: '#7f9a8a',
-    bg: '#e4ddd4',
+    face: 'bg-[#3A8A7A] text-[#F0EBE3]',
+    chip: 'bg-[#3A8A7A] text-[#F0EBE3]',
   },
   {
     name: 'Alex',
     level: 'Advanced',
     about: 'Singles · Early mornings',
-    more: 'Competitive play',
-    head: '#f4d6d7',
-    body: '#25457f',
-    bg: '#d9d3ea',
+    more: 'Match play',
+    face: 'bg-[#E8748A] text-[#111111]',
+    chip: 'bg-[#E8748A] text-[#111111]',
   },
   {
     name: 'Jordan',
-    level: 'Intermediate',
+    level: 'Competitive',
     about: 'Doubles · Weekends',
-    more: 'Friendly matches',
-    head: '#efe6c8',
-    body: '#ef6d87',
-    bg: '#e7ddd6',
+    more: 'Serious sets',
+    face: 'bg-[#1E3A6E] text-[#F0EBE3]',
+    chip: 'bg-[#D4A017] text-[#1E3A6E]',
   },
 ]
 
@@ -45,7 +41,7 @@ const games = [
   {
     level: 'Intermediate',
     time: 'Thu · 7:00 PM',
-    place: 'Line House',
+    place: 'Tennis court Champion',
     detail: 'Singles · Best of 3',
     seats: '1 seat left',
     featured: true,
@@ -53,7 +49,7 @@ const games = [
   {
     level: 'Advanced',
     time: 'Sat · 10:00 AM',
-    place: 'Baseline Club',
+    place: 'Tennis Club',
     detail: 'Doubles · Social match',
     seats: '2 seats left',
     featured: false,
@@ -69,20 +65,10 @@ const games = [
 ]
 
 const courts = [
-  { name: 'Line House', sub: '4 courts · Indoor', tone: 'bg-[#25457f]' },
+  { name: 'Tennis court Champion', sub: '4 courts · Indoor', tone: 'bg-[#25457f]' },
   { name: 'Court 4', sub: '4 courts · Clay', tone: 'bg-[#4f775d]' },
   { name: 'The Evening Set', sub: '3 courts · Outdoor', tone: 'bg-[#ef6d87]' },
 ]
-
-function Portrait({ head, body, bg }: { head: string; body: string; bg: string }) {
-  return (
-    <div className="relative h-[180px] overflow-hidden" style={{ background: bg }}>
-      <div className="absolute left-1/2 top-[18%] h-16 w-16 -translate-x-1/2 rounded-full" style={{ background: head }} />
-      <div className="absolute bottom-0 left-1/2 h-[74px] w-28 -translate-x-1/2 rounded-t-full" style={{ background: body }} />
-      <div className="absolute inset-3.5 rounded-[20px] border border-white/70" />
-    </div>
-  )
-}
 
 function CourtThumb({ tone }: { tone: string }) {
   return (
@@ -134,18 +120,13 @@ export function WebLanding() {
                 Explore courts
               </a>
             </div>
-            <div className="mt-8 flex gap-6 text-xs text-[#77716c]">
-              <div><strong className="mb-0.5 block text-[19px] text-[#111111]">42</strong>open games</div>
-              <div><strong className="mb-0.5 block text-[19px] text-[#111111]">186</strong>players</div>
-              <div><strong className="mb-0.5 block text-[19px] text-[#111111]">24</strong>courts</div>
-            </div>
           </div>
 
           <div className="relative min-h-[450px] sm:min-h-[520px] lg:min-h-[500px]">
             <article className="absolute right-0 top-2 w-[290px] rotate-[5deg] rounded-[28px] bg-[#25457f] p-6 text-white shadow-[0_22px_55px_rgba(19,33,67,0.18)] sm:right-5 sm:w-[360px]">
               <p className="text-[10px] uppercase tracking-[0.2em] opacity-70">Open game</p>
               <p className="my-2 font-display text-[38px] uppercase leading-[1.05] tracking-wide">Thursday<br />7:00 PM</p>
-              <p className="text-[13px] leading-snug opacity-80">Line House<br />Singles · Intermediate</p>
+              <p className="text-[13px] leading-snug opacity-80">Tennis court Champion<br />Singles · Intermediate</p>
               <div className="mt-[18px] flex items-center justify-between gap-3">
                 <span className="text-[11px] font-extrabold uppercase tracking-[0.08em]">1 seat left</span>
                 <Link href="/sign-up" className="rounded-full bg-[#edf4ef] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#4f775d] no-underline">
@@ -166,7 +147,7 @@ export function WebLanding() {
 
             <article className="absolute bottom-1 right-0 w-[255px] rotate-[3deg] rounded-[28px] bg-[#ef6d87] p-6 text-[#111111] shadow-[0_22px_55px_rgba(19,33,67,0.18)] sm:w-[300px]">
               <p className="text-[10px] uppercase tracking-[0.2em] opacity-70">Court</p>
-              <p className="my-2 font-display text-[38px] uppercase leading-[1.05] tracking-wide">Baseline Club</p>
+              <p className="my-2 font-display text-[38px] uppercase leading-[1.05] tracking-wide">Tennis Club</p>
               <p className="text-[13px] leading-snug opacity-80">6 courts · Lights</p>
             </article>
           </div>
@@ -225,15 +206,21 @@ export function WebLanding() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {players.map((player) => (
-              <article key={player.name} className="overflow-hidden rounded-[26px] border border-[#d9d0c9] bg-[#fffdfa]">
-                <Portrait head={player.head} body={player.body} bg={player.bg} />
-                <div className="p-[18px]">
-                  <p className="text-[21px] font-black">{player.name}</p>
-                  <p className="mt-1 text-xs font-extrabold text-[#4f775d]">{player.level}</p>
-                  <p className="mt-2.5 text-[13px] leading-snug text-[#77716c]">
-                    {player.about}<br />{player.more}
-                  </p>
+              <article key={player.name} className="rounded-[26px] border border-[#d9d0c9] bg-[#fffdfa] p-[18px]">
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${player.face}`}>
+                    <span className="font-display text-lg leading-none tracking-wide">{player.name.slice(0, 1)}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[21px] font-black leading-none">{player.name}</p>
+                    <p className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] ${player.chip}`}>
+                      {player.level}
+                    </p>
+                  </div>
                 </div>
+                <p className="mt-3 text-[13px] leading-snug text-[#77716c]">
+                  {player.about}<br />{player.more}
+                </p>
               </article>
             ))}
           </div>
@@ -252,7 +239,7 @@ export function WebLanding() {
           <div className="grid gap-[18px] lg:grid-cols-[1.2fr_0.8fr]">
             <article className="relative min-h-[380px] overflow-hidden rounded-[30px] bg-[#4f775d] p-7 text-white">
               <p className="text-[10px] uppercase tracking-[0.18em] opacity-70">Featured court</p>
-              <h3 className="my-3 max-w-[420px] font-display text-5xl uppercase leading-[0.95] tracking-wide">Baseline Club</h3>
+              <h3 className="my-3 max-w-[420px] font-display text-5xl uppercase leading-[0.95] tracking-wide">Tennis Club</h3>
               <p className="max-w-[420px] leading-relaxed opacity-80">
                 Six courts and lights for an evening match
               </p>
@@ -339,7 +326,7 @@ export function WebLanding() {
 
         <footer className="space-y-4 pb-12 pt-2 text-xs leading-relaxed text-[#8b847f]">
           <p className="max-w-xl">
-            The cards and numbers on this page are examples. They are not real players, games, or courts. Create an account to see real information.
+            The cards on this page are examples. They are not real players, games, or courts. Create an account to see real information.
           </p>
           <p className="max-w-xl">
             This page is public. You can read it without signing in. An account is for a profile, a message, and a place in the game. {appName} does not generate images. Sign in with Google only opens your account with your name, email address, and profile photo.
