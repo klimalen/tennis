@@ -249,25 +249,42 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
 
         <div>
           <FieldLabel>Your level</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
-            {SKILL_LEVELS.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => onChange({ skillLevel: s.value })}
-                className={`flex flex-col p-3 border text-left transition-colors ${
-                  data.skillLevel === s.value
-                    ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                }`}
-              >
-                <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">
-                  {s.label}
-                </span>
-                <span className={`text-[9px] mt-0.5 ${data.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sublabel}</span>
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => onChange({ isCoach: !data.isCoach })}
+            className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
+              data.isCoach
+                ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
+                : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
+            }`}
+          >
+            <span>
+              <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
+              <span className={`block text-[11px] mt-0.5 ${data.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
+            </span>
+            <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{data.isCoach ? 'On' : 'Off'}</span>
+          </button>
+          {!data.isCoach && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {SKILL_LEVELS.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => onChange({ skillLevel: s.value })}
+                  className={`flex flex-col p-3 border text-left transition-colors ${
+                    data.skillLevel === s.value
+                      ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                      : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
+                  }`}
+                >
+                  <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">
+                    {s.label}
+                  </span>
+                  <span className={`text-[9px] mt-0.5 ${data.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sublabel}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -307,21 +324,6 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onChange({ isCoach: !data.isCoach })}
-          className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
-            data.isCoach
-              ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
-              : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
-          }`}
-        >
-          <span>
-            <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
-            <span className={`block text-[11px] mt-0.5 ${data.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
-          </span>
-          <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{data.isCoach ? 'On' : 'Off'}</span>
-        </button>
       </div>
     </div>
   )
@@ -546,11 +548,11 @@ export default function OnboardingPage() {
       if (!session) { router.replace('/sign-in'); return }
 
       const { data: profile } = await supabase
-        .from('profiles').select('skill_level_self, username, account_kind')
+        .from('profiles').select('skill_level_self, is_coach, username, account_kind')
         .eq('id', session.user.id).single()
 
       if (profile?.account_kind === 'court') { router.replace('/me'); return }
-      if (profile?.skill_level_self) { router.replace('/search'); return }
+      if (profile?.skill_level_self || profile?.is_coach) { router.replace('/search'); return }
 
       setUserId(session.user.id)
       if (profile?.username) setData((prev) => ({ ...prev, username: profile.username }))
@@ -594,7 +596,7 @@ export default function OnboardingPage() {
       city_name: data.city || null,
       city_lat: data.cityLat,
       city_lng: data.cityLng,
-      skill_level_self: data.skillLevel,
+      skill_level_self: data.isCoach ? null : data.skillLevel,
       years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
       preferred_formats: data.playFormats,
       play_style: data.playStyle,

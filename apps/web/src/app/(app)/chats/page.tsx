@@ -112,7 +112,7 @@ export default async function ChatsPage() {
       <div className="min-h-screen pb-20 md:pb-0">
         <div className="page-header">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <span className="font-display text-5xl tracking-wide">CHATS</span>
+            <span className="font-display text-4xl tracking-wide leading-none">CHATS</span>
             <ComposeButton />
           </div>
         </div>

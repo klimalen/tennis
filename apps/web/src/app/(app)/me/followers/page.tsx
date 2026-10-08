@@ -12,7 +12,7 @@ async function FollowersContent() {
 
   const { data: rows } = await supabase
     .from('follows')
-    .select('follower_id, profiles!follows_follower_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self)')
+    .select('follower_id, profiles!follows_follower_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self, is_coach)')
     .eq('following_id', user.id)
     .order('created_at', { ascending: false })
 

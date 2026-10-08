@@ -5,7 +5,7 @@ export function CourtDetailsGate() {
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="page-header">
         <div className="max-w-2xl mx-auto">
-          <span className="font-display text-5xl tracking-wide text-[#1a1a1a]">PROFILE</span>
+          <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">PROFILE</span>
         </div>
       </div>
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">

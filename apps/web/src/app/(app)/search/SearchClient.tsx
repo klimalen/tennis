@@ -36,6 +36,7 @@ export interface IncomingRequest {
     skill_level_self: number | null
     skill_level_computed: number | null
     city_name: string | null
+    is_coach?: boolean
   }
 }
 
@@ -296,12 +297,12 @@ function PlayerCard({
   }
 
   const actionClass = `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium transition-colors ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
-  const level = skillLabel(skill)
+  const coach = Boolean(player.is_coach)
+  const level = coach ? null : skillLabel(skill)
   const meta = [formatSummary(player.preferred_formats), styleSummary(player.play_style)].filter(Boolean).join(' · ')
   const bio = player.bio?.trim() || null
   const lookingFor = player.looking_for?.trim() || null
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
-  const coach = Boolean(player.is_coach)
   const namePad = showSchedule && coach ? 'pr-28' : showSchedule ? 'pr-12' : coach ? 'pr-16' : ''
   void vivid
 
@@ -669,7 +670,8 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
 function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingRequest; onAccept: (id: string, senderId: string) => Promise<void>; onDecline: (id: string) => Promise<void> }) {
   const [acting, setActing] = useState<'accept' | 'decline' | null>(null)
   const { sender } = req
-  const skill = sender.skill_level_computed ?? sender.skill_level_self
+  const coach = Boolean(sender.is_coach)
+  const skill = coach ? null : sender.skill_level_computed ?? sender.skill_level_self
   const initials = sender.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
   return (
@@ -690,11 +692,13 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
           </Link>
           <p className="font-fraunces italic text-base text-[#1a1a1a] mt-1">Accept to open a chat. You will follow each other.</p>
           <div className="flex items-center gap-2 mt-2">
-            {skill != null && (
+            {coach ? (
+              <CoachBadge />
+            ) : skill != null ? (
               <span className="rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold bg-[#F0EBE3] text-[#E8748A] px-2.5 py-0.5">
                 {skillLabel(skill)}
               </span>
-            )}
+            ) : null}
             {sender.city_name && <span className="text-[11px] text-[#1a1a1a]/70">{sender.city_name}</span>}
           </div>
         </div>
@@ -828,7 +832,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
     : 'bg-[#BCD85E] text-[#1a1a1a]'
 
   const beard = !canJoin ? null : alreadyIn ? 'in' : isFull ? 'full' : 'join'
-  const beardBg = beard === 'join' ? 'bg-[#BCD85E]' : beard === 'full' ? 'bg-[#163A32]' : 'bg-[#2C6A5C]'
+  const beardBg = beard === 'join' ? 'bg-[#BCD85E]' : beard === 'full' ? 'bg-[#163A32]' : 'bg-[#1E3A6E]'
 
   return (
     <div className={beard ? `overflow-hidden rounded-[28px] ${beardBg}` : undefined}>

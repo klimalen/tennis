@@ -153,7 +153,7 @@ async function FeedContent() {
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto">
-          <span className="font-display text-5xl tracking-wide">FEED</span>
+          <span className="font-display text-4xl tracking-wide leading-none">FEED</span>
         </div>
       </div>
 

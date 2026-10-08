@@ -55,7 +55,7 @@ export async function GET() {
 
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self')
+    .select('id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self, is_coach')
     .in('id', newConnectionIds)
 
   return NextResponse.json({ connections: profiles ?? [], allChatsExist: false })

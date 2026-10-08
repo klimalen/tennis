@@ -121,7 +121,7 @@ async function ProfileContent() {
     : null
   const username = profile?.username || ''
   const avatarUrl = profile?.avatar_url || null
-  const rating = profile?.skill_level_computed ?? profile?.skill_level_self ?? null
+  const rating = profile?.is_coach ? null : (profile?.skill_level_computed ?? profile?.skill_level_self ?? null)
   const surfaces: string[] = profile?.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile?.availability)
 
@@ -130,7 +130,7 @@ async function ProfileContent() {
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <span className="font-display text-5xl tracking-wide text-[#1a1a1a]">PROFILE</span>
+          <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">PROFILE</span>
           <Link href="/settings" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <Settings size={16} className="text-[rgba(26,26,26,0.5)]" />
           </Link>

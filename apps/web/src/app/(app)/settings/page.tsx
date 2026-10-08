@@ -71,7 +71,7 @@ export default function SettingsPage() {
           >
             <ChevronLeft size={20} className="text-[rgba(26,26,26,0.5)]" />
           </button>
-          <span className="font-display text-5xl tracking-wide">SETTINGS</span>
+          <span className="font-display text-4xl tracking-wide leading-none">SETTINGS</span>
         </div>
       </div>
 

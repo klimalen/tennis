@@ -163,7 +163,7 @@ export async function loadDiscoverPlayer(supabase: Db, userId: string): Promise<
 }
 
 function matchesPlayer(
-  player: { full_name: string | null; username: string | null; city_name: string | null; looking_for: string | null; skill_level_self: number | null; skill_level_computed: number | null },
+  player: { full_name: string | null; username: string | null; city_name: string | null; looking_for: string | null; skill_level_self: number | null; skill_level_computed: number | null; is_coach?: boolean | null },
   q: string,
   skills: string[],
 ) {
@@ -172,6 +172,7 @@ function matchesPlayer(
     if (!hay.includes(q)) return false
   }
   if (skills.length > 0) {
+    if (player.is_coach) return false
     const label = skillLabel(player.skill_level_computed ?? player.skill_level_self)
     if (!label || !skills.includes(label)) return false
   }

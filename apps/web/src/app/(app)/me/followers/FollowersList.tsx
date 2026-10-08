@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { skillLabel } from '@/lib/skill'
+import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ListSearch } from '@/components/ui/ListSearch'
 
 export interface FollowerProfile {
@@ -14,6 +15,7 @@ export interface FollowerProfile {
   city_name: string | null
   skill_level_computed: number | null
   skill_level_self: number | null
+  is_coach?: boolean | null
 }
 
 export function FollowersList({ followers }: { followers: FollowerProfile[] }) {
@@ -39,7 +41,8 @@ export function FollowersList({ followers }: { followers: FollowerProfile[] }) {
         </div>
       ) : (
         shown.map((follower) => {
-          const rating = follower.skill_level_computed ?? follower.skill_level_self
+          const coach = Boolean(follower.is_coach)
+          const rating = coach ? null : follower.skill_level_computed ?? follower.skill_level_self
           const label = skillLabel(rating)
           const initials = follower.full_name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
           return (
@@ -64,11 +67,13 @@ export function FollowersList({ followers }: { followers: FollowerProfile[] }) {
                   <p className="text-[10px] text-[rgba(26,26,26,0.35)] mt-0.5">{follower.city_name}</p>
                 )}
               </div>
-              {label && (
+              {coach ? (
+                <CoachBadge className="flex-shrink-0" />
+              ) : label ? (
                 <span className="text-[8px] tracking-[0.12em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
                   {label}
                 </span>
-              )}
+              ) : null}
             </Link>
           )
         })

@@ -29,12 +29,12 @@ export async function PlayerFollowList({
   const { data: rows } = kind === 'followers'
     ? await supabase
       .from('follows')
-      .select('profiles!follows_follower_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self)')
+      .select('profiles!follows_follower_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self, is_coach)')
       .eq('following_id', profile.id)
       .order('created_at', { ascending: false })
     : await supabase
       .from('follows')
-      .select('profiles!follows_following_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self)')
+      .select('profiles!follows_following_id_fkey(id, full_name, username, avatar_url, city_name, skill_level_computed, skill_level_self, is_coach)')
       .eq('follower_id', profile.id)
       .order('created_at', { ascending: false })
 

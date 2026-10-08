@@ -155,7 +155,7 @@ export default async function PlayerProfilePage({
   }
 
   const isCourt = profile.account_kind === 'court'
-  const rating = profile.skill_level_computed ?? profile.skill_level_self
+  const rating = profile.is_coach ? null : profile.skill_level_computed ?? profile.skill_level_self
   const skill = isCourt ? null : skillLabel(rating)
   const websiteHref = profile.website
     ? (profile.website.startsWith('http') ? profile.website : `https://${profile.website}`)

@@ -25,7 +25,7 @@ export default async function SearchPage() {
         .single(),
       supabase
         .from('game_requests')
-        .select('id, sender_id, created_at, profiles!game_requests_sender_id_fkey ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, city_name )')
+        .select('id, sender_id, created_at, profiles!game_requests_sender_id_fkey ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, city_name, is_coach )')
         .eq('receiver_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),

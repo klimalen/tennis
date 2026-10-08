@@ -41,12 +41,12 @@ export async function GET(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('skill_level_self, account_kind')
+      .select('skill_level_self, is_coach, account_kind')
       .eq('id', user.id)
       .single()
     if (profile?.account_kind === 'court') {
       if (destination === '/onboarding') destination = '/me'
-    } else if (!profile?.skill_level_self) {
+    } else if (!profile?.skill_level_self && !profile?.is_coach) {
       destination = '/onboarding'
     }
   }

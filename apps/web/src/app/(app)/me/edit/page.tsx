@@ -128,15 +128,21 @@ export default function EditProfilePage() {
     preferredSurfaces: [], availability: {},
     lookingFor: '', isCoach: false, city: '', cityLat: null, cityLng: null,
   })
+  const draftRef = useRef(d)
+  draftRef.current = d
+  const dirtyRef = useRef(false)
 
   function update(partial: Partial<ProfileData>) {
+    dirtyRef.current = true
     setD((prev) => ({ ...prev, ...partial }))
   }
 
   // Load profile
   useEffect(() => {
+    let active = true
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
+      if (!active) return
       if (!user) { router.push('/sign-in'); return }
       setUserId(user.id)
 
@@ -146,14 +152,19 @@ export default function EditProfilePage() {
         .eq('id', user.id)
         .single()
 
+      if (!active || dirtyRef.current) {
+        if (active) setLoading(false)
+        return
+      }
       if (p?.account_kind === 'court') { router.replace('/me'); return }
       if (p) {
         setOriginalUsername(p.username || '')
-        update({
+        setD({
           fullName: p.full_name || '',
           username: p.username || '',
           bio: p.bio || '',
           avatarUrl: p.avatar_url || null,
+          avatarFile: null,
           skillLevel: p.skill_level_self ?? null,
           yearsPlaying: p.years_playing ?? null,
           playFormats: p.preferred_formats || [],
@@ -170,6 +181,7 @@ export default function EditProfilePage() {
       setLoading(false)
     }
     load()
+    return () => { active = false }
   }, [])
 
   // Username check
@@ -236,7 +248,8 @@ export default function EditProfilePage() {
     setSaveStatus('saving')
     setError('')
     try {
-      let avatarUrl = d.avatarUrl
+      const draft = draftRef.current
+      let avatarUrl = draft.avatarUrl
       if (pendingAvatar) {
         const path = `${userId}/avatar.jpg`
         const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, pendingAvatar, {
@@ -248,26 +261,26 @@ export default function EditProfilePage() {
         avatarUrl = `${publicUrl}?v=${Date.now()}`
       }
 
-      const schedule = legacySchedule(d.availability)
+      const schedule = legacySchedule(draft.availability)
       const { error: updateErr } = await supabase.from('profiles').update({
-        full_name: d.fullName.trim(),
-        username: d.username.trim(),
-        bio: d.bio.trim() || null,
+        full_name: draft.fullName.trim(),
+        username: draft.username.trim(),
+        bio: draft.bio.trim() || null,
         avatar_url: avatarUrl,
-        skill_level_self: d.skillLevel,
-        years_playing: d.yearsPlaying ? Math.round(d.yearsPlaying) : null,
-        preferred_formats: d.playFormats,
-        play_style: d.playStyle,
-        preferred_surfaces: d.preferredSurfaces,
+        skill_level_self: draft.isCoach ? null : draft.skillLevel,
+        years_playing: draft.yearsPlaying ? Math.round(draft.yearsPlaying) : null,
+        preferred_formats: draft.playFormats,
+        play_style: draft.playStyle,
+        preferred_surfaces: draft.preferredSurfaces,
         preferred_days: schedule.preferred_days,
         preferred_time_start: schedule.preferred_time_start,
         preferred_time_end: schedule.preferred_time_end,
-        availability: storedAvailability(d.availability),
-        looking_for: d.lookingFor.trim() || null,
-        is_coach: d.isCoach,
-        city_name: d.city.trim() || null,
-        city_lat: d.cityLat,
-        city_lng: d.cityLng,
+        availability: storedAvailability(draft.availability),
+        looking_for: draft.lookingFor.trim() || null,
+        is_coach: draft.isCoach,
+        city_name: draft.city.trim() || null,
+        city_lat: draft.cityLat,
+        city_lng: draft.cityLng,
       }).eq('id', userId)
 
       if (updateErr) throw updateErr
@@ -429,23 +442,40 @@ export default function EditProfilePage() {
           <div className="mt-3 space-y-4">
             <div>
               <FieldLabel optional>Level</FieldLabel>
-              <div className="grid grid-cols-2 gap-3">
-                {SKILL_LEVELS.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
-                    className={`flex flex-col p-3 border text-left transition-colors ${
-                      d.skillLevel === s.value
-                        ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                        : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                    }`}
-                  >
-                    <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
-                    <span className={`text-[9px] mt-0.5 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => update({ isCoach: !d.isCoach })}
+                className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
+                  d.isCoach
+                    ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
+                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
+                }`}
+              >
+                <span>
+                  <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
+                  <span className={`block text-[11px] mt-0.5 ${d.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
+                </span>
+                <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{d.isCoach ? 'On' : 'Off'}</span>
+              </button>
+              {!d.isCoach && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {SKILL_LEVELS.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
+                      className={`flex flex-col p-3 border text-left transition-colors ${
+                        d.skillLevel === s.value
+                          ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
+                          : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
+                      }`}
+                    >
+                      <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
+                      <span className={`text-[9px] mt-0.5 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -502,21 +532,6 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => update({ isCoach: !d.isCoach })}
-              className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
-                d.isCoach
-                  ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
-                  : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
-              }`}
-            >
-              <span>
-                <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
-                <span className={`block text-[11px] mt-0.5 ${d.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
-              </span>
-              <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{d.isCoach ? 'On' : 'Off'}</span>
-            </button>
           </div>
         </section>
 

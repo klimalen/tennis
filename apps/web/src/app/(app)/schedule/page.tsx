@@ -25,7 +25,7 @@ async function ScheduleContent() {
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <span className="font-display text-5xl tracking-wide">SCHEDULE</span>
+          <span className="font-display text-4xl tracking-wide leading-none">SCHEDULE</span>
           <Link
             href="/games/new"
             className="text-[10px] tracking-[0.16em] uppercase font-medium text-brand-primary hover:underline"
