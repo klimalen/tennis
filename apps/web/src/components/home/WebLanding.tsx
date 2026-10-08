@@ -113,12 +113,12 @@ export function WebLanding() {
               {appName} brings players, open games, and public courts into one place. Look through the examples here. Create an account when you want the real ones.
             </p>
             <div className="mt-7 flex flex-wrap gap-[13px]">
-              <a href="#games" className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#ef6d87] px-6 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#111111] no-underline">
-                Find a game
-              </a>
-              <a href="#courts" className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#b9afa8] bg-white/20 px-6 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#111111] no-underline">
-                Explore courts
-              </a>
+              <Link href="/sign-up" className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#ef6d87] px-6 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#111111] no-underline">
+                Create account
+              </Link>
+              <Link href="/sign-in" className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#b9afa8] bg-white/20 px-6 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#111111] no-underline">
+                Sign in
+              </Link>
             </div>
           </div>
 
