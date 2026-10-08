@@ -75,7 +75,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 pb-6 space-y-4">
         {/* Account section */}
         <div className="bg-white rounded-[28px] overflow-hidden">
           <div className="px-4 py-3 border-b border-brand-divider">

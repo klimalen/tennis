@@ -41,7 +41,7 @@ export function FeedTabs({ userId, initialPosts, initialNotifications, initialNo
   return (
     <div>
       {/* Tab bar */}
-      <div className="flex gap-2 px-4 pt-3 pb-1">
+      <div className="flex gap-2 px-4 pb-1">
         {([
           { id: 'activity' as Tab, label: 'Activity' },
           { id: 'notifications' as Tab, label: 'Notifications' },

@@ -764,31 +764,15 @@ function TicketFaces({ people, spotsLeft }: { people: { id: string; name: string
   )
 }
 
-function BallArt() {
-  return (
-    <svg aria-hidden viewBox="0 0 72 72" className="h-14 w-14">
-      <circle cx="42" cy="44" r="22" fill="#85648F" />
-      <circle cx="32" cy="32" r="22" fill="#BCD85E" />
-      <path d="M16 28c10 9 20 9 32 0" fill="none" stroke="#F0EBE3" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M18 40c11-6 20-6 28 3" fill="none" stroke="#F0EBE3" strokeWidth="2.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function CourtArt() {
   return (
-    <svg aria-hidden viewBox="0 0 280 220" className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[48%] @[540px]:block" preserveAspectRatio="xMaxYMid slice">
-      <g transform="translate(70 18) rotate(-20 90 90)">
-        <rect x="0" y="20" width="230" height="150" fill="#2C6A5C" />
-        <rect x="16" y="36" width="198" height="118" fill="none" stroke="#F0EBE3" strokeWidth="3" />
-        <line x1="115" y1="36" x2="115" y2="154" stroke="#F0EBE3" strokeWidth="3" />
-        <line x1="16" y1="95" x2="214" y2="95" stroke="#F0EBE3" strokeWidth="3" />
-      </g>
-      <circle cx="214" cy="118" r="36" fill="#85648F" />
-      <circle cx="200" cy="102" r="36" fill="#BCD85E" />
-      <path d="M174 96c16 14 34 14 52 0" fill="none" stroke="#F0EBE3" strokeWidth="3" strokeLinecap="round" />
-      <path d="M178 118c18-10 32-10 46 4" fill="none" stroke="#F0EBE3" strokeWidth="3" strokeLinecap="round" />
-    </svg>
+    <div
+      aria-hidden
+      className="pointer-events-none absolute -bottom-11 -right-9 h-[8.25rem] w-[10rem] -rotate-[7deg] border-[4px] border-[#F0EBE3]/80 @[540px]:-bottom-[4.75rem] @[540px]:-right-16 @[540px]:h-[17rem] @[540px]:w-[27rem] @[540px]:border-[5px]"
+    >
+      <div className="absolute inset-y-0 left-1/2 w-[4px] -translate-x-1/2 bg-[#F0EBE3]/80 @[540px]:w-[5px]" />
+      <div className="absolute inset-x-0 top-1/2 h-[4px] -translate-y-1/2 bg-[#F0EBE3]/80 @[540px]:h-[5px]" />
+    </div>
   )
 }
 
@@ -838,7 +822,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
     <div className={beard ? `overflow-hidden rounded-[28px] ${beardBg}` : undefined}>
       <div className="@container relative overflow-hidden rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3]">
         <CourtArt />
-        <span className={`pointer-events-none absolute right-3 top-3 z-10 hidden rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] @[540px]:inline-flex ${spotsPill}`}>
+        <span className={`pointer-events-none absolute right-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${spotsPill}`}>
           {isFull ? 'Full' : `${spotsLeft} left`}
         </span>
         <button type="button" onClick={open} className="relative flex w-full items-stretch text-left">
@@ -851,19 +835,11 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
           <span className="relative w-px flex-shrink-0 self-stretch" aria-hidden>
             <span className="absolute inset-y-3 left-0 border-l border-dashed border-[#F0EBE3]/45" />
           </span>
-          <span className="flex min-w-0 flex-1 flex-col overflow-hidden py-3.5 pl-3 pr-2 @[540px]:pr-3">
-            <span className="truncate font-display text-2xl leading-none tracking-wide uppercase @[540px]:pr-16 @[540px]:text-3xl">{title}</span>
+          <span className="relative z-[1] flex min-w-0 flex-1 flex-col overflow-hidden py-3.5 pl-3 pr-[4.75rem] @[540px]:pr-72">
+            <span className="truncate font-display text-2xl leading-none tracking-wide uppercase @[540px]:text-3xl">{title}</span>
             <span className="mt-1.5 truncate text-[13px] text-[#F0EBE3]/80">{meta}</span>
             <span className="mt-3">
               <TicketFaces people={faces} spotsLeft={spotsLeft} />
-            </span>
-          </span>
-          <span className="flex w-[4.5rem] flex-shrink-0 flex-col items-center self-stretch px-1 pb-2 pt-3 @[540px]:hidden">
-            <span className={`rounded-full px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${spotsPill}`}>
-              {isFull ? 'Full' : `${spotsLeft} left`}
-            </span>
-            <span className="flex flex-1 items-center">
-              <BallArt />
             </span>
           </span>
         </button>

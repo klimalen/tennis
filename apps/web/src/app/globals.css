@@ -102,12 +102,17 @@ html.game-native body {
   top: 0;
   z-index: 10;
   background-color: rgb(250 247 242 / 0.95);
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-bottom: 1rem;
-  padding-top: calc(1rem + var(--app-safe-top));
+  padding-bottom: 0.75rem;
+  padding-top: calc(1.5rem + var(--app-safe-top));
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
+}
+
+/* Inset lives inside the centered column, same as search (px-4 on max-w-2xl).
+   Padding on the sticky bar itself shifts the column on wide screens. */
+.page-header > * {
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 /* Built CSS is unlayered, so a utility like .text-sm beats a bare element.

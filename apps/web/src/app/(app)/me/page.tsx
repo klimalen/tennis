@@ -137,7 +137,7 @@ async function ProfileContent() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-2 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 space-y-4">
         {/* Profile header */}
         <div className="relative bg-white rounded-[28px] p-5">
             {!isCourt && profile?.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
