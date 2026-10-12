@@ -117,9 +117,6 @@ export function WebLanding() {
                 Sign in
               </Link>
             </div>
-            <p className="mt-6 max-w-[520px] text-[13px] leading-relaxed text-[#8b847f]">
-              Preview data — <Link href="/sign-up" className="text-[#111111] underline underline-offset-2">sign up</Link> to see real players and games near you.
-            </p>
           </div>
 
           <div className="relative min-h-[450px] sm:min-h-[520px] lg:min-h-[500px]">
@@ -267,33 +264,6 @@ export function WebLanding() {
                     </Link>
                   </div>
                 </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-[#d9d0c9] py-[60px] lg:py-[82px]">
-          <div className="grid gap-8 rounded-[34px] bg-[#111111] p-8 text-white lg:grid-cols-[0.8fr_1.2fr] lg:gap-[34px] lg:p-[42px]">
-            <div>
-              <p className="mb-[11px] text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#aaa]">How GAME. works</p>
-              <h2 className="m-0 font-display text-[46px] uppercase leading-[0.92] tracking-wide text-white lg:text-[58px]">
-                Find.<br />Join.<br />Play.
-              </h2>
-              <p className="mt-[18px] font-fraunces text-2xl italic text-[#c7ee6a]">
-                Less coordination.<br />More tennis.
-              </p>
-            </div>
-            <div className="grid gap-[18px] lg:grid-cols-3">
-              {[
-                ['01', 'Find', 'Look for players, open games, and courts near you.'],
-                ['02', 'Join', 'Create an account and take an open spot.'],
-                ['03', 'Play', 'Meet at a public court. No endless group chats. No planning chaos.'],
-              ].map(([num, title, copy]) => (
-                <div key={num} className="border-t border-white/30 pt-4">
-                  <p className="text-[11px] tracking-[0.18em] opacity-55">{num}</p>
-                  <h3 className="my-2 font-display text-[34px] uppercase tracking-wide">{title}</h3>
-                  <p className="text-[13px] leading-normal opacity-70">{copy}</p>
-                </div>
               ))}
             </div>
           </div>
