@@ -43,7 +43,7 @@ const games = [
     time: 'Thu · 7:00 PM',
     place: 'Tennis court Champion',
     detail: 'Singles · Best of 3',
-    seats: '1 seat left',
+    seats: '1 spot left',
     featured: true,
   },
   {
@@ -51,7 +51,7 @@ const games = [
     time: 'Sat · 10:00 AM',
     place: 'Tennis Club',
     detail: 'Doubles · Social match',
-    seats: '2 seats left',
+    seats: '2 spots left',
     featured: false,
   },
   {
@@ -59,7 +59,7 @@ const games = [
     time: 'Sun · 5:30 PM',
     place: 'Court 4',
     detail: 'Singles · Casual',
-    seats: 'Open',
+    seats: '3 spots left',
     featured: false,
   },
 ]
@@ -101,16 +101,13 @@ export function WebLanding() {
             <p className="mb-[22px] text-[11px] font-extrabold uppercase tracking-[0.32em] text-[#896e93]">
               This week
             </p>
-            <h1 className="m-0 font-display text-[64px] uppercase leading-[0.82] tracking-wide sm:text-[86px] lg:text-[118px]">
-              Find <span className="mx-[5px] inline-block -rotate-[7deg] text-[#ef6d87]">/</span>
-              <br />
-              Play
+            <h1 className="m-0 font-display text-[56px] uppercase leading-[0.86] tracking-wide sm:text-[76px] lg:text-[96px]">
+              Find.<br />
+              Play.<br />
+              <span className="text-[#ef6d87]">Connect.</span>
             </h1>
             <p className="mt-6 max-w-[650px] font-fraunces text-2xl italic leading-snug text-[#4f775d] sm:text-[30px]">
-              Find a partner, join a game, discover a court — and get on court this week
-            </p>
-            <p className="mt-6 max-w-[610px] text-base leading-relaxed text-[#77716c]">
-              {appName} brings players, open games, and public courts into one place. Look through the examples here. Create an account when you want the real ones.
+              Find players, games and courts near you.
             </p>
             <div className="mt-7 flex flex-wrap gap-[13px]">
               <Link href="/sign-up" className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#ef6d87] px-6 text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#111111] no-underline">
@@ -120,6 +117,9 @@ export function WebLanding() {
                 Sign in
               </Link>
             </div>
+            <p className="mt-6 max-w-[520px] text-[13px] leading-relaxed text-[#8b847f]">
+              Preview data — <Link href="/sign-up" className="text-[#111111] underline underline-offset-2">sign up</Link> to see real players and games near you.
+            </p>
           </div>
 
           <div className="relative min-h-[450px] sm:min-h-[520px] lg:min-h-[500px]">
@@ -128,7 +128,7 @@ export function WebLanding() {
               <p className="my-2 font-display text-[38px] uppercase leading-[1.05] tracking-wide">Thursday<br />7:00 PM</p>
               <p className="text-[13px] leading-snug opacity-80">Tennis court Champion<br />Singles · Intermediate</p>
               <div className="mt-[18px] flex items-center justify-between gap-3">
-                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em]">1 seat left</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.08em]">1 spot left</span>
                 <Link href="/sign-up" className="rounded-full bg-[#edf4ef] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#4f775d] no-underline">
                   Join
                 </Link>
@@ -197,7 +197,7 @@ export function WebLanding() {
         <section id="players" className="border-t border-[#d9d0c9] py-[60px] lg:py-[82px]">
           <div className="mb-[30px] flex items-end justify-between gap-5">
             <div>
-              <p className="mb-[11px] text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#8e7f77]">People, not profiles</p>
+              <p className="mb-[11px] text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#8e7f77]">Find people who actually want to play</p>
               <h2 className="m-0 font-display text-[46px] uppercase leading-[0.92] tracking-wide lg:text-[58px]">Players near you</h2>
             </div>
             <Link href="/sign-up" className="shrink-0 border-b border-[#777] text-[13px] text-[#111111] no-underline">
@@ -241,7 +241,7 @@ export function WebLanding() {
               <p className="text-[10px] uppercase tracking-[0.18em] opacity-70">Featured court</p>
               <h3 className="my-3 max-w-[420px] font-display text-5xl uppercase leading-[0.95] tracking-wide">Tennis Club</h3>
               <p className="max-w-[420px] leading-relaxed opacity-80">
-                Six courts and lights for an evening match
+                Six outdoor courts with lights for evening play.
               </p>
               <div className="absolute bottom-7 left-7 flex flex-wrap gap-2.5">
                 {['6 courts', 'Lights', 'Outdoor'].map((tag) => (
@@ -285,9 +285,9 @@ export function WebLanding() {
             </div>
             <div className="grid gap-[18px] lg:grid-cols-3">
               {[
-                ['01', 'Find', 'See how a player, a game, and a court look on this page.'],
-                ['02', 'Join', 'Create an account when you want a real seat.'],
-                ['03', 'Play', 'Meet on court. No endless group chats. No planning chaos.'],
+                ['01', 'Find', 'Look for players, open games, and courts near you.'],
+                ['02', 'Join', 'Create an account and take an open spot.'],
+                ['03', 'Play', 'Meet at a public court. No endless group chats. No planning chaos.'],
               ].map(([num, title, copy]) => (
                 <div key={num} className="border-t border-white/30 pt-4">
                   <p className="text-[11px] tracking-[0.18em] opacity-55">{num}</p>
@@ -326,10 +326,7 @@ export function WebLanding() {
 
         <footer className="space-y-4 pb-12 pt-2 text-xs leading-relaxed text-[#8b847f]">
           <p className="max-w-xl">
-            The cards on this page are examples. They are not real players, games, or courts. Create an account to see real information.
-          </p>
-          <p className="max-w-xl">
-            This page is public. You can read it without signing in. An account is for a profile, a message, and a place in the game. {appName} does not generate images. Sign in with Google only opens your account with your name, email address, and profile photo.
+            This page is public. You can read it without signing in. Create an account to build your profile, message players, and join games. {appName} does not generate images. Sign in with Google only opens your account with your name, email address, and profile photo.
           </p>
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <span>© 2026 GAME.</span>

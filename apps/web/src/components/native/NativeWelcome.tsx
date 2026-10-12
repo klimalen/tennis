@@ -26,7 +26,7 @@ export function NativeWelcome() {
             GAME<span className="-ml-[0.2em] tracking-normal">.</span>
           </p>
           <p className="mt-1.5 text-[10px] tracking-[0.28em] uppercase text-[#D4E040]">
-            Find · Play · Connect
+            Find. Play. Connect.
           </p>
         </header>
 

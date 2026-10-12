@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalDocument title="TERMS" updated="Updated 29 September 2026">
+    <LegalDocument title="TERMS" updated="Updated 12 October 2026">
       <LegalSection title="AGREEMENT">
         <p>
           These terms are an agreement between you and Klimova Alena for GAME. — Find and Play Tennis (“GAME.”). Creating an account means you agree to them and to the <Link href="/privacy" className="underline underline-offset-2 text-[#1a1a1a]">Privacy Policy</Link>. If you do not agree, do not use the app.
@@ -22,7 +22,19 @@ export default function TermsPage() {
 
       <LegalSection title="THE SERVICE">
         <p>
-          GAME. helps people find tennis players, arrange games, chat, and share posts. It does not reserve courts and it does not take payments. A game in the app is an arrangement between players. Meeting someone in person is your own decision, and you are responsible for that meeting.
+          GAME. helps people find tennis players, arrange games, chat, and share posts. It does not reserve courts and it does not take payments. A game in the app is an arrangement between players.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="MEETING PEOPLE">
+        <p>
+          Meeting someone in person is your decision. Meet at a public tennis court. Do not share your home address, financial details, or other sensitive information in a chat.
+        </p>
+        <p>
+          If another player makes you uncomfortable, leave the conversation and write to <a className="underline underline-offset-2 text-[#1a1a1a]" href="mailto:support@gametennisapp.com">support@gametennisapp.com</a>. We may remove content or close an account that breaks these rules.
+        </p>
+        <p>
+          If you are 16 or 17, tell a parent or guardian where you are going, and meet only at a public court.
         </p>
       </LegalSection>
 
@@ -51,7 +63,7 @@ export default function TermsPage() {
 
       <LegalSection title="NO GUARANTEE">
         <p>
-          GAME. is provided as it is. Profiles, playing levels, and court details can be incomplete or wrong. We do not guarantee that a game will take place or that another player will arrive.
+          GAME. is provided "as is". Profiles, playing levels, and court details can be incomplete or wrong. We do not guarantee that a game will take place or that another player will arrive.
         </p>
       </LegalSection>
 

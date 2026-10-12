@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalDocument title="PRIVACY POLICY" updated="Updated 5 October 2026">
+    <LegalDocument title="PRIVACY POLICY" updated="Updated 12 October 2026">
       <LegalSection title="WHO WE ARE">
         <p>
           GAME. — Find and Play Tennis (“GAME.”) is operated by Klimova Alena. This policy describes the information the app collects, why it is collected, and the choices you have.
@@ -24,8 +24,8 @@ export default function PrivacyPage() {
       </LegalSection>
 
       <LegalSection title="INFORMATION WE COLLECT">
-        <p>We collect only what the app needs to find a game:</p>
-        <p>Account. If you register with email, we store your email address and a password. The password is kept by our sign-in provider in a form we cannot read. If you continue with Google, Google sends us the name, email address, and profile photo on that Google account. We do not receive your Google password, your contacts, or anything else from your Google account.</p>
+        <p>We collect information needed to run your account, help you find games, and use social features.</p>
+        <p>Account. If you register with email, we store your email address. Your password is securely handled by our authentication provider; GAME. does not have access to your plain-text password. If you continue with Google, Google sends us the name, email address, and profile photo on that Google account. We do not receive your Google password, your contacts, or anything else from your Google account.</p>
         <p>Profile. You can add a name, username, photo, short bio, city, playing level, how long you have played, preferred format, surface and style, the days and times you are free, and who you want to play with.</p>
         <p>Location. The city on your profile. If you ask the app to use your location, the device or browser requests permission and we use that position for the search. We do not follow your location in the background. A city or a recent search area may stay on your device so the next visit opens where you left it.</p>
         <p>iOS app. The GAME. app on iPhone opens this same service. Camera, photos, and location are requested only when you use a feature that needs them (a profile photo, a post, or nearby search).</p>
@@ -35,12 +35,12 @@ export default function PrivacyPage() {
 
       <LegalSection title="HOW WE USE IT">
         <p>We use this information to create your account, keep you signed in, and show players, games, and courts near you. Chats and posts are shown to the people they are for. A support message is used to read the request and reply.</p>
-        <p>We do not sell personal information. We do not use it for advertising. We do not use it to train models, and we do not use it to generate images of any kind.</p>
+        <p>We do not sell personal information. We do not use it for advertising. We do not use it to train models or to generate images.</p>
       </LegalSection>
 
       <LegalSection title="GOOGLE USER DATA">
         <p>
-          This section describes how GAME. — Find and Play Tennis accesses, uses, stores, and shares Google user data. The only Google service in the app is Sign in with Google. We request your name, email address, and profile photo. We do not request Gmail, Drive, Calendar, Contacts, or any other Google data. We do not use Google user data to generate images, including non-consensual intimate imagery.
+          This section describes how GAME. — Find and Play Tennis accesses, uses, stores, and shares Google user data. The only Google service in the app is Sign in with Google. We request your name, email address, and profile photo. We do not request Gmail, Drive, Calendar, Contacts, or any other Google data. We do not use Google user data to train models or to generate images.
         </p>
         <p>Access. When you choose Continue with Google, Google gives us the name, email address, and profile photo of the account you pick. We do not receive your Google password.</p>
         <p>Use. We use that name, email address, and profile photo only to create or open your GAME. account and to show your name and photo to other players. We do not use Google user data for advertising, for sale, or to train a model.</p>

@@ -7,7 +7,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             GAME<span className="-ml-[0.25em] tracking-normal">.</span>
           </span>
           <p className="mt-1 pl-[0.3em] text-[10px] uppercase tracking-[0.3em] text-[rgba(26,26,26,0.4)]">
-            Find · Play · Connect
+            Find. Play. Connect.
           </p>
         </div>
         {children}
