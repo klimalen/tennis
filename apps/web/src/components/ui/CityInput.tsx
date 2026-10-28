@@ -2,17 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { MapPin, X } from 'lucide-react'
-
-interface NominatimPlace {
-  place_id: number
-  name: string
-  display_name: string
-  lat?: string
-  lon?: string
-  address?: { country?: string; state?: string }
-  class?: string
-  type?: string
-}
+import { toPlaceSuggestions, type NominatimPlace, type PlaceSuggestion } from '@/lib/place-suggestions'
 
 export interface CityCoords {
   lat: number
@@ -28,7 +18,7 @@ interface Props {
 
 export function CityInput({ value, onChange, placeholder = 'Your city...', className = '' }: Props) {
   const [input, setInput] = useState(value)
-  const [suggestions, setSuggestions] = useState<NominatimPlace[]>([])
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([])
   const [loading, setLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -65,12 +55,11 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`,
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=10&addressdetails=1`,
           { headers: { 'Accept-Language': 'en' } },
         )
         const results = (await res.json()) as NominatimPlace[]
-        const places = results.filter((r) => r.class === 'place' || r.class === 'boundary')
-        setSuggestions((places.length ? places : results).slice(0, 5))
+        setSuggestions(toPlaceSuggestions(results))
         setShowSuggestions(true)
       } catch {
         setSuggestions([])
@@ -81,8 +70,9 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
     return () => clearTimeout(timer)
   }, [input])
 
-  function select(place: NominatimPlace) {
-    const city = place.name
+  function select(row: PlaceSuggestion) {
+    const place = row.place
+    const city = row.title
     confirmedRef.current = true
     lastConfirmedRef.current = city
     skipFetchRef.current = true
@@ -148,23 +138,19 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
-          {suggestions.map((place) => {
-            const country = place.address?.country
-            const sub = [place.address?.state, country].filter(Boolean).join(', ')
-            return (
-              <button
-                key={place.place_id}
-                onMouseDown={() => select(place)}
-                className="w-full text-left px-4 py-2.5 hover:bg-brand-surface transition-colors border-b border-brand-divider last:border-0"
-              >
-                <p className="text-sm text-[#1a1a1a]">{place.name}</p>
-                {sub && sub !== place.name && (
-                  <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{sub}</p>
-                )}
-              </button>
-            )
-          })}
+        <div className="absolute top-full left-0 right-0 z-40 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
+          {suggestions.map((row) => (
+            <button
+              key={row.place.place_id}
+              onMouseDown={() => select(row)}
+              className="w-full text-left px-4 py-2.5 hover:bg-brand-surface transition-colors border-b border-brand-divider last:border-0"
+            >
+              <p className="text-sm text-[#1a1a1a]">{row.title}</p>
+              {row.subtitle && row.subtitle !== row.title && (
+                <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{row.subtitle}</p>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>
