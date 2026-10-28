@@ -21,6 +21,7 @@ import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
 import { holdsGameSeat } from '@/lib/schedule'
 import { compareOpenGames, gameInDayRange, localGameDayKey, openGameSpotsLeft } from '@/lib/open-games-order'
 import { formatDayRange, GameDateRange, type DayRange } from '@/components/games/GameDateRange'
+import { placeSuggestionLabel, toPlaceSuggestions, type NominatimPlace, type PlaceSuggestion } from '@/lib/place-suggestions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,18 +110,6 @@ function isPrivateVenue(venue: Venue): boolean {
 }
 
 type View = 'discovery' | 'players' | 'games' | 'courts'
-
-interface NominatimPlace {
-  place_id: number
-  display_name: string
-  name: string
-  lat: string
-  lon: string
-  boundingbox: [string, string, string, string]
-  type?: string
-  class?: string
-  address?: { country?: string; city?: string; town?: string }
-}
 
 interface OpenGameProfile {
   id: string
@@ -1351,7 +1340,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [cityInput, setCityInput] = useState('')
   const [cityLabel, setCityLabel] = useState<string | null>(null)
   const [courtsError, setCourtsError] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<NominatimPlace[]>([])
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const skipAutocompleteRef = useRef(false)
@@ -1388,12 +1377,11 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=7&addressdetails=1`,
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=10&addressdetails=1`,
           { headers: { 'Accept-Language': 'en' } },
         )
         const results = (await res.json()) as NominatimPlace[]
-        const places = results.filter((r) => r.class === 'place' || r.class === 'boundary' || r.class === 'landuse')
-        setSuggestions((places.length ? places : results).slice(0, 5))
+        setSuggestions(toPlaceSuggestions(results))
         setShowSuggestions(true)
       } catch {
         setSuggestions([])
@@ -1462,10 +1450,11 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, courtFilterActive, venuesHasMore, venuePageFailed, loadingVenues, loadingMoreVenues, venuesOffset])
 
-  function selectSuggestion(place: NominatimPlace) {
+  function selectSuggestion(row: PlaceSuggestion) {
+    const place = row.place
     skipAutocompleteRef.current = true
-    const name = place.name
-    const label = place.name + (place.address?.country ? `, ${place.address.country}` : '')
+    const name = row.title
+    const label = placeSuggestionLabel(row)
     const lat = parseFloat(place.lat)
     const lng = parseFloat(place.lon)
     const coords = { lat, lng }
@@ -1936,18 +1925,14 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
             )}
           </div>
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-20 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
-              {suggestions.map((place) => {
-                const country = place.address?.country
-                const subtitle = [place.address?.city ?? place.address?.town, country].filter(Boolean).join(', ')
-                return (
-                  <button key={place.place_id} onMouseDown={() => selectSuggestion(place)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-brand-surface transition-colors border-b border-brand-divider last:border-0">
-                    <p className="text-sm text-[#1a1a1a]">{place.name}</p>
-                    {subtitle && subtitle !== place.name && <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{subtitle}</p>}
-                  </button>
-                )
-              })}
+            <div className="absolute top-full left-0 right-0 z-40 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
+              {suggestions.map((row) => (
+                <button key={row.place.place_id} onMouseDown={() => selectSuggestion(row)}
+                  className="w-full text-left px-4 py-2.5 hover:bg-brand-surface transition-colors border-b border-brand-divider last:border-0">
+                  <p className="text-sm text-[#1a1a1a]">{row.title}</p>
+                  {row.subtitle && row.subtitle !== row.title && <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{row.subtitle}</p>}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -1957,7 +1942,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           onMouseDown={(e) => e.preventDefault()}
           onClick={requestGeolocation}
           disabled={loadingVenues || locating}
-          className="relative z-30 -mt-1 flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40"
+          className="-mt-1 flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40"
         >
           <MapPin size={11} /> {locating ? 'Detecting location...' : 'Use my location'}
         </button>
