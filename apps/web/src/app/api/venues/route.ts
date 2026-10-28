@@ -9,6 +9,19 @@ const SCAN_CAP = 3000
 // Venues within this radius (metres) are considered the same physical location
 const CLUSTER_RADIUS_M = 250
 
+/** Display labels the courts screen used to search client-side. Keep them in the haystack. */
+const KIND_SEARCH_LABELS: Record<string, string> = {
+  public_park: 'public park',
+  tennis_center: 'tennis center',
+  club: 'club',
+  school: 'school',
+  residential: 'private community',
+  hotel: 'hotel resort',
+  commercial: 'commercial',
+  other: 'facility',
+  unknown: 'tennis courts',
+}
+
 /**
  * Shape returned to the client. One card = one organization / facility.
  * Backed by `venue_groups` where the catalog pipeline has run, or by runtime
@@ -262,21 +275,31 @@ export async function GET(request: NextRequest) {
   const offsetParam = searchParams.get('offset')
   const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0
   const includePrivate = searchParams.get('include_private') === '1'
-  const query = searchParams.get('q')?.trim().toLowerCase() ?? ''
+  const query = (searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 80)
+  const minKmParam = searchParams.get('min_km')
+  const minKm = minKmParam ? parseFloat(minKmParam) : 0
+  const surfaces = new Set<string>(
+    (searchParams.get('surface') ?? '')
+      .split(',')
+      .map((part) => part.trim().toLowerCase())
+      .filter((part) => part === 'hard' || part === 'clay' || part === 'grass'),
+  )
 
   const centerLat = (south + north) / 2
   const centerLng = (west + east) / 2
   const sorted = [...groupCards, ...rawCards]
-    .filter((c) => includePrivate || c.kind !== 'residential')
-    .filter((c) => {
+    .map((card) => ({ card, distance: haversineKm(centerLat, centerLng, card.lat, card.lng) }))
+    .filter(({ card, distance }) => {
+      if (!includePrivate && card.kind === 'residential') return false
+      if (surfaces.size > 0 && !surfaces.has((card.surface ?? '').toLowerCase())) return false
+      if (Number.isFinite(minKm) && minKm > 0 && distance < minKm) return false
       if (!query) return true
-      const hay = `${c.name} ${c.address ?? ''}`.toLowerCase()
+      const kindLabel = KIND_SEARCH_LABELS[card.kind] ?? card.kind.replace(/_/g, ' ')
+      const hay = `${card.name} ${card.address ?? ''} ${kindLabel}`.toLowerCase()
       return hay.includes(query)
     })
-    .sort(
-      (a, b) =>
-        haversineKm(centerLat, centerLng, a.lat, a.lng) - haversineKm(centerLat, centerLng, b.lat, b.lng),
-    )
+    .sort((a, b) => a.distance - b.distance)
+    .map(({ card }) => card)
   const total = sorted.length
   const venues = sorted.slice(offset, offset + MAX_RESULTS)
 

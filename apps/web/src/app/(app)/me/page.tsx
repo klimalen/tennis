@@ -7,7 +7,7 @@ import { CreateSheet } from '@/components/navigation/CreateSheet'
 import { SchedulePreview } from '@/components/schedule/ScheduleBlocks'
 import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
-import { loadPlayerGames, playedGamesCount } from '@/lib/player-games'
+import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
@@ -30,7 +30,7 @@ async function ProfileContent() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [profileResult, followerResult, followingResult, playerGames, postsResult] = await Promise.all([
+  const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult] = await Promise.all([
     supabase
       .from('profiles')
       .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, phone, website, account_kind, preferred_surfaces, availability, is_coach')
@@ -65,6 +65,8 @@ async function ProfileContent() {
     .eq('author_id', user.id)
     .order('created_at', { ascending: false })
     .limit(30),
+    supabase.rpc('played_games_count', { p_player_id: user.id }),
+    supabase.from('post_likes').select('post_id').eq('user_id', user.id),
   ])
 
   const profile = profileResult.data
@@ -76,13 +78,10 @@ async function ProfileContent() {
   const followingCount = followingResult.count
   const schedule = summarizeSchedule(playerGames)
   const postRows = postsResult.data
-  const gamesPlayed = await playedGamesCount(supabase, user.id, schedule.playedCount)
-
-  const postIds = (postRows ?? []).map((p) => p.id as string)
-  const { data: myLikes } = postIds.length > 0
-    ? await supabase.from('post_likes').select('post_id').eq('user_id', user.id).in('post_id', postIds)
-    : { data: [] }
-  const likedSet = new Set((myLikes ?? []).map((l) => l.post_id as string))
+  const gamesPlayed = typeof playedCountResult.data === 'number' && !playedCountResult.error
+    ? playedCountResult.data
+    : schedule.playedCount
+  const likedSet = new Set((myLikesResult.data ?? []).map((like) => like.post_id as string))
 
   interface PostRow {
     id: string; type: string; body: string | null; image_url: string | null

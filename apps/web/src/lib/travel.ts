@@ -1,6 +1,14 @@
 /** How far a player can still be a practical trip for a practice. */
 export const TRAVEL_RADIUS_KM = 150
 
+/**
+ * First courts screen. The venues API still loads every group inside the box
+ * before it sorts, and Austin's courts almost all sit inside 25 km — so a
+ * 25 km box scans nearly the whole catalog. 12 km is enough for the first
+ * pages; "Farther courts" opens the travel radius after that.
+ */
+export const COURT_NEAR_RADIUS_KM = 12
+
 export function boundingBox(lat: number, lng: number, radiusKm: number) {
   const earthKm = 6371
   const deltaLat = (radiusKm / earthKm) * (180 / Math.PI)

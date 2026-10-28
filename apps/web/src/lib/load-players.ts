@@ -78,6 +78,7 @@ export async function loadPlayers(supabase: Db, args: LoadArgs): Promise<{
       .or(`${nearby}${cityClause}`)
     if (args.exclude) query = query.neq('id', args.exclude)
     if (args.coachesOnly) query = query.eq('is_coach', true)
+    query = applyPlayerText(query, args.q, args.city)
     const result = await query.order('last_active_at', { ascending: false, nullsFirst: false }).limit(NEARBY_CAP)
     data = result.data
     error = result.error
@@ -91,6 +92,7 @@ export async function loadPlayers(supabase: Db, args: LoadArgs): Promise<{
       .ilike('city_name', `%${args.city}%`)
     if (args.exclude) query = query.neq('id', args.exclude)
     if (args.coachesOnly) query = query.eq('is_coach', true)
+    query = applyPlayerText(query, args.q, args.city)
     const result = await query.order('last_active_at', { ascending: false, nullsFirst: false }).limit(NEARBY_CAP)
     data = result.data
     error = result.error
@@ -115,7 +117,7 @@ export async function loadPlayers(supabase: Db, args: LoadArgs): Promise<{
     }
   })
 
-  const filtered = rows.filter((row) => matchesPlayer(row, args.q, args.skills))
+  const filtered = rows.filter((row) => matchesPlayer(row, args.q, args.skills, args.city))
   const [userId, follows] = await Promise.all([userIdPromise, followsPromise])
   const ranked = rankPlayers(filtered, args.city, follows.mutual)
   const page = ranked.slice(args.offset, args.offset + pageSize)
@@ -162,15 +164,51 @@ export async function loadDiscoverPlayer(supabase: Db, userId: string): Promise<
   }
 }
 
+const PLAYER_TEXT_MIN_EXTRA = 3
+
+/**
+ * Name and username match any query. City and the free-text "looking for"
+ * line only match from 3 characters, and the city already used to scope the
+ * list is not searched again — otherwise "a" matches every player in Austin.
+ */
+export function playerMatchesQuery(
+  player: { full_name: string | null; username: string | null; city_name: string | null; looking_for: string | null },
+  q: string,
+  scopeCity: string | null,
+): boolean {
+  const needle = q.trim().toLowerCase()
+  if (!needle) return true
+  const name = `${player.full_name ?? ''} ${player.username ?? ''}`.toLowerCase()
+  if (name.includes(needle)) return true
+  if (needle.length < PLAYER_TEXT_MIN_EXTRA) return false
+  if ((player.looking_for ?? '').toLowerCase().includes(needle)) return true
+  const city = (player.city_name ?? '').toLowerCase()
+  const scope = (scopeCity ?? '').trim().toLowerCase()
+  if (!city || (scope && city.includes(scope))) return false
+  return city.includes(needle)
+}
+
+function applyPlayerText<T extends { or: (filters: string) => T }>(query: T, q: string, scopeCity: string | null): T {
+  const safe = q.replace(/[%*,().\\'"]/g, '').trim()
+  if (!safe) return query
+  const folded = safe.toLowerCase()
+  const parts = [`full_name.ilike.*${safe}*`, `username.ilike.*${safe}*`]
+  const scope = (scopeCity ?? '').trim().toLowerCase()
+  if (folded.length >= PLAYER_TEXT_MIN_EXTRA) {
+    parts.push(`looking_for.ilike.*${safe}*`)
+    // "AUS" must not pull every Austin row just because the scope city contains it.
+    if (!scope.includes(folded)) parts.push(`city_name.ilike.*${safe}*`)
+  }
+  return query.or(parts.join(','))
+}
+
 function matchesPlayer(
   player: { full_name: string | null; username: string | null; city_name: string | null; looking_for: string | null; skill_level_self: number | null; skill_level_computed: number | null; is_coach?: boolean | null },
   q: string,
   skills: string[],
+  scopeCity: string | null,
 ) {
-  if (q) {
-    const hay = `${player.full_name ?? ''} ${player.username ?? ''} ${player.city_name ?? ''} ${player.looking_for ?? ''}`.toLowerCase()
-    if (!hay.includes(q)) return false
-  }
+  if (q && !playerMatchesQuery(player, q, scopeCity)) return false
   if (skills.length > 0) {
     if (player.is_coach) return false
     const label = skillLabel(player.skill_level_computed ?? player.skill_level_self)

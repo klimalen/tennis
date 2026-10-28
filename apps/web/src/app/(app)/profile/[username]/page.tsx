@@ -9,7 +9,7 @@ import { MessageIcon } from './MessageIcon'
 import { SchedulePreview } from '@/components/schedule/ScheduleBlocks'
 import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
-import { loadPlayerGames, playedGamesCount } from '@/lib/player-games'
+import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
@@ -58,100 +58,122 @@ export default async function PlayerProfilePage({
   const { username } = await params
   const supabase = await createClient()
 
-  const { data: { user: viewer } } = await supabase.auth.getUser()
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select(
-      'id, full_name, username, avatar_url, bio, looking_for, city_name, phone, website, account_kind, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach',
-    )
-    .eq('username', username)
-    .is('deleted_at', null)
-    .single()
+  const [{ data: { user: viewer } }, { data: profile }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from('profiles')
+      .select(
+        'id, full_name, username, avatar_url, bio, looking_for, city_name, phone, website, account_kind, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach',
+      )
+      .eq('username', username)
+      .is('deleted_at', null)
+      .single(),
+  ])
 
   if (!profile) notFound()
   if (viewer && viewer.id === profile.id) redirect('/me')
 
-  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+  const otherId = viewer && viewer.id !== profile.id ? viewer.id : null
+  const [
+    { count: followerCount },
+    { count: followingCount },
+    playerGames,
+    playedCountResult,
+    { data: postRows },
+    likesResult,
+    sentReq,
+    receivedReq,
+    followOut,
+    followIn,
+    convIdResult,
+    viewerProfileResult,
+    hasSharedChat,
+  ] = await Promise.all([
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.id),
+    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profile.id),
+    loadPlayerGames(supabase, profile.id),
+    supabase.rpc('played_games_count', { p_player_id: profile.id }),
     supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', profile.id),
-    supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('follower_id', profile.id),
+      .from('posts')
+      .select(`
+        id, type, body, image_url, created_at, updated_at,
+        author:profiles!author_id (id, full_name, username, avatar_url),
+        match_result:match_results (
+          id, winner_id, winning_team, played_at,
+          winner:profiles!winner_id (full_name, username),
+          game:games (format, scheduled_at)
+        ),
+        game:games (
+          id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
+          neighborhood, status, max_players, is_open,
+          city:cities (name)
+        ),
+        likes:post_likes (count)
+      `)
+      .eq('author_id', profile.id)
+      .order('created_at', { ascending: false })
+      .limit(30),
+    otherId
+      ? supabase.from('post_likes').select('post_id').eq('user_id', otherId)
+      : Promise.resolve({ data: [] as { post_id: string }[] }),
+    otherId
+      ? supabase.from('game_requests').select('status').eq('sender_id', otherId).eq('receiver_id', profile.id).maybeSingle()
+      : Promise.resolve({ data: null as { status: string } | null }),
+    otherId
+      ? supabase.from('game_requests').select('status').eq('sender_id', profile.id).eq('receiver_id', otherId).in('status', ['accepted', 'matched']).maybeSingle()
+      : Promise.resolve({ data: null as { status: string } | null }),
+    otherId
+      ? supabase.from('follows').select('follower_id').eq('follower_id', otherId).eq('following_id', profile.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    otherId
+      ? supabase.from('follows').select('follower_id').eq('follower_id', profile.id).eq('following_id', otherId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    otherId
+      ? supabase.rpc('shared_conversation_id', { other_user_id: profile.id })
+      : Promise.resolve({ data: null as string | null }),
+    otherId
+      ? supabase.from('profiles').select('account_kind').eq('id', otherId).maybeSingle()
+      : Promise.resolve({ data: null as { account_kind: string | null } | null }),
+    otherId
+      ? (async () => {
+          const { data: profileConvs } = await supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', profile.id)
+          const profileConvIds = (profileConvs ?? []).map((row) => row.conversation_id as string)
+          if (profileConvIds.length === 0) return false
+          const { data: convParticipant } = await supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', otherId)
+            .in('conversation_id', profileConvIds)
+            .maybeSingle()
+          return !!convParticipant
+        })()
+      : Promise.resolve(false),
   ])
 
-  const schedule = summarizeSchedule(await loadPlayerGames(supabase, profile.id))
-  const gamesPlayed = await playedGamesCount(supabase, profile.id, schedule.playedCount)
+  const schedule = summarizeSchedule(playerGames)
+  const gamesPlayed = typeof playedCountResult.data === 'number' && !playedCountResult.error
+    ? playedCountResult.data
+    : schedule.playedCount
 
   const surfaces: string[] = profile.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile.availability)
 
-  // Check follow directions + existing conversation
-  let viewerIsFollowing = false
-  let profileFollowsViewer = false
-  let existingConvId: string | null = null
-  let viewerIsCourt = false
-
-  if (viewer && viewer.id !== profile.id) {
-    const [{ data: f1 }, { data: f2 }, { data: convId }, { data: viewerProfile }] = await Promise.all([
-      supabase.from('follows').select('follower_id').eq('follower_id', viewer.id).eq('following_id', profile.id).maybeSingle(),
-      supabase.from('follows').select('follower_id').eq('follower_id', profile.id).eq('following_id', viewer.id).maybeSingle(),
-      supabase.rpc('shared_conversation_id', { other_user_id: profile.id }),
-      supabase.from('profiles').select('account_kind').eq('id', viewer.id).maybeSingle(),
-    ])
-    viewerIsFollowing = !!f1
-    profileFollowsViewer = !!f2
-    existingConvId = convId ?? null
-    viewerIsCourt = viewerProfile?.account_kind === 'court'
-  }
-
+  const viewerIsFollowing = !!followOut.data
+  const profileFollowsViewer = !!followIn.data
+  const existingConvId = convIdResult.data ?? null
+  const viewerIsCourt = viewerProfileResult.data?.account_kind === 'court'
   const isMutual = viewerIsFollowing && profileFollowsViewer
 
-  // Check request status in both directions + existing conversation
-  let existingRequestStatus: string | null = null
-  if (viewer && viewer.id !== profile.id) {
-    // Request sent by viewer
-    const { data: sentReq } = await supabase
-      .from('game_requests')
-      .select('status')
-      .eq('sender_id', viewer.id)
-      .eq('receiver_id', profile.id)
-      .maybeSingle()
-
-    if (sentReq) {
-      existingRequestStatus = sentReq.status
-    } else {
-      // Request received from profile person (viewer accepted their request)
-      const { data: receivedReq } = await supabase
-        .from('game_requests')
-        .select('status')
-        .eq('sender_id', profile.id)
-        .eq('receiver_id', viewer.id)
-        .in('status', ['accepted', 'matched'])
-        .maybeSingle()
-      if (receivedReq) existingRequestStatus = receivedReq.status
-    }
-
-    // Final check: if there's already a conversation between them, always show matched
-    if (!existingRequestStatus || existingRequestStatus === 'pending' || existingRequestStatus === 'cancelled' || existingRequestStatus === 'declined') {
-      const { data: profileConvs } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', profile.id)
-      const profileConvIds = (profileConvs ?? []).map((r) => r.conversation_id as string)
-      if (profileConvIds.length > 0) {
-        const { data: convParticipant } = await supabase
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('user_id', viewer.id)
-          .in('conversation_id', profileConvIds)
-          .maybeSingle()
-        if (convParticipant) existingRequestStatus = 'matched'
-      }
-    }
+  let existingRequestStatus: string | null = sentReq.data?.status ?? null
+  if (!existingRequestStatus && receivedReq.data?.status) existingRequestStatus = receivedReq.data.status
+  if (
+    hasSharedChat
+    && (!existingRequestStatus || existingRequestStatus === 'pending' || existingRequestStatus === 'cancelled' || existingRequestStatus === 'declined')
+  ) {
+    existingRequestStatus = 'matched'
   }
 
   const isCourt = profile.account_kind === 'court'
@@ -162,34 +184,8 @@ export default async function PlayerProfilePage({
     : null
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
-  // Fetch user's posts
-  const { data: postRows } = await supabase
-    .from('posts')
-    .select(`
-      id, type, body, image_url, created_at, updated_at,
-      author:profiles!author_id (id, full_name, username, avatar_url),
-      match_result:match_results (
-        id, winner_id, winning_team, played_at,
-        winner:profiles!winner_id (full_name, username),
-        game:games (format, scheduled_at)
-      ),
-      game:games (
-        id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
-        neighborhood, status, max_players, is_open,
-        city:cities (name)
-      ),
-      likes:post_likes (count)
-    `)
-    .eq('author_id', profile.id)
-    .order('created_at', { ascending: false })
-    .limit(30)
-
   const rows = (postRows ?? []) as unknown as PostRow[]
-  const postIds = rows.map((p) => p.id)
-  const { data: myLikes } = viewer && postIds.length > 0
-    ? await supabase.from('post_likes').select('post_id').eq('user_id', viewer.id).in('post_id', postIds)
-    : { data: [] }
-  const likedSet = new Set((myLikes ?? []).map((l) => l.post_id as string))
+  const likedSet = new Set((likesResult.data ?? []).map((like) => like.post_id as string))
 
   const posts: PostItem[] = rows.map((row) => ({
     id: row.id,

@@ -17,7 +17,7 @@ import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
-import { TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
+import { COURT_NEAR_RADIUS_KM, TRAVEL_RADIUS_KM, boundingBox } from '@/lib/travel'
 import { holdsGameSeat } from '@/lib/schedule'
 import { compareOpenGames, gameInDayRange, localGameDayKey, openGameSpotsLeft } from '@/lib/open-games-order'
 import { formatDayRange, GameDateRange, type DayRange } from '@/components/games/GameDateRange'
@@ -994,6 +994,44 @@ interface SavedCourtsCity {
   east: number
 }
 
+type CourtSpan = 'near' | 'travel'
+
+interface CourtFetch {
+  coords: { lat: number; lng: number }
+  radiusKm: number
+  minKm: number
+  q: string
+  surfaces: string[]
+  span: CourtSpan
+  serverOffset: number
+  hasMore: boolean
+}
+
+async function fetchVenuePage(args: {
+  coords: { lat: number; lng: number }
+  radiusKm: number
+  minKm: number
+  offset: number
+  q: string
+  surfaces: string[]
+}): Promise<{ venues: Venue[]; hasMore: boolean }> {
+  const box = boundingBox(args.coords.lat, args.coords.lng, args.radiusKm)
+  const params = new URLSearchParams({
+    south: String(box.south),
+    west: String(box.west),
+    north: String(box.north),
+    east: String(box.east),
+    offset: String(args.offset),
+  })
+  if (args.minKm > 0) params.set('min_km', String(args.minKm))
+  if (args.q) params.set('q', args.q.slice(0, 80))
+  if (args.surfaces.length > 0) params.set('surface', args.surfaces.join(','))
+  const res = await fetch(`/api/venues?${params}`)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const json = (await res.json()) as { venues?: Venue[]; hasMore?: boolean }
+  return { venues: json.venues ?? [], hasMore: json.hasMore ?? false }
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming, initialPreviewPlayer = null, initialRequestStatuses = {}, previewPlayerReady = false, viewerIsCourt = false }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[]; initialPreviewPlayer?: Player | null; initialRequestStatuses?: Record<string, string>; previewPlayerReady?: boolean; viewerIsCourt?: boolean }) {
@@ -1072,14 +1110,17 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     }
 
     async function nearestVenue(lat: number, lng: number): Promise<Venue | null> {
-      const box = boundingBox(lat, lng, TRAVEL_RADIUS_KM)
-      const res = await fetch(`/api/venues?south=${box.south}&west=${box.west}&north=${box.north}&east=${box.east}`)
-      if (!res.ok) return null
-      const json = await res.json() as { venues: Venue[] }
-      const sorted = (json.venues ?? []).sort(
-        (a, b) => haversineMeters(lat, lng, a.lat, a.lng) - haversineMeters(lat, lng, b.lat, b.lng),
-      )
-      return sorted[0] ?? null
+      for (const radiusKm of [COURT_NEAR_RADIUS_KM, TRAVEL_RADIUS_KM]) {
+        const box = boundingBox(lat, lng, radiusKm)
+        const res = await fetch(`/api/venues?south=${box.south}&west=${box.west}&north=${box.north}&east=${box.east}`)
+        if (!res.ok) return null
+        const json = await res.json() as { venues: Venue[] }
+        const sorted = (json.venues ?? []).sort(
+          (a, b) => haversineMeters(lat, lng, a.lat, a.lng) - haversineMeters(lat, lng, b.lat, b.lng),
+        )
+        if (sorted[0]) return sorted[0]
+      }
+      return null
     }
 
     async function showNearest(lat: number, lng: number): Promise<boolean> {
@@ -1265,7 +1306,14 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [gameRange, setGameRange] = useState<DayRange | null>(null)
   const [loadingOpenGames, setLoadingOpenGames] = useState(false)
   const [courtQuery, setCourtQuery] = useState('')
+  const [debouncedCourtQuery, setDebouncedCourtQuery] = useState('')
   const [courtSurfaces, setCourtSurfaces] = useState<string[]>([])
+  const courtSurfaceKey = courtSurfaces.join(',')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedCourtQuery(courtQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [courtQuery])
 
   function loadGames() {
     if (!userCityName && !userGeoCoords) return
@@ -1333,9 +1381,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [locating, setLocating] = useState(false)
   const [loadingMoreVenues, setLoadingMoreVenues] = useState(false)
   const [venuesHasMore, setVenuesHasMore] = useState(false)
-  const [venuePageFailed, setVenuePageFailed] = useState(false)
-  const [venuesOffset, setVenuesOffset] = useState(0)
-  const [currentBbox, setCurrentBbox] = useState<{ south: number; west: number; north: number; east: number } | null>(null)
+  const [courtSpan, setCourtSpan] = useState<CourtSpan>('near')
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [cityInput, setCityInput] = useState('')
   const [cityLabel, setCityLabel] = useState<string | null>(null)
@@ -1346,6 +1392,9 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const skipAutocompleteRef = useRef(false)
   const courtsRestoredRef = useRef(false)
   const venuesRequestRef = useRef(0)
+  const courtFetchRef = useRef<CourtFetch | null>(null)
+  const venuesRef = useRef(venues)
+  venuesRef.current = venues
 
   // Restore last city when courts view opens
   useEffect(() => {
@@ -1360,8 +1409,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       setCityInput(saved.name)
       setCityLabel(saved.label)
       setUserCoords(coords)
-      const box = boundingBox(saved.lat, saved.lng, TRAVEL_RADIUS_KM)
-      void loadVenuesByBbox(box.south, box.west, box.north, box.east, coords)
     } catch {
       // ignore malformed data
     }
@@ -1393,62 +1440,93 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityInput])
 
-  async function loadVenuesByBbox(south: number, west: number, north: number, east: number, coords?: { lat: number; lng: number }) {
+  const courtFilterActive = debouncedCourtQuery.length > 0 || courtSurfaceKey.length > 0
+
+  useEffect(() => {
+    if (view !== 'courts' || !userCoords) return
+    const q = debouncedCourtQuery
+    const surfaces = courtSurfaceKey ? courtSurfaceKey.split(',') : []
+    const filtered = q.length > 0 || surfaces.length > 0
     const requestId = ++venuesRequestRef.current
+    let cancelled = false
     setLoadingVenues(true)
     setCourtsError(null)
     setShowSuggestions(false)
-    setVenuesOffset(0)
-    setVenuesHasMore(false)
-    setVenuePageFailed(false)
-    setCurrentBbox({ south, west, north, east })
-    try {
-      const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east) })
-      const res = await fetch(`/api/venues?${params}`)
-      if (requestId !== venuesRequestRef.current) return
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = (await res.json()) as { venues: Venue[]; hasMore: boolean }
-      if (requestId !== venuesRequestRef.current) return
-      setVenues(json.venues ?? [])
-      setVenuesHasMore(json.hasMore ?? false)
-      setVenuesOffset(json.venues?.length ?? 0)
-    } catch {
-      if (requestId !== venuesRequestRef.current) return
-      setVenues([])
-      setCourtsError('Failed to load courts. Please try again.')
-    } finally {
-      if (requestId === venuesRequestRef.current) setLoadingVenues(false)
-    }
-  }
+    ;(async () => {
+      try {
+        let radiusKm = filtered ? TRAVEL_RADIUS_KM : COURT_NEAR_RADIUS_KM
+        let span: CourtSpan = filtered ? 'travel' : 'near'
+        let page = await fetchVenuePage({ coords: userCoords, radiusKm, minKm: 0, offset: 0, q, surfaces })
+        if (!cancelled && !filtered && page.venues.length === 0) {
+          radiusKm = TRAVEL_RADIUS_KM
+          span = 'travel'
+          page = await fetchVenuePage({ coords: userCoords, radiusKm, minKm: 0, offset: 0, q, surfaces })
+        }
+        if (cancelled || requestId !== venuesRequestRef.current) return
+        setVenues(page.venues)
+        setVenuesHasMore(page.hasMore)
+        setCourtSpan(span)
+        courtFetchRef.current = {
+          coords: userCoords,
+          radiusKm,
+          minKm: 0,
+          q,
+          surfaces,
+          span,
+          serverOffset: page.venues.length,
+          hasMore: page.hasMore,
+        }
+      } catch {
+        if (cancelled || requestId !== venuesRequestRef.current) return
+        setVenues([])
+        setVenuesHasMore(false)
+        courtFetchRef.current = null
+        setCourtsError('Failed to load courts. Please try again.')
+      } finally {
+        if (!cancelled && requestId === venuesRequestRef.current) setLoadingVenues(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [view, userCoords, debouncedCourtQuery, courtSurfaceKey])
 
   async function loadMoreVenues() {
-    if (!currentBbox || loadingMoreVenues) return
+    const snap = courtFetchRef.current
+    if (!snap || loadingMoreVenues) return
+    const farther = snap.span === 'near' && !snap.hasMore
+    if (!farther && !snap.hasMore) return
+    const requestId = venuesRequestRef.current
+    const next = farther
+      ? { ...snap, radiusKm: TRAVEL_RADIUS_KM, minKm: COURT_NEAR_RADIUS_KM, serverOffset: 0, span: 'travel' as const }
+      : snap
     setLoadingMoreVenues(true)
     try {
-      const { south, west, north, east } = currentBbox
-      const params = new URLSearchParams({ south: String(south), west: String(west), north: String(north), east: String(east), offset: String(venuesOffset) })
-      const res = await fetch(`/api/venues?${params}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = (await res.json()) as { venues: Venue[]; hasMore: boolean }
-      setVenues((prev) => [...prev, ...(json.venues ?? [])])
-      setVenuesHasMore(json.hasMore ?? false)
-      setVenuesOffset((prev) => prev + (json.venues?.length ?? 0))
-      setVenuePageFailed(false)
+      let offset = next.serverOffset
+      let page = await fetchVenuePage({ ...next, offset })
+      const seen = new Set(venuesRef.current.map((venue) => venue.id))
+      let fresh = page.venues.filter((venue) => !seen.has(venue.id))
+      let guard = 0
+      while (fresh.length === 0 && page.hasMore && guard < 4) {
+        offset += page.venues.length
+        page = await fetchVenuePage({ ...next, offset })
+        fresh = page.venues.filter((venue) => !seen.has(venue.id))
+        guard += 1
+      }
+      if (requestId !== venuesRequestRef.current) return
+      offset += page.venues.length
+      setVenues((prev) => {
+        const ids = new Set(prev.map((venue) => venue.id))
+        return [...prev, ...fresh.filter((venue) => !ids.has(venue.id))]
+      })
+      setVenuesHasMore(page.hasMore)
+      setCourtSpan(next.span)
+      courtFetchRef.current = { ...next, serverOffset: offset, hasMore: page.hasMore }
     } catch {
-      setVenuePageFailed(true)
+      if (requestId !== venuesRequestRef.current) return
+      setCourtsError('Failed to load courts. Please try again.')
     } finally {
-      setLoadingMoreVenues(false)
+      if (requestId === venuesRequestRef.current) setLoadingMoreVenues(false)
     }
   }
-
-  const courtFilterActive = courtQuery.trim().length > 0 || courtSurfaces.length > 0
-  useEffect(() => {
-    if (view !== 'courts' || !courtFilterActive || !venuesHasMore || venuePageFailed) return
-    if (loadingVenues || loadingMoreVenues || !currentBbox) return
-    const timer = setTimeout(() => { void loadMoreVenues() }, 400)
-    return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, courtFilterActive, venuesHasMore, venuePageFailed, loadingVenues, loadingMoreVenues, venuesOffset])
 
   function selectSuggestion(row: PlaceSuggestion) {
     const place = row.place
@@ -1458,7 +1536,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     const lat = parseFloat(place.lat)
     const lng = parseFloat(place.lon)
     const coords = { lat, lng }
-    const box = boundingBox(lat, lng, TRAVEL_RADIUS_KM)
+    const box = boundingBox(lat, lng, COURT_NEAR_RADIUS_KM)
 
     setCityInput(name)
     setCityLabel(label)
@@ -1468,8 +1546,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
     const toSave: SavedCourtsCity = { name, label, lat, lng, south: box.south, north: box.north, west: box.west, east: box.east }
     localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
-
-    void loadVenuesByBbox(box.south, box.west, box.north, box.east, coords)
   }
 
   function requestGeolocation() {
@@ -1485,23 +1561,24 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     setShowSuggestions(false)
     setCityInput('')
     setLocating(true)
+    setLoadingVenues(false)
     setCourtsError(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (requestId !== venuesRequestRef.current) return
         const { latitude, longitude } = pos.coords
         const coords = { lat: latitude, lng: longitude }
-        const { south, west, north, east } = boundingBox(latitude, longitude, TRAVEL_RADIUS_KM)
+        const { south, west, north, east } = boundingBox(latitude, longitude, COURT_NEAR_RADIUS_KM)
         setUserCoords(coords)
         setCityLabel('your location')
         setLocating(false)
         const toSave: SavedCourtsCity = { name: '', label: 'your location', lat: latitude, lng: longitude, south, north, west, east }
         localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
-        void loadVenuesByBbox(south, west, north, east, coords)
       },
       () => {
         if (requestId !== venuesRequestRef.current) return
         setLocating(false)
+        setLoadingVenues(false)
         setCourtsError('Could not detect your location. Allow location access and try again.')
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 },
@@ -1991,19 +2068,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           </div>
         )}
 
-        {courtList === 'all' && loadingVenues && (
-          <div className="space-y-3">
-            {[0, 1, 2, 3].map((i) => <CourtCardSkeleton key={i} />)}
-          </div>
-        )}
-
-        {courtList === 'all' && !loadingVenues && !locating && userCoords && venues.length === 0 && !courtsError && (
-          <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-6 text-center">
-            <p className="text-sm text-[rgba(26,26,26,0.6)]">No courts found in this area</p>
-          </div>
-        )}
-
-        {courtList === 'all' && !loadingVenues && !locating && userCoords && venues.length > 0 && (
+        {courtList === 'all' && userCoords && !locating && (
           <>
             <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
             <MultiFilterChips
@@ -2011,60 +2076,49 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
               value={courtSurfaces}
               onChange={setCourtSurfaces}
             />
-            {cityLabel && (
+            {cityLabel && !courtFilterActive && (
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
                 Courts near {cityLabel}
               </p>
             )}
-            {(() => {
-              const needle = courtQuery.trim().toLowerCase()
-              const filterActive = needle.length > 0 || courtSurfaces.length > 0
-              const shown = venues.filter((venue) => {
-                if (courtSurfaces.length > 0 && !courtSurfaces.includes((venue.surface ?? '').toLowerCase())) return false
-                if (!needle) return true
-                const hay = `${courtTitle(venue)} ${venue.name} ${venue.address ?? ''} ${venueKindLabel(venue.kind)}`.toLowerCase()
-                return hay.includes(needle)
-              })
-              const showLoadMore = venuesHasMore && (!filterActive || venuePageFailed)
-              const stillLooking = filterActive && shown.length === 0 && (loadingMoreVenues || (venuesHasMore && !venuePageFailed))
-              return (
-                <>
-                  {stillLooking ? (
-                    <div className="flex flex-col items-center justify-center py-8 gap-3">
-                      <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
-                      <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">Looking further out</p>
-                    </div>
-                  ) : shown.length === 0 ? (
-                    <p className="text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] py-6">No matches</p>
-                  ) : (
-                    shown.map((venue) => (
-                      <VenueCard
-                        key={venue.id}
-                        venue={venue}
-                        userLat={userCoords.lat}
-                        userLng={userCoords.lng}
-                        viewed={viewedVenues.has(venue.id)}
-                        saved={favoriteIds.has(venue.id)}
-                        onToggleSave={(venue) => { void toggleFavorite(venue) }}
-                        onClick={() => {
-                          setSelectedVenue(venue)
-                          setViewedVenues((prev) => new Set(prev).add(venue.id))
-                        }}
-                      />
-                    ))
-                  )}
-                  {showLoadMore && (
-                    <button
-                      onClick={() => void loadMoreVenues()}
-                      disabled={loadingMoreVenues}
-                      className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors disabled:opacity-40"
-                    >
-                      {loadingMoreVenues ? 'Loading...' : 'Load more'}
-                    </button>
-                  )}
-                </>
-              )
-            })()}
+            {loadingVenues ? (
+              <div className="space-y-3">
+                {[0, 1, 2, 3].map((i) => <CourtCardSkeleton key={i} />)}
+              </div>
+            ) : venues.length === 0 && !courtsError ? (
+              <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-6 text-center">
+                <p className="text-sm text-[rgba(26,26,26,0.6)]">
+                  {courtFilterActive ? 'No matches' : 'No courts found in this area'}
+                </p>
+              </div>
+            ) : (
+              <>
+                {venues.map((venue) => (
+                  <VenueCard
+                    key={venue.id}
+                    venue={venue}
+                    userLat={userCoords.lat}
+                    userLng={userCoords.lng}
+                    viewed={viewedVenues.has(venue.id)}
+                    saved={favoriteIds.has(venue.id)}
+                    onToggleSave={(item) => { void toggleFavorite(item) }}
+                    onClick={() => {
+                      setSelectedVenue(venue)
+                      setViewedVenues((prev) => new Set(prev).add(venue.id))
+                    }}
+                  />
+                ))}
+                {(venuesHasMore || (courtSpan === 'near' && !courtFilterActive)) && (
+                  <button
+                    onClick={() => void loadMoreVenues()}
+                    disabled={loadingMoreVenues}
+                    className="w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] hover:bg-white transition-colors disabled:opacity-40"
+                  >
+                    {loadingMoreVenues ? 'Loading...' : venuesHasMore ? 'Load more' : 'Farther courts'}
+                  </button>
+                )}
+              </>
+            )}
           </>
         )}
 
