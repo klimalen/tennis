@@ -1,10 +1,11 @@
 // Navigations only. Other requests stay with the browser so the worker
 // does not add a hop to images, data, or scripts. The offline page is the
 // only thing kept in cache.
-const OFFLINE_CACHE = 'tennis-offline-v2'
+//
+// Do not time out in-flight navigations: on a slow path (e.g. Belgrade →
+// Vercel) a 10s race aborted a working load and left a broken first paint.
+const OFFLINE_CACHE = 'tennis-offline-v3'
 const OFFLINE_URL = '/offline.html'
-/** Prefer a retry screen over a 30–40s blank tab when the network stalls. */
-const NAVIGATE_TIMEOUT_MS = 10_000
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -26,20 +27,14 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-function offlineResponse() {
-  return caches.match(OFFLINE_URL).then((cached) => cached || Response.error())
-}
-
 self.addEventListener('fetch', (event) => {
   if (event.request.mode !== 'navigate') return
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
   event.respondWith(
-    Promise.race([
-      fetch(event.request),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('navigate-timeout')), NAVIGATE_TIMEOUT_MS)
-      }),
-    ]).catch(() => offlineResponse()),
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(OFFLINE_URL)
+      return cached || Response.error()
+    }),
   )
 })
