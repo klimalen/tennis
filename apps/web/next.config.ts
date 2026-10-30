@@ -2,6 +2,15 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@tennis/shared'],
+  // Next 15 defaults dynamic staleTime to 0 — every tab switch refetches RSC.
+  // Keep a short client cache so revisiting Discover/ME/Chats feels instant;
+  // loading.tsx still covers the cold path.
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   async headers() {
     return [
       {
