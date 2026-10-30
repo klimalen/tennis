@@ -146,7 +146,7 @@ export function CourtDetailsForm({
   if (allowPhoto && avatarFile) {
     return (
       <div className="space-y-4">
-        <SquarePhotoCrop ref={cropRef} file={avatarFile} shape="circle" onRemove={() => setAvatarFile(null)} />
+        <SquarePhotoCrop ref={cropRef} file={avatarFile} shape="circle" outputSize={512} quality={0.8} onRemove={() => setAvatarFile(null)} />
         {error && (
           <div className="px-4 py-3 bg-red-50 border border-red-100 rounded text-sm text-red-600">{error}</div>
         )}

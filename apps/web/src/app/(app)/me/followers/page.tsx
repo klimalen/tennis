@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 import { AuthGate } from '@/components/auth/AuthGate'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -7,7 +8,7 @@ import { FollowersList, type FollowerProfile } from './FollowersList'
 
 async function FollowersContent() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return notFound()
 
   const { data: rows } = await supabase

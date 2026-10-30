@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 import { loadDiscoverPlayer } from '@/lib/load-players'
 import { SearchClient, type Player } from './SearchClient'
 import type { IncomingRequest } from '@/app/api/game-requests/incoming/route'
 
 export default async function SearchPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   let cityName: string | null = null
   let cityLat: number | null = null

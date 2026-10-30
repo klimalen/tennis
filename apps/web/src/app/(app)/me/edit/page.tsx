@@ -322,7 +322,7 @@ export default function EditProfilePage() {
           </div>
         </div>
         <div className="max-w-2xl mx-auto px-4 py-6">
-          <SquarePhotoCrop ref={cropRef} file={d.avatarFile} shape="circle" onRemove={clearAvatarFile} />
+          <SquarePhotoCrop ref={cropRef} file={d.avatarFile} shape="circle" outputSize={512} quality={0.8} onRemove={clearAvatarFile} />
           {cropError && <p className="text-sm text-red-600 mt-3">{cropError}</p>}
         </div>
       </div>

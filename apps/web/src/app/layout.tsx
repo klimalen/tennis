@@ -71,6 +71,9 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
+/** Frankfurt — closer to EU players than the previous US East default. */
+export const preferredRegion = ['fra1']
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const native = isNativeGameAppUa((await headers()).get('user-agent'))
   const htmlClass = [

@@ -484,7 +484,7 @@ function Step5({
           })}
         </div>
         {data.avatarFile && (
-          <SquarePhotoCrop ref={cropRef} file={data.avatarFile} shape="circle" onRemove={clearPhoto} />
+          <SquarePhotoCrop ref={cropRef} file={data.avatarFile} shape="circle" outputSize={512} quality={0.8} onRemove={clearPhoto} />
         )}
       </div>
 

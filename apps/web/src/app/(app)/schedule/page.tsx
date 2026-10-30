@@ -1,5 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 import Link from 'next/link'
 import { ScheduleSections } from '@/components/schedule/ScheduleBlocks'
 import { loadPlayerGames } from '@/lib/player-games'
@@ -15,7 +16,7 @@ export default function SchedulePage() {
 
 async function ScheduleContent() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return null
 
   const { upcoming, past } = summarizeSchedule(await loadPlayerGames(supabase, user.id))

@@ -1,5 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 import { FeedTabs } from './FeedTabs'
 import type { PostItem } from './PostCard'
 import { NOTIFICATION_PAGE_SIZE, pageFromRows, type NotificationRow } from './notifications'
@@ -47,7 +48,7 @@ interface PostRow {
 
 async function FeedContent() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return null
 
   // Fetch following IDs for posts feed

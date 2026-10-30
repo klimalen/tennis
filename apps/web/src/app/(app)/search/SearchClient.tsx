@@ -2,6 +2,7 @@
 
 import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHideTabBar, useTabBarHidden } from '@/components/navigation/TabBarVisibility'
@@ -320,8 +321,7 @@ function PlayerCard({
         <div className="flex items-start gap-3">
           <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
             {player.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={player.avatar_url} alt={player.full_name} className="w-full h-full object-cover" />
+              <Image src={player.avatar_url} alt={player.full_name} width={72} height={72} className="w-full h-full object-cover" />
             ) : (
               <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
             )}
@@ -678,8 +678,7 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
       <div className="flex items-center gap-3">
         <Link href={`/profile/${sender.username}`} className="w-14 h-14 rounded-full bg-[#F0EBE3] overflow-hidden flex items-center justify-center flex-shrink-0">
           {sender.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={sender.avatar_url} alt={sender.full_name} className="w-full h-full object-cover" />
+            <Image src={sender.avatar_url} alt={sender.full_name} width={56} height={56} className="w-full h-full object-cover" />
           ) : (
             <span className="font-display text-xl text-[#E8748A]">{initials}</span>
           )}
