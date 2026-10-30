@@ -1450,24 +1450,58 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const venuesRef = useRef(venues)
   venuesRef.current = venues
 
-  // Restore last city when courts view opens
+  // Seed COURTS list from the same place Discover used (preview / profile),
+  // or from the last city the user picked here. Without this, "See all" shows
+  // "Enter a city" while Discover already has a court card for the profile city.
   useEffect(() => {
-    if (view !== 'courts' || courtsRestoredRef.current || userCoords) return
-    courtsRestoredRef.current = true
-    try {
-      const raw = localStorage.getItem(COURTS_CITY_KEY)
-      if (!raw) return
-      const saved = JSON.parse(raw) as SavedCourtsCity
-      const coords = { lat: saved.lat, lng: saved.lng }
-      skipAutocompleteRef.current = true
-      setCityInput(saved.name)
-      setCityLabel(saved.label)
-      setUserCoords(coords)
-    } catch {
-      // ignore malformed data
+    if (view !== 'courts' || userCoords) return
+
+    if (!courtsRestoredRef.current) {
+      courtsRestoredRef.current = true
+      try {
+        const raw = localStorage.getItem(COURTS_CITY_KEY)
+        if (raw) {
+          const saved = JSON.parse(raw) as SavedCourtsCity
+          if (Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) {
+            skipAutocompleteRef.current = true
+            setCityInput(saved.name)
+            setCityLabel(saved.label)
+            setUserCoords({ lat: saved.lat, lng: saved.lng })
+            return
+          }
+        }
+      } catch {
+        // ignore malformed data — fall through to Discover/profile
+      }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view])
+
+    const coords = previewCoords
+      ?? (userCityLat != null && userCityLng != null
+        ? { lat: userCityLat, lng: userCityLng }
+        : null)
+    if (!coords) return
+
+    const name = userCityName?.trim() || ''
+    const label = name || 'your city'
+    const box = boundingBox(coords.lat, coords.lng, COURT_NEAR_RADIUS_KM)
+    skipAutocompleteRef.current = true
+    setCityInput(name)
+    setCityLabel(label)
+    setUserCoords(coords)
+    localStorage.setItem(
+      COURTS_CITY_KEY,
+      JSON.stringify({
+        name,
+        label,
+        lat: coords.lat,
+        lng: coords.lng,
+        south: box.south,
+        north: box.north,
+        west: box.west,
+        east: box.east,
+      } satisfies SavedCourtsCity),
+    )
+  }, [view, userCoords, previewCoords, userCityLat, userCityLng, userCityName])
 
   useEffect(() => {
     if (view !== 'courts') return
