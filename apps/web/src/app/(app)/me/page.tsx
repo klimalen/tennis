@@ -1,5 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 import { Settings, CalendarDays, Globe, Phone } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -27,7 +28,7 @@ const SURFACE_LABELS: Record<string, string> = {
 
 async function ProfileContent() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return null
 
   const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult] = await Promise.all([

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { UserPlus, UserCheck } from 'lucide-react'
 import { formatPlayFormat } from '@/lib/skill'
@@ -23,8 +24,7 @@ function Avatar({ user }: { user: NotificationActor }) {
   return (
     <Link href={`/profile/${user.username}`} className="w-12 h-12 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
       {user.avatar_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={user.avatar_url} alt={user.full_name} width={48} height={48} className="w-full h-full object-cover" />
+        <Image src={user.avatar_url} alt={user.full_name} width={48} height={48} className="w-full h-full object-cover" />
       ) : (
         <span className="font-display text-lg text-[#1a1a1a]">{initials}</span>
       )}

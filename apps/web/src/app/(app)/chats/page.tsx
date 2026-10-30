@@ -1,5 +1,6 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 import { ChatsClient, type ChatItem } from './ChatsClient'
 import { ComposeButton } from './ComposeButton'
 import { formatPlayFormat } from '@/lib/skill'
@@ -26,7 +27,7 @@ interface ConversationRow {
 
 async function ChatsData() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return null
 
   const { data: conversations } = await supabase

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/user'
 
 interface AuthGateProps {
   children: React.ReactNode
@@ -8,22 +8,18 @@ interface AuthGateProps {
 
 const SECTION_CONTENT = {
   feed: {
-    emoji: '💬',
     title: 'Your tennis community awaits',
     description: 'Share match results, follow players and stay connected with your local tennis scene.',
   },
   schedule: {
-    emoji: '📅',
     title: 'Never miss a game',
     description: 'Games you create or join show up here.',
   },
   me: {
-    emoji: '🎾',
     title: 'Build your tennis profile',
     description: 'Track your progress, showcase your stats and connect with players at your level.',
   },
   chats: {
-    emoji: '💬',
     title: 'Your chats',
     description: 'Accept game requests to start chatting with other players.',
   },
@@ -47,8 +43,7 @@ function MockContent() {
 }
 
 export async function AuthGate({ children, section }: AuthGateProps) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (user) return <>{children}</>
 

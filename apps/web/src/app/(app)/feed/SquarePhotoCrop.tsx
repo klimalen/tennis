@@ -13,7 +13,17 @@ export const SquarePhotoCrop = forwardRef<SquarePhotoCropHandle, {
   file: File
   onRemove: () => void
   shape?: 'square' | 'circle'
-}>(function SquarePhotoCrop({ file, onRemove, shape = 'square' }, ref) {
+  /** Pixels on each side of the exported JPEG. Avatars can be smaller than posts. */
+  outputSize?: number
+  /** JPEG quality 0–1. */
+  quality?: number
+}>(function SquarePhotoCrop({
+  file,
+  onRemove,
+  shape = 'square',
+  outputSize = OUTPUT_SIZE,
+  quality = 0.82,
+}, ref) {
   const frameRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -110,20 +120,20 @@ export const SquarePhotoCrop = forwardRef<SquarePhotoCropHandle, {
       if (!image || !natural || frame <= 0) throw new Error('Photo is still loading')
       const rect = cropRect(focus, zoom, frame, natural.w, natural.h)
       const canvas = document.createElement('canvas')
-      canvas.width = OUTPUT_SIZE
-      canvas.height = OUTPUT_SIZE
+      canvas.width = outputSize
+      canvas.height = outputSize
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new Error('Could not prepare the photo')
       ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
-      ctx.drawImage(image, rect.x, rect.y, rect.size, rect.size, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
+      ctx.fillRect(0, 0, outputSize, outputSize)
+      ctx.drawImage(image, rect.x, rect.y, rect.size, rect.size, 0, 0, outputSize, outputSize)
       const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, 'image/jpeg', 0.9)
+        canvas.toBlob(resolve, 'image/jpeg', quality)
       })
       if (!blob) throw new Error('Could not prepare the photo')
       return blob
     },
-  }), [focus, frame, natural, zoom])
+  }), [focus, frame, natural, outputSize, quality, zoom])
 
   const safeFocus = placedFocus()
   const scale = natural && frame > 0 ? coverScale(frame, natural.w, natural.h) * zoom : 0
