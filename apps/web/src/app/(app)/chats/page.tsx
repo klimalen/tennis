@@ -49,20 +49,30 @@ async function ChatsData() {
   const rows = (conversations ?? []) as unknown as ConversationRow[]
   if (rows.length === 0) return <ChatsClient userId={user.id} initialChats={[]} />
 
-  // Fetch last message for each conversation
+  // One query for all last messages (was N round-trips — slow on cold tab opens).
   const lastMessages = new Map<string, ChatItem['lastMsg']>()
-  await Promise.all(
-    rows.map(async (conv) => {
-      const { data } = await supabase
-        .from('messages')
-        .select('id, body, created_at, sender_id, type')
-        .eq('conversation_id', conv.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (data) lastMessages.set(conv.id, data as ChatItem['lastMsg'])
-    }),
-  )
+  const conversationIds = rows.map((conv) => conv.id)
+  const { data: recentMessages } = await supabase
+    .from('messages')
+    .select('id, body, created_at, sender_id, type, conversation_id')
+    .in('conversation_id', conversationIds)
+    .order('created_at', { ascending: false })
+    // Newest-first scan: keep first hit per conversation. Generous limit so a
+    // busy thread cannot starve quieter chats in the same list.
+    .limit(Math.max(conversationIds.length * 20, 100))
+
+  for (const message of recentMessages ?? []) {
+    const conversationId = message.conversation_id as string
+    if (lastMessages.has(conversationId)) continue
+    const type = typeof message.type === 'string' ? message.type : undefined
+    lastMessages.set(conversationId, {
+      id: message.id as string,
+      body: message.body as string,
+      created_at: message.created_at as string,
+      sender_id: message.sender_id as string,
+      ...(type ? { type } : {}),
+    })
+  }
 
   const chats: ChatItem[] = rows.flatMap((conv): ChatItem[] => {
     const myPart = conv.conversation_participants.find((p) => p.user_id === user.id)
