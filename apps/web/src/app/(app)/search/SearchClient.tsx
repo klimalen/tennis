@@ -23,6 +23,15 @@ import { compareOpenGames, gameInDayRange, localGameDayKey, openGameSpotsLeft } 
 import { formatDayRange, GameDateRange, type DayRange } from '@/components/games/GameDateRange'
 import { placeSuggestionLabel, toPlaceSuggestions, type NominatimPlace, type PlaceSuggestion } from '@/lib/place-suggestions'
 
+/** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
+const SEARCH_FETCH_MS = 12_000
+
+function fetchWithTimeout(input: string, init?: RequestInit, ms = SEARCH_FETCH_MS): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface IncomingRequest {
@@ -1026,7 +1035,7 @@ async function fetchVenuePage(args: {
   if (args.minKm > 0) params.set('min_km', String(args.minKm))
   if (args.q) params.set('q', args.q.slice(0, 80))
   if (args.surfaces.length > 0) params.set('surface', args.surfaces.join(','))
-  const res = await fetch(`/api/venues?${params}`)
+  const res = await fetchWithTimeout(`/api/venues?${params}`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const json = (await res.json()) as { venues?: Venue[]; hasMore?: boolean }
   return { venues: json.venues ?? [], hasMore: json.hasMore ?? false }
@@ -1067,13 +1076,32 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [loadingPreviewPlayer, setLoadingPreviewPlayer] = useState(!previewPlayerReady && !!userCityName)
   const [loadingPreviewGame, setLoadingPreviewGame] = useState(!!userCityName)
   const [loadingPreviewVenue, setLoadingPreviewVenue] = useState(!!userCityName)
-  const discoveryLoaded = useRef(false)
+  // Bumped on bfcache restore so discovery/list effects run again after a frozen mid-fetch.
+  const [searchEpoch, setSearchEpoch] = useState(0)
 
   useEffect(() => {
-    if (discoveryLoaded.current || !userCityName) return
-    discoveryLoaded.current = true
+    function onPageShow(event: PageTransitionEvent) {
+      if (!event.persisted) return
+      setSearchEpoch((value) => value + 1)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
 
+  useEffect(() => {
+    if (!userCityName) {
+      setLoadingPreviewPlayer(false)
+      setLoadingPreviewGame(false)
+      setLoadingPreviewVenue(false)
+      return
+    }
+
+    let cancelled = false
     let playerLoaded = previewPlayerReady
+    if (!previewPlayerReady) setLoadingPreviewPlayer(true)
+    setLoadingPreviewGame(true)
+    setLoadingPreviewVenue(true)
+
     async function loadPreviewPlayer(coords?: { lat: number; lng: number }) {
       if (previewPlayerReady) return
       playerLoaded = true
@@ -1084,15 +1112,16 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         playerParams.set('lng', String(coords.lng))
       }
       try {
-        const res = await fetch(`/api/players?${playerParams}`)
+        const res = await fetchWithTimeout(`/api/players?${playerParams}`)
         const json = await res.json() as { players: Player[]; statuses?: Record<string, RequestStatus> }
+        if (cancelled) return
         const first = json.players?.[0] ?? null
         if (json.statuses) setRequestStatuses((prev) => ({ ...prev, ...json.statuses }))
         setPreviewPlayer(first)
       } catch {
-        setPreviewPlayer(null)
+        if (!cancelled) setPreviewPlayer(null)
       } finally {
-        setLoadingPreviewPlayer(false)
+        if (!cancelled) setLoadingPreviewPlayer(false)
       }
     }
 
@@ -1102,17 +1131,25 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         params.set('lat', String(coords.lat))
         params.set('lng', String(coords.lng))
       }
-      fetch(`/api/open-games?${params}`)
+      fetchWithTimeout(`/api/open-games?${params}`)
         .then((r) => r.json())
-        .then((json: { games: OpenGame[] }) => setPreviewGame(json.games?.[0] ?? null))
-        .catch(() => {})
-        .finally(() => setLoadingPreviewGame(false))
+        .then((json: { games: OpenGame[] }) => {
+          if (!cancelled) setPreviewGame(json.games?.[0] ?? null)
+        })
+        .catch(() => {
+          if (!cancelled) setPreviewGame(null)
+        })
+        .finally(() => {
+          if (!cancelled) setLoadingPreviewGame(false)
+        })
     }
 
     async function nearestVenue(lat: number, lng: number): Promise<Venue | null> {
       for (const radiusKm of [COURT_NEAR_RADIUS_KM, TRAVEL_RADIUS_KM]) {
         const box = boundingBox(lat, lng, radiusKm)
-        const res = await fetch(`/api/venues?south=${box.south}&west=${box.west}&north=${box.north}&east=${box.east}`)
+        const res = await fetchWithTimeout(
+          `/api/venues?south=${box.south}&west=${box.west}&north=${box.north}&east=${box.east}`,
+        )
         if (!res.ok) return null
         const json = await res.json() as { venues: Venue[] }
         const sorted = (json.venues ?? []).sort(
@@ -1125,7 +1162,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
 
     async function showNearest(lat: number, lng: number): Promise<boolean> {
       const venue = await nearestVenue(lat, lng)
-      if (!venue) return false
+      if (!venue || cancelled) return false
       setPreviewCoords({ lat, lng })
       setPreviewVenue(venue)
       return true
@@ -1135,19 +1172,24 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     // Austin than the one that has courts, so try the city name when the
     // point comes back empty.
     async function loadPreviewCourts(lat: number | null, lng: number | null) {
-      if (lat != null && lng != null && await showNearest(lat, lng)) return
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName!)}&format=json&limit=5&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } },
-      )
-      if (!res.ok) return
-      const places = await res.json() as NominatimPlace[]
-      for (const place of places) {
-        const plat = parseFloat(place.lat)
-        const plng = parseFloat(place.lon)
-        if (!Number.isFinite(plat) || !Number.isFinite(plng)) continue
-        if (lat != null && lng != null && haversineMeters(lat, lng, plat, plng) < 20_000) continue
-        if (await showNearest(plat, plng)) return
+      try {
+        if (lat != null && lng != null && await showNearest(lat, lng)) return
+        const res = await fetchWithTimeout(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName!)}&format=json&limit=5&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en' } },
+        )
+        if (!res.ok || cancelled) return
+        const places = await res.json() as NominatimPlace[]
+        for (const place of places) {
+          if (cancelled) return
+          const plat = parseFloat(place.lat)
+          const plng = parseFloat(place.lon)
+          if (!Number.isFinite(plat) || !Number.isFinite(plng)) continue
+          if (lat != null && lng != null && haversineMeters(lat, lng, plat, plng) < 20_000) continue
+          if (await showNearest(plat, plng)) return
+        }
+      } catch {
+        // Timeout / network — leave the empty state after finally clears loading.
       }
     }
 
@@ -1155,19 +1197,22 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       const coords = { lat: userCityLat, lng: userCityLng }
       void loadPreviewPlayer(coords)
       loadPreviewGames(coords)
-      void loadPreviewCourts(coords.lat, coords.lng).finally(() => setLoadingPreviewVenue(false))
-      return
+      void loadPreviewCourts(coords.lat, coords.lng).finally(() => {
+        if (!cancelled) setLoadingPreviewVenue(false)
+      })
+      return () => { cancelled = true }
     }
 
     loadPreviewGames()
 
     // No saved point — geocode the city, then pick the match that has courts.
-    fetch(
+    fetchWithTimeout(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=5&addressdetails=1`,
       { headers: { 'Accept-Language': 'en' } },
     )
       .then((r) => r.json())
       .then(async (results: NominatimPlace[]) => {
+        if (cancelled) return
         const place = results[0]
         if (!place) {
           await loadPreviewPlayer()
@@ -1177,8 +1222,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         const lng = parseFloat(place.lon)
         setPreviewCoords({ lat, lng })
         await loadPreviewPlayer({ lat, lng })
+        if (cancelled) return
         if (await showNearest(lat, lng)) return
         for (const other of results.slice(1)) {
+          if (cancelled) return
           const otherLat = parseFloat(other.lat)
           const otherLng = parseFloat(other.lon)
           if (!Number.isFinite(otherLat) || !Number.isFinite(otherLng)) continue
@@ -1186,11 +1233,15 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         }
       })
       .catch(async () => {
-        if (!playerLoaded) await loadPreviewPlayer()
+        if (!cancelled && !playerLoaded) await loadPreviewPlayer()
       })
-      .finally(() => setLoadingPreviewVenue(false))
+      .finally(() => {
+        if (!cancelled) setLoadingPreviewVenue(false)
+      })
+
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [userCityName, userCityLat, userCityLng, searchEpoch])
 
   // ── Full players view ───────────────────────────────────────────────────────
   const [players, setPlayers] = useState<Player[]>([])
@@ -1226,7 +1277,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       return
     }
     let cancelled = false
-    fetch(
+    fetchWithTimeout(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(userCityName)}&format=json&limit=1`,
       { headers: { 'Accept-Language': 'en' } },
     )
@@ -1239,7 +1290,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       .catch(() => {})
       .finally(() => { if (!cancelled) setGeocodeDone(true) })
     return () => { cancelled = true }
-  }, [userCityName, previewCoords])
+  }, [userCityName, previewCoords, searchEpoch])
 
   async function fetchPlayers(offset: number, append: boolean) {
     if (!userCityName) return
@@ -1316,7 +1367,11 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   }, [courtQuery])
 
   function loadGames() {
-    if (!userCityName && !userGeoCoords) return
+    if (!userCityName && !userGeoCoords) {
+      setLoadingOpenGames(false)
+      setOpenGames([])
+      return
+    }
     setLoadingOpenGames(true)
     const params = new URLSearchParams()
     if (userCityName) params.set('city', userCityName)
@@ -1324,7 +1379,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       params.set('lat', String(userGeoCoords.lat))
       params.set('lng', String(userGeoCoords.lng))
     }
-    fetch(`/api/open-games?${params}`)
+    fetchWithTimeout(`/api/open-games?${params}`)
       .then((r) => r.json())
       .then((json: { games: OpenGame[] }) => setOpenGames(json.games ?? []))
       .catch(() => setOpenGames([]))
@@ -1443,7 +1498,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const courtFilterActive = debouncedCourtQuery.length > 0 || courtSurfaceKey.length > 0
 
   useEffect(() => {
-    if (view !== 'courts' || !userCoords) return
+    if (view !== 'courts' || !userCoords) {
+      if (view !== 'courts') setLoadingVenues(false)
+      return
+    }
     const q = debouncedCourtQuery
     const surfaces = courtSurfaceKey ? courtSurfaceKey.split(',') : []
     const filtered = q.length > 0 || surfaces.length > 0
@@ -1462,7 +1520,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           span = 'travel'
           page = await fetchVenuePage({ coords: userCoords, radiusKm, minKm: 0, offset: 0, q, surfaces })
         }
-        if (cancelled || requestId !== venuesRequestRef.current) return
+        if (requestId !== venuesRequestRef.current) return
         setVenues(page.venues)
         setVenuesHasMore(page.hasMore)
         setCourtSpan(span)
@@ -1477,17 +1535,19 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           hasMore: page.hasMore,
         }
       } catch {
-        if (cancelled || requestId !== venuesRequestRef.current) return
+        if (requestId !== venuesRequestRef.current) return
         setVenues([])
         setVenuesHasMore(false)
         courtFetchRef.current = null
         setCourtsError('Failed to load courts. Please try again.')
       } finally {
-        if (!cancelled && requestId === venuesRequestRef.current) setLoadingVenues(false)
+        // Clear even when this run was cancelled, as long as nothing newer owns the request id.
+        // Otherwise leaving courts (or a coords flicker) can leave the skeleton on forever.
+        if (requestId === venuesRequestRef.current) setLoadingVenues(false)
       }
     })()
     return () => { cancelled = true }
-  }, [view, userCoords, debouncedCourtQuery, courtSurfaceKey])
+  }, [view, userCoords, debouncedCourtQuery, courtSurfaceKey, searchEpoch])
 
   async function loadMoreVenues() {
     const snap = courtFetchRef.current
@@ -1592,10 +1652,12 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   }
 
   useEffect(() => {
-    if (view !== 'games' || !geocodeDone) return
+    if (view !== 'games') return
+    // City name alone is enough for open games; do not wait on Nominatim.
+    if (!userCityName && !userGeoCoords && !geocodeDone) return
     loadGames()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, geocodeDone, userGeoCoords])
+  }, [view, geocodeDone, userGeoCoords, userCityName, searchEpoch])
 
   async function openGameDetail(gameId: string, options?: { court?: boolean }) {
     const detail = await loadGameDetail(gameId)
