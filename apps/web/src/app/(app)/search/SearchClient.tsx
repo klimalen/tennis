@@ -1130,6 +1130,8 @@ export function SearchClient({
     if (user) {
       const { error } = await saveProfileCity(createClient(), user.id, location)
       if (error) throw new Error(error)
+      // Invalidate soft-nav cache so ME / other RSC pages see the new city immediately.
+      router.refresh()
     }
     adoptAppLocation(location.name, location.lat, location.lng, { toast: true })
   }
