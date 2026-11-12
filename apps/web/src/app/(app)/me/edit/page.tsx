@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
-import { CityInput } from '@/components/ui/CityInput'
+import { CityLocationField } from '@/components/location/CityLocationField'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { availabilityFromProfile, legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
 
@@ -570,10 +570,10 @@ export default function EditProfilePage() {
 
         <div>
           <FieldLabel>City</FieldLabel>
-          <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Discover uses this city to show players, games, and courts near you.</p>
-          <CityInput
+          <CityLocationField
             value={d.city}
             onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
+            helper="Used for courts, players, and games near you."
             placeholder="Search your city..."
           />
           {!d.city.trim() && (
