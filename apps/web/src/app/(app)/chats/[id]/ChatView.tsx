@@ -52,6 +52,8 @@ interface Props {
   initialGameDetails: Record<string, GameDetail>
   isMutual: boolean
   canPropose?: boolean
+  /** Either person is a court. The chat is open without a match or a mutual follow. */
+  courtChat?: boolean
   gameChat?: {
     members: ChatMember[]
     closed: boolean
@@ -251,6 +253,7 @@ export function ChatView({
   initialGameDetails,
   isMutual,
   canPropose = true,
+  courtChat = false,
   gameChat = null,
 }: Props) {
   const canCompose = gameChat ? !gameChat.closed : isMutual
@@ -470,16 +473,18 @@ export function ChatView({
           <div className="rounded-[20px] bg-white px-4 py-4 text-center">
             <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
             <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
-              You matched with{' '}
+              {courtChat ? 'Chat with ' : 'You matched with '}
               {otherUsername ? (
                 <Link href={`/profile/${otherUsername}`} className="underline underline-offset-4 hover:text-brand-primary">
                   {otherName}
                 </Link>
               ) : otherName}
             </p>
-            <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
+            {!courtChat && (
+              <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
+            )}
             <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">
-              {canPropose ? 'Say hello and arrange a game' : 'Say hello'}
+              {courtChat ? 'Say hello' : canPropose ? 'Say hello and arrange a game' : 'Say hello'}
             </p>
           </div>
         </div>
