@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ListSearch } from '@/components/ui/ListSearch'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
+import { membershipNoticeText } from '@/lib/membership-notice'
 
 export interface ChatItem {
   id: string
@@ -201,16 +202,22 @@ export function ChatsClient({ userId, initialChats }: Props) {
         const { lastMsg } = chat
         const initials = chat.initials
         let previewBody = lastMsg?.body ?? ''
-        if (lastMsg?.type === 'game_invite') {
+        if (lastMsg?.type === 'system') {
+          previewBody = membershipNoticeText(lastMsg.body) ?? lastMsg.body
+        } else if (lastMsg?.type === 'game_invite') {
           try {
-            const parsed = JSON.parse(lastMsg.body) as { updated?: boolean }
-            previewBody = parsed.updated ? 'Meeting details updated' : 'Confirm participation in a game'
+            const parsed = JSON.parse(lastMsg.body) as { updated?: boolean; joined?: boolean }
+            previewBody = parsed.joined
+              ? 'Joined the game'
+              : parsed.updated
+                ? 'Meeting details updated'
+                : 'Confirm participation in a game'
           } catch {
             previewBody = 'Confirm participation in a game'
           }
         }
         const preview = lastMsg
-          ? (lastMsg.sender_id === userId ? 'You: ' : '') + previewBody
+          ? (lastMsg.type !== 'system' && lastMsg.sender_id === userId ? 'You: ' : '') + previewBody
           : null
         const unread = hasUnread(chat, userId)
 
