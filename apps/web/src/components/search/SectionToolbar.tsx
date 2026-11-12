@@ -24,11 +24,14 @@ interface Props {
 
 type Panel = 'city' | 'search' | 'filters' | null
 
+const controlBase =
+  'h-9 border transition-colors'
 const controlIdle =
-  'h-9 shrink-0 border border-[#1a1a1a]/15 bg-white text-[#1a1a1a] transition-colors hover:bg-brand-field'
-const controlActive = 'h-9 shrink-0 border border-[#1a1a1a] bg-[#1a1a1a] text-[#FAF7F2] transition-colors'
+  `${controlBase} border-[#1a1a1a]/15 bg-white text-[#1a1a1a] hover:bg-brand-field`
+const controlActive =
+  `${controlBase} border-[#1a1a1a] bg-[#1a1a1a] text-[#FAF7F2]`
 const controlAccent =
-  'h-9 shrink-0 border border-[#E8748A] bg-[#E8748A] text-[#1a1a1a] transition-colors'
+  `${controlBase} border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]`
 const iconBtn = 'flex w-9 items-center justify-center rounded-[12px]'
 const panelClass = 'rounded-[20px] border border-[#1a1a1a]/10 bg-white p-3 space-y-2'
 /** Match CityInput field chrome so search/city panels feel like one system */
@@ -36,9 +39,9 @@ const fieldClass =
   'w-full rounded-lg border border-[#1a1a1a]/40 bg-brand-field py-2.5 pl-8 pr-8 text-sm text-[#1a1a1a] outline-none placeholder:text-[rgba(26,26,26,0.4)] focus:border-brand-primary'
 
 /**
- * Compact section chrome for PLAYERS / COURTS / OPEN GAMES:
+ * Compact section chrome for PLAYERS / COURTS / GAMES:
  * back · title · city · search · filter on one row.
- * City / search / filters all open the same style of panel under the row.
+ * Title stays full width priority; city truncates. Panels drop below.
  */
 export function SectionToolbar({
   title,
@@ -89,24 +92,24 @@ export function SectionToolbar({
           <button
             type="button"
             onClick={onBack}
-            className={`${iconBtn} ${controlIdle} !rounded-full`}
+            className={`${iconBtn} shrink-0 ${controlIdle} !rounded-full`}
             aria-label="Back"
           >
             <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </button>
 
-          <span className="min-w-0 flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
+          <span className="shrink-0 font-display text-2xl tracking-wide text-[#1a1a1a]">
             {title}
           </span>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="ml-auto flex min-w-0 items-center gap-1.5">
             <button
               type="button"
               onClick={() => {
                 setCityError(null)
                 toggle('city')
               }}
-              className={`inline-flex max-w-[9.5rem] items-center gap-1 rounded-[12px] px-2.5 text-[10px] font-medium uppercase tracking-[0.08em] ${
+              className={`inline-flex min-w-0 items-center gap-1 rounded-[12px] px-2.5 text-[10px] font-medium uppercase tracking-[0.08em] ${
                 panel === 'city' ? controlActive : controlIdle
               }`}
               aria-expanded={panel === 'city'}
@@ -122,7 +125,7 @@ export function SectionToolbar({
               <button
                 type="button"
                 onClick={() => toggle('search')}
-                className={`${iconBtn} ${panel === 'search' || searchActive ? controlActive : controlIdle}`}
+                className={`${iconBtn} shrink-0 ${panel === 'search' || searchActive ? controlActive : controlIdle}`}
                 aria-expanded={panel === 'search'}
                 aria-label="Search"
               >
@@ -133,7 +136,7 @@ export function SectionToolbar({
               <button
                 type="button"
                 onClick={() => toggle('filters')}
-                className={`relative ${iconBtn} ${
+                className={`relative ${iconBtn} shrink-0 ${
                   panel === 'filters' || filtersActive ? controlAccent : controlIdle
                 }`}
                 aria-expanded={panel === 'filters'}

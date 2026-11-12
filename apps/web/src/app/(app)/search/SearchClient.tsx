@@ -1770,8 +1770,13 @@ export function SearchClient({
 
   const gamesMatchingSearch = openGames.filter((game) => {
     const formats = gameFilters.filter((id) => id !== 'spots')
-    if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
-    if (formats.length > 0 && !formats.includes(game.format)) return false
+    const wantSpots = gameFilters.includes('spots')
+    // Chip filters are OR across format + open-spots.
+    if (formats.length > 0 || wantSpots) {
+      const matchFormat = formats.length > 0 && formats.includes(game.format)
+      const matchSpots = wantSpots && openGameSpotsLeft(game) > 0
+      if (!matchFormat && !matchSpots) return false
+    }
     const needle = gameQuery.trim().toLowerCase()
     if (!needle) return true
     const hay = `${game.court?.name ?? ''} ${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
@@ -1861,7 +1866,7 @@ export function SearchClient({
                 )}
               </DiscoverySection>
 
-              <DiscoverySection title="OPEN GAMES" onSeeAll={() => navigateTo('games')}>
+              <DiscoverySection title="GAMES" onSeeAll={() => navigateTo('games')}>
                 {loadingPreviewGame ? (
                   <GameCardSkeleton />
                 ) : previewGame ? (
@@ -1912,7 +1917,7 @@ export function SearchClient({
           }}
           filtersActive={playerFiltersActive}
           filterPanel={
-            <div className="flex w-full min-w-0 max-w-full items-center gap-2">
+            <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain">
               <button
                 type="button"
                 onClick={() => setCoachesOnly((on) => !on)}
@@ -1924,12 +1929,27 @@ export function SearchClient({
               >
                 Coach
               </button>
-              <MultiFilterChips
-                className="min-w-0 flex-1"
-                options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
-                value={playerSkills}
-                onChange={setPlayerSkills}
-              />
+              {SKILL_OPTIONS.map((option) => {
+                const active = playerSkills.includes(option)
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      setPlayerSkills(
+                        active ? playerSkills.filter((id) => id !== option) : [...playerSkills, option],
+                      )
+                    }
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
+                      active
+                        ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
+                        : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                )
+              })}
             </div>
           }
         />
@@ -1994,7 +2014,7 @@ export function SearchClient({
       <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
         {sheets}
         <SectionToolbar
-          title="OPEN GAMES"
+          title="GAMES"
           onBack={() => setView('discovery')}
           cityName={userCityName}
           onLocationChange={applyAppLocation}
