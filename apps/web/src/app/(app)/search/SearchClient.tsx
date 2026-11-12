@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
@@ -28,6 +28,7 @@ import { createClient } from '@/lib/supabase/client'
 import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 import { SectionToolbar } from '@/components/search/SectionToolbar'
+import { OpeningHours } from '@/components/court/OpeningHours'
 
 /** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
 const SEARCH_FETCH_MS = 12_000
@@ -561,12 +562,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
             {venue.description && (
               <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
             )}
-            {venue.opening_hours && (
-              <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
-                <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
-                <span>{venue.opening_hours}</span>
-              </div>
-            )}
+            {venue.opening_hours && <OpeningHours hours={venue.opening_hours} />}
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
               Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
             </p>

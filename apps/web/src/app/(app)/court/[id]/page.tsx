@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { permanentRedirect } from 'next/navigation'
 import { ArrowLeft, Globe, MapPin, Navigation, Phone } from 'lucide-react'
 import { CourtMapFrame } from '@/components/court/CourtMapFrame'
+import { OpeningHours } from '@/components/court/OpeningHours'
 import { CourtSaveButton } from '@/components/court/CourtSaveButton'
 import { LinkState } from '@/components/share/LinkState'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
@@ -107,7 +108,7 @@ export default async function CourtPage({
             {closed && <Fact>{court.access === 'members' ? 'Members only' : 'Private'}</Fact>}
           </div>
           {court.description && <p className="font-copy text-sm leading-relaxed text-[rgba(26,26,26,0.65)]">{court.description}</p>}
-          {court.opening_hours && <p className="text-[12px] text-[rgba(26,26,26,0.6)]">{court.opening_hours}</p>}
+          {court.opening_hours && <OpeningHours hours={court.opening_hours} />}
           <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Booking isn't available in the app yet. Open the court in Google Maps to get there.</p>
           <div className="grid grid-cols-1 gap-2">
             <CourtSaveButton venueId={court.id} signedIn={Boolean(user)} />
