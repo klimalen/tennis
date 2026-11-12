@@ -23,7 +23,7 @@ async function ScheduleContent() {
   const hasGames = upcoming.length > 0 || past.length > 0
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen">
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <span className="font-display text-4xl tracking-wide leading-none">SCHEDULE</span>

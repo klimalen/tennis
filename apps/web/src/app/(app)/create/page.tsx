@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react'
 
 export default function CreatePage() {
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen">
       <div className="page-header">
         <div className="max-w-2xl mx-auto">
           <h1 className="font-display text-5xl tracking-wide">CREATE</h1>

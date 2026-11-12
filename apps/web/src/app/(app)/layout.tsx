@@ -1,3 +1,4 @@
+import { AppMain } from '@/components/navigation/AppMain'
 import { BottomTabBar } from '@/components/navigation/BottomTabBar'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { TabBarVisibility } from '@/components/navigation/TabBarVisibility'
@@ -9,9 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <TouchLastActive />
       <Sidebar />
       <TabBarVisibility>
-        <main className="min-w-0 w-full max-w-full flex-1 md:ml-64 min-h-screen">
-          {children}
-        </main>
+        <AppMain>{children}</AppMain>
         <BottomTabBar />
       </TabBarVisibility>
     </div>

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { NAV_ITEMS } from './nav-config'
 import { useNavBadges } from './useNavBadges'
 import { CreateSheet } from './CreateSheet'
+import { tabBarHiddenByPath } from './tab-bar'
 import { useTabBarHidden } from './TabBarVisibility'
 
 export function BottomTabBar() {
@@ -21,14 +22,7 @@ export function BottomTabBar() {
     return 0
   }
 
-  const hideBar =
-    hidden ||
-    pathname === '/games/new' ||
-    pathname === '/feed/new' ||
-    /^\/feed\/[^/]+\/edit$/.test(pathname) ||
-    pathname.startsWith('/settings') ||
-    pathname === '/me/edit' ||
-    (pathname.startsWith('/chats/') && pathname.length > '/chats/'.length)
+  const hideBar = hidden || tabBarHiddenByPath(pathname)
 
   if (hideBar) return null
 

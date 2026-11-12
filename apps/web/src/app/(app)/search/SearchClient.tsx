@@ -1781,7 +1781,7 @@ export function SearchClient({
 
   if (view === 'discovery') {
     return (
-      <div className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-[#FAF7F2] pb-20 md:pb-0">
+      <div className="min-h-screen min-w-0 max-w-full overflow-x-clip bg-[#FAF7F2]">
         {sheets}
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">

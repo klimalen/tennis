@@ -2,7 +2,7 @@ import { CourtDetailsContinue } from '@/components/court/CourtDetailsForm'
 
 export function CourtDetailsGate() {
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen">
       <div className="page-header">
         <div className="mx-auto flex max-w-2xl items-end">
           <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">PROFILE</span>

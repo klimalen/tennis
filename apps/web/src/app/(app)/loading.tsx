@@ -5,7 +5,7 @@
  */
 export default function AppLoading() {
   return (
-    <div className="min-h-screen bg-brand-bg px-4 pt-6 pb-24 md:pb-8" aria-busy="true" aria-label="Loading">
+    <div className="min-h-screen bg-brand-bg px-4 pt-6 pb-8" aria-busy="true" aria-label="Loading">
       <div className="mx-auto max-w-2xl space-y-4 animate-pulse">
         <div className="h-9 w-40 rounded bg-brand-surface-md" />
         <div className="h-4 w-56 rounded bg-brand-surface" />
