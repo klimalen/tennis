@@ -77,7 +77,8 @@ export async function loadPlayers(supabase: Db, args: LoadArgs): Promise<{
       .eq('account_kind', 'player')
       .or(`${nearby}${cityClause}`)
     if (args.exclude) query = query.neq('id', args.exclude)
-    if (args.coachesOnly) query = query.eq('is_coach', true)
+    // Coach + skill chips are OR'd client-side — don't hard-filter coaches in SQL.
+    if (args.coachesOnly && args.skills.length === 0) query = query.eq('is_coach', true)
     query = applyPlayerText(query, args.q)
     const result = await query.order('last_active_at', { ascending: false, nullsFirst: false }).limit(NEARBY_CAP)
     data = result.data
@@ -91,7 +92,7 @@ export async function loadPlayers(supabase: Db, args: LoadArgs): Promise<{
       .eq('account_kind', 'player')
       .ilike('city_name', `%${args.city}%`)
     if (args.exclude) query = query.neq('id', args.exclude)
-    if (args.coachesOnly) query = query.eq('is_coach', true)
+    if (args.coachesOnly && args.skills.length === 0) query = query.eq('is_coach', true)
     query = applyPlayerText(query, args.q)
     const result = await query.order('last_active_at', { ascending: false, nullsFirst: false }).limit(NEARBY_CAP)
     data = result.data
@@ -117,7 +118,7 @@ export async function loadPlayers(supabase: Db, args: LoadArgs): Promise<{
     }
   })
 
-  const filtered = rows.filter((row) => matchesPlayer(row, args.q, args.skills))
+  const filtered = rows.filter((row) => matchesPlayer(row, args.q, args.skills, args.coachesOnly))
   const [userId, follows] = await Promise.all([userIdPromise, followsPromise])
   const ranked = rankPlayers(filtered, args.city, follows.mutual)
   const page = ranked.slice(args.offset, args.offset + pageSize)
@@ -184,18 +185,21 @@ function applyPlayerText<T extends { or: (filters: string) => T }>(query: T, q: 
   return query.or(`full_name.ilike.*${safe}*,username.ilike.*${safe}*`)
 }
 
+/** Chip filters are OR: Coach and/or any selected skill level. */
 function matchesPlayer(
   player: { full_name: string | null; username: string | null; skill_level_self: number | null; skill_level_computed: number | null; is_coach?: boolean | null },
   q: string,
   skills: string[],
+  coachesOnly: boolean,
 ) {
   if (q && !playerMatchesQuery(player, q)) return false
+  if (skills.length === 0 && !coachesOnly) return true
+  if (coachesOnly && player.is_coach) return true
   if (skills.length > 0) {
-    if (player.is_coach) return false
     const label = skillLabel(player.skill_level_computed ?? player.skill_level_self)
-    if (!label || !skills.includes(label)) return false
+    if (label && skills.includes(label)) return true
   }
-  return true
+  return false
 }
 
 async function followSets(supabase: Db, userId: string) {

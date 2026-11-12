@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
@@ -26,9 +26,9 @@ import { formatDayRange, GameDateRange, type DayRange } from '@/components/games
 import { type NominatimPlace } from '@/lib/place-suggestions'
 import { createClient } from '@/lib/supabase/client'
 import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
-import { YourCityControl } from '@/components/location/YourCityControl'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 import { SectionToolbar } from '@/components/search/SectionToolbar'
+import { OpeningHours } from '@/components/court/OpeningHours'
 
 /** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
 const SEARCH_FETCH_MS = 12_000
@@ -505,7 +505,8 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[28px] bg-white md:bottom-8 md:left-1/2 md:max-w-lg md:-translate-x-1/2 md:rounded-[28px] md:shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:bottom-8 md:left-64 md:flex md:justify-center md:pointer-events-none">
+        <div className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white md:pointer-events-auto md:max-w-lg md:rounded-[28px] md:shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-brand-divider bg-white px-4 py-3">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(venue.kind)}</span>
           <div className="flex items-center gap-2">
@@ -561,12 +562,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
             {venue.description && (
               <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
             )}
-            {venue.opening_hours && (
-              <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
-                <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
-                <span>{venue.opening_hours}</span>
-              </div>
-            )}
+            {venue.opening_hours && <OpeningHours hours={venue.opening_hours} />}
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
               Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
             </p>
@@ -604,6 +600,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
               Write to us — we&apos;ll fix it or add more detail.
             </Link>
           </div>
+        </div>
         </div>
       </div>
     </>
@@ -1761,6 +1758,14 @@ export function SearchClient({
             const id = selectedGame.id
             setJoinedGameIds((prev) => new Set(prev).add(id))
           }}
+          onLeft={() => {
+            const id = selectedGame.id
+            setJoinedGameIds((prev) => {
+              const next = new Set(prev)
+              next.delete(id)
+              return next
+            })
+          }}
           onClose={() => setSelectedGame(null)}
         />
       )}
@@ -1770,8 +1775,13 @@ export function SearchClient({
 
   const gamesMatchingSearch = openGames.filter((game) => {
     const formats = gameFilters.filter((id) => id !== 'spots')
-    if (gameFilters.includes('spots') && openGameSpotsLeft(game) <= 0) return false
-    if (formats.length > 0 && !formats.includes(game.format)) return false
+    const wantSpots = gameFilters.includes('spots')
+    // Chip filters are OR across format + open-spots.
+    if (formats.length > 0 || wantSpots) {
+      const matchFormat = formats.length > 0 && formats.includes(game.format)
+      const matchSpots = wantSpots && openGameSpotsLeft(game) > 0
+      if (!matchFormat && !matchSpots) return false
+    }
     const needle = gameQuery.trim().toLowerCase()
     if (!needle) return true
     const hay = `${game.court?.name ?? ''} ${game.neighborhood ?? ''} ${game.creator.city_name ?? ''} ${OPEN_FORMAT_LABELS[game.format] ?? game.format} ${game.creator.full_name} ${game.notes ?? ''}`.toLowerCase()
@@ -1789,10 +1799,6 @@ export function SearchClient({
         {sheets}
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
-          <YourCityControl
-            cityName={userCityName}
-            onLocationChange={applyAppLocation}
-          />
           {!user && (
             <div className="flex min-w-0 items-end justify-between gap-4 rounded-[28px] bg-[#1E3A6E] px-5 py-5 text-[#F0EBE3]">
               <div className="min-w-0">
@@ -1861,7 +1867,7 @@ export function SearchClient({
                 )}
               </DiscoverySection>
 
-              <DiscoverySection title="OPEN GAMES" onSeeAll={() => navigateTo('games')}>
+              <DiscoverySection title="GAMES" onSeeAll={() => navigateTo('games')}>
                 {loadingPreviewGame ? (
                   <GameCardSkeleton />
                 ) : previewGame ? (
@@ -1912,7 +1918,7 @@ export function SearchClient({
           }}
           filtersActive={playerFiltersActive}
           filterPanel={
-            <div className="flex w-full min-w-0 max-w-full items-center gap-2">
+            <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain">
               <button
                 type="button"
                 onClick={() => setCoachesOnly((on) => !on)}
@@ -1924,12 +1930,27 @@ export function SearchClient({
               >
                 Coach
               </button>
-              <MultiFilterChips
-                className="min-w-0 flex-1"
-                options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
-                value={playerSkills}
-                onChange={setPlayerSkills}
-              />
+              {SKILL_OPTIONS.map((option) => {
+                const active = playerSkills.includes(option)
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() =>
+                      setPlayerSkills(
+                        active ? playerSkills.filter((id) => id !== option) : [...playerSkills, option],
+                      )
+                    }
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
+                      active
+                        ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
+                        : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                )
+              })}
             </div>
           }
         />
@@ -1994,7 +2015,7 @@ export function SearchClient({
       <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
         {sheets}
         <SectionToolbar
-          title="OPEN GAMES"
+          title="GAMES"
           onBack={() => setView('discovery')}
           cityName={userCityName}
           onLocationChange={applyAppLocation}

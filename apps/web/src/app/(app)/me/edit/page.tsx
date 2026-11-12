@@ -18,14 +18,6 @@ const SKILL_LEVELS = [
   { value: 6.0, label: 'Competitive', sub: 'Ranked player, tournament regular' },
 ]
 
-const YEARS_OPTIONS = [
-  { value: 0.5, label: '< 1 year' },
-  { value: 1.5, label: '1–2 years' },
-  { value: 3.5, label: '2–5 years' },
-  { value: 7.5, label: '5–10 years' },
-  { value: 15, label: '10+ years' },
-]
-
 const FORMAT_OPTIONS = [
   { value: 'singles', label: 'Singles' },
   { value: 'doubles', label: 'Doubles' },
@@ -92,7 +84,6 @@ interface ProfileData {
   avatarUrl: string | null
   avatarFile: File | null
   skillLevel: number | null
-  yearsPlaying: number | null
   playFormats: string[]
   playStyle: string | null
   preferredSurfaces: string[]
@@ -102,6 +93,24 @@ interface ProfileData {
   city: string
   cityLat: number | null
   cityLng: number | null
+}
+
+function draftKey(d: ProfileData): string {
+  return JSON.stringify({
+    fullName: d.fullName.trim(),
+    username: d.username.trim(),
+    bio: d.bio.trim(),
+    skillLevel: d.skillLevel,
+    playFormats: [...d.playFormats].sort(),
+    playStyle: d.playStyle,
+    preferredSurfaces: [...d.preferredSurfaces].sort(),
+    availability: d.availability,
+    lookingFor: d.lookingFor.trim(),
+    isCoach: d.isCoach,
+    city: d.city.trim(),
+    cityLat: d.cityLat,
+    cityLng: d.cityLng,
+  })
 }
 
 export default function EditProfilePage() {
@@ -121,16 +130,21 @@ export default function EditProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
   const [originalUsername, setOriginalUsername] = useState('')
+  const [savedKey, setSavedKey] = useState<string | null>(null)
+  const [leaveOpen, setLeaveOpen] = useState(false)
 
   const [d, setD] = useState<ProfileData>({
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null,
-    skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
+    skillLevel: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], availability: {},
     lookingFor: '', isCoach: false, city: '', cityLat: null, cityLng: null,
   })
   const draftRef = useRef(d)
   draftRef.current = d
   const dirtyRef = useRef(false)
+  const goneRef = useRef(false)
+  const saveTimer = useRef<number | null>(null)
+  const savedAt = useRef(0)
 
   function update(partial: Partial<ProfileData>) {
     dirtyRef.current = true
@@ -148,7 +162,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('account_kind, full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
+        .select('account_kind, full_name, username, bio, avatar_url, skill_level_self, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
         .eq('id', user.id)
         .single()
 
@@ -158,15 +172,13 @@ export default function EditProfilePage() {
       }
       if (p?.account_kind === 'court') { router.replace('/me'); return }
       if (p) {
-        setOriginalUsername(p.username || '')
-        setD({
+        const next: ProfileData = {
           fullName: p.full_name || '',
           username: p.username || '',
           bio: p.bio || '',
           avatarUrl: p.avatar_url || null,
           avatarFile: null,
           skillLevel: p.skill_level_self ?? null,
-          yearsPlaying: p.years_playing ?? null,
           playFormats: p.preferred_formats || [],
           playStyle: p.play_style || null,
           preferredSurfaces: p.preferred_surfaces || [],
@@ -176,7 +188,10 @@ export default function EditProfilePage() {
           city: p.city_name || '',
           cityLat: p.city_lat ?? null,
           cityLng: p.city_lng ?? null,
-        })
+        }
+        setOriginalUsername(p.username || '')
+        setD(next)
+        setSavedKey(draftKey(next))
       }
       setLoading(false)
     }
@@ -214,6 +229,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     return () => {
       if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+      if (saveTimer.current) window.clearTimeout(saveTimer.current)
     }
   }, [])
 
@@ -242,6 +258,29 @@ export default function EditProfilePage() {
   }
 
   const canSave = d.fullName.trim().length > 0 && d.username.trim().length >= 3 && usernameStatus !== 'taken'
+  const isDirty = savedKey !== null && (draftKey(d) !== savedKey || pendingAvatar !== null)
+
+  function goToProfile() {
+    if (goneRef.current) return
+    goneRef.current = true
+    // A soft push reuses /me from the 30s client cache, so the saved bio stays old.
+    window.location.assign('/me')
+  }
+
+  function finishSaved() {
+    if (Date.now() - savedAt.current < 400) return
+    if (saveTimer.current) window.clearTimeout(saveTimer.current)
+    setSaveStatus(null)
+    goToProfile()
+  }
+
+  function handleBack() {
+    if (isDirty) {
+      setLeaveOpen(true)
+      return
+    }
+    router.back()
+  }
 
   async function handleSave() {
     if (!canSave || !userId || saveStatus === 'saving') return
@@ -268,7 +307,6 @@ export default function EditProfilePage() {
         bio: draft.bio.trim() || null,
         avatar_url: avatarUrl,
         skill_level_self: draft.isCoach ? null : draft.skillLevel,
-        years_playing: draft.yearsPlaying ? Math.round(draft.yearsPlaying) : null,
         preferred_formats: draft.playFormats,
         play_style: draft.playStyle,
         preferred_surfaces: draft.preferredSurfaces,
@@ -284,9 +322,16 @@ export default function EditProfilePage() {
       }).eq('id', userId)
 
       if (updateErr) throw updateErr
+      setPendingAvatar(null)
+      setSavedKey(draftKey(draft))
+      setLeaveOpen(false)
+      savedAt.current = Date.now()
       setSaveStatus('saved')
-      router.refresh()
-      window.setTimeout(() => router.push('/me'), 1000)
+      if (saveTimer.current) window.clearTimeout(saveTimer.current)
+      saveTimer.current = window.setTimeout(() => {
+        setSaveStatus(null)
+        goToProfile()
+      }, 1000)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save')
       setSaveStatus('error')
@@ -335,14 +380,14 @@ export default function EditProfilePage() {
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+          <button type="button" onClick={handleBack} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
           </button>
           <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
           <button
             onClick={() => void handleSave()}
             disabled={saveStatus === 'saving' || !canSave}
-            className="px-4 py-1.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-40"
+            className="px-4 py-1.5 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#2F7466] transition-colors disabled:opacity-40"
           >
             Save
           </button>
@@ -432,6 +477,53 @@ export default function EditProfilePage() {
         </div>
         </section>
 
+        {/* ── LOOKING FOR ── */}
+        <section className="space-y-4">
+        <SectionTitle>Looking for</SectionTitle>
+
+        <div>
+          <FieldLabel optional>Who are you looking to play with?</FieldLabel>
+          <textarea
+            value={d.lookingFor}
+            onChange={(e) => update({ lookingFor: e.target.value })}
+            rows={3}
+            maxLength={300}
+            className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
+            placeholder="e.g. A partner for friendly matches 1–2x per week..."
+          />
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
+        </div>
+        </section>
+
+        {/* ── LOCATION ── */}
+        <section className="space-y-4">
+        <SectionTitle>Location</SectionTitle>
+
+        <div>
+          <FieldLabel>City</FieldLabel>
+          <CityLocationField
+            value={d.city}
+            onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
+            helper="Used for courts, players, and games near you."
+            placeholder="Search your city..."
+          />
+          {!d.city.trim() && (
+            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
+          )}
+        </div>
+        </section>
+
+        {/* ── SCHEDULE ── */}
+        <section className="space-y-4">
+        <SectionTitle>Schedule</SectionTitle>
+
+        {/* Days and the parts of those days */}
+        <div>
+          <FieldLabel optional>When you play</FieldLabel>
+          <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
+        </div>
+        </section>
+
         {/* ── YOUR GAME ── */}
         <section>
           <div className="flex items-center gap-3">
@@ -480,17 +572,6 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <FieldLabel optional>Playing since</FieldLabel>
-              <div className="flex flex-wrap gap-2.5">
-                {YEARS_OPTIONS.map((o) => (
-                  <Pill key={o.value} active={d.yearsPlaying === o.value} onClick={() => update({ yearsPlaying: d.yearsPlaying === o.value ? null : o.value })}>
-                    {o.label}
-                  </Pill>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <FieldLabel optional>Preferred format</FieldLabel>
               <div className="flex flex-wrap gap-2.5">
                 {FORMAT_OPTIONS.map((o) => (
@@ -535,59 +616,27 @@ export default function EditProfilePage() {
 
           </div>
         </section>
-
-        {/* ── SCHEDULE ── */}
-        <section className="space-y-4">
-        <SectionTitle>Schedule</SectionTitle>
-
-        {/* Days and the parts of those days */}
-        <div>
-          <FieldLabel optional>When you play</FieldLabel>
-          <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
-        </div>
-        </section>
-
-        {/* ── LOOKING FOR ── */}
-        <section className="space-y-4">
-        <SectionTitle>Looking for</SectionTitle>
-
-        <div>
-          <FieldLabel optional>Who are you looking to play with?</FieldLabel>
-          <textarea
-            value={d.lookingFor}
-            onChange={(e) => update({ lookingFor: e.target.value })}
-            rows={3}
-            maxLength={300}
-            className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
-            placeholder="e.g. A partner for friendly matches 1–2x per week..."
-          />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
-        </div>
-        </section>
-
-        {/* ── LOCATION ── */}
-        <section className="space-y-4">
-        <SectionTitle>Location</SectionTitle>
-
-        <div>
-          <FieldLabel>City</FieldLabel>
-          <CityLocationField
-            value={d.city}
-            onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
-            helper="Used for courts, players, and games near you."
-            placeholder="Search your city..."
-          />
-          {!d.city.trim() && (
-            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
-          )}
-        </div>
-        </section>
       </div>
       {saveStatus && (
         <SaveNotice
           status={saveStatus}
           message={error}
           onClose={() => setSaveStatus(null)}
+          onSavedDismiss={finishSaved}
+        />
+      )}
+      {leaveOpen && (
+        <UnsavedChangesDialog
+          canSave={canSave && saveStatus !== 'saving'}
+          onDismiss={() => setLeaveOpen(false)}
+          onDiscard={() => {
+            setLeaveOpen(false)
+            router.back()
+          }}
+          onSave={() => {
+            setLeaveOpen(false)
+            void handleSave()
+          }}
         />
       )}
     </div>
@@ -598,14 +647,34 @@ function SaveNotice({
   status,
   message,
   onClose,
+  onSavedDismiss,
 }: {
   status: 'saving' | 'saved' | 'error'
   message: string
   onClose: () => void
+  onSavedDismiss: () => void
 }) {
+  function dismiss() {
+    if (status === 'saving') return
+    if (status === 'saved') onSavedDismiss()
+    else onClose()
+  }
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-black/25">
-      <div className="w-full max-w-[220px] rounded-[24px] bg-white px-5 py-6 text-center shadow-[0_12px_40px_rgba(26,26,26,0.16)]">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-black/25"
+      onClick={dismiss}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={status === 'saved' ? 'Saved' : status === 'saving' ? 'Saving' : 'Something went wrong'}
+        className="w-full max-w-[220px] rounded-[24px] bg-white px-5 py-6 text-center shadow-[0_12px_40px_rgba(26,26,26,0.16)]"
+        onClick={(event) => {
+          if (status !== 'saved') event.stopPropagation()
+        }}
+      >
         {status === 'saving' && (
           <>
             <Loader2 size={22} className="mx-auto animate-spin text-[#E8748A]" />
@@ -633,6 +702,60 @@ function SaveNotice({
             </button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+function UnsavedChangesDialog({
+  canSave,
+  onDismiss,
+  onDiscard,
+  onSave,
+}: {
+  canSave: boolean
+  onDismiss: () => void
+  onDiscard: () => void
+  onSave: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-black/25"
+      onClick={onDismiss}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unsaved-title"
+        className="relative w-full max-w-sm rounded-[28px] bg-white px-5 pb-5 pt-6 shadow-[0_12px_40px_rgba(26,26,26,0.16)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Close"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-brand-field border border-[#1a1a1a]/15 flex items-center justify-center"
+        >
+          <X size={14} className="text-[rgba(26,26,26,0.55)]" />
+        </button>
+        <h2 id="unsaved-title" className="font-display text-3xl tracking-wide pr-8 text-[#1a1a1a]">Unsaved changes</h2>
+        <p className="mt-2 font-copy text-sm text-[rgba(26,26,26,0.6)]">You have changes that are not saved yet.</p>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!canSave}
+          className="mt-5 w-full py-3 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#2F7466] transition-colors disabled:opacity-40"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onDiscard}
+          className="mt-2 w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   )

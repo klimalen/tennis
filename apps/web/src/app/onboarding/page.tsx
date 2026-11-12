@@ -16,7 +16,6 @@ interface OnboardingData {
   city: string
   cityLat: number | null
   cityLng: number | null
-  yearsPlaying: number | null
   skillLevel: number | null
   playFormats: string[]
   playStyle: string | null
@@ -38,7 +37,7 @@ const PRESET_AVATARS = [
 ]
 
 const INITIAL_DATA: OnboardingData = {
-  city: '', cityLat: null, cityLng: null, yearsPlaying: null, skillLevel: null,
+  city: '', cityLat: null, cityLng: null, skillLevel: null,
   playFormats: [], playStyle: null, preferredSurfaces: [], availability: {},
   bio: '', lookingFor: '', isCoach: false, username: '', avatarFile: null,
   presetAvatar: '/avatars/preset-4.jpg',
@@ -192,14 +191,6 @@ const SKILL_LEVELS = [
   { value: 6.0, label: 'Competitive', sublabel: 'Ranked player, tournament regular' },
 ]
 
-const YEARS_OPTIONS = [
-  { value: 0.5, label: '< 1 year' },
-  { value: 1.5, label: '1–2 years' },
-  { value: 3.5, label: '2–5 years' },
-  { value: 7.5, label: '5–10 years' },
-  { value: 15, label: '10+ years' },
-]
-
 const FORMAT_OPTIONS = [
   { value: 'singles', label: 'Singles' },
   { value: 'doubles', label: 'Doubles' },
@@ -222,17 +213,6 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
       <StepHeading title="YOUR TENNIS" sub="Tell us about your game — all optional" />
 
       <div className="space-y-6">
-        <div>
-          <FieldLabel>How long have you been playing?</FieldLabel>
-          <div className="flex flex-wrap gap-2">
-            {YEARS_OPTIONS.map((o) => (
-              <Pill key={o.value} active={data.yearsPlaying === o.value} onClick={() => onChange({ yearsPlaying: data.yearsPlaying === o.value ? null : o.value })}>
-                {o.label}
-              </Pill>
-            ))}
-          </div>
-        </div>
-
         <div>
           <FieldLabel>Your level</FieldLabel>
           <button
@@ -574,7 +554,6 @@ export default function OnboardingPage() {
       city_lat: data.cityLat,
       city_lng: data.cityLng,
       skill_level_self: data.isCoach ? null : data.skillLevel,
-      years_playing: data.yearsPlaying ? Math.round(data.yearsPlaying) : null,
       preferred_formats: data.playFormats,
       play_style: data.playStyle,
       preferred_surfaces: data.preferredSurfaces,

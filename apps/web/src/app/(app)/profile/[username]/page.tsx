@@ -20,6 +20,7 @@ import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
+import { returnToFromSearch } from '@/lib/return-to'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const SURFACE_LABELS: Record<string, string> = {
@@ -81,10 +82,14 @@ export async function generateMetadata({
 
 export default async function PlayerProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>
+  searchParams: Promise<{ from?: string | string[] }>
 }) {
   const { username } = await params
+  const query = await searchParams
+  const backHref = returnToFromSearch(query.from)
   const supabase = await createClient()
 
   const [{ data: { user: viewer } }, { data: profile }] = await Promise.all([
@@ -239,7 +244,7 @@ export default async function PlayerProfilePage({
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/search" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+          <Link href={backHref} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           <span className="flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
