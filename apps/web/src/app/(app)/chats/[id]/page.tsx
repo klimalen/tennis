@@ -87,7 +87,7 @@ export default async function ChatPage({
   const rawMessages = (messages ?? []) as RawMessage[]
   const initialMessages = rawMessages.map((m) => ({
     ...m,
-    type: m.type as 'text' | 'game_invite',
+    type: m.type as 'text' | 'game_invite' | 'system',
     game_id: m.game_id,
   }))
 

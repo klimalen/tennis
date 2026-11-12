@@ -6,13 +6,14 @@ import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } fro
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { membershipNoticeText, readMembershipNotice } from '@/lib/membership-notice'
 
 interface Message {
   id: string
   body: string
   created_at: string
   sender_id: string
-  type: 'text' | 'game_invite'
+  type: 'text' | 'game_invite' | 'system'
   game_id: string | null
   _tempId?: string
   _status?: 'sending' | 'sent' | 'error'
@@ -142,9 +143,10 @@ function GameInviteCard({
   const [responding, setResponding] = useState(false)
 
   // Use live game data if available, fall back to snapshot in msg.body
-  let snapshot: { scheduled_at?: string; format?: string; location?: string | null; updated?: boolean } = {}
+  let snapshot: { scheduled_at?: string; format?: string; location?: string | null; updated?: boolean; joined?: boolean } = {}
   try { snapshot = JSON.parse(msg.body) as typeof snapshot } catch { /* ignore */ }
   const isUpdate = snapshot.updated === true
+  const joined = snapshot.joined === true
 
   const source = gameDetail ?? snapshot
   const dt = source.scheduled_at ? new Date(source.scheduled_at) : null
@@ -167,6 +169,11 @@ function GameInviteCard({
 
   // Status label for the card footer
   function statusBadge() {
+    if (joined) {
+      const seat = isMe ? myStatus : otherStatus
+      if (seat === 'declined') return <span className="text-[10px] text-[rgba(26,26,26,0.4)]">Left the game</span>
+      return <span className="text-[10px] text-brand-primary font-medium">✓ Joined</span>
+    }
     if (isMe) {
       // Show other person's response
       if (otherStatus === 'accepted') return <span className="text-[10px] text-brand-primary font-medium">✓ Accepted</span>
@@ -200,7 +207,7 @@ function GameInviteCard({
       <div className={`px-3 py-2 flex items-center gap-2 ${isMe ? 'bg-brand-primary/5' : 'bg-brand-surface'}`}>
         <Calendar size={12} className="text-brand-primary flex-shrink-0" />
         <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-brand-primary">
-          {isUpdate ? 'Meeting details updated' : 'Game proposal'}
+          {joined ? 'Joined the game' : isUpdate ? 'Meeting details updated' : 'Game proposal'}
         </span>
       </div>
 
@@ -507,6 +514,26 @@ export function ChatView({
               }
 
               const { msg, isFirst, isLast } = item
+              if (msg.type === 'system') {
+                const notice = readMembershipNotice(msg.body)
+                const when = notice?.scheduledAt ? new Date(notice.scheduledAt) : null
+                const whenLabel = when && !Number.isNaN(when.getTime())
+                  ? `${when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+                  : null
+                return (
+                  <div key={item.key} className="flex justify-center px-8 py-2">
+                    <div className="text-center">
+                      <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
+                        {membershipNoticeText(msg.body) ?? msg.body}
+                      </p>
+                      {whenLabel && (
+                        <p className="mt-0.5 text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.35)]">{whenLabel}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+
               const isMe = msg.sender_id === userId
               const isError = msg._status === 'error'
               const isSending = msg._status === 'sending'

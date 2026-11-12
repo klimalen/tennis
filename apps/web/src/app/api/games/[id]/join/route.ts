@@ -14,7 +14,7 @@ export async function POST(
 
   const { data: game } = await supabase
     .from('games')
-    .select('id, is_open, max_players, creator_id, scheduled_at, format, neighborhood')
+    .select('id, is_open')
     .eq('id', gameId)
     .single()
 
@@ -41,26 +41,7 @@ export async function POST(
     return NextResponse.json({ ok: true, already: true })
   }
 
-  if (game.creator_id !== user.id) {
-    const { data: convId } = await supabase
-      .rpc('shared_conversation_id', { other_user_id: game.creator_id })
-
-    if (convId) {
-      const snapshot = JSON.stringify({
-        scheduled_at: game.scheduled_at,
-        format: game.format,
-        location: game.neighborhood ?? null,
-        joined: true,
-      })
-      await supabase.from('messages').insert({
-        conversation_id: convId,
-        sender_id: user.id,
-        body: snapshot,
-        type: 'game_invite',
-        game_id: gameId,
-      })
-    }
-  }
-
+  // The seat change itself writes "joined the game" into the game chat
+  // and into the direct chat with the organiser, when one exists.
   return NextResponse.json({ ok: true })
 }
