@@ -276,17 +276,22 @@ export function GameDetailSheet({
                     <Globe size={12} /> Website
                   </a>
                 )}
-                <a
-                  href={game.court.google_maps_uri ?? `https://www.google.com/maps/search/${encodeURIComponent(game.court.name)}/@${game.court.lat ?? ''},${game.court.lng ?? ''},17z`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#E8748A] px-4 py-2 text-[10px] tracking-[0.16em] uppercase text-[#1a1a1a]"
-                >
-                  <MapPin size={12} /> View on Google Maps
-                </a>
-                <Link href={`/court/${game.court.id}`} className="inline-flex items-center gap-2 text-[12px] text-[#3A8A7A]">
-                  Court page
-                </Link>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={game.court.google_maps_uri ?? `https://www.google.com/maps/search/${encodeURIComponent(game.court.name)}/@${game.court.lat ?? ''},${game.court.lng ?? ''},17z`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#E8748A] px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a]"
+                  >
+                    <MapPin size={12} /> View on Google Maps
+                  </a>
+                  <Link
+                    href={`/court/${game.court.id}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
+                  >
+                    Court page
+                  </Link>
+                </div>
               </div>
             )}
             {game.notes && (
@@ -311,7 +316,7 @@ export function GameDetailSheet({
               className={`w-full py-4 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${
                 joinDisabled
                   ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
-                  : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+                  : 'bg-[#3A8A7A] text-white hover:bg-[#2F7366]'
               }`}
             >
               {joining ? <Loader2 size={14} className="animate-spin mx-auto" /> : joinLabel}
