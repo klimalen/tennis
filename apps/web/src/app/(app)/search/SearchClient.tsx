@@ -1060,6 +1060,11 @@ export function SearchClient({
   const [userCityLat, setUserCityLat] = useState(initialCityLat)
   const [userCityLng, setUserCityLng] = useState(initialCityLng)
   const [cityToast, setCityToast] = useState<string | null>(null)
+  const cityRef = useRef({
+    name: initialCityName,
+    lat: initialCityLat,
+    lng: initialCityLng,
+  })
 
   // Navigation
   const [view, setView] = useState<View>('discovery')
@@ -1080,23 +1085,6 @@ export function SearchClient({
   const [courtInfoOpen, setCourtInfoOpen] = useState(false)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
 
-  async function applyAppLocation(location: ProfileLocation) {
-    if (user) {
-      const { error } = await saveProfileCity(createClient(), user.id, location)
-      if (error) throw new Error(error)
-    }
-    setUserCityName(location.name)
-    setUserCityLat(location.lat)
-    setUserCityLng(location.lng)
-    setPreviewCoords({ lat: location.lat, lng: location.lng })
-    setUserGeoCoords({ lat: location.lat, lng: location.lng })
-    setUserCoords({ lat: location.lat, lng: location.lng })
-    setCityLabel(location.name)
-    setGeocodeDone(true)
-    setCityToast(location.name)
-    setSearchEpoch((epoch) => epoch + 1)
-  }
-
   // ── Discovery previews ──────────────────────────────────────────────────────
   const [previewPlayer, setPreviewPlayer] = useState<Player | null>(initialPreviewPlayer)
   const [previewGame, setPreviewGame] = useState<OpenGame | null>(null)
@@ -1110,14 +1098,93 @@ export function SearchClient({
   // Bumped on bfcache restore so discovery/list effects run again after a frozen mid-fetch.
   const [searchEpoch, setSearchEpoch] = useState(0)
 
+  function adoptAppLocation(
+    name: string | null,
+    lat: number | null,
+    lng: number | null,
+    options?: { toast?: boolean },
+  ) {
+    const current = cityRef.current
+    if (name === current.name && lat === current.lat && lng === current.lng) return
+    cityRef.current = { name, lat, lng }
+    setUserCityName(name)
+    setUserCityLat(lat)
+    setUserCityLng(lng)
+    if (lat != null && lng != null) {
+      setPreviewCoords({ lat, lng })
+      setUserGeoCoords({ lat, lng })
+      setUserCoords({ lat, lng })
+      setGeocodeDone(true)
+    } else {
+      setPreviewCoords(null)
+      setUserGeoCoords(null)
+      setUserCoords(null)
+      setGeocodeDone(false)
+    }
+    setCityLabel(name)
+    if (options?.toast && name) setCityToast(name)
+    setSearchEpoch((epoch) => epoch + 1)
+  }
+
+  async function applyAppLocation(location: ProfileLocation) {
+    if (user) {
+      const { error } = await saveProfileCity(createClient(), user.id, location)
+      if (error) throw new Error(error)
+    }
+    adoptAppLocation(location.name, location.lat, location.lng, { toast: true })
+  }
+
+  // Profile city can change in ME edit while Discover is cached — pull fresh on visit.
   useEffect(() => {
+    if (!user) return
+    let cancelled = false
+
+    async function pullProfileCity() {
+      const { data } = await createClient()
+        .from('profiles')
+        .select('city_name, city_lat, city_lng')
+        .eq('id', user!.id)
+        .maybeSingle()
+      if (cancelled || !data) return
+      adoptAppLocation(data.city_name ?? null, data.city_lat ?? null, data.city_lng ?? null)
+    }
+
+    void pullProfileCity()
+
+    function onVisible() {
+      if (document.visibilityState === 'visible') void pullProfileCity()
+    }
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) void pullProfileCity()
+      else setSearchEpoch((value) => value + 1)
+    }
+
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
+  // Guests / first paint: adopt newer RSC props when the soft-nav cache is fresh.
+  useEffect(() => {
+    if (user) return
+    adoptAppLocation(initialCityName, initialCityLat, initialCityLng)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, initialCityName, initialCityLat, initialCityLng])
+
+  useEffect(() => {
+    if (user) return
     function onPageShow(event: PageTransitionEvent) {
       if (!event.persisted) return
       setSearchEpoch((value) => value + 1)
     }
     window.addEventListener('pageshow', onPageShow)
     return () => window.removeEventListener('pageshow', onPageShow)
-  }, [])
+  }, [user])
 
   useEffect(() => {
     if (!userCityName) {
@@ -1727,7 +1794,6 @@ export function SearchClient({
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
           <YourCityControl
-            variant="chip"
             cityName={userCityName}
             onLocationChange={applyAppLocation}
           />
