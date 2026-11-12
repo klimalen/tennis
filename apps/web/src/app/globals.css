@@ -56,6 +56,10 @@
 /* Sticky titles sit under the iPhone status bar in Safari / PWA. */
 :root {
   --app-safe-top: env(safe-area-inset-top, 0px);
+  /* Scroll room so the last card clears the floating tab bar.
+     Matches the bar: safe-area padding, 8px margin, 62px pill,
+     14px plus-button overhang, then a 20px gap. */
+  --tab-bar-clearance: calc(max(env(safe-area-inset-bottom, 0px), 10px) + 8px + 62px + 14px + 20px);
 }
 
 /* Native WebView is already inset by SafeAreaView — do not add the notch twice. */

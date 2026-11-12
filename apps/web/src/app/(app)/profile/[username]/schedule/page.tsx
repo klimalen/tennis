@@ -29,7 +29,7 @@ export default async function ProfileSchedulePage({
   const hasGames = upcoming.length > 0 || past.length > 0
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen">
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link href={`/profile/${profile.username}`} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">

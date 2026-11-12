@@ -148,7 +148,7 @@ export function EditGameForm({
   }
 
   return (
-    <div className="min-h-screen pb-24 md:pb-8">
+    <div className="min-h-screen pb-8">
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">

@@ -150,7 +150,7 @@ async function FeedContent() {
   const latestNotificationAt = notifications[0]?.createdAt ?? null
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="page-header">
         <div className="mx-auto flex max-w-2xl items-end">
