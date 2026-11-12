@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { membershipNoticeText, readMembershipNotice } from '@/lib/membership-notice'
+import { withReturnTo } from '@/lib/return-to'
 
 interface Message {
   id: string
@@ -520,16 +521,27 @@ export function ChatView({
                 const whenLabel = when && !Number.isNaN(when.getTime())
                   ? `${when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
                   : null
+                const label = membershipNoticeText(msg.body) ?? msg.body
+                const gameHref = msg.game_id
+                  ? withReturnTo(`/game/${msg.game_id}`, `/chats/${conversationId}`)
+                  : null
+                const body = (
+                  <div className="text-center">
+                    <p className={`text-[12px] text-[rgba(26,26,26,0.55)] ${gameHref ? 'underline underline-offset-4 decoration-[rgba(26,26,26,0.25)] group-hover:text-brand-primary' : ''}`}>
+                      {label}
+                    </p>
+                    {whenLabel && (
+                      <p className="mt-0.5 text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.35)]">{whenLabel}</p>
+                    )}
+                  </div>
+                )
                 return (
                   <div key={item.key} className="flex justify-center px-8 py-2">
-                    <div className="text-center">
-                      <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
-                        {membershipNoticeText(msg.body) ?? msg.body}
-                      </p>
-                      {whenLabel && (
-                        <p className="mt-0.5 text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.35)]">{whenLabel}</p>
-                      )}
-                    </div>
+                    {gameHref ? (
+                      <Link href={gameHref} className="group rounded-2xl px-3 py-1 hover:bg-white/70 transition-colors">
+                        {body}
+                      </Link>
+                    ) : body}
                   </div>
                 )
               }

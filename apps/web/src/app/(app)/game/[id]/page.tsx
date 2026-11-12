@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatPlayFormat } from '@/lib/skill'
 import { isUuid, loadGameDetailRow, loadGameLinkState, viewerPlaysInGame } from '@/lib/public-game'
 import { courtTitle } from '@/lib/venue-label'
+import { returnToFromSearch } from '@/lib/return-to'
 
 function utcStamp(iso: string) {
   const dt = new Date(iso)
@@ -41,8 +42,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-export default async function GamePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GamePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ from?: string | string[] }>
+}) {
   const { id } = await params
+  const query = await searchParams
+  const backHref = returnToFromSearch(query.from)
   if (!isUuid(id)) {
     return <LinkState title="THIS GAME ISN'T ON GAME." body="The link may be old, or the game was removed." action={{ href: '/search', label: 'Find a game' }} />
   }
@@ -73,5 +82,13 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
     return <LinkState title="THIS GAME ISN'T ON GAME." body="The link may be old, or the game was removed." action={{ href: '/search', label: 'Find a game' }} />
   }
 
-  return <GameDetailSheet mode="page" game={game} currentUserId={user?.id ?? null} viewerIsCourt={viewerIsCourt} />
+  return (
+    <GameDetailSheet
+      mode="page"
+      game={game}
+      currentUserId={user?.id ?? null}
+      viewerIsCourt={viewerIsCourt}
+      backHref={backHref}
+    />
+  )
 }

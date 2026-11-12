@@ -93,6 +93,7 @@ export function GameDetailSheet({
   viewerIsCourt,
   courtInfoOpen = false,
   mode = 'sheet',
+  backHref,
 }: {
   game: GameDetail
   currentUserId: string | null
@@ -103,6 +104,8 @@ export function GameDetailSheet({
   viewerIsCourt?: boolean
   courtInfoOpen?: boolean
   mode?: 'sheet' | 'page'
+  /** Page mode only. Where the header back arrow goes. */
+  backHref?: string
 }) {
   const page = mode === 'page'
   const router = useRouter()
@@ -233,7 +236,7 @@ export function GameDetailSheet({
   const shareButton = (
     <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={game.is_open ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
   )
-  const gamePath = `/game/${game.id}`
+  const gamePath = backHref ? withReturnTo(`/game/${game.id}`, backHref) : `/game/${game.id}`
   const courtPageHref = game.court ? withReturnTo(`/court/${game.court.id}`, gamePath) : null
 
   /** Leave sheet/search history for the durable game page, then open related. */
@@ -413,7 +416,7 @@ export function GameDetailSheet({
       <div className="min-h-screen pb-20 md:pb-0">
         <div className="page-header">
           <div className="max-w-2xl mx-auto flex items-center gap-3">
-            <Link href="/search" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+            <Link href={backHref ?? '/search'} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors" aria-label="Back">
               <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
             </Link>
             <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
