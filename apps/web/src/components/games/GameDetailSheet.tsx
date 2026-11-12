@@ -12,6 +12,7 @@ import { arrivalLabel, costLine, lightsLabel, type GameCourt } from '@/lib/game-
 import { GameFaceRow, type GameFace } from '@/components/games/GameFaceRow'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 import { GAME_DETAIL_SELECT, normalizeGameDetail, viewerPlaysInGame } from '@/lib/public-game'
+import { withReturnTo } from '@/lib/return-to'
 
 export interface GameParticipant {
   player_id: string
@@ -232,6 +233,21 @@ export function GameDetailSheet({
   const shareButton = (
     <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={game.is_open ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
   )
+  const gamePath = `/game/${game.id}`
+  const courtPageHref = game.court ? withReturnTo(`/court/${game.court.id}`, gamePath) : null
+
+  /** Leave sheet/search history for the durable game page, then open related. */
+  function goRelated(href: string) {
+    onClose?.()
+    if (!page) {
+      router.replace(gamePath)
+      window.setTimeout(() => {
+        router.push(href)
+      }, 0)
+      return
+    }
+    router.push(href)
+  }
 
   const body = (
         <div className={page ? 'space-y-5' : 'p-5 pb-8 space-y-5'}>
@@ -240,8 +256,7 @@ export function GameDetailSheet({
             spotsLeft={game.is_open && !isCancelled && !isPast ? spotsLeft : 0}
             onPerson={(person) => {
               if (!person.username) return
-              onClose?.()
-              router.push(`/profile/${person.username}`)
+              goRelated(withReturnTo(`/profile/${person.username}`, gamePath))
             }}
           />
           {game.is_open && !isCancelled && !isPast && (
@@ -311,12 +326,19 @@ export function GameDetailSheet({
                       >
                         <MapPin size={12} /> View on Google Maps
                       </a>
-                      <Link
-                        href={`/court/${game.court.id}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
-                      >
-                        Court page
-                      </Link>
+                      {courtPageHref && (
+                        <Link
+                          href={courtPageHref}
+                          onClick={(event) => {
+                            if (page) return
+                            event.preventDefault()
+                            goRelated(courtPageHref)
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
+                        >
+                          Court page
+                        </Link>
+                      )}
                     </div>
                   </div>
                 )}
