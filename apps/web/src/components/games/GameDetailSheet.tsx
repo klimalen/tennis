@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
+import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
 import { arrivalLabel, costLine, lightsLabel, type GameCourt } from '@/lib/game-court'
 import { GameFaceRow, type GameFace } from '@/components/games/GameFaceRow'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
+import { GAME_DETAIL_SELECT, normalizeGameDetail, viewerPlaysInGame } from '@/lib/public-game'
 
 export interface GameParticipant {
   player_id: string
@@ -60,31 +62,7 @@ const FORMAT_LABELS: Record<string, string> = {
   mixed_doubles: 'Mixed',
 }
 
-const DETAIL_SELECT = `
-  id, format, scheduled_at, duration_minutes, skill_level_min, skill_level_max,
-  neighborhood, notes, court_cost_cents, payment, status, max_players, is_open, creator_id,
-  court:venue_groups!games_venue_group_id_fkey ( id, name, address, lit, fee, access, phone, website, google_maps_uri, lat, lng ),
-  creator:profiles!creator_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind),
-  city:cities (name),
-  participants:game_participants (
-    player_id, status,
-    profile:profiles!player_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind)
-  )
-`
-
-export function viewerPlaysInGame(
-  game: {
-    creator_id: string
-    participants: { player_id: string; status: string }[]
-    creator?: { account_kind?: string | null }
-  },
-  viewerId: string | null,
-) {
-  if (!viewerId) return false
-  const courtHost = game.creator?.account_kind === 'court'
-  if (game.creator_id === viewerId && !courtHost) return true
-  return game.participants.some((participant) => participant.player_id === viewerId && holdsGameSeat(participant.status))
-}
+export { viewerPlaysInGame }
 
 export function viewerCanOpenGame(
   game: { is_open: boolean; creator_id: string; participants: { player_id: string; status: string }[] },
@@ -95,11 +73,8 @@ export function viewerCanOpenGame(
 
 export async function loadGameDetail(gameId: string): Promise<GameDetail | null> {
   const supabase = createClient()
-  const { data } = await supabase.from('games').select(DETAIL_SELECT).eq('id', gameId).maybeSingle()
-  if (!data) return null
-  const row = data as unknown as GameDetail & { court: GameCourt | GameCourt[] | null }
-  const court = Array.isArray(row.court) ? row.court[0] ?? null : row.court
-  return { ...row, court: court?.id ? court : null }
+  const { data } = await supabase.from('games').select(GAME_DETAIL_SELECT).eq('id', gameId).maybeSingle()
+  return normalizeGameDetail(data)
 }
 
 function Fact({ children }: { children: string | null | undefined }) {
@@ -115,22 +90,25 @@ export function GameDetailSheet({
   activeConversationId,
   viewerIsCourt,
   courtInfoOpen = false,
+  mode = 'sheet',
 }: {
   game: GameDetail
   currentUserId: string | null
-  onClose: () => void
+  onClose?: () => void
   onJoined?: () => void
   activeConversationId?: string
   viewerIsCourt?: boolean
   courtInfoOpen?: boolean
+  mode?: 'sheet' | 'page'
 }) {
+  const page = mode === 'page'
   const router = useRouter()
   const [joining, setJoining] = useState(false)
   const [joined, setJoined] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
   const [courtOpen, setCourtOpen] = useState(courtInfoOpen)
   const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
-  useHideTabBar(true)
+  useHideTabBar(!page)
 
   useEffect(() => {
     if (viewerIsCourt != null) {
@@ -195,9 +173,15 @@ export function GameDetailSheet({
     }))
   const faces = game.creator.account_kind === 'court' ? otherFaces : [hostFace, ...otherFaces]
 
+  const shareWhen = new Date(game.scheduled_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const shareText = [FORMAT_LABELS[game.format] ?? game.format, shareWhen, placeName].filter(Boolean).join(' · ')
+
   async function handleJoin() {
     if (!game.is_open || joining || alreadyIn || isFull || isPast || isCancelled) return
-    if (!currentUserId) return
+    if (!currentUserId) {
+      router.push(`/sign-in?next=${encodeURIComponent(`/game/${game.id}`)}`)
+      return
+    }
     setJoining(true)
     const res = await fetch(`/api/games/${game.id}/join`, { method: 'POST' })
     if (res.ok) {
@@ -210,26 +194,19 @@ export function GameDetailSheet({
   const joinLabel = isCourtHost ? 'You organised this' : alreadyIn ? "You're in" : isFull ? 'Game is full' : isPast ? 'Game passed' : isCancelled ? 'Cancelled' : 'Join game'
   const joinDisabled = isCourtHost || !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
 
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">
-            {game.is_open ? 'Open Game' : 'Game'}
-          </span>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
-            <X size={16} />
-          </button>
-        </div>
+  const shareTitle = game.is_open ? 'Open game on GAME.' : 'Private game on GAME.'
+  const shareButton = (
+    <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={game.is_open ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
+  )
 
-        <div className="p-5 pb-8 space-y-5">
+  const body = (
+        <div className={page ? 'space-y-5' : 'p-5 pb-8 space-y-5'}>
           <GameFaceRow
             people={faces}
             spotsLeft={game.is_open && !isCancelled && !isPast ? spotsLeft : 0}
             onPerson={(person) => {
               if (!person.username) return
-              onClose()
+              onClose?.()
               router.push(`/profile/${person.username}`)
             }}
           />
@@ -307,6 +284,9 @@ export function GameDetailSheet({
                 >
                   <MapPin size={12} /> View on Google Maps
                 </a>
+                <Link href={`/court/${game.court.id}`} className="inline-flex items-center gap-2 text-[12px] text-[#3A8A7A]">
+                  Court page
+                </Link>
               </div>
             )}
             {game.notes && (
@@ -317,7 +297,7 @@ export function GameDetailSheet({
           {chatId && chatId !== activeConversationId && (
             <Link
               href={`/chats/${chatId}`}
-              onClick={onClose}
+              onClick={() => onClose?.()}
               className="block w-full py-3 rounded-full text-center text-[10px] tracking-[0.2em] uppercase font-medium border border-[#1a1a1a]/20 text-[#1a1a1a] hover:border-[#1a1a1a]/50 transition-colors"
             >
               Game chat
@@ -338,6 +318,45 @@ export function GameDetailSheet({
             </button>
           )}
         </div>
+  )
+
+  if (page) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0">
+        <div className="page-header">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <Link href="/search" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+              <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
+            </Link>
+            <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
+              {game.is_open ? 'OPEN GAME' : 'GAME'}
+            </span>
+            {shareButton}
+          </div>
+        </div>
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="rounded-[28px] bg-white p-5">{body}</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
+          <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">
+            {game.is_open ? 'Open Game' : 'Game'}
+          </span>
+          <div className="flex items-center gap-1">
+            {shareButton}
+            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+        {body}
       </div>
     </>
   )

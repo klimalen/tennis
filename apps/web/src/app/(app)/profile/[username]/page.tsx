@@ -1,8 +1,11 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { permanentRedirect, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, CalendarDays, Globe, MapPin, Phone } from 'lucide-react'
+import { ShareLinkButton } from '@/components/share/ShareLinkButton'
+import { LinkState } from '@/components/share/LinkState'
 import { ProposeMatchButton } from './ProposeMatchButton'
 import { FollowButton } from './FollowButton'
 import { MessageIcon } from './MessageIcon'
@@ -50,6 +53,32 @@ interface PostRow {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>
+}): Promise<Metadata> {
+  const { username } = await params
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, city_name, account_kind, is_coach, skill_level_self, skill_level_computed')
+    .eq('username', username)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (!profile) return { title: 'Profile on GAME.' }
+  const isCourt = profile.account_kind === 'court'
+  const title = `${profile.full_name} on GAME.`
+  const level = isCourt || profile.is_coach ? null : skillLabel(profile.skill_level_computed ?? profile.skill_level_self)
+  const description = [isCourt ? 'Court' : 'Player', profile.city_name, level].filter(Boolean).join(' · ')
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { card: 'summary_large_image', title, description },
+  }
+}
+
 export default async function PlayerProfilePage({
   params,
 }: {
@@ -70,7 +99,11 @@ export default async function PlayerProfilePage({
       .single(),
   ])
 
-  if (!profile) notFound()
+  if (!profile) {
+    const { data: nextName } = await supabase.rpc('profile_slug_redirect', { slug: username })
+    if (typeof nextName === 'string' && nextName && nextName !== username) permanentRedirect(`/profile/${nextName}`)
+    return <LinkState title="THIS PROFILE ISN'T ON GAME." body="The link may be old, or the player left." action={{ href: '/search', label: 'Find players' }} />
+  }
   if (viewer && viewer.id === profile.id) redirect('/me')
 
   const otherId = viewer && viewer.id !== profile.id ? viewer.id : null
@@ -209,9 +242,14 @@ export default async function PlayerProfilePage({
           <Link href="/search" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
-          <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">
+          <span className="flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
             {profile.full_name.toUpperCase()}
           </span>
+          <ShareLinkButton
+            path={`/profile/${profile.username}`}
+            title={`${profile.full_name} on GAME.`}
+            text={`${profile.full_name} on GAME.`}
+          />
         </div>
       </div>
 
@@ -283,9 +321,9 @@ export default async function PlayerProfilePage({
                 <ExpandableText text={profile.bio} className="font-copy text-sm text-[#497250] leading-snug" />
               </div>
             )}
-            {(profile.phone || websiteHref) && (
+            {((isCourt || viewer) && profile.phone || websiteHref) && (
               <div className="pt-1 space-y-1">
-                {profile.phone && (
+                {(isCourt || viewer) && profile.phone && (
                   <a href={`tel:${profile.phone}`} className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)]">
                     <Phone size={12} /> {profile.phone}
                   </a>

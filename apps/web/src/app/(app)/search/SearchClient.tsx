@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHideTabBar, useTabBarHidden } from '@/components/navigation/TabBarVisibility'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
+import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import type { User } from '@supabase/supabase-js'
 import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
 import { formatCourtCost, type GameCourt } from '@/lib/game-court'
@@ -510,6 +511,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
                 <CourtStar saved={Boolean(saved)} />
               </button>
             )}
+            <ShareLinkButton path={`/court/${venue.id}`} title={`${courtTitle(venue)} on GAME.`} text={`${courtTitle(venue)} on GAME.`} size="sm" />
             <button onClick={onClose} className="flex h-7 w-7 items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
           </div>
         </div>
