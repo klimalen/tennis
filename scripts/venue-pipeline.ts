@@ -357,7 +357,11 @@ async function cmdIdentify(sb: SupabaseClient, city: CityConfig, flags: Record<s
     // 2. Google Places — the business listing at this point
     if (useGoogle && !PRIVATE_KINDS.has(kindNow)) {
       try {
-        const { place, requests } = await googleOrganizationAt(g.lat, g.lng, { hintName: nameNow, cityLabel: `${city.label} ${city.region}` })
+        const { place, requests } = await googleOrganizationAt(g.lat, g.lng, {
+          hintName: nameNow,
+          cityLabel: `${city.label} ${city.region}`,
+          ...(city.country === 'RS' ? { languageCode: 'sr-Latn' } : {}),
+        })
         googleRequests += requests
         if (place) {
           const noName = !nameNow || isGenericName(nameNow)
@@ -420,7 +424,14 @@ async function cmdIdentify(sb: SupabaseClient, city: CityConfig, flags: Record<s
     for (const l of log) console.log(`     ${l}`)
 
     if (!dryRun && Object.keys(update).length > 0) {
-      const { error } = await sb.from('venue_groups').update(update).eq('id', g.id)
+      let { error } = await sb.from('venue_groups').update(update).eq('id', g.id)
+      // Two nearby clusters can resolve to the same Google listing. The place id
+      // stays on the first group; the second still keeps the name and contacts.
+      if (error?.code === '23505' && String(update['google_place_id'] ?? '') !== '') {
+        delete update['google_place_id']
+        console.log('     google place id already on another group — saved without the place link')
+        ;({ error } = await sb.from('venue_groups').update(update).eq('id', g.id))
+      }
       if (error) console.error(`     ❌ update failed: ${error.message}`)
     }
   }
