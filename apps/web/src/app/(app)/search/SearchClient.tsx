@@ -1761,6 +1761,14 @@ export function SearchClient({
             const id = selectedGame.id
             setJoinedGameIds((prev) => new Set(prev).add(id))
           }}
+          onLeft={() => {
+            const id = selectedGame.id
+            setJoinedGameIds((prev) => {
+              const next = new Set(prev)
+              next.delete(id)
+              return next
+            })
+          }}
           onClose={() => setSelectedGame(null)}
         />
       )}

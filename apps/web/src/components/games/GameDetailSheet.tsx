@@ -87,6 +87,7 @@ export function GameDetailSheet({
   currentUserId,
   onClose,
   onJoined,
+  onLeft,
   activeConversationId,
   viewerIsCourt,
   courtInfoOpen = false,
@@ -96,6 +97,7 @@ export function GameDetailSheet({
   currentUserId: string | null
   onClose?: () => void
   onJoined?: () => void
+  onLeft?: () => void
   activeConversationId?: string
   viewerIsCourt?: boolean
   courtInfoOpen?: boolean
@@ -104,7 +106,9 @@ export function GameDetailSheet({
   const page = mode === 'page'
   const router = useRouter()
   const [joining, setJoining] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [joined, setJoined] = useState(false)
+  const [left, setLeft] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
   const [courtOpen, setCourtOpen] = useState(courtInfoOpen)
   const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
@@ -151,12 +155,19 @@ export function GameDetailSheet({
   const spotsLeft = game.max_players - accepted.length
   const isFull = spotsLeft <= 0
   const isCourtHost = game.creator.account_kind === 'court' && currentUserId === game.creator_id
-  const alreadyIn = !isCourtHost && (viewerPlaysInGame(game, currentUserId) || joined)
   const isPast = new Date(game.scheduled_at) < new Date()
   const isCancelled = game.status === 'cancelled'
+  const alreadyIn = !isCourtHost && !left && (viewerPlaysInGame(game, currentUserId) || joined)
+  const canLeave = alreadyIn && !isPast && !isCancelled && currentUserId !== game.creator_id
   const price = game.court?.fee === false ? 'Free' : costLine(game.court_cost_cents, game.payment)
   const placeName = game.court?.name?.trim() || game.neighborhood
   const placeDetail = game.court?.address && game.court.address !== placeName ? game.court.address : null
+  const courtFacts = [
+    lightsLabel(game.court?.lit),
+    game.court?.fee === true && !price ? 'Fee' : null,
+    arrivalLabel(game.court),
+    price,
+  ].filter((fact): fact is string => Boolean(fact))
   const hostFace: GameFace = {
     id: game.creator.id,
     name: game.creator.full_name,
@@ -185,13 +196,36 @@ export function GameDetailSheet({
     setJoining(true)
     const res = await fetch(`/api/games/${game.id}/join`, { method: 'POST' })
     if (res.ok) {
+      setLeft(false)
       setJoined(true)
       onJoined?.()
     }
     setJoining(false)
   }
 
-  const joinLabel = isCourtHost ? 'You organised this' : alreadyIn ? "You're in" : isFull ? 'Game is full' : isPast ? 'Game passed' : isCancelled ? 'Cancelled' : 'Join game'
+  async function handleLeave() {
+    if (!canLeave || leaving) return
+    setLeaving(true)
+    const res = await fetch(`/api/games/${game.id}/leave`, { method: 'POST' })
+    if (res.ok) {
+      setJoined(false)
+      setLeft(true)
+      onLeft?.()
+    }
+    setLeaving(false)
+  }
+
+  const joinLabel = isCourtHost
+    ? 'You organised this'
+    : alreadyIn
+      ? "You're in"
+      : isFull
+        ? 'Game is full'
+        : isPast
+          ? 'Game passed'
+          : isCancelled
+            ? 'Cancelled'
+            : 'Join game'
   const joinDisabled = isCourtHost || !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
 
   const shareTitle = game.is_open ? 'Open game on GAME.' : 'Private game on GAME.'
@@ -225,27 +259,68 @@ export function GameDetailSheet({
               <span className="text-[rgba(26,26,26,0.45)]"> · {FORMAT_LABELS[game.format] ?? game.format}</span>
             </p>
             {placeName && game.court && (
-              <button
-                type="button"
-                onClick={() => setCourtOpen((open) => !open)}
-                aria-expanded={courtOpen}
-                className="mt-3 w-full rounded-[16px] bg-[#F4F1EC] px-3 py-3 text-left"
-              >
-                <span className="flex items-start justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</span>
-                    {placeDetail && (
-                      <span className="mt-1 flex items-center gap-1 text-[12px] text-[rgba(26,26,26,0.5)]">
-                        <MapPin size={11} />{placeDetail}
-                      </span>
-                    )}
+              <div className="mt-3 w-full rounded-[16px] bg-[#F4F1EC] px-3 py-3">
+                <button
+                  type="button"
+                  onClick={() => setCourtOpen((open) => !open)}
+                  aria-expanded={courtOpen}
+                  className="w-full text-left"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</span>
+                      {placeDetail && (
+                        <span className="mt-1 flex items-center gap-1 text-[12px] text-[rgba(26,26,26,0.5)]">
+                          <MapPin size={11} />{placeDetail}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown size={16} className={`mt-1 flex-shrink-0 text-[#3A8A7A] transition-transform ${courtOpen ? 'rotate-180' : ''}`} />
                   </span>
-                  <ChevronDown size={16} className={`mt-1 flex-shrink-0 text-[#3A8A7A] transition-transform ${courtOpen ? 'rotate-180' : ''}`} />
-                </span>
-                <span className="mt-2 block text-[10px] tracking-[0.14em] uppercase text-[#3A8A7A]">
-                  {courtOpen ? 'Hide court info' : 'Court info'}
-                </span>
-              </button>
+                  <span className="mt-2 block text-[10px] tracking-[0.14em] uppercase text-[#3A8A7A]">
+                    {courtOpen ? 'Hide court info' : 'Court info'}
+                  </span>
+                </button>
+
+                {courtFacts.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {courtFacts.map((fact) => (
+                      <Fact key={fact}>{fact}</Fact>
+                    ))}
+                  </div>
+                )}
+
+                {courtOpen && (
+                  <div className="mt-3 space-y-2">
+                    {game.court.phone && (
+                      <a href={`tel:${game.court.phone}`} className="flex items-center gap-2 text-[12px] text-[#1a1a1a]">
+                        <Phone size={12} /> {game.court.phone}
+                      </a>
+                    )}
+                    {game.court.website && (
+                      <a href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-[#1a1a1a]">
+                        <Globe size={12} /> Website
+                      </a>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href={game.court.google_maps_uri ?? `https://www.google.com/maps/search/${encodeURIComponent(game.court.name)}/@${game.court.lat ?? ''},${game.court.lng ?? ''},17z`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#E8748A] px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a]"
+                      >
+                        <MapPin size={12} /> View on Google Maps
+                      </a>
+                      <Link
+                        href={`/court/${game.court.id}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
+                      >
+                        Court page
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             {placeName && !game.court && (
               <div className="mt-3 text-left">
@@ -255,38 +330,17 @@ export function GameDetailSheet({
                     <MapPin size={11} />{placeDetail}
                   </p>
                 )}
+                {(price || isCancelled) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {price && <Fact>{price}</Fact>}
+                    {isCancelled && <Fact>Cancelled</Fact>}
+                  </div>
+                )}
               </div>
             )}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {lightsLabel(game.court?.lit) && <Fact>{lightsLabel(game.court?.lit)}</Fact>}
-              {game.court?.fee === true && !price && <Fact>Fee</Fact>}
-              {arrivalLabel(game.court) && <Fact>{arrivalLabel(game.court)}</Fact>}
-              {price && <Fact>{price}</Fact>}
-              {isCancelled && <Fact>Cancelled</Fact>}
-            </div>
-            {courtOpen && game.court && (
-              <div className="mt-3 space-y-2">
-                {game.court.phone && (
-                  <a href={`tel:${game.court.phone}`} className="flex items-center gap-2 text-[12px] text-[#1a1a1a]">
-                    <Phone size={12} /> {game.court.phone}
-                  </a>
-                )}
-                {game.court.website && (
-                  <a href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-[#1a1a1a]">
-                    <Globe size={12} /> Website
-                  </a>
-                )}
-                <a
-                  href={game.court.google_maps_uri ?? `https://www.google.com/maps/search/${encodeURIComponent(game.court.name)}/@${game.court.lat ?? ''},${game.court.lng ?? ''},17z`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#E8748A] px-4 py-2 text-[10px] tracking-[0.16em] uppercase text-[#1a1a1a]"
-                >
-                  <MapPin size={12} /> View on Google Maps
-                </a>
-                <Link href={`/court/${game.court.id}`} className="inline-flex items-center gap-2 text-[12px] text-[#3A8A7A]">
-                  Court page
-                </Link>
+            {game.court && isCancelled && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <Fact>Cancelled</Fact>
               </div>
             )}
             {game.notes && (
@@ -304,14 +358,26 @@ export function GameDetailSheet({
             </Link>
           )}
 
-          {courtViewer === false && (
+          {courtViewer === false && canLeave && (
             <button
+              type="button"
+              onClick={handleLeave}
+              disabled={leaving}
+              className="w-full py-4 rounded-full border border-[#1a1a1a]/20 text-[10px] tracking-[0.2em] uppercase font-medium text-[#1a1a1a] transition-colors hover:border-[#1a1a1a]/50 disabled:opacity-50"
+            >
+              {leaving ? <Loader2 size={14} className="animate-spin mx-auto" /> : 'Leave game'}
+            </button>
+          )}
+
+          {courtViewer === false && !canLeave && (
+            <button
+              type="button"
               onClick={handleJoin}
               disabled={joinDisabled}
               className={`w-full py-4 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium transition-colors ${
                 joinDisabled
                   ? 'bg-brand-surface text-[rgba(26,26,26,0.35)] cursor-default'
-                  : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+                  : 'bg-[#3A8A7A] text-white hover:bg-[#2F7366]'
               }`}
             >
               {joining ? <Loader2 size={14} className="animate-spin mx-auto" /> : joinLabel}

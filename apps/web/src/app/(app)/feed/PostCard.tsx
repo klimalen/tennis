@@ -214,6 +214,12 @@ function OpenGameCard({
               }],
             } : prev)
           }}
+          onLeft={() => {
+            setGameDetail((prev) => prev ? {
+              ...prev,
+              participants: prev.participants.filter((participant) => participant.player_id !== currentUserId),
+            } : prev)
+          }}
         />
       )}
     </>
