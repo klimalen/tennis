@@ -263,7 +263,8 @@ export default function EditProfilePage() {
   function goToProfile() {
     if (goneRef.current) return
     goneRef.current = true
-    router.push('/me')
+    // A soft push reuses /me from the 30s client cache, so the saved bio stays old.
+    window.location.assign('/me')
   }
 
   function finishSaved() {
