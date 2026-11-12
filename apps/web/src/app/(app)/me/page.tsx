@@ -265,10 +265,7 @@ async function ProfileContent() {
             viewerId={user.id}
             allowEdit
             empty={(
-              <div className="px-1 pb-2">
-                <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No games yet</p>
-                <p className="text-xs text-[#85648F] font-fraunces italic mt-0.5">Tap + to add your first game</p>
-              </div>
+              <EmptySection title="No games yet" hint="Tap + to add your first game" />
             )}
           />
         </div>
@@ -281,10 +278,7 @@ async function ProfileContent() {
             <CreateSheet variant="schedule" direct="post" />
           </div>
           {posts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
-              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">No posts yet</p>
-            </div>
+            <EmptySection title="No posts yet" hint="Tap + to add your first post" />
           ) : (
             <div>
               {posts.map((post) => (
@@ -298,6 +292,16 @@ async function ProfileContent() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function EmptySection({ title, hint }: { title: string; hint: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
+      <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">{title}</p>
+      <p className="mt-0.5 font-fraunces text-xs italic text-[#85648F]">{hint}</p>
     </div>
   )
 }
