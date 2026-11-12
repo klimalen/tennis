@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, ChevronLeft, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
@@ -11,7 +11,7 @@ import type { User } from '@supabase/supabase-js'
 import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
 import { formatCourtCost, type GameCourt } from '@/lib/game-court'
 import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
-import { ListSearch, MultiFilterChips } from '@/components/ui/ListSearch'
+import { MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { CoachBadge } from '@/components/ui/CoachBadge'
@@ -27,6 +27,7 @@ import { createClient } from '@/lib/supabase/client'
 import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
 import { YourCityControl } from '@/components/location/YourCityControl'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
+import { SectionToolbar } from '@/components/search/SectionToolbar'
 
 /** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
 const SEARCH_FETCH_MS = 12_000
@@ -1732,17 +1733,6 @@ export function SearchClient({
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
-  const pageHeader = (title: string, onBack: () => void) => (
-    <div className="page-header max-w-full">
-      <div className="mx-auto flex min-w-0 max-w-2xl items-center gap-3">
-        <button onClick={onBack} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-white transition-colors hover:bg-brand-field">
-          <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
-        </button>
-        <span className="min-w-0 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">{title}</span>
-      </div>
-    </div>
-  )
-
   // ── Sheets (always rendered) ────────────────────────────────────────────────
   const sheets = (
     <>
@@ -1902,36 +1892,44 @@ export function SearchClient({
   // ── Players full view ───────────────────────────────────────────────────────
 
   if (view === 'players') {
+    const playerFiltersActive = coachesOnly || playerSkills.length > 0
     return (
       <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
         {sheets}
-        {pageHeader('PLAYERS', () => setView('discovery'))}
+        <SectionToolbar
+          title="PLAYERS"
+          onBack={() => setView('discovery')}
+          cityName={userCityName}
+          onLocationChange={applyAppLocation}
+          search={{
+            value: playerQuery,
+            onChange: setPlayerQuery,
+            placeholder: 'Search name or username',
+          }}
+          filtersActive={playerFiltersActive}
+          filterPanel={
+            <div className="flex w-full min-w-0 max-w-full items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCoachesOnly((on) => !on)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
+                  coachesOnly
+                    ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
+                    : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
+                }`}
+              >
+                Coach
+              </button>
+              <MultiFilterChips
+                className="min-w-0 flex-1"
+                options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
+                value={playerSkills}
+                onChange={setPlayerSkills}
+              />
+            </div>
+          }
+        />
         <div className="mx-auto min-w-0 max-w-2xl space-y-3 px-4 py-4">
-          <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
-          {userCityName && (
-            <>
-              <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or username" />
-              <div className="flex w-full min-w-0 max-w-full items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCoachesOnly((on) => !on)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
-                    coachesOnly
-                      ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
-                      : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
-                  }`}
-                >
-                  Coach
-                </button>
-                <MultiFilterChips
-                  className="min-w-0 flex-1"
-                  options={SKILL_OPTIONS.map((option) => ({ id: option, label: option }))}
-                  value={playerSkills}
-                  onChange={setPlayerSkills}
-                />
-              </div>
-            </>
-          )}
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingPlayers || !geocodeDone ? (
@@ -1990,21 +1988,35 @@ export function SearchClient({
   // ── Games full view ─────────────────────────────────────────────────────────
 
   if (view === 'games') {
+    const gameFiltersActive = gameFilters.length > 0 || gameQuery.trim().length > 0
     return (
       <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
         {sheets}
-        {pageHeader('OPEN GAMES', () => setView('discovery'))}
-        <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
-          <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
-          {userCityName && openGames.length > 0 && (
-            <>
-              <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
+        <SectionToolbar
+          title="OPEN GAMES"
+          onBack={() => setView('discovery')}
+          cityName={userCityName}
+          onLocationChange={applyAppLocation}
+          search={
+            userCityName && openGames.length > 0
+              ? {
+                  value: gameQuery,
+                  onChange: setGameQuery,
+                  placeholder: 'Search place, format, or player',
+                }
+              : null
+          }
+          filtersActive={gameFiltersActive}
+          filterPanel={
+            userCityName && openGames.length > 0 ? (
               <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain">
                 <MultiFilterChips className="!w-auto" options={GAME_FILTERS} value={gameFilters} onChange={setGameFilters} />
                 <GameDateRange value={gameRange} onChange={setGameRange} markedDays={markedGameDays} />
               </div>
-            </>
-          )}
+            ) : null
+          }
+        />
+        <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingOpenGames ? (
@@ -2053,19 +2065,43 @@ export function SearchClient({
 
   // ── Courts full view ────────────────────────────────────────────────────────
 
+  const courtFiltersActive = courtList === 'mine' || courtSurfaces.length > 0 || courtQuery.trim().length > 0
   return (
     <div className="min-h-screen min-w-0 max-w-full overflow-x-clip pb-8">
       {sheets}
-      {pageHeader('COURTS', () => setView('discovery'))}
+      <SectionToolbar
+        title="COURTS"
+        onBack={() => setView('discovery')}
+        cityName={userCityName}
+        onLocationChange={applyAppLocation}
+        search={
+          courtList === 'all' && userCoords
+            ? {
+                value: courtQuery,
+                onChange: setCourtQuery,
+                placeholder: 'Search court name or address',
+              }
+            : null
+        }
+        filtersActive={courtFiltersActive}
+        filterPanel={
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setCourtList('all')} className={`px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border ${courtList === 'all' ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]' : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'}`}>All</button>
+              <button type="button" onClick={() => setCourtList('mine')} className={`px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border ${courtList === 'mine' ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]' : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'}`}>My courts</button>
+            </div>
+            {courtList === 'all' && (
+              <MultiFilterChips
+                options={COURT_SURFACE_FILTERS}
+                value={courtSurfaces}
+                onChange={setCourtSurfaces}
+              />
+            )}
+          </div>
+        }
+      />
       <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
-        <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
-
         {courtsError && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{courtsError}</p>}
-
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setCourtList('all')} className={`px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border ${courtList === 'all' ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]' : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'}`}>All</button>
-          <button type="button" onClick={() => setCourtList('mine')} className={`px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border ${courtList === 'mine' ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]' : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'}`}>My courts</button>
-        </div>
 
         {courtList === 'mine' && (
           favoriteVenues.length === 0 ? (
@@ -2097,12 +2133,6 @@ export function SearchClient({
 
         {courtList === 'all' && userCoords && (
           <>
-            <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
-            <MultiFilterChips
-              options={COURT_SURFACE_FILTERS}
-              value={courtSurfaces}
-              onChange={setCourtSurfaces}
-            />
             {cityLabel && !courtFilterActive && (
               <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
                 Courts near {cityLabel}
