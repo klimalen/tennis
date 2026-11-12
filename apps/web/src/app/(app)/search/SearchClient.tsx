@@ -1908,7 +1908,7 @@ export function SearchClient({
           <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
           {userCityName && (
             <>
-              <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or city" />
+              <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or username" />
               <div className="flex w-full min-w-0 max-w-full items-center gap-2">
                 <button
                   type="button"
