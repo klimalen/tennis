@@ -84,6 +84,20 @@ interface GroupRow {
   } | null
 }
 
+const GENERIC_SINGLE_NAME = /^(tennis courts?|teniski teren(i)?|teren|sports field)$/iu
+
+/** A lone court with no phone, website, school, or tennis-club name. These are
+ * usually a private court by a house. They stay out of the public list. */
+function isUnlistedSingle(card: VenueCard): boolean {
+  if (card.profile_username) return false
+  if (card.member_count !== 1 || (card.court_count ?? 1) !== 1) return false
+  if (card.phone || card.website) return false
+  const name = card.name.trim()
+  if ((/tenis|tennis|\btk\b/iu.test(name)) && !GENERIC_SINGLE_NAME.test(name)) return false
+  if (/\b(oš|school|škola|skola|gimnazij|university|univerzitet|fakultet)\b/iu.test(name) || /international school/i.test(name)) return false
+  return true
+}
+
 function groupToCard(g: GroupRow): VenueCard {
   const rawLinked = g.linked_profile as GroupRow['linked_profile'] | GroupRow['linked_profile'][] | null
   const linkedRow = Array.isArray(rawLinked) ? rawLinked[0] ?? null : rawLinked
@@ -290,6 +304,7 @@ export async function GET(request: NextRequest) {
   const sorted = [...groupCards, ...rawCards]
     .map((card) => ({ card, distance: haversineKm(centerLat, centerLng, card.lat, card.lng) }))
     .filter(({ card, distance }) => {
+      if (isUnlistedSingle(card)) return false
       if (!includePrivate && card.kind === 'residential') return false
       if (surfaces.size > 0 && !surfaces.has((card.surface ?? '').toLowerCase())) return false
       if (Number.isFinite(minKm) && minKm > 0 && distance < minKm) return false
