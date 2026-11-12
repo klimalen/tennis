@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, Clock, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
+import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, ChevronRight, Plus, Minus, Star, ArrowDown, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
@@ -28,6 +28,7 @@ import { createClient } from '@/lib/supabase/client'
 import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 import { SectionToolbar } from '@/components/search/SectionToolbar'
+import { OpeningHours } from '@/components/court/OpeningHours'
 
 /** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
 const SEARCH_FETCH_MS = 12_000
@@ -504,7 +505,8 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[28px] bg-white md:bottom-8 md:left-1/2 md:max-w-lg md:-translate-x-1/2 md:rounded-[28px] md:shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:bottom-8 md:left-64 md:flex md:justify-center md:pointer-events-none">
+        <div className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white md:pointer-events-auto md:max-w-lg md:rounded-[28px] md:shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-brand-divider bg-white px-4 py-3">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(venue.kind)}</span>
           <div className="flex items-center gap-2">
@@ -560,12 +562,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
             {venue.description && (
               <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
             )}
-            {venue.opening_hours && (
-              <div className="flex items-start gap-2 text-[12px] text-[rgba(26,26,26,0.6)]">
-                <Clock size={13} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
-                <span>{venue.opening_hours}</span>
-              </div>
-            )}
+            {venue.opening_hours && <OpeningHours hours={venue.opening_hours} />}
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
               Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
             </p>
@@ -603,6 +600,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
               Write to us — we&apos;ll fix it or add more detail.
             </Link>
           </div>
+        </div>
         </div>
       </div>
     </>
