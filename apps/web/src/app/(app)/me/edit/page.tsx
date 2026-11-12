@@ -559,7 +559,7 @@ export default function EditProfilePage() {
             rows={3}
             maxLength={300}
             className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
-            placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
+            placeholder="e.g. A partner for friendly matches 1–2x per week..."
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
         </div>

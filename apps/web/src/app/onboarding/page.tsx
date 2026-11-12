@@ -170,8 +170,13 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           )}
 
           <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.35)]">
-            Used for courts, players, and games near you. You can change it later in your profile.
+            Used for courts, players, and games near you.
           </p>
+          <div className="mt-3 rounded-lg bg-white px-4 py-3">
+            <p className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
+              ✦ &nbsp; You can update all of your information in your profile at any time.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -196,8 +201,8 @@ const YEARS_OPTIONS = [
 ]
 
 const FORMAT_OPTIONS = [
-  { value: 'singles', label: 'Singles', sublabel: null },
-  { value: 'doubles', label: 'Doubles', sublabel: '2v2, any gender' },
+  { value: 'singles', label: 'Singles' },
+  { value: 'doubles', label: 'Doubles' },
 ]
 
 const STYLE_OPTIONS = [
@@ -221,7 +226,7 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           <FieldLabel>How long have you been playing?</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {YEARS_OPTIONS.map((o) => (
-              <Pill key={o.value} active={data.yearsPlaying === o.value} onClick={() => onChange({ yearsPlaying: o.value })}>
+              <Pill key={o.value} active={data.yearsPlaying === o.value} onClick={() => onChange({ yearsPlaying: data.yearsPlaying === o.value ? null : o.value })}>
                 {o.label}
               </Pill>
             ))}
@@ -251,7 +256,7 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
                 <button
                   key={s.value}
                   type="button"
-                  onClick={() => onChange({ skillLevel: s.value })}
+                  onClick={() => onChange({ skillLevel: data.skillLevel === s.value ? null : s.value })}
                   className={`flex flex-col p-3 border text-left transition-colors ${
                     data.skillLevel === s.value
                       ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
@@ -273,10 +278,7 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           <div className="flex flex-wrap gap-2">
             {FORMAT_OPTIONS.map((o) => (
               <Pill key={o.value} active={data.playFormats.includes(o.value)} onClick={() => toggleFormat(o.value)}>
-                <span className="flex flex-col items-start">
-                  <span>{o.label}</span>
-                  {o.sublabel && <span className="text-[8px] normal-case tracking-normal opacity-60 mt-0.5">{o.sublabel}</span>}
-                </span>
+                {o.label}
               </Pill>
             ))}
           </div>
@@ -289,7 +291,7 @@ function Step2({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
               <button
                 key={o.value}
                 type="button"
-                onClick={() => onChange({ playStyle: o.value })}
+                onClick={() => onChange({ playStyle: data.playStyle === o.value ? null : o.value })}
                 className={`flex flex-col p-3 border text-left transition-colors ${
                   data.playStyle === o.value
                     ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
@@ -351,18 +353,12 @@ function Step4({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           <textarea
             value={data.lookingFor}
             onChange={(e) => onChange({ lookingFor: e.target.value })}
-            placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
+            placeholder="e.g. A partner for friendly matches 1–2x per week..."
             rows={3}
             maxLength={300}
             className="font-copy w-full px-4 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all resize-none text-sm"
           />
           <p className="text-[9px] text-[rgba(26,26,26,0.3)] text-right mt-1">{data.lookingFor.length}/300</p>
-        </div>
-
-        <div className="rounded-lg bg-white px-4 py-3">
-          <p className="text-[10px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.5)]">
-            ✦ &nbsp; You can update your profile anytime from the Me section.
-          </p>
         </div>
       </div>
     </div>
