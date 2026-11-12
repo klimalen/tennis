@@ -504,7 +504,8 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[28px] bg-white md:bottom-8 md:left-1/2 md:max-w-lg md:-translate-x-1/2 md:rounded-[28px] md:shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:bottom-8 md:left-64 md:flex md:justify-center md:pointer-events-none">
+        <div className="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white md:pointer-events-auto md:max-w-lg md:rounded-[28px] md:shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-brand-divider bg-white px-4 py-3">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(venue.kind)}</span>
           <div className="flex items-center gap-2">
@@ -603,6 +604,7 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
               Write to us — we&apos;ll fix it or add more detail.
             </Link>
           </div>
+        </div>
         </div>
       </div>
     </>
