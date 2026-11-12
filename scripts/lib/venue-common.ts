@@ -106,6 +106,16 @@ export const CITIES: Record<string, CityConfig> = {
     timezone: 'America/Chicago',
     bbox: { south: 30.05, west: -98.05, north: 30.6, east: -97.35 },
   },
+  // Nominatim city bbox for Belgrade (relation 2728438), padded so courts on the
+  // municipal edge are not clipped. This is the urban city, not Lazarevac/Mladenovac.
+  belgrade: {
+    slug: 'belgrade',
+    label: 'Belgrade',
+    region: 'City of Belgrade',
+    country: 'RS',
+    timezone: 'Europe/Belgrade',
+    bbox: { south: 44.68, west: 20.21, north: 44.95, east: 20.63 },
+  },
 }
 
 export function cityFromFlags(flags: CliArgs['flags']): CityConfig {
@@ -208,8 +218,14 @@ const SURFACE_MAP: Record<string, Surface> = {
   hartru: 'clay',
   'green clay': 'clay',
   'red clay': 'clay',
+  antuka: 'clay',
+  šljaka: 'clay',
+  sljaka: 'clay',
   grass: 'grass',
   lawn: 'grass',
+  trava: 'grass',
+  beton: 'hard',
+  asfalt: 'hard',
   carpet: 'carpet',
   tartan: 'carpet',
   synthetic: 'synthetic',
@@ -272,11 +288,11 @@ export function kindFromOsmTags(tags: Record<string, string>): VenueKind {
   const landuse = tags['landuse']
   const name = (tags['name'] ?? '').toLowerCase()
 
-  if (/tennis (center|centre)/.test(name)) return 'tennis_center'
-  if (tags['club'] || amenity === 'club' || /country club|racquet club|tennis club|athletic club|swim (and|&) tennis/.test(name)) return 'club'
-  if (leisure === 'sports_centre' && tags['sport'] === 'tennis') return 'tennis_center'
+  if (/tennis (center|centre)|teniski centar/.test(name)) return 'tennis_center'
+  if (tags['club'] || amenity === 'club' || /country club|racquet club|tennis club|athletic club|swim (and|&) tennis|teniski klub/.test(name)) return 'club'
+  if (leisure === 'sports_centre' && /(^|;)tennis(;|$)/.test(tags['sport'] ?? '')) return 'tennis_center'
   if (leisure === 'park' || leisure === 'recreation_ground' || leisure === 'nature_reserve' || landuse === 'recreation_ground') return 'public_park'
-  if (amenity === 'school' || amenity === 'college' || amenity === 'university' || /\b(school|academy|university|college|isd)\b/.test(name)) return 'school'
+  if (amenity === 'school' || amenity === 'college' || amenity === 'university' || /\b(school|academy|university|college|isd|skola|škola|gimnazija|fakultet|univerzitet)\b/.test(name)) return 'school'
   if (landuse === 'residential' || tags['building'] === 'apartments' || tags['tourism'] === 'apartment' || /\b(hoa|apartments?|condos?|villas?|residences?|neighborhood|subdivision)\b/.test(name)) return 'residential'
   if (tags['tourism'] === 'hotel' || tags['tourism'] === 'resort' || leisure === 'resort' || tags['building'] === 'hotel') return 'hotel'
   if (leisure === 'sports_centre' || leisure === 'fitness_centre' || leisure === 'stadium' || leisure === 'golf_course') return 'club'
@@ -304,6 +320,56 @@ export const PRIVATE_KINDS: ReadonlySet<VenueKind> = new Set<VenueKind>(['reside
 
 /** Names that mark a court as clearly not a public organization. */
 export const PRIVATE_NAME_RE = /\b(hoa|homeowners|residence|residents only|not for public|private|apartments?|condos?|townhomes?)\b/i
+
+const SR_TO_LATIN: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', ђ: 'đ', е: 'e', ж: 'ž', з: 'z', и: 'i', ј: 'j',
+  к: 'k', л: 'l', љ: 'lj', м: 'm', н: 'n', њ: 'nj', о: 'o', п: 'p', р: 'r', с: 's', т: 't',
+  ћ: 'ć', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'č', џ: 'dž', ш: 'š',
+}
+
+export function hasCyrillic(value: string): boolean {
+  return /[\u0400-\u04FF]/.test(value)
+}
+
+/** Serbian Cyrillic → Latin. Latin text, including diacritics, is left as-is. */
+export function serbianToLatin(input: string): string {
+  let out = ''
+  for (const ch of input) {
+    const mapped = SR_TO_LATIN[ch.toLowerCase()]
+    if (!mapped) {
+      out += ch
+      continue
+    }
+    out += ch === ch.toLowerCase() ? mapped : mapped[0]!.toUpperCase() + mapped.slice(1)
+  }
+  return out
+}
+
+/**
+ * Name to show on a card. Cyrillic OSM names become Latin (English tag, then
+ * sr-Latn, then transliteration) so the directory stays readable in the app.
+ */
+export function preferredOsmName(tags: Record<string, string | undefined>): string | null {
+  const name = tags['name']?.trim()
+  const en = tags['name:en']?.trim()
+  const latn = tags['name:sr-Latn']?.trim() || tags['name:sr-latn']?.trim()
+  const picked = name && hasCyrillic(name) ? en || latn || serbianToLatin(name) : name || en || latn
+  if (!picked) return null
+  return picked.replace(/[„“”«»]/g, '"').replace(/\s+/g, ' ').trim()
+}
+
+/** Latin script, and drop the "Gradska opština" prefix Nominatim puts on Belgrade streets. */
+export function tidyPostalAddress(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  const line = (hasCyrillic(raw) ? serbianToLatin(raw) : raw)
+    .replace(/Gradska opština /gi, '')
+    .replace(/Opština /gi, '')
+    .replace(/ Urban Municipality/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim()
+  return line || null
+}
 
 export function normalizePhone(raw: string | null | undefined): string | null {
   if (!raw) return null

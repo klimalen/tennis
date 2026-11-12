@@ -2,6 +2,10 @@
  * Venue catalog pipeline: turn raw OSM court polygons into organizations
  * ("who runs these courts, how do I contact them, what do they have").
  *
+ *   pnpm venues ingest    [--city austin] [--dry-run] [--no-cache]
+ *       Raw court polygons → `venues` (OSM, plus Geoapify / Austin open data
+ *       when those sources apply). Run this before cluster for a new city.
+ *
  *   pnpm venues cluster   [--city austin] [--dry-run] [--no-cache]
  *       Group raw `venues` rows into `venue_groups` (same OSM parent polygon, or
  *       courts within LINK_M of each other). Idempotent: re-running keeps groups
@@ -55,6 +59,7 @@ import {
   normalizeSurface,
   normalizeWebsite,
   parseArgs,
+  tidyPostalAddress,
   PRIVATE_KINDS,
   PRIVATE_NAME_RE,
   requireEnv,
@@ -63,6 +68,7 @@ import {
   supabaseAdmin,
   type VenueKind,
 } from './lib/venue-common'
+import { ingestCourts } from './lib/ingest-courts'
 
 loadEnvLocal()
 
@@ -383,6 +389,12 @@ async function cmdIdentify(sb: SupabaseClient, city: CityConfig, flags: Record<s
       }
     }
 
+    const tidyAddress = tidyPostalAddress(g.address)
+    if (tidyAddress && tidyAddress !== g.address && update['address'] == null) {
+      update['address'] = tidyAddress
+      log.push(`address: ${tidyAddress}`)
+    }
+
     // 3. Postal address (never a name)
     if (!g.address && update['address'] == null) {
       const addr = await reverseAddress(g.lat, g.lng)
@@ -577,7 +589,7 @@ async function applyResults(
     const set = (field: keyof GroupRow, value: unknown) => {
       if (value == null) return
       const current = group[field]
-      if (current == null || current === '' || opts.overwrite || (field === 'name' && isGenericName(current as string))) update[field] = value
+      if (current == null || current === '' || opts.overwrite || (field === 'name' && isGenericName(current as string)) || (field === 'kind' && current === 'unknown')) update[field] = value
     }
     set('name', r.venue_name)
     set('kind', r.kind)
@@ -659,7 +671,7 @@ const saveEnrichmentTool: Anthropic.Tool = {
     properties: {
       venue_name: { type: 'string', description: 'Official name of the organization / facility operating the courts' },
       kind: { type: 'string', enum: ['public_park', 'tennis_center', 'club', 'school', 'residential', 'hotel', 'commercial', 'other'] },
-      address: { type: 'string', description: 'Street address, city, state ZIP' },
+      address: { type: 'string', description: 'Street address as written locally' },
       phone: { type: 'string' },
       website: { type: 'string', description: 'Official website (not Facebook / Yelp / Google Maps)' },
       opening_hours: { type: 'string', description: 'Short human text, e.g. "Mon–Fri 8am–10pm, Sat–Sun 8am–8pm" or "Dawn to dusk"' },
@@ -687,7 +699,7 @@ You get one facility at a time: its location, what we already know, and what is 
 Find the organization that operates the courts at that exact location and extract facts about it.
 Rules:
 - Search the web with web_search; read pages with fetch_page when a snippet is not enough.
-- Prefer official sources: the operator's own website, the city parks department, school district, HOA site. Court directories (tennis-austin.com, playtennis, tennispronow, globaltennisnetwork) are acceptable for court count / surface / lights.
+- Prefer official sources: the operator's own website, the city parks department, school district, club site. Court directories are acceptable for court count / surface / lights${city.country === 'RS' ? ' (Teniski savez Srbije, Teniski savez Beograda, Playtomic, globaltennisnetwork). Search in Serbian and English ("teniski teren", "teniski klub")' : ' (tennis-austin.com, playtennis, tennispronow, globaltennisnetwork)'}.
 - Make sure the facts refer to THIS location, not another branch of the same operator.
 - Keep description to 1–2 sentences. Keep opening_hours short.
 - Finish by calling save_enrichment exactly once. Omit fields you could not verify.`
@@ -835,6 +847,9 @@ async function main() {
   const city = cityFromFlags(flags)
 
   switch (command) {
+    case 'ingest':
+      await ingestCourts({ city, dryRun: flags['dry-run'] === true, noCache: flags['no-cache'] === true })
+      break
     case 'cluster':
       await cmdCluster(sb, city, flags)
       break

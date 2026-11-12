@@ -7,7 +7,7 @@
  *   - Nominatim reverse: postal address only. Never used as a venue name.
  */
 
-import { haversineM, kindFromGoogleTypes, sleep, type VenueKind } from './venue-common'
+import { haversineM, kindFromGoogleTypes, sleep, tidyPostalAddress, type VenueKind } from './venue-common'
 
 // ─── Google Places (New) ──────────────────────────────────────────────────────
 
@@ -216,7 +216,10 @@ export async function reverseAddress(lat: number, lng: number): Promise<string |
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18&addressdetails=1`
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'TennisApp/1.0 (catalog-builder; contact@tennisapp.com)' },
+      headers: {
+        'User-Agent': 'TennisApp/1.0 (catalog-builder; contact@tennisapp.com)',
+        'Accept-Language': 'en, sr-Latn',
+      },
       signal: AbortSignal.timeout(10_000),
     })
     if (!res.ok) return null
@@ -227,7 +230,7 @@ export async function reverseAddress(lat: number, lng: number): Promise<string |
     const street = a['house_number'] && a['road'] ? `${a['house_number']} ${a['road']}` : a['road']
     const city = a['city'] ?? a['town'] ?? a['village'] ?? a['municipality']
     const parts = [street, city, a['state'] ? `${stateAbbrev(a['state'])}${a['postcode'] ? ` ${a['postcode']}` : ''}` : a['postcode']].filter(Boolean)
-    return parts.length ? parts.join(', ') : null
+    return tidyPostalAddress(parts.join(', '))
   } catch {
     return null
   }
