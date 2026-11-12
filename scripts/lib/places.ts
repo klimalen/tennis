@@ -7,7 +7,7 @@
  *   - Nominatim reverse: postal address only. Never used as a venue name.
  */
 
-import { haversineM, kindFromGoogleTypes, sleep, type VenueKind } from './venue-common'
+import { haversineM, kindFromGoogleTypes, serbianToLatin, sleep, tidyPostalAddress, type VenueKind } from './venue-common'
 
 // ─── Google Places (New) ──────────────────────────────────────────────────────
 
@@ -101,6 +101,10 @@ async function placesRequest(path: 'places:searchText' | 'places:searchNearby', 
   return json.places ?? []
 }
 
+function latinPlaceText(value: string): string {
+  return serbianToLatin(value).replace(/[„“”«»]/g, '"').replace(/\s+/g, ' ').trim()
+}
+
 function toPlace(raw: RawPlace, lat: number, lng: number): GooglePlace | null {
   const name = raw.displayName?.text
   const plat = raw.location?.latitude
@@ -108,19 +112,21 @@ function toPlace(raw: RawPlace, lat: number, lng: number): GooglePlace | null {
   if (!raw.id || !name || plat == null || plng == null) return null
   const types = raw.types ?? []
   const hours = raw.regularOpeningHours?.weekdayDescriptions
+  const latinName = latinPlaceText(name)
+  const address = raw.formattedAddress ?? raw.shortFormattedAddress ?? null
   return {
     placeId: raw.id,
-    name,
-    kind: kindFromGoogleTypes(types, name),
+    name: latinName,
+    kind: kindFromGoogleTypes(types, latinName),
     types,
-    address: raw.formattedAddress ?? raw.shortFormattedAddress ?? null,
+    address: address ? latinPlaceText(address) : null,
     lat: plat,
     lng: plng,
     distanceM: haversineM(lat, lng, plat, plng),
     phone: raw.nationalPhoneNumber ?? raw.internationalPhoneNumber ?? null,
     website: raw.websiteUri ?? null,
-    openingHours: hours && hours.length > 0 ? hours.join('; ') : null,
-    description: raw.editorialSummary?.text ?? null,
+    openingHours: hours && hours.length > 0 ? latinPlaceText(hours.join('; ')) : null,
+    description: raw.editorialSummary?.text ? latinPlaceText(raw.editorialSummary.text) : null,
     googleMapsUri: raw.googleMapsUri ?? null,
     businessStatus: raw.businessStatus ?? null,
   }
@@ -158,9 +164,10 @@ function similar(a: string, b: string): boolean {
 export async function googleOrganizationAt(
   lat: number,
   lng: number,
-  opts: { hintName?: string | null; maxDistanceM?: number; cityLabel?: string } = {},
+  opts: { hintName?: string | null; maxDistanceM?: number; cityLabel?: string; languageCode?: string } = {},
 ): Promise<{ place: GooglePlace | null; requests: number }> {
   const maxD = opts.maxDistanceM ?? 320
+  const lang = opts.languageCode ? { languageCode: opts.languageCode } : {}
   let requests = 0
   const candidates: GooglePlace[] = []
 
@@ -173,6 +180,7 @@ export async function googleOrganizationAt(
     textQuery,
     maxResultCount: 6,
     locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: maxD } },
+    ...lang,
   })
   for (const raw of text) {
     const p = toPlace(raw, lat, lng)
@@ -190,6 +198,7 @@ export async function googleOrganizationAt(
       maxResultCount: 8,
       rankPreference: 'DISTANCE',
       locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius: Math.min(maxD, 250) } },
+      ...lang,
     })
     for (const raw of nearby) {
       const p = toPlace(raw, lat, lng)
@@ -216,7 +225,10 @@ export async function reverseAddress(lat: number, lng: number): Promise<string |
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18&addressdetails=1`
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'TennisApp/1.0 (catalog-builder; contact@tennisapp.com)' },
+      headers: {
+        'User-Agent': 'TennisApp/1.0 (catalog-builder; contact@tennisapp.com)',
+        'Accept-Language': 'en, sr-Latn',
+      },
       signal: AbortSignal.timeout(10_000),
     })
     if (!res.ok) return null
@@ -227,7 +239,7 @@ export async function reverseAddress(lat: number, lng: number): Promise<string |
     const street = a['house_number'] && a['road'] ? `${a['house_number']} ${a['road']}` : a['road']
     const city = a['city'] ?? a['town'] ?? a['village'] ?? a['municipality']
     const parts = [street, city, a['state'] ? `${stateAbbrev(a['state'])}${a['postcode'] ? ` ${a['postcode']}` : ''}` : a['postcode']].filter(Boolean)
-    return parts.length ? parts.join(', ') : null
+    return tidyPostalAddress(parts.join(', '))
   } catch {
     return null
   }

@@ -15,6 +15,7 @@ import {
   normalizeSurface,
   normalizeWebsite,
   PRIVATE_NAME_RE,
+  serbianToLatin,
   type SourceRef,
   UnionFind,
   type VenueKind,
@@ -31,21 +32,49 @@ export const MERGE_PARENT_MAX_AREA_M2 = 2_500_000
  */
 export const SAME_NAME_MERGE_M = 600
 
-const GENERIC_NAMES = new Set(['tennis court', 'tennis courts', 'court', 'courts', 'tennis'])
+const GENERIC_NAMES = new Set([
+  'tennis court',
+  'tennis courts',
+  'court',
+  'courts',
+  'tennis',
+  'teniski teren',
+  'teniski tereni',
+  'teren',
+  'tereni',
+  'tenis',
+])
 export const STREET_ADDRESS_RE =
-  /^\d+\s+\S+.*\b(rd|road|st|street|dr|drive|ln|lane|blvd|boulevard|ave|avenue|way|trail|trl|cir|circle|pkwy|parkway|hwy|highway|loop|pass|path|bend|cove|cv|pl|place)\b\.?$/i
+  /^\d+\s+\S+.*\b(rd|road|st|street|dr|drive|ln|lane|blvd|boulevard|ave|avenue|way|trail|trl|cir|circle|pkwy|parkway|hwy|highway|loop|pass|path|bend|cove|cv|pl|place|ulica|ul|bulevar|bul|trg|put)\b\.?$/i
 
 export function isGenericName(name: string | null | undefined): boolean {
   if (!name) return true
-  return GENERIC_NAMES.has(name.trim().toLowerCase())
+  const folded = serbianToLatin(name).trim().toLowerCase()
+  return GENERIC_NAMES.has(folded)
 }
 
-const NAME_STOPWORDS = /\b(the|park|tennis|courts?|center|centre|club|country|district|neighborhood|hoa|of|at|and|complex|sports?)\b/g
+const NAME_STOPWORDS =
+  /\b(the|park|tennis|courts?|center|centre|club|klub|country|district|neighborhood|hoa|of|at|and|i|complex|kompleks|sports?|sportski|sportska|sportsko|teniski|teniska|tereni|terena|teren|centar|skola|gimnazija|fakultet)\b/g
+
+function foldOrgName(s: string): string {
+  return serbianToLatin(s)
+    .toLowerCase()
+    .replace(/đ/g, 'dj')
+    .replace(/[ćč]/g, 'c')
+    .replace(/š/g, 's')
+    .replace(/ž/g, 'z')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(NAME_STOPWORDS, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 /** Loose equality of organization names: same significant tokens, ignoring generic words. */
 export function namesSimilar(a: string, b: string): boolean {
-  const norm = (s: string) =>
-    s.toLowerCase().replace(/\(.*?\)/g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(NAME_STOPWORDS, ' ').replace(/\s+/g, ' ').trim()
+  const norm = foldOrgName
   const na = norm(a)
   const nb = norm(b)
   if (!na || !nb) return false
@@ -249,9 +278,10 @@ export function deriveGroupFields(c: Cluster): DerivedGroup {
   let kind: VenueKind = c.parent?.feature.kind ?? 'unknown'
   if (kind === 'unknown' && name) {
     if (PRIVATE_NAME_RE.test(name)) kind = 'residential'
-    else if (/tennis (center|centre)/i.test(name)) kind = 'tennis_center'
-    else if (/club/i.test(name)) kind = 'club'
-    else if (/park/i.test(name)) kind = 'public_park'
+    else if (/tennis (center|centre)|teniski centar/i.test(name)) kind = 'tennis_center'
+    else if (/\b(skola|škola|gimnazija|fakultet|univerzitet|school|academy|university|college)\b/i.test(name)) kind = 'school'
+    else if (/\b(club|klub)\b/i.test(name)) kind = 'club'
+    else if (/\bpark\b/i.test(name)) kind = 'public_park'
   }
   if (kind === 'unknown' && memberNames.some((n) => PRIVATE_NAME_RE.test(n))) kind = 'residential'
 

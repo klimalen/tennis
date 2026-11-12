@@ -12,6 +12,8 @@
     "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
     "ingest:austin": "tsx scripts/ingest-venues-austin.ts",
     "ingest:austin:dry": "tsx scripts/ingest-venues-austin.ts --dry-run",
+    "ingest:belgrade": "tsx scripts/venue-pipeline.ts ingest --city belgrade",
+    "ingest:belgrade:dry": "tsx scripts/venue-pipeline.ts ingest --city belgrade --dry-run",
     "venues": "tsx scripts/venue-pipeline.ts",
     "eas:ios": "pnpm --filter mobile eas:build:ios"
   },

@@ -13,7 +13,9 @@ import {
   haversineM,
   kindFromOsmTags,
   pointInRing,
+  preferredOsmName,
   readJsonCache,
+  tidyPostalAddress,
   sleep,
   type VenueKind,
   writeJsonCache,
@@ -84,7 +86,7 @@ const PARENT_FILTERS = [
   `["name"]["landuse"~"^(recreation_ground|residential|retail|commercial)$"]`,
   `["name"]["tourism"~"^(hotel|resort|apartment|camp_site)$"]`,
   `["name"]["building"~"^(apartments|dormitory|hotel)$"]`,
-  `["name"]["sport"="tennis"]["leisure"!="pitch"]`,
+  `["name"]["sport"~"(^|;)tennis(;|$)"]["leisure"!="pitch"]`,
 ]
 
 function buildParentsQuery(b: BBox): string {
@@ -141,7 +143,7 @@ export async function loadParentIndex(city: { slug: string; bbox: BBox }, opts: 
   const features: ParentFeature[] = []
   for (const el of elements) {
     const tags = el.tags ?? {}
-    const name = tags['name']
+    const name = preferredOsmName(tags)
     if (!name) continue
     // Skip admin/timezone/place areas that sneak in via the "club" or "name" filters
     if (tags['boundary'] || tags['place'] || tags['admin_level'] || tags['timezone']) continue
@@ -163,7 +165,7 @@ export async function loadParentIndex(city: { slug: string; bbox: BBox }, opts: 
     features.push({
       osmId: `${el.type}/${el.id}`,
       name,
-      kind: kindFromOsmTags(tags),
+      kind: kindFromOsmTags({ ...tags, name }),
       tags,
       bounds,
       areaM2,
@@ -240,5 +242,5 @@ function buildAddress(tags: Record<string, string>): string | null {
     ? `${tags['addr:housenumber']} ${tags['addr:street']}`
     : tags['addr:street']
   const parts = [street, tags['addr:city'], tags['addr:postcode']].filter(Boolean)
-  return parts.length ? parts.join(', ') : null
+  return tidyPostalAddress(parts.length ? parts.join(', ') : null)
 }
