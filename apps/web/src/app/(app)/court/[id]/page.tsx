@@ -12,6 +12,7 @@ import { courtReportHref } from '@/lib/court-report'
 import { isUuid } from '@/lib/public-game'
 import { loadPublicCourt, type PublicCourt } from '@/lib/public-court'
 import { courtTitle, venueKindLabel } from '@/lib/venue-label'
+import { returnToFromSearch, withReturnTo } from '@/lib/return-to'
 
 function mapsHref(court: PublicCourt) {
   if (court.google_maps_uri) return court.google_maps_uri
@@ -38,8 +39,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-export default async function CourtPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CourtPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ from?: string | string[] }>
+}) {
   const { id } = await params
+  const query = await searchParams
+  const backHref = returnToFromSearch(query.from)
   if (!isUuid(id)) {
     return <LinkState title="COURT NOT FOUND" body="This court isn't in the catalog." action={{ href: '/search', label: 'Browse courts' }} />
   }
@@ -53,7 +62,10 @@ export default async function CourtPage({ params }: { params: Promise<{ id: stri
   if (!result) {
     return <LinkState title="COURT NOT FOUND" body="This court isn't in the catalog." action={{ href: '/search', label: 'Browse courts' }} />
   }
-  if ('redirectTo' in result) permanentRedirect(`/court/${result.redirectTo}`)
+  if ('redirectTo' in result) {
+    const from = returnToFromSearch(query.from, '')
+    permanentRedirect(from ? withReturnTo(`/court/${result.redirectTo}`, from) : `/court/${result.redirectTo}`)
+  }
 
   const court = result.court
   const title = courtTitle(court.name, court.address)
@@ -64,7 +76,7 @@ export default async function CourtPage({ params }: { params: Promise<{ id: stri
     <div className="min-h-screen pb-20 md:pb-0">
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/search" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+          <Link href={backHref} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
           <span className="flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">{title.toUpperCase()}</span>
