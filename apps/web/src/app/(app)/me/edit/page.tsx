@@ -95,6 +95,24 @@ interface ProfileData {
   cityLng: number | null
 }
 
+function draftKey(d: ProfileData): string {
+  return JSON.stringify({
+    fullName: d.fullName.trim(),
+    username: d.username.trim(),
+    bio: d.bio.trim(),
+    skillLevel: d.skillLevel,
+    playFormats: [...d.playFormats].sort(),
+    playStyle: d.playStyle,
+    preferredSurfaces: [...d.preferredSurfaces].sort(),
+    availability: d.availability,
+    lookingFor: d.lookingFor.trim(),
+    isCoach: d.isCoach,
+    city: d.city.trim(),
+    cityLat: d.cityLat,
+    cityLng: d.cityLng,
+  })
+}
+
 export default function EditProfilePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -112,6 +130,8 @@ export default function EditProfilePage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
   const [originalUsername, setOriginalUsername] = useState('')
+  const [savedKey, setSavedKey] = useState<string | null>(null)
+  const [leaveOpen, setLeaveOpen] = useState(false)
 
   const [d, setD] = useState<ProfileData>({
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null,
@@ -122,6 +142,9 @@ export default function EditProfilePage() {
   const draftRef = useRef(d)
   draftRef.current = d
   const dirtyRef = useRef(false)
+  const goneRef = useRef(false)
+  const saveTimer = useRef<number | null>(null)
+  const savedAt = useRef(0)
 
   function update(partial: Partial<ProfileData>) {
     dirtyRef.current = true
@@ -149,8 +172,7 @@ export default function EditProfilePage() {
       }
       if (p?.account_kind === 'court') { router.replace('/me'); return }
       if (p) {
-        setOriginalUsername(p.username || '')
-        setD({
+        const next: ProfileData = {
           fullName: p.full_name || '',
           username: p.username || '',
           bio: p.bio || '',
@@ -166,7 +188,10 @@ export default function EditProfilePage() {
           city: p.city_name || '',
           cityLat: p.city_lat ?? null,
           cityLng: p.city_lng ?? null,
-        })
+        }
+        setOriginalUsername(p.username || '')
+        setD(next)
+        setSavedKey(draftKey(next))
       }
       setLoading(false)
     }
@@ -204,6 +229,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     return () => {
       if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+      if (saveTimer.current) window.clearTimeout(saveTimer.current)
     }
   }, [])
 
@@ -232,6 +258,28 @@ export default function EditProfilePage() {
   }
 
   const canSave = d.fullName.trim().length > 0 && d.username.trim().length >= 3 && usernameStatus !== 'taken'
+  const isDirty = savedKey !== null && (draftKey(d) !== savedKey || pendingAvatar !== null)
+
+  function goToProfile() {
+    if (goneRef.current) return
+    goneRef.current = true
+    router.push('/me')
+  }
+
+  function finishSaved() {
+    if (Date.now() - savedAt.current < 400) return
+    if (saveTimer.current) window.clearTimeout(saveTimer.current)
+    setSaveStatus(null)
+    goToProfile()
+  }
+
+  function handleBack() {
+    if (isDirty) {
+      setLeaveOpen(true)
+      return
+    }
+    router.back()
+  }
 
   async function handleSave() {
     if (!canSave || !userId || saveStatus === 'saving') return
@@ -273,9 +321,16 @@ export default function EditProfilePage() {
       }).eq('id', userId)
 
       if (updateErr) throw updateErr
+      setPendingAvatar(null)
+      setSavedKey(draftKey(draft))
+      setLeaveOpen(false)
+      savedAt.current = Date.now()
       setSaveStatus('saved')
-      router.refresh()
-      window.setTimeout(() => router.push('/me'), 1000)
+      if (saveTimer.current) window.clearTimeout(saveTimer.current)
+      saveTimer.current = window.setTimeout(() => {
+        setSaveStatus(null)
+        goToProfile()
+      }, 1000)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save')
       setSaveStatus('error')
@@ -324,7 +379,7 @@ export default function EditProfilePage() {
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+          <button type="button" onClick={handleBack} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
           </button>
           <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
@@ -566,6 +621,21 @@ export default function EditProfilePage() {
           status={saveStatus}
           message={error}
           onClose={() => setSaveStatus(null)}
+          onSavedDismiss={finishSaved}
+        />
+      )}
+      {leaveOpen && (
+        <UnsavedChangesDialog
+          canSave={canSave && saveStatus !== 'saving'}
+          onDismiss={() => setLeaveOpen(false)}
+          onDiscard={() => {
+            setLeaveOpen(false)
+            router.back()
+          }}
+          onSave={() => {
+            setLeaveOpen(false)
+            void handleSave()
+          }}
         />
       )}
     </div>
@@ -576,14 +646,34 @@ function SaveNotice({
   status,
   message,
   onClose,
+  onSavedDismiss,
 }: {
   status: 'saving' | 'saved' | 'error'
   message: string
   onClose: () => void
+  onSavedDismiss: () => void
 }) {
+  function dismiss() {
+    if (status === 'saving') return
+    if (status === 'saved') onSavedDismiss()
+    else onClose()
+  }
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-black/25">
-      <div className="w-full max-w-[220px] rounded-[24px] bg-white px-5 py-6 text-center shadow-[0_12px_40px_rgba(26,26,26,0.16)]">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-black/25"
+      onClick={dismiss}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={status === 'saved' ? 'Saved' : status === 'saving' ? 'Saving' : 'Something went wrong'}
+        className="w-full max-w-[220px] rounded-[24px] bg-white px-5 py-6 text-center shadow-[0_12px_40px_rgba(26,26,26,0.16)]"
+        onClick={(event) => {
+          if (status !== 'saved') event.stopPropagation()
+        }}
+      >
         {status === 'saving' && (
           <>
             <Loader2 size={22} className="mx-auto animate-spin text-[#E8748A]" />
@@ -611,6 +701,60 @@ function SaveNotice({
             </button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+function UnsavedChangesDialog({
+  canSave,
+  onDismiss,
+  onDiscard,
+  onSave,
+}: {
+  canSave: boolean
+  onDismiss: () => void
+  onDiscard: () => void
+  onSave: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center px-6 bg-black/25"
+      onClick={onDismiss}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="unsaved-title"
+        className="relative w-full max-w-sm rounded-[28px] bg-white px-5 pb-5 pt-6 shadow-[0_12px_40px_rgba(26,26,26,0.16)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Close"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full bg-brand-field border border-[#1a1a1a]/15 flex items-center justify-center"
+        >
+          <X size={14} className="text-[rgba(26,26,26,0.55)]" />
+        </button>
+        <h2 id="unsaved-title" className="font-display text-3xl tracking-wide pr-8 text-[#1a1a1a]">Unsaved changes</h2>
+        <p className="mt-2 font-copy text-sm text-[rgba(26,26,26,0.6)]">You have changes that are not saved yet.</p>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={!canSave}
+          className="mt-5 w-full py-3 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#2F7466] transition-colors disabled:opacity-40"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onDiscard}
+          className="mt-2 w-full py-3 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   )
