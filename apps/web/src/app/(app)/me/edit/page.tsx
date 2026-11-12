@@ -18,14 +18,6 @@ const SKILL_LEVELS = [
   { value: 6.0, label: 'Competitive', sub: 'Ranked player, tournament regular' },
 ]
 
-const YEARS_OPTIONS = [
-  { value: 0.5, label: '< 1 year' },
-  { value: 1.5, label: '1–2 years' },
-  { value: 3.5, label: '2–5 years' },
-  { value: 7.5, label: '5–10 years' },
-  { value: 15, label: '10+ years' },
-]
-
 const FORMAT_OPTIONS = [
   { value: 'singles', label: 'Singles' },
   { value: 'doubles', label: 'Doubles' },
@@ -92,7 +84,6 @@ interface ProfileData {
   avatarUrl: string | null
   avatarFile: File | null
   skillLevel: number | null
-  yearsPlaying: number | null
   playFormats: string[]
   playStyle: string | null
   preferredSurfaces: string[]
@@ -124,7 +115,7 @@ export default function EditProfilePage() {
 
   const [d, setD] = useState<ProfileData>({
     fullName: '', username: '', bio: '', avatarUrl: null, avatarFile: null,
-    skillLevel: null, yearsPlaying: null, playFormats: [], playStyle: null,
+    skillLevel: null, playFormats: [], playStyle: null,
     preferredSurfaces: [], availability: {},
     lookingFor: '', isCoach: false, city: '', cityLat: null, cityLng: null,
   })
@@ -148,7 +139,7 @@ export default function EditProfilePage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('account_kind, full_name, username, bio, avatar_url, skill_level_self, years_playing, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
+        .select('account_kind, full_name, username, bio, avatar_url, skill_level_self, preferred_formats, play_style, preferred_surfaces, preferred_days, preferred_time_start, preferred_time_end, availability, looking_for, is_coach, city_name, city_lat, city_lng')
         .eq('id', user.id)
         .single()
 
@@ -166,7 +157,6 @@ export default function EditProfilePage() {
           avatarUrl: p.avatar_url || null,
           avatarFile: null,
           skillLevel: p.skill_level_self ?? null,
-          yearsPlaying: p.years_playing ?? null,
           playFormats: p.preferred_formats || [],
           playStyle: p.play_style || null,
           preferredSurfaces: p.preferred_surfaces || [],
@@ -268,7 +258,6 @@ export default function EditProfilePage() {
         bio: draft.bio.trim() || null,
         avatar_url: avatarUrl,
         skill_level_self: draft.isCoach ? null : draft.skillLevel,
-        years_playing: draft.yearsPlaying ? Math.round(draft.yearsPlaying) : null,
         preferred_formats: draft.playFormats,
         play_style: draft.playStyle,
         preferred_surfaces: draft.preferredSurfaces,
@@ -432,6 +421,53 @@ export default function EditProfilePage() {
         </div>
         </section>
 
+        {/* ── LOOKING FOR ── */}
+        <section className="space-y-4">
+        <SectionTitle>Looking for</SectionTitle>
+
+        <div>
+          <FieldLabel optional>Who are you looking to play with?</FieldLabel>
+          <textarea
+            value={d.lookingFor}
+            onChange={(e) => update({ lookingFor: e.target.value })}
+            rows={3}
+            maxLength={300}
+            className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
+            placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
+          />
+          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
+        </div>
+        </section>
+
+        {/* ── LOCATION ── */}
+        <section className="space-y-4">
+        <SectionTitle>Location</SectionTitle>
+
+        <div>
+          <FieldLabel>City</FieldLabel>
+          <CityLocationField
+            value={d.city}
+            onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
+            helper="Used for courts, players, and games near you."
+            placeholder="Search your city..."
+          />
+          {!d.city.trim() && (
+            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
+          )}
+        </div>
+        </section>
+
+        {/* ── SCHEDULE ── */}
+        <section className="space-y-4">
+        <SectionTitle>Schedule</SectionTitle>
+
+        {/* Days and the parts of those days */}
+        <div>
+          <FieldLabel optional>When you play</FieldLabel>
+          <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
+        </div>
+        </section>
+
         {/* ── YOUR GAME ── */}
         <section>
           <div className="flex items-center gap-3">
@@ -480,17 +516,6 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <FieldLabel optional>Playing since</FieldLabel>
-              <div className="flex flex-wrap gap-2.5">
-                {YEARS_OPTIONS.map((o) => (
-                  <Pill key={o.value} active={d.yearsPlaying === o.value} onClick={() => update({ yearsPlaying: d.yearsPlaying === o.value ? null : o.value })}>
-                    {o.label}
-                  </Pill>
-                ))}
-              </div>
-            </div>
-
-            <div>
               <FieldLabel optional>Preferred format</FieldLabel>
               <div className="flex flex-wrap gap-2.5">
                 {FORMAT_OPTIONS.map((o) => (
@@ -534,53 +559,6 @@ export default function EditProfilePage() {
             </div>
 
           </div>
-        </section>
-
-        {/* ── SCHEDULE ── */}
-        <section className="space-y-4">
-        <SectionTitle>Schedule</SectionTitle>
-
-        {/* Days and the parts of those days */}
-        <div>
-          <FieldLabel optional>When you play</FieldLabel>
-          <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
-        </div>
-        </section>
-
-        {/* ── LOOKING FOR ── */}
-        <section className="space-y-4">
-        <SectionTitle>Looking for</SectionTitle>
-
-        <div>
-          <FieldLabel optional>Who are you looking to play with?</FieldLabel>
-          <textarea
-            value={d.lookingFor}
-            onChange={(e) => update({ lookingFor: e.target.value })}
-            rows={3}
-            maxLength={300}
-            className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
-            placeholder="e.g. A partner around 3.0–3.5 for friendly matches 1–2x per week..."
-          />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
-        </div>
-        </section>
-
-        {/* ── LOCATION ── */}
-        <section className="space-y-4">
-        <SectionTitle>Location</SectionTitle>
-
-        <div>
-          <FieldLabel>City</FieldLabel>
-          <CityLocationField
-            value={d.city}
-            onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
-            helper="Used for courts, players, and games near you."
-            placeholder="Search your city..."
-          />
-          {!d.city.trim() && (
-            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
-          )}
-        </div>
         </section>
       </div>
       {saveStatus && (
