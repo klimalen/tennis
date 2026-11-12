@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useHideTabBar, useTabBarHidden } from '@/components/navigation/TabBarVisibility'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
+import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import type { User } from '@supabase/supabase-js'
 import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
 import { formatCourtCost, type GameCourt } from '@/lib/game-court'
@@ -496,6 +497,8 @@ function CourtMap({ venue }: { venue: { lat: number; lng: number; name: string }
   )
 }
 
+const sheetIconButton = 'flex h-7 w-7 items-center justify-center rounded-full border border-[#1a1a1a]/15 bg-white text-[rgba(26,26,26,0.55)] transition-colors hover:bg-brand-field'
+
 function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: { venue: Venue; userLat: number; userLng: number; saved?: boolean; onToggleSave?: (venue: Venue) => void; onClose: () => void }) {
   useHideTabBar(true)
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
@@ -505,13 +508,14 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
       <div className="fixed bottom-0 left-0 right-0 z-40 flex max-h-[85vh] flex-col overflow-hidden rounded-t-[28px] bg-white md:bottom-8 md:left-1/2 md:max-w-lg md:-translate-x-1/2 md:rounded-[28px] md:shadow-xl">
         <div className="flex shrink-0 items-center justify-between border-b border-brand-divider bg-white px-4 py-3">
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(venue.kind)}</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {onToggleSave && (
-              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className="flex h-7 w-7 items-center justify-center text-[#1a1a1a]">
-                <CourtStar saved={Boolean(saved)} />
+              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className={sheetIconButton}>
+                <CourtStar saved={Boolean(saved)} size={14} strokeWidth={saved ? 1.25 : 2} />
               </button>
             )}
-            <button onClick={onClose} className="flex h-7 w-7 items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]"><X size={16} /></button>
+            <ShareLinkButton path={`/court/${venue.id}`} title={`${courtTitle(venue)} on GAME.`} text={`${courtTitle(venue)} on GAME.`} size="sm" />
+            <button type="button" onClick={onClose} aria-label="Close" className={sheetIconButton}><X size={14} /></button>
           </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -606,13 +610,13 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
   )
 }
 
-function CourtStar({ saved, size = 16 }: { saved?: boolean; size?: number }) {
+function CourtStar({ saved, size = 16, strokeWidth }: { saved?: boolean; size?: number; strokeWidth?: number }) {
   return (
     <Star
       size={size}
       fill={saved ? '#E8748A' : 'none'}
       stroke={saved ? '#E8748A' : 'currentColor'}
-      strokeWidth={saved ? 1.25 : 1.75}
+      strokeWidth={strokeWidth ?? (saved ? 1.25 : 1.75)}
     />
   )
 }

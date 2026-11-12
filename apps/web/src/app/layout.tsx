@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { Oswald, Anton, Source_Sans_3, Fraunces } from 'next/font/google'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
 import { isNativeGameAppUa } from '@/lib/native-app'
+import { siteOrigin } from '@/lib/site-origin'
 import './globals.css'
 
 const bebasNeue = Oswald({
@@ -39,29 +40,31 @@ const siteName = 'GAME. — Find and Play Tennis'
 const siteTitle = 'GAME. — Find and Play Tennis'
 const siteDescription = 'Find and play tennis. Players, games, courts, and more.'
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: siteTitle,
-  description: siteDescription,
-  applicationName: siteName,
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    metadataBase: new URL(await siteOrigin()),
     title: siteTitle,
     description: siteDescription,
-    url: siteUrl,
-    siteName,
-    type: 'website',
-    locale: 'en_US',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteTitle,
-    description: siteDescription,
-  },
-  appleWebApp: {
-    capable: true,
-    title: siteName,
-    statusBarStyle: 'default',
-  },
+    applicationName: siteName,
+    openGraph: {
+      title: siteTitle,
+      description: siteDescription,
+      url: siteUrl,
+      siteName,
+      type: 'website',
+      locale: 'en_US',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: siteTitle,
+      description: siteDescription,
+    },
+    appleWebApp: {
+      capable: true,
+      title: siteName,
+      statusBarStyle: 'default',
+    },
+  }
 }
 
 export const viewport: Viewport = {

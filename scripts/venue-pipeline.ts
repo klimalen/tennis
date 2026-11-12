@@ -177,6 +177,7 @@ async function cmdCluster(sb: SupabaseClient, city: CityConfig, flags: Record<st
   let created = 0
   let updated = 0
   const touchedGroupIds = new Set<string>()
+  const redirects: { old_id: string; new_id: string }[] = []
   const now = new Date().toISOString()
 
   for (const c of clusters) {
@@ -257,12 +258,20 @@ async function cmdCluster(sb: SupabaseClient, city: CityConfig, flags: Record<st
       created++
     }
     touchedGroupIds.add(groupId)
+    for (const other of absorbed) {
+      if (other.id !== groupId) redirects.push({ old_id: other.id, new_id: groupId })
+    }
 
     const toAttach = c.members.filter((v) => v.group_id !== groupId).map((v) => v.id)
     if (toAttach.length > 0) {
       const { error } = await sb.from('venues').update({ group_id: groupId }).in('id', toAttach)
       if (error) throw new Error(`attach venues: ${error.message}`)
     }
+  }
+
+  if (!dryRun && redirects.length > 0) {
+    const { error } = await sb.from('venue_group_redirects').upsert(redirects, { onConflict: 'old_id' })
+    if (error) throw new Error(`court redirects: ${error.message}`)
   }
 
   // Groups that lost all members

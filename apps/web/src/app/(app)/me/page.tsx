@@ -2,6 +2,7 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
 import { Settings, CalendarDays, Globe, Phone } from 'lucide-react'
+import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CreateSheet } from '@/components/navigation/CreateSheet'
@@ -131,9 +132,18 @@ async function ProfileContent() {
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">PROFILE</span>
-          <Link href="/settings" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
-            <Settings size={16} className="text-[rgba(26,26,26,0.5)]" />
-          </Link>
+          <div className="flex items-center gap-2">
+            {username && (
+              <ShareLinkButton
+                path={`/profile/${username}`}
+                title={`${fullName} on GAME.`}
+                text={`${fullName} on GAME.`}
+              />
+            )}
+            <Link href="/settings" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
+              <Settings size={16} className="text-[rgba(26,26,26,0.5)]" />
+            </Link>
+          </div>
         </div>
       </div>
 
