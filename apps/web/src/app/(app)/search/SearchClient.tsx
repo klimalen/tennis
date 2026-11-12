@@ -22,7 +22,11 @@ import { COURT_NEAR_RADIUS_KM, TRAVEL_RADIUS_KM, boundingBox } from '@/lib/trave
 import { holdsGameSeat } from '@/lib/schedule'
 import { compareOpenGames, gameInDayRange, localGameDayKey, openGameSpotsLeft } from '@/lib/open-games-order'
 import { formatDayRange, GameDateRange, type DayRange } from '@/components/games/GameDateRange'
-import { placeSuggestionLabel, toPlaceSuggestions, type NominatimPlace, type PlaceSuggestion } from '@/lib/place-suggestions'
+import { type NominatimPlace } from '@/lib/place-suggestions'
+import { createClient } from '@/lib/supabase/client'
+import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
+import { YourCityControl } from '@/components/location/YourCityControl'
+import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 
 /** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
 const SEARCH_FETCH_MS = 12_000
@@ -987,21 +991,6 @@ function NoCityState({ guest, onBrowseCourts, vivid = true }: { guest?: boolean;
   )
 }
 
-// ─── Courts city persistence ───────────────────────────────────────────────────
-
-const COURTS_CITY_KEY = 'courts_last_city'
-
-interface SavedCourtsCity {
-  name: string
-  label: string
-  lat: number
-  lng: number
-  south: number
-  north: number
-  west: number
-  east: number
-}
-
 type CourtSpan = 'near' | 'travel'
 
 interface CourtFetch {
@@ -1042,9 +1031,35 @@ async function fetchVenuePage(args: {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function SearchClient({ user, userCityName, userCityLat = null, userCityLng = null, initialIncoming, initialPreviewPlayer = null, initialRequestStatuses = {}, previewPlayerReady = false, viewerIsCourt = false }: { user: User | null; userCityName: string | null; userCityLat?: number | null; userCityLng?: number | null; initialIncoming: IncomingRequest[]; initialPreviewPlayer?: Player | null; initialRequestStatuses?: Record<string, string>; previewPlayerReady?: boolean; viewerIsCourt?: boolean }) {
+export function SearchClient({
+  user,
+  userCityName: initialCityName,
+  userCityLat: initialCityLat = null,
+  userCityLng: initialCityLng = null,
+  initialIncoming,
+  initialPreviewPlayer = null,
+  initialRequestStatuses = {},
+  previewPlayerReady = false,
+  viewerIsCourt = false,
+}: {
+  user: User | null
+  userCityName: string | null
+  userCityLat?: number | null
+  userCityLng?: number | null
+  initialIncoming: IncomingRequest[]
+  initialPreviewPlayer?: Player | null
+  initialRequestStatuses?: Record<string, string>
+  previewPlayerReady?: boolean
+  viewerIsCourt?: boolean
+}) {
   const router = useRouter()
   const { setHidden: setTabBarHidden } = useTabBarHidden()
+
+  // One app city (profile for signed-in; session-only for guests).
+  const [userCityName, setUserCityName] = useState(initialCityName)
+  const [userCityLat, setUserCityLat] = useState(initialCityLat)
+  const [userCityLng, setUserCityLng] = useState(initialCityLng)
+  const [cityToast, setCityToast] = useState<string | null>(null)
 
   // Navigation
   const [view, setView] = useState<View>('discovery')
@@ -1064,6 +1079,23 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [selectedGame, setSelectedGame] = useState<GameDetail | null>(null)
   const [courtInfoOpen, setCourtInfoOpen] = useState(false)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
+
+  async function applyAppLocation(location: ProfileLocation) {
+    if (user) {
+      const { error } = await saveProfileCity(createClient(), user.id, location)
+      if (error) throw new Error(error)
+    }
+    setUserCityName(location.name)
+    setUserCityLat(location.lat)
+    setUserCityLng(location.lng)
+    setPreviewCoords({ lat: location.lat, lng: location.lng })
+    setUserGeoCoords({ lat: location.lat, lng: location.lng })
+    setUserCoords({ lat: location.lat, lng: location.lng })
+    setCityLabel(location.name)
+    setGeocodeDone(true)
+    setCityToast(location.name)
+    setSearchEpoch((epoch) => epoch + 1)
+  }
 
   // ── Discovery previews ──────────────────────────────────────────────────────
   const [previewPlayer, setPreviewPlayer] = useState<Player | null>(initialPreviewPlayer)
@@ -1432,67 +1464,33 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
   const [favoriteVenues, setFavoriteVenues] = useState<Venue[]>([])
   const [courtList, setCourtList] = useState<'all' | 'mine'>('all')
   const [loadingVenues, setLoadingVenues] = useState(false)
-  const [locating, setLocating] = useState(false)
   const [loadingMoreVenues, setLoadingMoreVenues] = useState(false)
   const [venuesHasMore, setVenuesHasMore] = useState(false)
   const [courtSpan, setCourtSpan] = useState<CourtSpan>('near')
-  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [cityInput, setCityInput] = useState('')
-  const [cityLabel, setCityLabel] = useState<string | null>(null)
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(
+    initialCityLat != null && initialCityLng != null
+      ? { lat: initialCityLat, lng: initialCityLng }
+      : null,
+  )
+  const [cityLabel, setCityLabel] = useState<string | null>(initialCityName)
   const [courtsError, setCourtsError] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([])
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const skipAutocompleteRef = useRef(false)
-  const courtsRestoredRef = useRef(false)
   const venuesRequestRef = useRef(0)
   const courtFetchRef = useRef<CourtFetch | null>(null)
   const venuesRef = useRef(venues)
   venuesRef.current = venues
 
-  // Restore last city when courts view opens
+  // Keep courts list centered on the same profile/session city as Discover.
   useEffect(() => {
-    if (view !== 'courts' || courtsRestoredRef.current || userCoords) return
-    courtsRestoredRef.current = true
-    try {
-      const raw = localStorage.getItem(COURTS_CITY_KEY)
-      if (!raw) return
-      const saved = JSON.parse(raw) as SavedCourtsCity
-      const coords = { lat: saved.lat, lng: saved.lng }
-      skipAutocompleteRef.current = true
-      setCityInput(saved.name)
-      setCityLabel(saved.label)
-      setUserCoords(coords)
-    } catch {
-      // ignore malformed data
+    if (userCityLat != null && userCityLng != null) {
+      setUserCoords({ lat: userCityLat, lng: userCityLng })
+      setCityLabel(userCityName)
+      return
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view])
-
-  useEffect(() => {
-    if (view !== 'courts') return
-    if (skipAutocompleteRef.current) { skipAutocompleteRef.current = false; return }
-    const q = cityInput.trim()
-    if (q.length < 2) { setSuggestions([]); setShowSuggestions(false); return }
-    setLoadingSuggestions(true)
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=10&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } },
-        )
-        const results = (await res.json()) as NominatimPlace[]
-        setSuggestions(toPlaceSuggestions(results))
-        setShowSuggestions(true)
-      } catch {
-        setSuggestions([])
-      } finally {
-        setLoadingSuggestions(false)
-      }
-    }, 350)
-    return () => clearTimeout(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityInput])
+    if (previewCoords) {
+      setUserCoords(previewCoords)
+      setCityLabel(userCityName)
+    }
+  }, [userCityLat, userCityLng, userCityName, previewCoords])
 
   const courtFilterActive = debouncedCourtQuery.length > 0 || courtSurfaceKey.length > 0
 
@@ -1508,7 +1506,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     let cancelled = false
     setLoadingVenues(true)
     setCourtsError(null)
-    setShowSuggestions(false)
     ;(async () => {
       try {
         let radiusKm = filtered ? TRAVEL_RADIUS_KM : COURT_NEAR_RADIUS_KM
@@ -1540,8 +1537,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         courtFetchRef.current = null
         setCourtsError('Failed to load courts. Please try again.')
       } finally {
-        // Clear even when this run was cancelled, as long as nothing newer owns the request id.
-        // Otherwise leaving courts (or a coords flicker) can leave the skeleton on forever.
         if (requestId === venuesRequestRef.current) setLoadingVenues(false)
       }
     })()
@@ -1585,63 +1580,6 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
     } finally {
       if (requestId === venuesRequestRef.current) setLoadingMoreVenues(false)
     }
-  }
-
-  function selectSuggestion(row: PlaceSuggestion) {
-    const place = row.place
-    skipAutocompleteRef.current = true
-    const name = row.title
-    const label = placeSuggestionLabel(row)
-    const lat = parseFloat(place.lat)
-    const lng = parseFloat(place.lon)
-    const coords = { lat, lng }
-    const box = boundingBox(lat, lng, COURT_NEAR_RADIUS_KM)
-
-    setCityInput(name)
-    setCityLabel(label)
-    setSuggestions([])
-    setShowSuggestions(false)
-    setUserCoords(coords)
-
-    const toSave: SavedCourtsCity = { name, label, lat, lng, south: box.south, north: box.north, west: box.west, east: box.east }
-    localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
-  }
-
-  function requestGeolocation() {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setCourtsError('Geolocation is not supported by your browser')
-      return
-    }
-    // Drop any in-flight search of the typed city. This click must use the device position.
-    venuesRequestRef.current += 1
-    const requestId = venuesRequestRef.current
-    if (cityInput.trim()) skipAutocompleteRef.current = true
-    setSuggestions([])
-    setShowSuggestions(false)
-    setCityInput('')
-    setLocating(true)
-    setLoadingVenues(false)
-    setCourtsError(null)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (requestId !== venuesRequestRef.current) return
-        const { latitude, longitude } = pos.coords
-        const coords = { lat: latitude, lng: longitude }
-        const { south, west, north, east } = boundingBox(latitude, longitude, COURT_NEAR_RADIUS_KM)
-        setUserCoords(coords)
-        setCityLabel('your location')
-        setLocating(false)
-        const toSave: SavedCourtsCity = { name: '', label: 'your location', lat: latitude, lng: longitude, south, north, west, east }
-        localStorage.setItem(COURTS_CITY_KEY, JSON.stringify(toSave))
-      },
-      () => {
-        if (requestId !== venuesRequestRef.current) return
-        setLocating(false)
-        setLoadingVenues(false)
-        setCourtsError('Could not detect your location. Allow location access and try again.')
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 },
-    )
   }
 
   // ── Shared handlers ─────────────────────────────────────────────────────────
@@ -1763,6 +1701,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           onClose={() => setSelectedGame(null)}
         />
       )}
+      <CityUpdatedToast cityName={cityToast} onDone={() => setCityToast(null)} />
     </>
   )
 
@@ -1787,6 +1726,11 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         {sheets}
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
+          <YourCityControl
+            variant="chip"
+            cityName={userCityName}
+            onLocationChange={applyAppLocation}
+          />
           {!user && (
             <div className="flex min-w-0 items-end justify-between gap-4 rounded-[28px] bg-[#1E3A6E] px-5 py-5 text-[#F0EBE3]">
               <div className="min-w-0">
@@ -1895,6 +1839,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         {sheets}
         {pageHeader('PLAYERS', () => setView('discovery'))}
         <div className="mx-auto min-w-0 max-w-2xl space-y-3 px-4 py-4">
+          <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
           {userCityName && (
             <>
               <ListSearch value={playerQuery} onChange={setPlayerQuery} placeholder="Search name or city" />
@@ -1982,6 +1927,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
         {sheets}
         {pageHeader('OPEN GAMES', () => setView('discovery'))}
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
+          <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
           {userCityName && openGames.length > 0 && (
             <>
               <ListSearch value={gameQuery} onChange={setGameQuery} placeholder="Search place, format, or player" />
@@ -2044,46 +1990,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
       {sheets}
       {pageHeader('COURTS', () => setView('discovery'))}
       <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
-        {/* City search */}
-        <div className="relative">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={cityInput}
-              onChange={(e) => { setCityInput(e.target.value); setShowSuggestions(true) }}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              placeholder="Search city or area..."
-              className="min-w-0 flex-1 bg-brand-field border border-[#1a1a1a]/40 rounded-lg px-4 py-2.5 text-sm text-[#1a1a1a] outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.4)]"
-            />
-            {loadingSuggestions && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <div className="w-3.5 h-3.5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
-              </div>
-            )}
-          </div>
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-40 bg-white border border-[#1a1a1a]/15 rounded-lg shadow-sm mt-1 overflow-hidden">
-              {suggestions.map((row) => (
-                <button key={row.place.place_id} onMouseDown={() => selectSuggestion(row)}
-                  className="w-full text-left px-4 py-2.5 hover:bg-brand-surface transition-colors border-b border-brand-divider last:border-0">
-                  <p className="text-sm text-[#1a1a1a]">{row.title}</p>
-                  {row.subtitle && row.subtitle !== row.title && <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{row.subtitle}</p>}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={requestGeolocation}
-          disabled={loadingVenues || locating}
-          className="-mt-1 flex items-center gap-1.5 text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline disabled:opacity-40"
-        >
-          <MapPin size={11} /> {locating ? 'Detecting location...' : 'Use my location'}
-        </button>
+        <YourCityControl cityName={userCityName} onLocationChange={applyAppLocation} />
 
         {courtsError && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{courtsError}</p>}
 
@@ -2120,16 +2027,7 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           )
         )}
 
-        {courtList === 'all' && locating && !loadingVenues && (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-5 h-5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
-            <p className="text-[11px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-              Detecting your location...
-            </p>
-          </div>
-        )}
-
-        {courtList === 'all' && userCoords && !locating && (
+        {courtList === 'all' && userCoords && (
           <>
             <ListSearch value={courtQuery} onChange={setCourtQuery} placeholder="Search court name or address" />
             <MultiFilterChips
@@ -2183,10 +2081,10 @@ export function SearchClient({ user, userCityName, userCityLat = null, userCityL
           </>
         )}
 
-        {courtList === 'all' && !loadingVenues && !locating && !userCoords && (
+        {courtList === 'all' && !loadingVenues && !userCoords && (
           <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">Enter a city to find courts</p>
-            <p className="text-sm text-[rgba(26,26,26,0.5)]">Or use your location for the nearest courts</p>
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">Add your city to find courts</p>
+            <p className="text-sm text-[rgba(26,26,26,0.5)]">Or use your location once to set it</p>
           </div>
         )}
       </div>

@@ -4,7 +4,8 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { CityInput, type CityCoords } from '@/components/ui/CityInput'
+import { CityLocationField } from '@/components/location/CityLocationField'
+import type { CityCoords } from '@/components/ui/CityInput'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
 
 const inputClass = 'w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
@@ -211,9 +212,10 @@ export function CourtDetailsForm({
       </div>
       <div>
         <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">City</label>
-        <CityInput
+        <CityLocationField
           value={city}
           onChange={(next, nextCoords) => { setCity(next); setCoords(nextCoords ?? null) }}
+          helper="Used for courts, players, and games near you."
           placeholder="Austin"
         />
       </div>

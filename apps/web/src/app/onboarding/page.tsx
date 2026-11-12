@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Camera, Check, Loader2, MapPin, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CityInput } from '@/components/ui/CityInput'
+import { detectProfileLocation, type ProfileLocation } from '@/lib/profile-location'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
@@ -84,48 +85,30 @@ type GeoDetectState = 'idle' | 'detecting' | 'detected' | 'error'
 
 function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial<OnboardingData>) => void }) {
   const [geoState, setGeoState] = useState<GeoDetectState>('idle')
-  const [detectedCity, setDetectedCity] = useState<string | null>(null)
+  const [detected, setDetected] = useState<ProfileLocation | null>(null)
 
   async function handleUseMyLocation() {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGeoState('error')
-      return
-    }
     setGeoState('detecting')
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            { headers: { 'Accept-Language': 'en' } },
-          )
-          const result = await res.json() as { address?: { city?: string; town?: string; county?: string }; name?: string }
-          const city = result.address?.city ?? result.address?.town ?? result.address?.county ?? result.name ?? null
-          if (city) {
-            setDetectedCity(city)
-            setGeoState('detected')
-          } else {
-            setGeoState('error')
-          }
-        } catch {
-          setGeoState('error')
-        }
-      },
-      () => setGeoState('error'),
-      { timeout: 10_000 },
-    )
+    try {
+      const location = await detectProfileLocation()
+      setDetected(location)
+      setGeoState('detected')
+    } catch {
+      setGeoState('error')
+    }
   }
 
   function confirmDetected() {
-    if (detectedCity) onChange({ city: detectedCity })
+    if (detected) {
+      onChange({ city: detected.name, cityLat: detected.lat, cityLng: detected.lng })
+    }
     setGeoState('idle')
-    setDetectedCity(null)
+    setDetected(null)
   }
 
   function rejectDetected() {
     setGeoState('idle')
-    setDetectedCity(null)
+    setDetected(null)
   }
 
   return (
@@ -135,11 +118,10 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
         <div>
           <FieldLabel>City</FieldLabel>
 
-          {/* Detected city confirmation */}
-          {geoState === 'detected' && detectedCity && (
+          {geoState === 'detected' && detected && (
             <div className="rounded-[20px] border border-[#3A8A7A]/30 bg-white px-4 py-3 mb-3">
               <p className="text-sm text-[#1a1a1a]">
-                We detected your city as <span className="font-medium">{detectedCity}</span>. Is this correct?
+                We detected your city as <span className="font-medium">{detected.name}</span>. Is this correct?
               </p>
               <div className="flex gap-2 mt-3">
                 <button
@@ -166,7 +148,6 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
             placeholder="Search your city..."
           />
 
-          {/* Use my location button */}
           {geoState !== 'detected' && (
             <button
               type="button"
@@ -189,7 +170,7 @@ function Step1({ data, onChange }: { data: OnboardingData; onChange: (d: Partial
           )}
 
           <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.35)]">
-            Discover uses your city to show nearby players, games, and courts. You can change it later in your profile.
+            Used for courts, players, and games near you. You can change it later in your profile.
           </p>
         </div>
       </div>
