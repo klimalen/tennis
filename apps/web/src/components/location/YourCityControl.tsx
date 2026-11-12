@@ -9,15 +9,13 @@ import type { ProfileLocation } from '@/lib/profile-location'
 interface Props {
   cityName: string | null
   onLocationChange: (location: ProfileLocation) => void | Promise<void>
-  /** Compact chip for Discover header. */
-  variant?: 'block' | 'chip'
 }
 
 /**
- * Global “your city” control for Discover list screens.
- * Change / GPS update the app city (caller writes the profile).
+ * Same city chip everywhere: tap to change (search + one-shot GPS).
+ * Caller writes the profile / session city.
  */
-export function YourCityControl({ cityName, onLocationChange, variant = 'block' }: Props) {
+export function YourCityControl({ cityName, onLocationChange }: Props) {
   const [editing, setEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -40,60 +38,25 @@ export function YourCityControl({ cityName, onLocationChange, variant = 'block' 
     void apply({ name: city.trim(), lat: coords.lat, lng: coords.lng })
   }
 
-  if (variant === 'chip') {
-    return (
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => setEditing((open) => !open)}
-          className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[11px] tracking-[0.08em] uppercase text-[#1a1a1a] border border-[#1a1a1a]/10"
-        >
-          <MapPin size={12} className="shrink-0 text-brand-primary" />
-          <span className="truncate font-medium">
-            {cityName?.trim() || 'Add your city'}
-          </span>
-        </button>
-        {editing && (
-          <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 p-3 space-y-2">
-            <CityInput
-              value={cityName ?? ''}
-              onChange={handleCityPick}
-              placeholder="Search your city..."
-            />
-            <UseMyLocationButton
-              disabled={saving}
-              onDetected={(location) => void apply(location)}
-              onError={setError}
-            />
-            {error && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{error}</p>}
-          </div>
-        )}
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="flex min-w-0 items-center gap-1.5 text-sm text-[#1a1a1a]">
-          <MapPin size={14} className="shrink-0 text-brand-primary" />
-          <span className="truncate">
-            {cityName?.trim()
-              ? <>Your city: <span className="font-medium">{cityName.trim()}</span></>
-              : 'Add your city'}
-          </span>
-        </p>
-        <button
-          type="button"
-          onClick={() => setEditing((open) => !open)}
-          className="text-[11px] tracking-[0.12em] uppercase font-medium text-brand-primary hover:underline"
-        >
-          {editing ? 'Cancel' : 'Change'}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => {
+          setError(null)
+          setEditing((open) => !open)
+        }}
+        className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-[11px] tracking-[0.08em] uppercase text-[#1a1a1a] border border-[#1a1a1a]/10"
+        aria-expanded={editing}
+      >
+        <MapPin size={12} className="shrink-0 text-brand-primary" />
+        <span className="truncate font-medium">
+          {cityName?.trim() || 'Add your city'}
+        </span>
+      </button>
 
       {editing && (
-        <div className="space-y-2">
+        <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 p-3 space-y-2">
           <CityInput
             value=""
             onChange={handleCityPick}
@@ -104,18 +67,9 @@ export function YourCityControl({ cityName, onLocationChange, variant = 'block' 
             onDetected={(location) => void apply(location)}
             onError={setError}
           />
+          {error && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{error}</p>}
         </div>
       )}
-
-      {!editing && (
-        <UseMyLocationButton
-          disabled={saving}
-          onDetected={(location) => void apply(location)}
-          onError={setError}
-        />
-      )}
-
-      {error && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{error}</p>}
     </div>
   )
 }

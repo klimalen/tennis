@@ -285,6 +285,7 @@ export default function EditProfilePage() {
 
       if (updateErr) throw updateErr
       setSaveStatus('saved')
+      router.refresh()
       window.setTimeout(() => router.push('/me'), 1000)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save')
