@@ -331,7 +331,7 @@ export default function EditProfilePage() {
           <button
             onClick={() => void handleSave()}
             disabled={saveStatus === 'saving' || !canSave}
-            className="px-4 py-1.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-40"
+            className="px-4 py-1.5 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#2F7466] transition-colors disabled:opacity-40"
           >
             Save
           </button>
