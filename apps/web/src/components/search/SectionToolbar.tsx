@@ -95,30 +95,29 @@ export function SectionToolbar({
             <ChevronLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </button>
 
-          <span className="min-w-0 shrink truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
+          <span className="min-w-0 flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
             {title}
           </span>
 
-          <button
-            type="button"
-            onClick={() => {
-              setCityError(null)
-              toggle('city')
-            }}
-            className={`inline-flex max-w-[9.5rem] items-center gap-1 rounded-[12px] px-2.5 text-[10px] font-medium uppercase tracking-[0.08em] ${
-              panel === 'city' ? controlActive : controlIdle
-            }`}
-            aria-expanded={panel === 'city'}
-          >
-            <MapPin size={12} className={`shrink-0 ${panel === 'city' ? 'text-[#FAF7F2]' : 'text-brand-primary'}`} />
-            <span className="min-w-0 truncate">{cityLabel}</span>
-            <ChevronDown
-              size={12}
-              className={`shrink-0 opacity-50 transition-transform ${panel === 'city' ? 'rotate-180' : ''}`}
-            />
-          </button>
-
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setCityError(null)
+                toggle('city')
+              }}
+              className={`inline-flex max-w-[9.5rem] items-center gap-1 rounded-[12px] px-2.5 text-[10px] font-medium uppercase tracking-[0.08em] ${
+                panel === 'city' ? controlActive : controlIdle
+              }`}
+              aria-expanded={panel === 'city'}
+            >
+              <MapPin size={12} className={`shrink-0 ${panel === 'city' ? 'text-[#FAF7F2]' : 'text-brand-primary'}`} />
+              <span className="min-w-0 truncate">{cityLabel}</span>
+              <ChevronDown
+                size={12}
+                className={`shrink-0 opacity-50 transition-transform ${panel === 'city' ? 'rotate-180' : ''}`}
+              />
+            </button>
             {search && (
               <button
                 type="button"
