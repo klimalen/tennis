@@ -6,6 +6,8 @@ import { Check, Share2 } from 'lucide-react'
 
 type Anchor = { top: number; right: number }
 
+const menuRow = 'block w-full px-4 py-3 text-left text-[13px] text-[#1a1a1a] outline-none hover:bg-brand-field focus-visible:bg-brand-field'
+
 /** Phones and tablets put Copy inside the system sheet. Desktop sheets do not. */
 function systemSheetIncludesCopy() {
   const ua = navigator.userAgent
@@ -170,11 +172,11 @@ export function ShareLinkButton({
           {manualUrl ? (
             <ManualCopy url={manualUrl} onCopy={() => { void copyLink() }} />
           ) : (
-            <div role="menu" aria-label="Share" className="min-w-44 overflow-hidden rounded-2xl border border-[#1a1a1a]/10 bg-white py-1 shadow-lg">
-              <button type="button" role="menuitem" autoFocus onClick={() => { void copyLink() }} className="block w-full px-4 py-2.5 text-left text-[13px] text-[#1a1a1a] hover:bg-brand-field">
+            <div role="menu" aria-label="Share" className="min-w-44 overflow-hidden rounded-2xl border border-[#1a1a1a]/10 bg-white shadow-lg">
+              <button type="button" role="menuitem" onClick={() => { void copyLink() }} className={menuRow}>
                 Copy link
               </button>
-              <button type="button" role="menuitem" onClick={() => { void systemShare() }} className="block w-full px-4 py-2.5 text-left text-[13px] text-[#1a1a1a] hover:bg-brand-field">
+              <button type="button" role="menuitem" onClick={() => { void systemShare() }} className={`${menuRow} border-t border-[#1a1a1a]/10`}>
                 Share…
               </button>
             </div>
