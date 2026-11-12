@@ -26,7 +26,6 @@ import { formatDayRange, GameDateRange, type DayRange } from '@/components/games
 import { type NominatimPlace } from '@/lib/place-suggestions'
 import { createClient } from '@/lib/supabase/client'
 import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
-import { YourCityControl } from '@/components/location/YourCityControl'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 import { SectionToolbar } from '@/components/search/SectionToolbar'
 
@@ -1802,10 +1801,6 @@ export function SearchClient({
         {sheets}
 
         <div className="max-w-2xl mx-auto min-w-0 px-4 py-6 space-y-8">
-          <YourCityControl
-            cityName={userCityName}
-            onLocationChange={applyAppLocation}
-          />
           {!user && (
             <div className="flex min-w-0 items-end justify-between gap-4 rounded-[28px] bg-[#1E3A6E] px-5 py-5 text-[#F0EBE3]">
               <div className="min-w-0">
