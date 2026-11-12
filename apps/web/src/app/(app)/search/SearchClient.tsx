@@ -1929,7 +1929,7 @@ export function SearchClient({
             </div>
           }
         />
-        <div className="mx-auto min-w-0 max-w-2xl space-y-3 px-4 py-4">
+        <div className="mx-auto min-w-0 max-w-2xl space-y-3 px-4 pt-2 pb-4">
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingPlayers || !geocodeDone ? (
@@ -1949,9 +1949,6 @@ export function SearchClient({
             </div>
           ) : (
             <>
-              <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                Players near {userCityName}
-              </p>
               {players.map((player) => (
                 <PlayerCard
                   key={player.id}
@@ -2016,7 +2013,7 @@ export function SearchClient({
             ) : null
           }
         />
-        <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
+        <div className="max-w-2xl mx-auto min-w-0 px-4 pt-2 pb-4 space-y-3">
           {!userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingOpenGames ? (
@@ -2039,9 +2036,6 @@ export function SearchClient({
                   {rangeHeading && (
                     <p className="font-display text-4xl leading-none tracking-wide uppercase">{rangeHeading}</p>
                   )}
-                  <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                    {rankedOpenGames.length} game{rankedOpenGames.length !== 1 ? 's' : ''} near {userCityName}
-                  </p>
                   {rankedOpenGames.map((game) => (
                     <OpenGameCard
                       key={game.id}
@@ -2100,7 +2094,7 @@ export function SearchClient({
           </div>
         }
       />
-      <div className="max-w-2xl mx-auto min-w-0 px-4 py-4 space-y-3">
+      <div className="max-w-2xl mx-auto min-w-0 px-4 pt-2 pb-4 space-y-3">
         {courtsError && <p className="text-[11px] text-[rgba(26,26,26,0.5)]">{courtsError}</p>}
 
         {courtList === 'mine' && (
@@ -2133,11 +2127,6 @@ export function SearchClient({
 
         {courtList === 'all' && userCoords && (
           <>
-            {cityLabel && !courtFilterActive && (
-              <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)]">
-                Courts near {cityLabel}
-              </p>
-            )}
             {loadingVenues ? (
               <div className="space-y-3">
                 {[0, 1, 2, 3].map((i) => <CourtCardSkeleton key={i} />)}
