@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { permanentRedirect, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, CalendarDays } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronRight } from 'lucide-react'
 import { CourtProfileDetails } from '@/components/court/CourtProfileDetails'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { LinkState } from '@/components/share/LinkState'
@@ -420,14 +420,19 @@ export default async function PlayerProfilePage({
 
         {schedule.preview.length > 0 && (
           <div>
-            <div className="px-1 pb-3 flex items-center gap-2">
+            <Link
+              href={`/profile/${profile.username}/schedule`}
+              className="px-1 pb-3 flex items-center gap-2 transition-opacity hover:opacity-70"
+            >
               <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-              <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
+              <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">
+                Schedule
+                <ChevronRight size={11} className="text-[rgba(26,26,26,0.4)]" aria-hidden />
+              </span>
               <div className="flex-1 h-px bg-brand-divider" />
-            </div>
+            </Link>
             <SchedulePreview
               items={schedule.preview}
-              seeAllHref={`/profile/${profile.username}/schedule`}
               viewerId={viewer?.id ?? null}
             />
           </div>
