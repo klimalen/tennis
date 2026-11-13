@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { MessageCircle, Pencil } from 'lucide-react'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { gameEndMs } from '@/lib/game-time'
@@ -25,6 +26,7 @@ export function ScheduleGameCard({
   const [detail, setDetail] = useState<GameDetail | null>(null)
   const endIso = new Date(gameEndMs(game.scheduled_at, game.duration_minutes)).toISOString()
   const canTry = game.is_open || Boolean(viewerId)
+  const router = useRouter()
   const resolvedEditHref = editHref ?? (allowEdit && !past && viewerId && game.creator_id === viewerId ? `/games/${game.id}/edit` : null)
 
   async function open() {
@@ -99,7 +101,15 @@ export function ScheduleGameCard({
       )}
     </div>
     {detail && (
-      <GameDetailSheet game={detail} currentUserId={viewerId} onClose={() => setDetail(null)} />
+      <GameDetailSheet
+        game={detail}
+        currentUserId={viewerId}
+        onClose={() => setDetail(null)}
+        onCancelled={() => {
+          setDetail(null)
+          router.refresh()
+        }}
+      />
     )}
     </>
   )

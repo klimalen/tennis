@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Globe, Loader2, MapPin, Phone, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
@@ -89,6 +89,7 @@ export function GameDetailSheet({
   onClose,
   onJoined,
   onLeft,
+  onCancelled,
   activeConversationId,
   viewerIsCourt,
   courtInfoOpen = false,
@@ -100,6 +101,7 @@ export function GameDetailSheet({
   onClose?: () => void
   onJoined?: () => void
   onLeft?: () => void
+  onCancelled?: () => void
   activeConversationId?: string
   viewerIsCourt?: boolean
   courtInfoOpen?: boolean
@@ -111,6 +113,8 @@ export function GameDetailSheet({
   const router = useRouter()
   const [joining, setJoining] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [joined, setJoined] = useState(false)
   const [left, setLeft] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
@@ -158,11 +162,13 @@ export function GameDetailSheet({
   const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court')
   const spotsLeft = game.max_players - accepted.length
   const isFull = spotsLeft <= 0
-  const isCourtHost = game.creator.account_kind === 'court' && currentUserId === game.creator_id
+  const isHost = Boolean(currentUserId && currentUserId === game.creator_id)
+  const isCourtHost = game.creator.account_kind === 'court' && isHost
   const isPast = new Date(game.scheduled_at) < new Date()
   const isCancelled = game.status === 'cancelled'
   const alreadyIn = !isCourtHost && !left && (viewerPlaysInGame(game, currentUserId) || joined)
-  const canLeave = alreadyIn && !isPast && !isCancelled && currentUserId !== game.creator_id
+  const canLeave = alreadyIn && !isPast && !isCancelled && !isHost
+  const canCancel = isHost && !isPast && !isCancelled
   const price = game.court?.fee === false ? 'Free' : costLine(game.court_cost_cents, game.payment)
   const placeName = game.court?.name?.trim() || game.neighborhood
   const placeDetail = game.court?.address && game.court.address !== placeName ? game.court.address : null
@@ -219,7 +225,22 @@ export function GameDetailSheet({
     setLeaving(false)
   }
 
-  const joinLabel = isCourtHost
+  async function handleCancel() {
+    if (!canCancel || cancelling) return
+    setCancelling(true)
+    const res = await fetch(`/api/games/${game.id}`, { method: 'DELETE' })
+    setCancelling(false)
+    setShowCancelConfirm(false)
+    if (!res.ok) return
+    onCancelled?.()
+    onClose?.()
+    if (page) {
+      router.push(backHref ?? '/me')
+      router.refresh()
+    }
+  }
+
+  const joinLabel = isHost
     ? 'You organised this'
     : alreadyIn
       ? "You're in"
@@ -230,7 +251,7 @@ export function GameDetailSheet({
           : isCancelled
             ? 'Cancelled'
             : 'Join game'
-  const joinDisabled = isCourtHost || !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
+  const joinDisabled = isHost || !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
 
   const shareTitle = game.is_open ? 'Open game on GAME.' : 'Private game on GAME.'
   const shareButton = (
@@ -383,7 +404,17 @@ export function GameDetailSheet({
             </Link>
           )}
 
-          {courtViewer === false && canLeave && (
+          {canCancel && (
+            <button
+              type="button"
+              onClick={() => setShowCancelConfirm(true)}
+              className="w-full py-4 rounded-full border border-red-200 text-[10px] tracking-[0.2em] uppercase font-medium text-red-500 transition-colors hover:bg-red-50"
+            >
+              Cancel game
+            </button>
+          )}
+
+          {!isHost && courtViewer === false && canLeave && (
             <button
               type="button"
               onClick={handleLeave}
@@ -394,7 +425,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {courtViewer === false && !canLeave && (
+          {!isHost && courtViewer === false && !canLeave && (
             <button
               type="button"
               onClick={handleJoin}
@@ -408,8 +439,49 @@ export function GameDetailSheet({
               {joining ? <Loader2 size={14} className="animate-spin mx-auto" /> : joinLabel}
             </button>
           )}
+
+          {isHost && !canCancel && (
+            <button
+              type="button"
+              disabled
+              className="w-full py-4 rounded-full bg-brand-surface text-[10px] tracking-[0.2em] uppercase font-medium text-[rgba(26,26,26,0.35)] cursor-default"
+            >
+              {joinLabel}
+            </button>
+          )}
         </div>
   )
+
+  const cancelConfirm = showCancelConfirm ? (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
+        <span className="font-display text-2xl tracking-wide block mb-3">CANCEL GAME?</span>
+        <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
+          {accepted.length > 0
+            ? 'Players who joined will be notified in chat that this game is fully cancelled.'
+            : 'This game will be removed from your schedule.'}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setShowCancelConfirm(false)}
+            disabled={cancelling}
+            className="flex-1 py-2.5 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-sm font-medium text-[#1a1a1a] hover:bg-white transition-colors"
+          >
+            Keep
+          </button>
+          <button
+            type="button"
+            onClick={() => { void handleCancel() }}
+            disabled={cancelling}
+            className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors"
+          >
+            {cancelling ? 'Cancelling…' : 'Cancel game'}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null
 
   if (page) {
     return (
@@ -422,12 +494,23 @@ export function GameDetailSheet({
             <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
               {game.is_open ? 'OPEN GAME' : 'GAME'}
             </span>
+            {canCancel && (
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center text-[rgba(26,26,26,0.45)] hover:text-red-500 hover:border-red-200 transition-colors"
+                aria-label="Cancel game"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
             {shareButton}
           </div>
         </div>
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="rounded-[28px] bg-white p-5">{body}</div>
         </div>
+        {cancelConfirm}
       </div>
     )
   }
@@ -441,6 +524,16 @@ export function GameDetailSheet({
             {game.is_open ? 'Open Game' : 'Game'}
           </span>
           <div className="flex items-center gap-1">
+            {canCancel && (
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.45)] hover:text-red-500"
+                aria-label="Cancel game"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
             {shareButton}
             <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
               <X size={16} />
@@ -449,6 +542,7 @@ export function GameDetailSheet({
         </div>
         {body}
       </div>
+      {cancelConfirm}
     </>
   )
 }

@@ -312,9 +312,11 @@ export function EditGameForm({
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
-            <span className="font-display text-2xl tracking-wide block mb-3">DELETE GAME?</span>
+            <span className="font-display text-2xl tracking-wide block mb-3">CANCEL GAME?</span>
             <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
-              This game will be permanently removed from your schedule.
+              {participants.some((p) => p.status === 'accepted' || p.status === 'invited')
+                ? 'Players who joined or were invited will be notified in chat that this game is fully cancelled.'
+                : 'This game will be permanently removed from your schedule.'}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}

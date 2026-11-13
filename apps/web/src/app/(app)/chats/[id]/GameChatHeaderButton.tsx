@@ -44,6 +44,10 @@ export function GameChatHeaderButton({
           currentUserId={userId}
           activeConversationId={conversationId}
           onClose={() => setGame(null)}
+          onCancelled={() => {
+            setGame(null)
+            window.location.href = '/chats'
+          }}
         />,
         document.body,
       )}

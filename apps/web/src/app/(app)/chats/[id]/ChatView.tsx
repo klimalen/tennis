@@ -144,10 +144,11 @@ function GameInviteCard({
   const [responding, setResponding] = useState(false)
 
   // Use live game data if available, fall back to snapshot in msg.body
-  let snapshot: { scheduled_at?: string; format?: string; location?: string | null; updated?: boolean; joined?: boolean } = {}
+  let snapshot: { scheduled_at?: string; format?: string; location?: string | null; updated?: boolean; joined?: boolean; cancelled?: boolean } = {}
   try { snapshot = JSON.parse(msg.body) as typeof snapshot } catch { /* ignore */ }
   const isUpdate = snapshot.updated === true
   const joined = snapshot.joined === true
+  const wasCancelled = snapshot.cancelled === true || !msg.game_id
 
   const source = gameDetail ?? snapshot
   const dt = source.scheduled_at ? new Date(source.scheduled_at) : null
@@ -187,16 +188,16 @@ function GameInviteCard({
     }
   }
 
-  // Game was deleted (ON DELETE SET NULL)
-  if (!msg.game_id) {
+  // Host deleted the game (ON DELETE SET NULL on messages.game_id) or sent a cancel notice.
+  if (wasCancelled && (!msg.game_id || snapshot.cancelled)) {
     return (
       <div className="max-w-[80%] border border-[#1a1a1a]/40 bg-brand-field rounded-lg overflow-hidden opacity-50">
         <div className="px-3 py-2 flex items-center gap-2 bg-brand-surface">
           <Calendar size={12} className="text-[rgba(26,26,26,0.3)] flex-shrink-0" />
-          <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.4)]">Game proposal</span>
+          <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.4)]">Game cancelled</span>
         </div>
         <div className="px-3 py-3">
-          <p className="text-sm text-[rgba(26,26,26,0.4)] italic">This game has been cancelled</p>
+          <p className="text-sm text-[rgba(26,26,26,0.4)] italic">This game has been fully cancelled</p>
         </div>
       </div>
     )

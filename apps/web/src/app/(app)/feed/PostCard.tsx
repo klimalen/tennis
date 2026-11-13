@@ -204,6 +204,10 @@ function OpenGameCard({
           currentUserId={currentUserId}
           {...(canJoin == null ? {} : { viewerIsCourt: !canJoin })}
           onClose={() => setShowSheet(false)}
+          onCancelled={() => {
+            setShowSheet(false)
+            setGameDetail(null)
+          }}
           onJoined={() => {
             setGameDetail((prev) => prev ? {
               ...prev,
