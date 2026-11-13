@@ -1,4 +1,7 @@
-/** Ticket-stub Coach chip — cream fill, teal stroke/type, side notches. */
+/**
+ * Vintage nameplate Coach chip — cream fill, double teal border,
+ * concave corner cuts. Overlay with absolute + left-1/2 -translate-x-1/2.
+ */
 export function CoachBadge({ className = '' }: { className?: string }) {
   // Don't force `relative` when the caller already positions with absolute/fixed —
   // otherwise Tailwind's conflicting utilities can leave the chip in flow and shove the avatar.
@@ -6,27 +9,59 @@ export function CoachBadge({ className = '' }: { className?: string }) {
 
   return (
     <span
-      className={`inline-flex h-[22px] w-[78px] shrink-0 items-center justify-center drop-shadow-[0_1px_2px_rgba(26,26,26,0.18)] ${
+      className={`inline-flex h-[22px] w-[64px] shrink-0 items-center justify-center drop-shadow-[0_2px_3px_rgba(26,26,26,0.25)] ${
         positioned ? '' : 'relative'
       } ${className}`}
       aria-label="Coach"
     >
       <svg
-        viewBox="0 0 78 26"
+        viewBox="0 0 64 22"
         className="pointer-events-none absolute inset-0 h-full w-full"
         aria-hidden
       >
         <path
-          d="M6 1.25H72C74.485 1.25 75.75 2.515 75.75 5V8.25A4.75 4.75 0 0 0 75.75 17.75V21C75.75 23.485 74.485 24.75 72 24.75H6C3.515 24.75 2.25 23.485 2.25 21V17.75A4.75 4.75 0 0 1 2.25 8.25V5C2.25 2.515 3.515 1.25 6 1.25Z"
-          fill="#F6F1E8"
+          d={PLATE_OUTER}
+          fill="#F7F2EA"
           stroke="#2F6B5E"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinejoin="round"
         />
+        <path
+          d={PLATE_INNER}
+          fill="none"
+          stroke="#2F6B5E"
+          strokeWidth="0.9"
+          strokeLinejoin="round"
+        />
+        {/*
+          SVG text is geometrically centered (textAnchor=middle).
+          letterSpacing adds trailing advance — tiny dx balances it optically.
+        */}
+        <text
+          x="32"
+          y="11.7"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="#2F6B5E"
+          fontSize="8.25"
+          fontWeight="700"
+          letterSpacing="1.4"
+          dx="0.7"
+          fontFamily="var(--font-display), ui-sans-serif, system-ui, sans-serif"
+        >
+          COACH
+        </text>
       </svg>
-      <span className="relative font-display text-[10px] font-medium leading-none tracking-[0.16em] text-[#2F6B5E]">
-        COACH
-      </span>
     </span>
   )
 }
+
+/**
+ * Clockwise plate, viewBox 64×22, concave corner cuts (SVG sweep=0 = CCW).
+ * Cut radius 3.1 so the vintage notch reads clearly at chip size.
+ */
+const PLATE_OUTER =
+  'M 6.2 1.05 H 57.8 A 3.1 3.1 0 0 0 60.9 4.15 V 17.85 A 3.1 3.1 0 0 0 57.8 20.95 H 6.2 A 3.1 3.1 0 0 0 3.1 17.85 V 4.15 A 3.1 3.1 0 0 0 6.2 1.05 Z'
+
+const PLATE_INNER =
+  'M 8.1 3.1 H 55.9 A 2.1 2.1 0 0 0 58 5.2 V 16.8 A 2.1 2.1 0 0 0 55.9 18.9 H 8.1 A 2.1 2.1 0 0 0 6 16.8 V 5.2 A 2.1 2.1 0 0 0 8.1 3.1 Z'
