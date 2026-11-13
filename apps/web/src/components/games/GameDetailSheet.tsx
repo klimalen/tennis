@@ -259,6 +259,9 @@ export function GameDetailSheet({
   )
   const gamePath = backHref ? withReturnTo(`/game/${game.id}`, backHref) : `/game/${game.id}`
   const courtPageHref = game.court ? withReturnTo(`/court/${game.court.id}`, gamePath) : null
+  const courtProfileHref = game.court?.profile_username
+    ? withReturnTo(`/profile/${game.court.profile_username}`, gamePath)
+    : null
 
   /** Leave sheet/search history for the durable game page, then open related. */
   function goRelated(href: string) {
@@ -361,6 +364,19 @@ export function GameDetailSheet({
                           className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
                         >
                           Court page
+                        </Link>
+                      )}
+                      {courtProfileHref && (
+                        <Link
+                          href={courtProfileHref}
+                          onClick={(event) => {
+                            if (page) return
+                            event.preventDefault()
+                            goRelated(courtProfileHref)
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
+                        >
+                          Court profile
                         </Link>
                       )}
                     </div>
