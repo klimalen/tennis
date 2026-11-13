@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { ActivityHeatmap } from '@/components/schedule/ActivityHeatmap'
 import { ScheduleSections } from '@/components/schedule/ScheduleBlocks'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
@@ -25,8 +26,10 @@ export default async function ProfileSchedulePage({
   if (!profile) notFound()
   if (viewer && viewer.id === profile.id) redirect('/schedule')
 
-  const { upcoming, past } = summarizeSchedule(await loadPlayerGames(supabase, profile.id))
+  const games = await loadPlayerGames(supabase, profile.id)
+  const { upcoming, past } = summarizeSchedule(games)
   const hasGames = upcoming.length > 0 || past.length > 0
+  const activityDates = [...upcoming, ...past].map((game) => game.scheduled_at)
 
   return (
     <div className="min-h-screen">
@@ -39,15 +42,17 @@ export default async function ProfileSchedulePage({
         </div>
       </div>
 
-      {!hasGames ? (
-        <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-          <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)]">No games yet</p>
-        </div>
-      ) : (
-        <div className="max-w-2xl mx-auto pt-2">
+      <div className="max-w-2xl mx-auto pt-2">
+        <ActivityHeatmap scheduledAts={activityDates} />
+
+        {!hasGames ? (
+          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)]">No games yet</p>
+          </div>
+        ) : (
           <ScheduleSections upcoming={upcoming} past={past} viewerId={viewer?.id ?? null} />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
