@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     location_name?: string
     venue_group_id?: string | null
     court_cost_cents?: number | null
+    cost_currency?: string | null
     payment?: string | null
     notes?: string
     is_open?: boolean
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     venueFee = venue.fee
   }
 
-  const offer = parseCourtOffer(body.court_cost_cents, body.payment, venueFee)
+  const offer = parseCourtOffer(body.court_cost_cents, body.payment, venueFee, body.cost_currency)
   if (offer.error) return NextResponse.json({ error: offer.error }, { status: 400 })
 
   const gameId = crypto.randomUUID()
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
       neighborhood: placeName,
       venue_group_id: resolvedVenueId,
       court_cost_cents: offer.court_cost_cents,
+      cost_currency: offer.cost_currency,
       payment: offer.payment,
       notes: notes ?? null,
       is_open: isCourt ? true : (is_open ?? false),

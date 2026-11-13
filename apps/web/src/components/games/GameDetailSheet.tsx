@@ -47,6 +47,7 @@ export interface GameDetail {
   neighborhood: string | null
   notes: string | null
   court_cost_cents: number | null
+  cost_currency?: string | null
   payment: string | null
   court: GameCourt | null
   status: string
@@ -170,7 +171,9 @@ export function GameDetailSheet({
   const alreadyIn = !isCourtHost && !left && (viewerPlaysInGame(game, currentUserId) || joined)
   const canLeave = alreadyIn && !isPast && !isCancelled && !isHost
   const canCancel = isHost && !isPast && !isCancelled
-  const price = game.court?.fee === false ? 'Free' : costLine(game.court_cost_cents, game.payment)
+  const price = game.court?.fee === false
+    ? 'Free'
+    : costLine(game.court_cost_cents, game.payment, game.cost_currency)
   const placeName = game.court?.name?.trim() || game.neighborhood
   const placeDetail = game.court
     ? [game.court.address?.trim(), game.court.city_name?.trim()].filter(Boolean).join(', ')

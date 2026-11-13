@@ -87,6 +87,7 @@ function NewGameForm() {
             },
             locationName: '',
             courtCostCents: venue.fee === false ? 0 : null,
+            costCurrency: null,
             payment: null,
           })
         } else {
@@ -98,6 +99,7 @@ function NewGameForm() {
             venue: null,
             locationName: label || profile.full_name || 'My court',
             courtCostCents: null,
+            costCurrency: null,
             payment: null,
           })
         }
@@ -141,6 +143,7 @@ function NewGameForm() {
         location_name: place.locationName.trim() || undefined,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
+        cost_currency: place.costCurrency,
         payment: place.payment,
         notes: about.trim() || undefined,
         is_open: isCourt ? true : isOpen,

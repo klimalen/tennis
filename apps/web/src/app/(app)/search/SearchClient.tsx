@@ -158,6 +158,7 @@ interface OpenGame {
   neighborhood: string | null
   notes: string | null
   court_cost_cents?: number | null
+  cost_currency?: string | null
   payment?: string | null
   court?: GameCourt | null
   creator_id: string
@@ -710,6 +711,7 @@ function OpenGameCard({ game, userId, joined, onJoin, onClick, onCourt, canJoin 
       scheduledAt={game.scheduled_at}
       durationMinutes={game.duration_minutes ?? null}
       courtCostCents={game.court_cost_cents ?? null}
+      costCurrency={game.cost_currency ?? null}
       courtFee={game.court?.fee ?? null}
       faces={faces}
       spotsLeft={spotsLeft}

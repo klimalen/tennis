@@ -33,6 +33,7 @@ interface Game {
   is_open: boolean
   venue_group_id: string | null
   court_cost_cents: number | null
+  cost_currency: string | null
   payment: string | null
   court: CourtPick | null
 }
@@ -77,6 +78,9 @@ export function EditGameForm({
     venue: game.court,
     locationName: game.court ? '' : (game.neighborhood ?? ''),
     courtCostCents: game.court_cost_cents,
+    costCurrency: (game.cost_currency === 'EUR' || game.cost_currency === 'USD')
+      ? game.cost_currency
+      : ((game.court_cost_cents ?? 0) > 0 ? 'USD' : null),
     payment: (game.payment as CourtPayment | null) ?? null,
   })
   const [notes, setNotes] = useState(game.notes ?? '')
@@ -106,6 +110,7 @@ export function EditGameForm({
         location_name: place.locationName.trim() || null,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
+        cost_currency: place.costCurrency,
         payment: place.payment,
         notes: notes.trim() || null,
         ...(isCreator ? { is_open: isOpen } : {}),

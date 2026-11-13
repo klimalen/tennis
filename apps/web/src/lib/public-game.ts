@@ -22,7 +22,7 @@ const COURT_LINKED_PROFILE_SELECT =
 
 export const GAME_DETAIL_SELECT = `
   id, format, scheduled_at, duration_minutes, skill_level_min, skill_level_max,
-  neighborhood, notes, court_cost_cents, payment, status, max_players, is_open, creator_id,
+  neighborhood, notes, court_cost_cents, cost_currency, payment, status, max_players, is_open, creator_id,
   court:venue_groups!games_venue_group_id_fkey (
     id, name, address, lit, fee, access, phone, website, google_maps_uri, lat, lng,
     surface, court_count, has_indoor, has_outdoor, fee_hour_min, fee_hour_max, opening_hours,

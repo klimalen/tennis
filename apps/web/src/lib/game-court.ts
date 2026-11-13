@@ -1,4 +1,5 @@
 export type CourtPayment = 'split' | 'host' | 'at_court'
+export type CourtCurrency = 'USD' | 'EUR'
 
 export interface GameCourt {
   id: string
@@ -31,14 +32,31 @@ export const PAYMENT_OPTIONS: { value: CourtPayment; label: string; hint: string
   { value: 'at_court', label: 'Pay at the court', hint: 'Players pay this total at the court' },
 ]
 
+export const CURRENCY_OPTIONS: { value: CourtCurrency; symbol: string; label: string }[] = [
+  { value: 'USD', symbol: '$', label: 'USD' },
+  { value: 'EUR', symbol: '€', label: 'EUR' },
+]
+
 const MAX_CENTS = 100_000
 
-export function formatCourtCost(cents: number | null | undefined): string | null {
+export function currencySymbol(currency: CourtCurrency | string | null | undefined): string {
+  return currency === 'EUR' ? '€' : '$'
+}
+
+export function parseCourtCurrency(value: unknown): CourtCurrency | null {
+  if (value === 'USD' || value === 'EUR') return value
+  return null
+}
+
+export function formatCourtCost(
+  cents: number | null | undefined,
+  currency: CourtCurrency | string | null | undefined = 'USD',
+): string | null {
   if (cents == null) return null
   if (cents === 0) return 'Free'
-  const dollars = cents / 100
-  const text = Number.isInteger(dollars) ? String(dollars) : dollars.toFixed(2)
-  return `$${text}`
+  const amount = cents / 100
+  const text = Number.isInteger(amount) ? String(amount) : amount.toFixed(2)
+  return `${currencySymbol(currency)}${text}`
 }
 
 export function paymentLabel(payment: string | null | undefined): string | null {
@@ -48,8 +66,12 @@ export function paymentLabel(payment: string | null | undefined): string | null 
   return null
 }
 
-export function costLine(cents: number | null | undefined, payment: string | null | undefined): string | null {
-  const cost = formatCourtCost(cents)
+export function costLine(
+  cents: number | null | undefined,
+  payment: string | null | undefined,
+  currency: CourtCurrency | string | null | undefined = 'USD',
+): string | null {
+  const cost = formatCourtCost(cents, currency)
   if (!cost) return null
   if (cents === 0) return 'Free'
   const how = paymentLabel(payment)
@@ -95,27 +117,34 @@ export function parseCourtOffer(
   costCents: unknown,
   payment: unknown,
   venueFee: boolean | null,
-): { court_cost_cents: number | null; payment: CourtPayment | null; error: string | null } {
+  currency: unknown = 'USD',
+): {
+  court_cost_cents: number | null
+  payment: CourtPayment | null
+  cost_currency: CourtCurrency | null
+  error: string | null
+} {
   if (venueFee === false) {
-    return { court_cost_cents: 0, payment: null, error: null }
+    return { court_cost_cents: 0, payment: null, cost_currency: null, error: null }
   }
 
   if (costCents == null || costCents === '') {
-    return { court_cost_cents: null, payment: null, error: null }
+    return { court_cost_cents: null, payment: null, cost_currency: null, error: null }
   }
 
   const cents = typeof costCents === 'number' ? costCents : Number(costCents)
   if (!Number.isInteger(cents) || cents < 0 || cents > MAX_CENTS) {
-    return { court_cost_cents: null, payment: null, error: 'Enter a court price up to $1000' }
+    return { court_cost_cents: null, payment: null, cost_currency: null, error: 'Enter a court price up to 1000' }
   }
   if (cents === 0) {
-    return { court_cost_cents: 0, payment: null, error: null }
+    return { court_cost_cents: 0, payment: null, cost_currency: null, error: null }
   }
 
+  const costCurrency = parseCourtCurrency(currency) ?? 'USD'
   if (payment !== 'split' && payment !== 'host' && payment !== 'at_court') {
-    return { court_cost_cents: null, payment: null, error: 'Choose how players pay for the court' }
+    return { court_cost_cents: null, payment: null, cost_currency: null, error: 'Choose how players pay for the court' }
   }
-  return { court_cost_cents: cents, payment, error: null }
+  return { court_cost_cents: cents, payment, cost_currency: costCurrency, error: null }
 }
 
 export function dollarsToCents(dollars: string): number | null {

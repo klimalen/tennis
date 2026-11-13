@@ -88,6 +88,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
         location_name: place.locationName.trim() || undefined,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
+        cost_currency: place.costCurrency,
         payment: place.payment,
         notes: about.trim() || undefined,
       }),
