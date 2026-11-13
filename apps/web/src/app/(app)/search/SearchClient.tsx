@@ -1781,6 +1781,17 @@ export function SearchClient({
               return next
             })
           }}
+          onCancelled={() => {
+            const id = selectedGame.id
+            setSelectedGame(null)
+            setPreviewGame((prev) => (prev?.id === id ? null : prev))
+            setJoinedGameIds((prev) => {
+              const next = new Set(prev)
+              next.delete(id)
+              return next
+            })
+            setSearchEpoch((n) => n + 1)
+          }}
           onClose={() => setSelectedGame(null)}
         />
       )}

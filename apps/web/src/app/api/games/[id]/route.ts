@@ -143,12 +143,13 @@ export async function DELETE(
 
   if (!game) return NextResponse.json({ error: 'Not found or not creator' }, { status: 404 })
 
-  // Notify before deletion. ON DELETE SET NULL flips game_id → null,
-  // which the card renders as "This game has been cancelled".
+  // Notify before deletion. ON DELETE SET NULL flips game_id → null;
+  // chat cards then show that the game was fully cancelled.
   const snapshot = JSON.stringify({
     scheduled_at: game.scheduled_at,
     format: game.format,
     location: game.neighborhood ?? null,
+    cancelled: true,
   })
   await postGameNotice(supabase, user.id, id, snapshot)
 
