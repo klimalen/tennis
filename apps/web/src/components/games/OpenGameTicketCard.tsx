@@ -139,8 +139,8 @@ export function OpenGameTicketCard({
           <span className="relative w-px flex-shrink-0 self-stretch" aria-hidden>
             <span className="absolute inset-y-3 left-0 border-l border-dashed border-[#F0EBE3]/45" />
           </span>
-          <span className="relative z-[1] flex min-w-0 flex-1 flex-col overflow-hidden py-3.5 pl-3 pr-[4.75rem] @[540px]:pr-72">
-            <span className="truncate font-display text-2xl leading-none tracking-wide uppercase @[540px]:text-3xl">{title}</span>
+          <span className="relative z-[1] flex min-w-0 flex-1 flex-col overflow-hidden py-3.5 pl-3 pr-16">
+            <span className="line-clamp-2 break-words font-display text-2xl leading-[1.05] tracking-wide uppercase @[540px]:text-3xl">{title}</span>
             <span className="mt-1.5 truncate text-[13px] text-[#F0EBE3]/80">{meta}</span>
             <span className="mt-3">
               <TicketFaces people={faces} spotsLeft={Math.max(0, spotsLeft)} />
