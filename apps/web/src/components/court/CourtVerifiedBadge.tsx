@@ -48,7 +48,7 @@ export function CourtVerifiedBadge({ className = '' }: { className?: string }) {
           role="tooltip"
           className="absolute left-1/2 top-full z-40 mt-2 w-56 -translate-x-1/2 rounded-2xl border border-[#1a1a1a]/10 bg-white px-3 py-2 text-left text-[11px] leading-snug text-[rgba(26,26,26,0.7)] shadow-lg"
         >
-          Data validated by the court — this listing is linked to the facility&apos;s GAME. profile and kept in sync by them.
+          Data validated by the court — this listing is linked to the facility&apos;s GAME.
         </span>
       )}
     </span>
