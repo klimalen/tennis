@@ -16,12 +16,12 @@ export function formatPlayFormat(format: string | null | undefined): string {
   return format ?? ''
 }
 
-/** Short chip label for profiles.play_style. */
-export function playStyleLabel(style: string | null | undefined): string | null {
-  if (style === 'recreational') return 'Recreational'
-  if (style === 'competitive') return 'Competitive'
-  if (style === 'both') return 'Both'
-  return null
+/** Chip labels for profiles.play_style — `both` expands to both options (never "Both"). */
+export function playStyleLabels(style: string | null | undefined): string[] {
+  if (style === 'recreational') return ['Recreational']
+  if (style === 'competitive') return ['Competitive']
+  if (style === 'both') return ['Recreational', 'Competitive']
+  return []
 }
 
 /** Letter-avatar wash for game chats — keeps singles vs doubles visually distinct. */

@@ -1,5 +1,5 @@
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { formatPlayFormat, playStyleLabel } from '@/lib/skill'
+import { formatPlayFormat, playStyleLabels } from '@/lib/skill'
 import type { Availability } from '@/lib/availability'
 import { hasSlots } from '@/lib/availability'
 
@@ -37,10 +37,16 @@ export function ProfileTraitChips({
 }) {
   const formatLabels = (formats ?? []).map((f) => formatPlayFormat(f)).filter(Boolean)
   const surfaceLabels = (surfaces ?? []).map((s) => SURFACE_LABELS[s] ?? s)
-  const style = playStyleLabel(playStyle)
+  const styleLabels = playStyleLabels(playStyle)
   const showAvailability = availability != null && hasSlots(availability)
 
-  if (!skill && formatLabels.length === 0 && surfaceLabels.length === 0 && !style && !showAvailability) {
+  if (
+    !skill
+    && formatLabels.length === 0
+    && surfaceLabels.length === 0
+    && styleLabels.length === 0
+    && !showAvailability
+  ) {
     return null
   }
 
@@ -53,7 +59,9 @@ export function ProfileTraitChips({
       {surfaceLabels.map((label) => (
         <span key={`surface-${label}`} className={CHIP.surface}>{label}</span>
       ))}
-      {style && <span className={CHIP.style}>{style}</span>}
+      {styleLabels.map((label) => (
+        <span key={`style-${label}`} className={CHIP.style}>{label}</span>
+      ))}
       {showAvailability && availability != null && <AvailabilityButton value={availability} />}
     </div>
   )
