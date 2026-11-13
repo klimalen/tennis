@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
+import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
@@ -257,43 +257,13 @@ function NewGameForm() {
             </div>
           )}
 
-          {/* Invite more players */}
           {!isCourt && connections.length > 0 && (
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-                {preselectedId ? 'Add more players' : 'Invite players'}{' '}
-                <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-              </p>
-              <div className="space-y-2">
-                {connections.map((c) => {
-                  const selected = selectedIds.has(c.id)
-                  const initials = c.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-                  return (
-                    <button key={c.id} type="button" onClick={() => togglePlayer(c.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 border transition-colors text-left ${
-                        selected ? 'rounded-[20px] border-[#E8748A] bg-[#F8E6EA]' : 'rounded-[20px] bg-brand-field border-[#1a1a1a]/15 hover:border-[#1a1a1a]/35'
-                      }`}>
-                      <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
-                        {c.avatar_url ? (
-                          <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1a1a] truncate">{c.full_name}</p>
-                        <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{c.username}</p>
-                      </div>
-                      <div className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 transition-colors ${
-                        selected ? 'rounded-md border-[#E8748A] bg-[#E8748A]' : 'rounded-md border-[#1a1a1a]/25 bg-white'
-                      }`}>
-                        {selected && <span className="text-[#1a1a1a] text-[10px] font-bold">✓</span>}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <InviteConnectionsList
+              connections={connections}
+              selectedIds={selectedIds}
+              onToggle={togglePlayer}
+              title={preselectedId ? 'Add more players' : 'Invite players'}
+            />
           )}
 
           {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
