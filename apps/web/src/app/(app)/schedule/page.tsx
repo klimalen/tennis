@@ -2,6 +2,7 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
 import Link from 'next/link'
+import { ActivityHeatmap } from '@/components/schedule/ActivityHeatmap'
 import { ScheduleSections } from '@/components/schedule/ScheduleBlocks'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
@@ -19,8 +20,10 @@ async function ScheduleContent() {
   const user = await getCurrentUser()
   if (!user) return null
 
-  const { upcoming, past } = summarizeSchedule(await loadPlayerGames(supabase, user.id))
+  const games = await loadPlayerGames(supabase, user.id)
+  const { upcoming, past } = summarizeSchedule(games)
   const hasGames = upcoming.length > 0 || past.length > 0
+  const activityDates = [...upcoming, ...past].map((game) => game.scheduled_at)
 
   return (
     <div className="min-h-screen">
@@ -36,38 +39,40 @@ async function ScheduleContent() {
         </div>
       </div>
 
-      {!hasGames ? (
-        <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-          <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
-          <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No games yet</p>
-          <p className="text-sm text-[rgba(26,26,26,0.45)] max-w-xs">
-            Games you create or join show up here
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <Link
-              href="/games/new"
-              className="px-6 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
-            >
-              Create a game
-            </Link>
-            <Link
-              href="/search"
-              className="text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline"
-            >
-              Find a game
-            </Link>
+      <div className="max-w-2xl mx-auto pt-2">
+        <ActivityHeatmap scheduledAts={activityDates} />
+
+        {!hasGames ? (
+          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
+            <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No games yet</p>
+            <p className="text-sm text-[rgba(26,26,26,0.45)] max-w-xs">
+              Games you create or join show up here
+            </p>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <Link
+                href="/games/new"
+                className="px-6 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
+              >
+                Create a game
+              </Link>
+              <Link
+                href="/search"
+                className="text-[11px] text-brand-primary tracking-[0.1em] uppercase font-medium hover:underline"
+              >
+                Find a game
+              </Link>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="max-w-2xl mx-auto pt-2">
+        ) : (
           <ScheduleSections
             upcoming={upcoming}
             past={past}
             viewerId={user.id}
             allowEdit
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
