@@ -45,7 +45,6 @@ export default function CourtSignUpPage() {
           city: profile.city_name || '',
           address: profile.address || '',
           phone: profile.phone || '',
-          openingHours: profile.opening_hours || '',
         })) {
           router.replace('/me')
           return

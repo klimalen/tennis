@@ -12,6 +12,7 @@ import {
   saveCourtDetails,
   type CourtDetailsValues,
 } from '@/components/court/CourtDetailsForm'
+import { OpeningHoursEditor } from '@/components/court/OpeningHoursEditor'
 
 const TOTAL_STEPS = 3
 const inputClass = 'w-full px-4 py-3 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
@@ -175,7 +176,7 @@ export default function CourtOnboardingPage() {
       )
     }
     if (step === 2) {
-      return Boolean(data.phone.trim() && data.openingHours.trim())
+      return Boolean(data.phone.trim())
     }
     return true
   }
@@ -377,15 +378,18 @@ export default function CourtOnboardingPage() {
 
         {step === 2 && (
           <div>
-            <StepHeading title="HOW TO REACH YOU" sub="Phone and hours are required · website is optional" />
+            <StepHeading title="HOW TO REACH YOU" sub="Phone is required · hours and website are optional" />
             <div className="space-y-5">
               <div>
                 <FieldLabel>Phone</FieldLabel>
                 <input type="tel" value={data.phone} onChange={(e) => update({ phone: e.target.value })} placeholder="(512) 000-0000" maxLength={40} className={inputClass} />
               </div>
               <div>
-                <FieldLabel>Opening hours</FieldLabel>
-                <input type="text" value={data.openingHours} onChange={(e) => update({ openingHours: e.target.value })} placeholder="Mo–Su 6:00–24:00" maxLength={200} className={inputClass} />
+                <FieldLabel optional>Opening hours</FieldLabel>
+                <OpeningHoursEditor
+                  value={data.openingHours}
+                  onChange={(openingHours) => update({ openingHours })}
+                />
               </div>
               <div>
                 <FieldLabel optional>Website</FieldLabel>
