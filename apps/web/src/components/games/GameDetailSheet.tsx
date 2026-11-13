@@ -447,13 +447,26 @@ export function GameDetailSheet({
           )}
 
           {canCancel && (
-            <button
-              type="button"
-              onClick={() => setShowCancelConfirm(true)}
-              className="w-full py-4 rounded-full border border-red-200 text-[10px] tracking-[0.2em] uppercase font-medium text-red-500 transition-colors hover:bg-red-50"
-            >
-              Cancel game
-            </button>
+            <div className="flex gap-3">
+              <Link
+                href={`/games/${game.id}/edit`}
+                onClick={(event) => {
+                  if (page) return
+                  event.preventDefault()
+                  goRelated(`/games/${game.id}/edit`)
+                }}
+                className="flex-1 py-4 rounded-full text-center text-[10px] tracking-[0.2em] uppercase font-medium border border-[#1a1a1a]/20 text-[#1a1a1a] transition-colors hover:border-[#1a1a1a]/50"
+              >
+                Edit game
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(true)}
+                className="flex-1 py-4 rounded-full border border-red-200 text-[10px] tracking-[0.2em] uppercase font-medium text-red-500 transition-colors hover:bg-red-50"
+              >
+                Cancel game
+              </button>
+            </div>
           )}
 
           {!isHost && courtViewer === false && canLeave && (
