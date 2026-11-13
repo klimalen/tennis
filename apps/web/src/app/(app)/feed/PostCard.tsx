@@ -4,13 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Calendar, Loader2, MapPin } from 'lucide-react'
-import { formatGameTicketTime } from '@/components/ui/LocalGameTime'
+import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Loader2 } from 'lucide-react'
 import { holdsGameSeat } from '@/lib/schedule'
-import { costLine } from '@/lib/game-court'
-import { GameFaceRow } from '@/components/games/GameFaceRow'
 import { createClient } from '@/lib/supabase/client'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
+import { OpenGameTicketCard } from '@/components/games/OpenGameTicketCard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +51,12 @@ export interface PostItem {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const FORMAT_LABELS: Record<string, string> = {
+  singles: 'Singles',
+  doubles: 'Doubles',
+  mixed_doubles: 'Mixed',
+}
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -65,11 +69,7 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-const FORMAT_LABELS: Record<string, string> = {
-  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed',
-}
-
-// ─── Open game preview card ────────────────────────────────────────────────────
+// ─── Open game preview card (same ticket as Discover → Games) ─────────────────
 
 function OpenGameCard({
   game: basicGame,
@@ -84,9 +84,8 @@ function OpenGameCard({
 
   const isCancelled = basicGame.status === 'cancelled'
   const isPast = new Date(basicGame.scheduled_at) < new Date()
-  const placeName = gameDetail?.court?.name?.trim() || basicGame.neighborhood
-  const gameWhen = formatGameTicketTime(basicGame.scheduled_at, gameDetail?.duration_minutes ?? null)
-  const price = gameDetail?.court?.fee === false ? null : costLine(gameDetail?.court_cost_cents, gameDetail?.payment)
+  const placeName = gameDetail?.court?.name?.trim() || basicGame.neighborhood?.trim() || ''
+  const title = placeName || gameDetail?.creator.full_name || 'Open game'
 
   useEffect(() => {
     let cancelled = false
@@ -119,84 +118,60 @@ function OpenGameCard({
   const spotsLeft = gameDetail ? gameDetail.max_players - spotsTaken : basicGame.max_players
   const isFull = spotsLeft <= 0
   const isParticipant = gameDetail?.participants.some((p) => p.player_id === currentUserId && holdsGameSeat(p.status)) ?? false
-  const isCreator = gameDetail?.creator_id === currentUserId
+  const isCreator = (gameDetail?.creator_id ?? basicGame.creator_id) === currentUserId
   const alreadyIn = isParticipant || isCreator
+  const courtHost = gameDetail?.creator.account_kind === 'court'
+  const faces = gameDetail
+    ? [
+        ...(courtHost ? [] : [{
+          id: gameDetail.creator.id,
+          name: gameDetail.creator.full_name,
+          avatarUrl: gameDetail.creator.avatar_url,
+        }]),
+        ...accepted
+          .filter((person) => person.player_id !== gameDetail.creator_id)
+          .map((person) => ({
+            id: person.player_id,
+            name: person.profile.full_name,
+            avatarUrl: person.profile.avatar_url,
+          })),
+      ]
+    : []
 
-  const buttonLabel = alreadyIn ? "You're in" : isFull ? 'Full' : 'Join game'
+  const muted = isCancelled || isPast
+  const beard = muted || canJoin === false
+    ? null
+    : !gameDetail
+      ? null
+      : alreadyIn
+        ? 'in' as const
+        : isFull
+          ? 'full' as const
+          : 'join' as const
+
+  function openSheet() {
+    if (gameDetail && !viewerCanOpenGame(gameDetail, currentUserId)) return
+    setShowSheet(true)
+  }
 
   return (
-    <>
-      <button
-        onClick={() => {
-          if (gameDetail && !viewerCanOpenGame(gameDetail, currentUserId)) return
-          setShowSheet(true)
-        }}
-        className="w-full text-left rounded-[20px] border border-[#1a1a1a]/10 bg-brand-field mb-3 overflow-hidden hover:border-[#1a1a1a]/25 transition-colors"
-      >
-        <div className="px-4 py-3">
-          {/* Header badge */}
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar size={13} className="text-brand-primary flex-shrink-0" />
-            <span className="text-[9px] tracking-[0.2em] uppercase text-brand-primary font-medium">Open game</span>
-            {isCancelled && (
-              <span className="text-[8px] tracking-[0.1em] uppercase text-red-400 border border-red-200 px-1.5 py-0.5">Cancelled</span>
-            )}
-          </div>
-
-          <p className="font-display text-3xl leading-[0.85] tracking-wide uppercase text-[#1a1a1a]">
-            {gameWhen.dateLabel}
-            <span className="mt-1 block">{gameWhen.startLabel}–{gameWhen.endLabel}</span>
-          </p>
-          <p className="mt-2 text-[13px] text-[rgba(26,26,26,0.55)]">
-            {FORMAT_LABELS[basicGame.format] ?? basicGame.format}
-          </p>
-          {placeName && (
-            <div className="flex items-start justify-between gap-3">
-              <p className="font-display text-lg leading-none tracking-wide uppercase text-[#1a1a1a] flex items-center gap-1"><MapPin size={12} />{placeName}</p>
-              {price && <p className="text-[13px] font-medium text-[#3A8A7A] flex-shrink-0">{price}</p>}
-            </div>
-          )}
-          {gameDetail && !isCancelled && !isPast && (
-            <div className="mt-3">
-              <GameFaceRow
-                people={[
-                  ...(gameDetail.creator.account_kind === 'court' ? [] : [{ id: gameDetail.creator.id, name: gameDetail.creator.full_name, username: gameDetail.creator.username, avatarUrl: gameDetail.creator.avatar_url }]),
-                  ...accepted.filter((person) => person.player_id !== gameDetail.creator_id && person.profile.account_kind !== 'court').map((person) => ({
-                    id: person.player_id,
-                    name: person.profile.full_name,
-                    username: person.profile.username,
-                    avatarUrl: person.profile.avatar_url,
-                  })),
-                ]}
-                spotsLeft={spotsLeft}
-              />
-              <p className="mt-2 text-[10px] tracking-[0.14em] uppercase text-[rgba(26,26,26,0.45)]">
-                {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Join / You're in strip */}
-        {!isCancelled && !isPast && canJoin && (
-          <div
-            onClick={(e) => {
-              if (alreadyIn || isFull || !gameDetail) return
-              e.stopPropagation()
-              setShowSheet(true)
-            }}
-            className={`w-full py-2.5 text-center text-[10px] tracking-[0.2em] uppercase font-medium border-t border-brand-divider transition-colors ${
-              alreadyIn
-                ? 'text-[rgba(26,26,26,0.35)] bg-brand-surface cursor-default'
-                : isFull
-                  ? 'text-[rgba(26,26,26,0.3)] bg-brand-surface cursor-default'
-                  : 'text-[#1a1a1a] bg-[#E8748A] hover:bg-[#E8406A]'
-            }`}
-          >
-            {!gameDetail ? <Loader2 size={12} className="animate-spin inline" /> : buttonLabel}
-          </div>
-        )}
-      </button>
+    <div className="mb-3">
+      <OpenGameTicketCard
+        title={title}
+        format={basicGame.format}
+        scheduledAt={basicGame.scheduled_at}
+        durationMinutes={gameDetail?.duration_minutes ?? null}
+        courtCostCents={gameDetail?.court_cost_cents ?? null}
+        courtFee={gameDetail?.court?.fee ?? null}
+        faces={faces}
+        spotsLeft={spotsLeft}
+        isFull={isFull}
+        beard={beard}
+        muted={muted}
+        badge={isCancelled ? 'Cancelled' : isPast ? 'Past' : null}
+        onOpen={openSheet}
+        onJoin={openSheet}
+      />
 
       {showSheet && gameDetail && viewerCanOpenGame(gameDetail, currentUserId) && (
         <GameDetailSheet
@@ -226,7 +201,7 @@ function OpenGameCard({
           }}
         />
       )}
-    </>
+    </div>
   )
 }
 
