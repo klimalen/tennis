@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Globe, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
 import { CourtListingDetails } from '@/components/court/CourtListingDetails'
 import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
@@ -593,11 +593,6 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {showDistance && <span className={`text-[11px] flex items-center gap-0.5 ${vivid ? 'text-[#D4A017]' : 'text-[rgba(26,26,26,0.4)]'}`}><MapPin size={10} />{formatDistance(distanceM)}</span>}
             <CourtFactChips chips={venueFactChips(venue)} className="flex flex-wrap items-center gap-1.5" />
-            {venue.website && (
-              <span className="inline-flex items-center text-[rgba(26,26,26,0.35)]">
-                <Globe size={9} />
-              </span>
-            )}
           </div>
         </div>
         <div className="relative w-9 flex-shrink-0 self-stretch">
