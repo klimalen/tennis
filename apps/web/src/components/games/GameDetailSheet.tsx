@@ -171,6 +171,8 @@ export function GameDetailSheet({
   const alreadyIn = !isCourtHost && !left && (viewerPlaysInGame(game, currentUserId) || joined)
   const canLeave = alreadyIn && !isPast && !isCancelled && !isHost
   const canCancel = isHost && !isPast && !isCancelled
+  // Past games stay on the schedule; hosts can hard-delete them (same DELETE API).
+  const canDeletePast = isHost && isPast
   const price = game.court?.fee === false
     ? 'Free'
     : costLine(game.court_cost_cents, game.payment, game.cost_currency)
@@ -237,7 +239,7 @@ export function GameDetailSheet({
   }
 
   async function handleCancel() {
-    if (!canCancel || cancelling) return
+    if ((!canCancel && !canDeletePast) || cancelling) return
     setCancelling(true)
     const res = await fetch(`/api/games/${game.id}`, { method: 'DELETE' })
     setCancelling(false)
@@ -472,6 +474,16 @@ export function GameDetailSheet({
             </div>
           )}
 
+          {canDeletePast && (
+            <button
+              type="button"
+              onClick={() => setShowCancelConfirm(true)}
+              className="w-full py-4 rounded-full border border-red-200 text-[10px] tracking-[0.2em] uppercase font-medium text-red-500 transition-colors hover:bg-red-50"
+            >
+              Delete game
+            </button>
+          )}
+
           {!isHost && courtViewer === false && canLeave && (
             <button
               type="button"
@@ -498,7 +510,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {isHost && !canCancel && (
+          {isHost && !canCancel && !canDeletePast && (
             <button
               type="button"
               disabled
@@ -510,14 +522,19 @@ export function GameDetailSheet({
         </div>
   )
 
+  const removingPast = canDeletePast
   const cancelConfirm = showCancelConfirm ? (
     <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
-        <span className="font-display text-2xl tracking-wide block mb-3">CANCEL GAME?</span>
+        <span className="font-display text-2xl tracking-wide block mb-3">
+          {removingPast ? 'DELETE GAME?' : 'CANCEL GAME?'}
+        </span>
         <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
-          {accepted.length > 0
-            ? 'Players who joined will be notified in chat that this game is fully cancelled.'
-            : 'This game will be removed from your schedule.'}
+          {removingPast
+            ? 'This past game will be permanently removed from your schedule.'
+            : accepted.length > 0
+              ? 'Players who joined will be notified in chat that this game is fully cancelled.'
+              : 'This game will be removed from your schedule.'}
         </p>
         <div className="flex gap-3">
           <button
@@ -534,7 +551,9 @@ export function GameDetailSheet({
             disabled={cancelling}
             className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors"
           >
-            {cancelling ? 'Cancelling…' : 'Cancel game'}
+            {cancelling
+              ? (removingPast ? 'Deleting…' : 'Cancelling…')
+              : (removingPast ? 'Delete game' : 'Cancel game')}
           </button>
         </div>
       </div>
