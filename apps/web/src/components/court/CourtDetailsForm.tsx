@@ -8,6 +8,11 @@ import { CityLocationField } from '@/components/location/CityLocationField'
 import type { CityCoords } from '@/components/ui/CityInput'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
 import { OpeningHoursEditor } from '@/components/court/OpeningHoursEditor'
+import {
+  PROFILE_LENGTH_ERROR,
+  PROFILE_USERNAME_MAX,
+  exceedsProfileLimit,
+} from '@/lib/profile-limits'
 
 const inputClass = 'w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
 
@@ -141,6 +146,9 @@ export async function saveCourtDetails(values: CourtDetailsValues, avatar?: Blob
 
   const currentUsername = profile.username ?? ''
   const chosen = values.username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
+  if (exceedsProfileLimit(chosen, PROFILE_USERNAME_MAX)) {
+    return PROFILE_LENGTH_ERROR
+  }
   let username = currentUsername
   if (chosen.length >= 3) {
     const { data: taken } = await supabase
@@ -409,7 +417,12 @@ export function CourtDetailsForm({
 
   const photo = avatarPreview
   const photoInitials = (name || seed.name || 'Court').split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
-  const usernameOk = username.trim().length >= 3 && usernameStatus !== 'taken' && usernameStatus !== 'checking'
+  const usernameTooLong = exceedsProfileLimit(username, PROFILE_USERNAME_MAX)
+  const usernameOk =
+    username.trim().length >= 3
+    && !usernameTooLong
+    && usernameStatus !== 'taken'
+    && usernameStatus !== 'checking'
   const canSave = courtDetailsComplete(values) && usernameOk
 
   return (
@@ -463,14 +476,15 @@ export function CourtDetailsForm({
             type="text"
             value={username}
             onChange={(e) => {
-              setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))
+              setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, PROFILE_USERNAME_MAX))
               markDirty()
             }}
             placeholder="your_court"
             required
             minLength={3}
-            maxLength={20}
+            maxLength={PROFILE_USERNAME_MAX}
             className={`${inputClass} pl-8 pr-10`}
+            aria-invalid={usernameTooLong}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
@@ -480,8 +494,15 @@ export function CourtDetailsForm({
         </div>
         <div className="mt-1.5 flex justify-between gap-2">
           <p className="text-[9px] text-[rgba(26,26,26,0.35)]">Letters, numbers and underscores only</p>
-          {usernameStatus === 'taken' && <p className="text-[9px] text-red-500">Username is taken</p>}
-          {usernameStatus === 'available' && <p className="text-[9px] text-brand-primary">Available</p>}
+          {usernameTooLong ? (
+            <p className="text-[9px] text-red-500">{PROFILE_LENGTH_ERROR}</p>
+          ) : usernameStatus === 'taken' ? (
+            <p className="text-[9px] text-red-500">Username is taken</p>
+          ) : usernameStatus === 'available' ? (
+            <p className="text-[9px] text-brand-primary">Available</p>
+          ) : (
+            <p className="text-[9px] text-[rgba(26,26,26,0.35)]">{username.length}/{PROFILE_USERNAME_MAX}</p>
+          )}
         </div>
       </div>
       <div>

@@ -8,6 +8,12 @@ import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/Sq
 import { CityLocationField } from '@/components/location/CityLocationField'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { availabilityFromProfile, legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
+import {
+  PROFILE_LENGTH_ERROR,
+  PROFILE_NAME_MAX,
+  PROFILE_USERNAME_MAX,
+  exceedsProfileLimit,
+} from '@/lib/profile-limits'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SKILL_LEVELS = [
@@ -257,7 +263,14 @@ export function PlayerEditPage() {
     return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]
   }
 
-  const canSave = d.fullName.trim().length > 0 && d.username.trim().length >= 3 && usernameStatus !== 'taken'
+  const nameTooLong = exceedsProfileLimit(d.fullName, PROFILE_NAME_MAX)
+  const usernameTooLong = exceedsProfileLimit(d.username, PROFILE_USERNAME_MAX)
+  const canSave =
+    d.fullName.trim().length > 0
+    && d.username.trim().length >= 3
+    && !nameTooLong
+    && !usernameTooLong
+    && usernameStatus !== 'taken'
   const isDirty = savedKey !== null && (draftKey(d) !== savedKey || pendingAvatar !== null)
 
   function goToProfile() {
@@ -283,11 +296,20 @@ export function PlayerEditPage() {
   }
 
   async function handleSave() {
-    if (!canSave || !userId || saveStatus === 'saving') return
+    if (!userId || saveStatus === 'saving') return
+    const draft = draftRef.current
+    if (
+      exceedsProfileLimit(draft.fullName, PROFILE_NAME_MAX)
+      || exceedsProfileLimit(draft.username, PROFILE_USERNAME_MAX)
+    ) {
+      setError(PROFILE_LENGTH_ERROR)
+      setSaveStatus('error')
+      return
+    }
+    if (!canSave) return
     setSaveStatus('saving')
     setError('')
     try {
-      const draft = draftRef.current
       let avatarUrl = draft.avatarUrl
       if (pendingAvatar) {
         const path = `${userId}/avatar.jpg`
@@ -435,10 +457,19 @@ export function PlayerEditPage() {
           <input
             type="text"
             value={d.fullName}
-            onChange={(e) => update({ fullName: e.target.value })}
-            className="w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+            onChange={(e) => update({ fullName: e.target.value.slice(0, PROFILE_NAME_MAX) })}
+            maxLength={PROFILE_NAME_MAX}
+            className={`w-full px-3 py-2.5 border bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary ${
+              nameTooLong ? 'border-red-400 focus:ring-red-400' : 'border-[#1a1a1a]/40'
+            }`}
             placeholder="Your name"
+            aria-invalid={nameTooLong}
           />
+          {nameTooLong ? (
+            <p className="text-[10px] text-red-500 mt-1">{PROFILE_LENGTH_ERROR}</p>
+          ) : (
+            <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.fullName.length}/{PROFILE_NAME_MAX}</p>
+          )}
         </div>
 
         {/* Username */}
@@ -449,9 +480,15 @@ export function PlayerEditPage() {
             <input
               type="text"
               value={d.username}
-              onChange={(e) => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-              className="w-full pl-7 pr-8 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              onChange={(e) => update({
+                username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, PROFILE_USERNAME_MAX),
+              })}
+              maxLength={PROFILE_USERNAME_MAX}
+              className={`w-full pl-7 pr-8 py-2.5 border bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary ${
+                usernameTooLong ? 'border-red-400 focus:ring-red-400' : 'border-[#1a1a1a]/40'
+              }`}
               placeholder="username"
+              aria-invalid={usernameTooLong}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
@@ -459,7 +496,13 @@ export function PlayerEditPage() {
               {usernameStatus === 'taken' && <X size={14} className="text-red-500" />}
             </div>
           </div>
-          {usernameStatus === 'taken' && <p className="text-[10px] text-red-500 mt-1">Already taken</p>}
+          {usernameTooLong ? (
+            <p className="text-[10px] text-red-500 mt-1">{PROFILE_LENGTH_ERROR}</p>
+          ) : usernameStatus === 'taken' ? (
+            <p className="text-[10px] text-red-500 mt-1">Already taken</p>
+          ) : (
+            <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.username.length}/{PROFILE_USERNAME_MAX}</p>
+          )}
         </div>
 
         {/* Bio */}
