@@ -1,5 +1,18 @@
+/** Shared pill size for date/time + option chips on create/edit game forms. */
+export const gameFormPill =
+  'h-11 min-h-11 max-h-11 box-border rounded-full border border-[#1a1a1a]/40 bg-brand-field text-base leading-none text-[#1a1a1a] transition-colors'
+
 const fieldClass =
-  'flex h-11 w-full min-w-0 max-w-full items-center justify-center box-border appearance-none [-webkit-appearance:none] [-webkit-min-logical-width:0] overflow-hidden px-3 border border-[#1a1a1a]/40 bg-brand-field rounded-full text-center text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary transition-colors [&::-webkit-date-and-time-value]:m-auto [&::-webkit-date-and-time-value]:h-auto [&::-webkit-date-and-time-value]:min-h-[1.25em] [&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-center [&::-webkit-datetime-edit]:m-auto [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:p-0 [&::-webkit-datetime-edit]:text-center [&::-webkit-datetime-edit-fields-wrapper]:p-0 [&::-webkit-calendar-picker-indicator]:hidden'
+  `${gameFormPill} flex w-full min-w-0 max-w-full items-center justify-center appearance-none [-webkit-appearance:none] [-webkit-min-logical-width:0] overflow-hidden px-3 text-center focus:outline-none focus:border-brand-primary ` +
+  '[&::-webkit-date-and-time-value]:m-auto [&::-webkit-date-and-time-value]:h-auto [&::-webkit-date-and-time-value]:min-h-0 [&::-webkit-date-and-time-value]:w-full [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:text-base [&::-webkit-date-and-time-value]:leading-none ' +
+  '[&::-webkit-datetime-edit]:m-auto [&::-webkit-datetime-edit]:w-full [&::-webkit-datetime-edit]:p-0 [&::-webkit-datetime-edit]:text-center [&::-webkit-datetime-edit]:text-base [&::-webkit-datetime-edit]:leading-none ' +
+  '[&::-webkit-datetime-edit-fields-wrapper]:m-0 [&::-webkit-datetime-edit-fields-wrapper]:p-0 [&::-webkit-datetime-edit-fields-wrapper]:text-base [&::-webkit-datetime-edit-fields-wrapper]:leading-none ' +
+  '[&::-webkit-datetime-edit-text]:p-0 [&::-webkit-datetime-edit-hour-field]:p-0 [&::-webkit-datetime-edit-minute-field]:p-0 [&::-webkit-datetime-edit-day-field]:p-0 [&::-webkit-datetime-edit-month-field]:p-0 [&::-webkit-datetime-edit-year-field]:p-0 ' +
+  '[&::-webkit-calendar-picker-indicator]:hidden'
+
+/** Option chips (Format / Visibility) — same height & type size as date/time. */
+export const gameFormOptionPill =
+  `${gameFormPill} flex flex-1 items-center justify-center px-3 text-center font-medium tracking-[0.08em] focus:outline-none`
 
 function openDatePicker(input: HTMLInputElement) {
   // Phones already open the system calendar on tap. Desktop Chrome only opens it

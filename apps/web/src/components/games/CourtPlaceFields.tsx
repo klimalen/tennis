@@ -394,8 +394,8 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 text-[10px] tracking-[0.14em] uppercase font-medium border transition-colors ${
-        active ? 'rounded-full border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a]'
+      className={`inline-flex h-11 min-h-11 max-h-11 items-center justify-center rounded-full border px-4 text-base font-medium leading-none tracking-[0.08em] transition-colors ${
+        active ? 'border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]' : 'border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a]'
       }`}
     >
       {children}

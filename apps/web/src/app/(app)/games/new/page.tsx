@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { WhenFields } from '@/components/games/WhenFields'
+import { gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
@@ -213,10 +213,8 @@ function NewGameForm() {
             <div className="flex gap-2">
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    format === opt.value
-                      ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]'
-                      : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  className={`${gameFormOptionPill} ${
+                    format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                   }`}>
                   {opt.label}
                 </button>
@@ -307,14 +305,14 @@ function NewGameForm() {
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
             <div className="flex gap-2">
               <button type="button" onClick={() => setIsOpen(false)}
-                className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                  !isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                className={`${gameFormOptionPill} ${
+                  !isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                 }`}>
                 Private
               </button>
               <button type="button" onClick={() => setIsOpen(true)}
-                className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                  isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                className={`${gameFormOptionPill} ${
+                  isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                 }`}>
                 Public
               </button>
