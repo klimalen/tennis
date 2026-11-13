@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2, Check } from 'lucide-react'
@@ -47,40 +47,72 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [checkEmail, setCheckEmail] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [accountExists, setAccountExists] = useState(false)
+  const submittingRef = useRef(false)
 
   const strength = getPasswordStrength(password)
   const passwordValid = password.length >= 8
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!passwordValid) return
+    if (!passwordValid || !fullName.trim() || !email.trim()) return
+    // Guard before React re-renders disabled=loading — double-clicks can fire twice.
+    if (submittingRef.current) return
+    submittingRef.current = true
     setError(null)
     setAccountExists(false)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
+    try {
+      const supabase = createClient()
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { full_name: fullName.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
 
-    if (error) {
-      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-        setAccountExists(true)
-      } else {
-        setError(error.message)
+      if (signUpError) {
+        if (
+          signUpError.message.includes('already registered')
+          || signUpError.message.includes('already been registered')
+        ) {
+          setAccountExists(true)
+        } else {
+          setError(signUpError.message)
+        }
+        submittingRef.current = false
+        setLoading(false)
+        return
       }
-      setLoading(false)
-      return
-    }
 
-    router.push('/onboarding')
+      if (!data.session) {
+        setCheckEmail(true)
+        setLoading(false)
+        return
+      }
+
+      router.push('/onboarding')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not create the account. Try again.')
+      submittingRef.current = false
+      setLoading(false)
+    }
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="bg-white rounded-[28px] p-8">
+        <h1 className="font-display text-4xl tracking-wide mb-2">CHECK YOUR EMAIL</h1>
+        <p className="text-sm text-[rgba(26,26,26,0.6)]">
+          We sent a link to {email.trim()}. Open it to confirm your account, then continue setup.
+        </p>
+      </div>
+    )
   }
 
   return (

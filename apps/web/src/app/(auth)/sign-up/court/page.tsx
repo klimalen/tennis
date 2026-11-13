@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -21,39 +21,44 @@ export default function CourtSignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [accountExists, setAccountExists] = useState(false)
   const [signedInAsPlayer, setSignedInAsPlayer] = useState(false)
+  const submittingRef = useRef(false)
 
   const passwordValid = password.length >= 8
 
   useEffect(() => {
     let cancelled = false
     async function resume() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        if (!cancelled) setReady(true)
-        return
-      }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_kind, full_name, city_name, address, phone, opening_hours')
-        .eq('id', user.id)
-        .maybeSingle()
-      if (cancelled) return
-      if (profile?.account_kind === 'court') {
-        if (courtDetailsComplete({
-          name: profile.full_name || '',
-          city: profile.city_name || '',
-          address: profile.address || '',
-          phone: profile.phone || '',
-        })) {
-          router.replace('/me')
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          if (!cancelled) setReady(true)
           return
         }
-        router.replace('/onboarding/court')
-        return
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_kind, full_name, city_name, address, phone, opening_hours')
+          .eq('id', user.id)
+          .maybeSingle()
+        if (cancelled) return
+        if (profile?.account_kind === 'court') {
+          if (courtDetailsComplete({
+            name: profile.full_name || '',
+            city: profile.city_name || '',
+            address: profile.address || '',
+            phone: profile.phone || '',
+          })) {
+            router.replace('/me')
+            return
+          }
+          router.replace('/onboarding/court')
+          return
+        }
+        if (profile) setSignedInAsPlayer(true)
+        setReady(true)
+      } catch {
+        if (!cancelled) setReady(true)
       }
-      if (profile) setSignedInAsPlayer(true)
-      setReady(true)
     }
     void resume()
     return () => { cancelled = true }
@@ -61,37 +66,51 @@ export default function CourtSignUpPage() {
 
   async function handleAccount(e: React.FormEvent) {
     e.preventDefault()
-    if (!passwordValid || !email.trim()) return
+    if (!passwordValid || !email.trim() || signedInAsPlayer) return
+    // Guard before React re-renders disabled=loading — double-clicks can fire twice.
+    if (submittingRef.current) return
+    submittingRef.current = true
     setError(null)
     setAccountExists(false)
     setLoading(true)
 
-    const supabase = createClient()
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { account_kind: 'court' },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding/court`,
-      },
-    })
+    try {
+      const supabase = createClient()
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { account_kind: 'court' },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding/court`,
+        },
+      })
 
-    if (signUpError) {
-      if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
-        setAccountExists(true)
-      } else {
-        setError(signUpError.message)
+      if (signUpError) {
+        if (
+          signUpError.message.includes('already registered')
+          || signUpError.message.includes('already been registered')
+        ) {
+          setAccountExists(true)
+        } else {
+          setError(signUpError.message)
+        }
+        submittingRef.current = false
+        setLoading(false)
+        return
       }
-      setLoading(false)
-      return
-    }
 
-    setLoading(false)
-    if (!data.session) {
-      setStep('check-email')
-      return
+      if (!data.session) {
+        setStep('check-email')
+        setLoading(false)
+        return
+      }
+
+      router.push('/onboarding/court')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not create the account. Try again.')
+      submittingRef.current = false
+      setLoading(false)
     }
-    router.push('/onboarding/court')
   }
 
   if (!ready) {

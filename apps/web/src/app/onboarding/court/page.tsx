@@ -90,56 +90,63 @@ export default function CourtOnboardingPage() {
   useEffect(() => {
     let cancelled = false
     async function boot() {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        router.replace('/sign-in')
-        return
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          router.replace('/sign-in')
+          return
+        }
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+          .eq('id', session.user.id)
+          .maybeSingle()
+        if (cancelled) return
+        if (!profile || profile.account_kind !== 'court') {
+          router.replace('/onboarding')
+          return
+        }
+        const autoUsername = /^court\d*$/.test(profile.username || '')
+        const surfaces = Array.isArray(profile.preferred_surfaces) ? profile.preferred_surfaces : []
+        const seeded: CourtDetailsValues = {
+          ...emptyCourtDetails(),
+          name: profile.full_name || '',
+          username: autoUsername ? '' : (profile.username || ''),
+          city: profile.city_name || '',
+          cityLat: profile.city_lat ?? null,
+          cityLng: profile.city_lng ?? null,
+          address: profile.address || '',
+          phone: profile.phone || '',
+          website: profile.website || '',
+          openingHours: profile.opening_hours || '',
+          description: profile.bio || '',
+          avatarUrl: profile.avatar_url,
+          courtCount: profile.court_count != null ? String(profile.court_count) : '',
+          surfaces: surfaces.filter((s: string) => VALID_SURFACES.has(s)),
+          hasIndoor: profile.has_indoor ?? null,
+          hasOutdoor: profile.has_outdoor ?? null,
+          lit: profile.lit ?? null,
+          feeHourMin: profile.fee_hour_min != null ? String(profile.fee_hour_min) : '',
+          feeHourMax: profile.fee_hour_max != null ? String(profile.fee_hour_max) : '',
+          whatsapp: profile.whatsapp || '',
+          instagram: profile.instagram || '',
+          telegram: profile.telegram || '',
+          facebook: profile.facebook || '',
+        }
+        if (courtDetailsComplete(seeded) && !autoUsername && (profile.username || '').length >= 3) {
+          router.replace('/me')
+          return
+        }
+        setUserId(session.user.id)
+        setData(seeded)
+        setAvatarPreview(profile.avatar_url)
+        setLoading(false)
+      } catch (err: unknown) {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Could not load court setup. Try refreshing.')
+        setLoading(false)
       }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
-        .eq('id', session.user.id)
-        .single()
-      if (cancelled) return
-      if (!profile || profile.account_kind !== 'court') {
-        router.replace('/onboarding')
-        return
-      }
-      const autoUsername = /^court\d*$/.test(profile.username || '')
-      const seeded: CourtDetailsValues = {
-        ...emptyCourtDetails(),
-        name: profile.full_name || '',
-        username: autoUsername ? '' : (profile.username || ''),
-        city: profile.city_name || '',
-        cityLat: profile.city_lat ?? null,
-        cityLng: profile.city_lng ?? null,
-        address: profile.address || '',
-        phone: profile.phone || '',
-        website: profile.website || '',
-        openingHours: profile.opening_hours || '',
-        description: profile.bio || '',
-        avatarUrl: profile.avatar_url,
-        courtCount: profile.court_count != null ? String(profile.court_count) : '',
-        surfaces: (profile.preferred_surfaces ?? []).filter((s: string) => VALID_SURFACES.has(s)),
-        hasIndoor: profile.has_indoor ?? null,
-        hasOutdoor: profile.has_outdoor ?? null,
-        lit: profile.lit ?? null,
-        feeHourMin: profile.fee_hour_min != null ? String(profile.fee_hour_min) : '',
-        feeHourMax: profile.fee_hour_max != null ? String(profile.fee_hour_max) : '',
-        whatsapp: profile.whatsapp || '',
-        instagram: profile.instagram || '',
-        telegram: profile.telegram || '',
-        facebook: profile.facebook || '',
-      }
-      if (courtDetailsComplete(seeded) && !autoUsername && (profile.username || '').length >= 3) {
-        router.replace('/me')
-        return
-      }
-      setUserId(session.user.id)
-      setData(seeded)
-      setAvatarPreview(profile.avatar_url)
-      setLoading(false)
     }
     void boot()
     return () => { cancelled = true }
