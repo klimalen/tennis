@@ -252,7 +252,7 @@ export default async function PlayerProfilePage({
           <Link href={backHref} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
-          <span className="flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
+          <span className="flex-1 truncate font-display text-xl tracking-wide text-[#1a1a1a]">
             {profile.full_name.toUpperCase()}
           </span>
           <ShareLinkButton
@@ -308,11 +308,11 @@ export default async function PlayerProfilePage({
                   href={courtHref}
                   className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
                 >
-                  <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+                  <p className="font-display text-xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
                   <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
                 </Link>
               ) : (
-                <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+                <p className="font-display text-xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
               )}
               <span className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.28)]">@{profile.username}</span>
             </div>
