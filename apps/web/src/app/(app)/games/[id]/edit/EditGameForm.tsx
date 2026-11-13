@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import type { CourtPayment } from '@/lib/game-court'
 import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
@@ -188,7 +188,7 @@ export function EditGameForm({
           />
 
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
+            <FormSectionLabel>Format</FormSectionLabel>
             <div className="flex gap-2">
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
@@ -204,9 +204,9 @@ export function EditGameForm({
           <CourtPlaceFields value={place} onChange={setPlace} />
 
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-            </p>
+            <FormSectionLabel>
+              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+            </FormSectionLabel>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder="Any information — for example the training format" rows={3} maxLength={500}
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
@@ -214,7 +214,7 @@ export function EditGameForm({
 
           {isCreator && (
             <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
+              <FormSectionLabel>Visibility</FormSectionLabel>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setIsOpen(false)}
                   className={`${gameFormOptionPill} ${
@@ -235,7 +235,7 @@ export function EditGameForm({
                 </p>
               ) : (
                 <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                  It stays on your profile. Only you and the people you invite can see it. Nobody else can find it or join.
+                  It still shows on your profile schedule. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
                 </p>
               )}
             </div>
@@ -244,7 +244,7 @@ export function EditGameForm({
           {/* Participants */}
           {participants.length > 0 && (
             <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
+              <FormSectionLabel>Players</FormSectionLabel>
               <div className="space-y-2">
                 {participants.map((p) => {
                   const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()

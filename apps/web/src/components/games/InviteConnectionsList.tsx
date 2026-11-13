@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Search, X } from 'lucide-react'
+import { FormSectionLabel } from '@/components/games/WhenFields'
 
 export interface InviteConnection {
   id: string
@@ -38,10 +39,10 @@ export function InviteConnectionsList({
 
   return (
     <div>
-      <p className="mb-3 text-[9px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.35)]">
+      <FormSectionLabel>
         {title}{' '}
         <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-      </p>
+      </FormSectionLabel>
 
       {showSearch && (
         <div className="relative mb-3">

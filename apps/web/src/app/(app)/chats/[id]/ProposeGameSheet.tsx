@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
-import { gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
@@ -155,7 +155,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* Format */}
               <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
+                <FormSectionLabel>Format</FormSectionLabel>
                 <div className="flex gap-2">
                   {FORMAT_OPTIONS.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
@@ -172,9 +172,9 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* About */}
               <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-                  About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-                </p>
+                <FormSectionLabel>
+                  About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+                </FormSectionLabel>
                 <textarea value={about} onChange={(e) => setAbout(e.target.value)}
                   placeholder="Any information — for example the training format" rows={3} maxLength={500}
                   className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
@@ -182,7 +182,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* Players */}
               <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
+                <FormSectionLabel>Players</FormSectionLabel>
 
                 {/* Pre-selected chat partner */}
                 <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA] mb-2">

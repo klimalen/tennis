@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
@@ -210,9 +210,8 @@ function NewGameForm() {
             onEnd={setEndTime}
           />
 
-          {/* Format */}
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
+            <FormSectionLabel>Format</FormSectionLabel>
             <div className="flex gap-2">
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
@@ -227,11 +226,10 @@ function NewGameForm() {
 
           <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
 
-          {/* About */}
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-            </p>
+            <FormSectionLabel>
+              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+            </FormSectionLabel>
             <textarea value={about} onChange={(e) => setAbout(e.target.value)}
               placeholder="Any information — for example the training format"
               rows={3}
@@ -275,7 +273,7 @@ function NewGameForm() {
           {/* Visibility */}
           {!isCourt && (
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
+            <FormSectionLabel>Visibility</FormSectionLabel>
             <div className="flex gap-2">
               <button type="button" onClick={() => setIsOpen(false)}
                 className={`${gameFormOptionPill} ${
@@ -296,7 +294,7 @@ function NewGameForm() {
               </p>
             ) : (
               <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                It stays on your profile. Only you and the people you invite can see it. Nobody else can find it or join.
+                It still shows on your profile schedule. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
               </p>
             )}
           </div>

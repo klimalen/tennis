@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 /** Shared pill size for date/time + option chips on create/edit game forms. */
 export const gameFormPill =
   'h-11 min-h-11 max-h-11 box-border rounded-full border border-[#1a1a1a]/40 bg-brand-field text-base leading-none text-[#1a1a1a] transition-colors'
@@ -13,6 +15,16 @@ const fieldClass =
 /** Option chips (Format / Visibility) — same height & type size as date/time. */
 export const gameFormOptionPill =
   `${gameFormPill} flex flex-1 items-center justify-center px-3 text-center font-medium tracking-[0.08em] focus:outline-none`
+
+/** Section title + hairline — same rhythm as game detail Court / Price blocks. */
+export function FormSectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.45)]">{children}</span>
+      <div className="h-px flex-1 bg-brand-divider" aria-hidden />
+    </div>
+  )
+}
 
 function openDatePicker(input: HTMLInputElement) {
   // Phones already open the system calendar on tap. Desktop Chrome only opens it
@@ -45,7 +57,7 @@ export function WhenFields({
 }) {
   return (
     <div>
-      <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">When</p>
+      <FormSectionLabel>When</FormSectionLabel>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div className="col-span-2 min-w-0 overflow-hidden sm:col-span-1">
           <label className="block text-[9px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.35)] mb-1.5">Date</label>

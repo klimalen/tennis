@@ -12,6 +12,7 @@ import {
   type CourtCurrency,
   type CourtPayment,
 } from '@/lib/game-court'
+import { FormSectionLabel } from '@/components/games/WhenFields'
 import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
 
 export interface CourtPick {
@@ -252,12 +253,12 @@ export function CourtPlaceFields({
 
   return (
     <div className="space-y-3">
-      <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">
+      <FormSectionLabel>
         Court
         {!locked && (
           <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]"> (optional)</span>
         )}
-      </p>
+      </FormSectionLabel>
 
       {locked ? (
         value.venue || value.locationName ? (
@@ -352,7 +353,7 @@ export function CourtPlaceFields({
       )}
 
       <div className="space-y-2">
-        <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Court cost</p>
+        <FormSectionLabel>Court cost</FormSectionLabel>
         {lockedFree ? (
           <p className="text-[12px] text-[rgba(26,26,26,0.55)]">This court is free. Nothing to pay.</p>
         ) : (

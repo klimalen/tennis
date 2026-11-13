@@ -518,6 +518,22 @@ export function ChatView({
         </div>
       )}
 
+      {messages.length === 0 && gameChat && (
+        <div className="max-w-2xl w-full mx-auto px-4 pt-6">
+          <div className="rounded-[20px] bg-white px-4 py-4 text-center">
+            <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
+            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
+              This is the game chat
+            </p>
+            <p className="mt-1 text-sm text-[rgba(26,26,26,0.45)] font-fraunces italic">
+              {gameChat.closed
+                ? 'This game was cancelled.'
+                : 'Say hello and coordinate with everyone who joined.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <div ref={scrollRef} onScroll={handleScroll}
         className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 overflow-y-auto relative">
