@@ -400,14 +400,9 @@ export function GameDetailSheet({
                 <div className="h-px flex-1 bg-brand-divider" />
               </div>
               <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-[rgba(26,26,26,0.7)]">{placeName}</p>
-              {(price || isCancelled) && (
+              {isCancelled && (
                 <div className="mt-2">
-                  <CourtFactChips
-                    chips={[
-                      ...(price ? [{ key: 'game-price', label: price, tone: 'fee' as const }] : []),
-                      ...(isCancelled ? [{ key: 'cancelled', label: 'Cancelled', tone: 'feature' as const }] : []),
-                    ]}
-                  />
+                  <CourtFactChips chips={[{ key: 'cancelled', label: 'Cancelled', tone: 'feature' }]} />
                 </div>
               )}
             </div>
@@ -415,6 +410,16 @@ export function GameDetailSheet({
 
           {game.court && isCancelled && (
             <CourtFactChips chips={[{ key: 'cancelled', label: 'Cancelled', tone: 'feature' }]} />
+          )}
+
+          {price && (
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.45)]">Price</span>
+                <div className="h-px flex-1 bg-brand-divider" />
+              </div>
+              <p className="font-display text-xl tracking-wide text-[#1a1a1a]">{price}</p>
+            </div>
           )}
 
           {game.notes?.trim() && (
