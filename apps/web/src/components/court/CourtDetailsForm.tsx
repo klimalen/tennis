@@ -19,6 +19,7 @@ const SURFACE_OPTIONS = [
 
 export interface CourtDetailsValues {
   name: string
+  username: string
   city: string
   cityLat: number | null
   cityLng: number | null
@@ -42,6 +43,7 @@ export interface CourtDetailsValues {
 export function emptyCourtDetails(): CourtDetailsValues {
   return {
     name: '',
+    username: '',
     city: '',
     cityLat: null,
     cityLng: null,
@@ -121,9 +123,20 @@ export async function saveCourtDetails(values: CourtDetailsValues, avatar?: Blob
   }
 
   const currentUsername = profile.username ?? ''
-  const username = /^court\d*$/.test(currentUsername)
-    ? await uniqueCourtUsername(values.name, user.id)
-    : currentUsername
+  const chosen = values.username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
+  let username = currentUsername
+  if (chosen.length >= 3) {
+    const { data: taken } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', chosen)
+      .neq('id', user.id)
+      .maybeSingle()
+    if (taken) return 'That username is already taken.'
+    username = chosen
+  } else if (/^court\d*$/.test(currentUsername)) {
+    username = await uniqueCourtUsername(values.name, user.id)
+  }
 
   let avatarUrl: string | undefined
   if (avatar) {
@@ -276,6 +289,7 @@ export function CourtDetailsForm({
 
   const values: CourtDetailsValues = {
     name,
+    username: seed.username,
     city,
     cityLat: coords?.lat ?? seed.cityLat ?? null,
     cityLng: coords?.lng ?? seed.cityLng ?? null,

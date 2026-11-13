@@ -58,6 +58,7 @@ export function CourtEditPage() {
       setPreviewHref(venue?.id ? `/court/${venue.id}` : (profile.username ? `/profile/${profile.username}` : '/me'))
       setInitial({
         name: profile.full_name || '',
+        username: profile.username || '',
         city: profile.city_name || '',
         cityLat: profile.city_lat ?? null,
         cityLng: profile.city_lng ?? null,
