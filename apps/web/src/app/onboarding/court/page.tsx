@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Camera, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CityLocationField } from '@/components/location/CityLocationField'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
@@ -65,16 +65,20 @@ function Pill({
   )
 }
 
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken'
+
 export default function CourtOnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState('')
   const [data, setData] = useState<CourtDetailsValues>(emptyCourtDetails())
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [pendingAvatar, setPendingAvatar] = useState<Blob | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle')
   const cropRef = useRef<SquarePhotoCropHandle>(null)
   const [cropping, setCropping] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -90,7 +94,7 @@ export default function CourtOnboardingPage() {
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('account_kind, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+        .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
         .eq('id', session.user.id)
         .single()
       if (cancelled) return
@@ -98,9 +102,11 @@ export default function CourtOnboardingPage() {
         router.replace('/onboarding')
         return
       }
+      const autoUsername = /^court\d*$/.test(profile.username || '')
       const seeded: CourtDetailsValues = {
         ...emptyCourtDetails(),
         name: profile.full_name || '',
+        username: autoUsername ? '' : (profile.username || ''),
         city: profile.city_name || '',
         cityLat: profile.city_lat ?? null,
         cityLng: profile.city_lng ?? null,
@@ -120,10 +126,11 @@ export default function CourtOnboardingPage() {
         telegram: profile.telegram || '',
         facebook: profile.facebook || '',
       }
-      if (courtDetailsComplete(seeded)) {
+      if (courtDetailsComplete(seeded) && !autoUsername && (profile.username || '').length >= 3) {
         router.replace('/me')
         return
       }
+      setUserId(session.user.id)
       setData(seeded)
       setAvatarPreview(profile.avatar_url)
       setLoading(false)
@@ -132,13 +139,40 @@ export default function CourtOnboardingPage() {
     return () => { cancelled = true }
   }, [router])
 
+  useEffect(() => {
+    if (!userId) return
+    const username = data.username.trim()
+    if (username.length < 3) {
+      setUsernameStatus('idle')
+      return
+    }
+    setUsernameStatus('checking')
+    const timer = setTimeout(async () => {
+      const supabase = createClient()
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .neq('id', userId)
+        .maybeSingle()
+      setUsernameStatus(existing ? 'taken' : 'available')
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [data.username, userId])
+
   function update(partial: Partial<CourtDetailsValues>) {
     setData((prev) => ({ ...prev, ...partial }))
   }
 
   function canProceed() {
     if (step === 1) {
-      return Boolean(data.name.trim() && data.city.trim() && data.address.trim())
+      return Boolean(
+        data.name.trim()
+        && data.city.trim()
+        && data.address.trim()
+        && data.username.trim().length >= 3
+        && usernameStatus === 'available',
+      )
     }
     if (step === 2) {
       return Boolean(data.phone.trim() && data.openingHours.trim())
@@ -242,7 +276,7 @@ export default function CourtOnboardingPage() {
 
         {step === 1 && (
           <div>
-            <StepHeading title="ABOUT THE COURT" sub="Players see this on your profile and in Search" />
+            <StepHeading title="ABOUT THE COURT" sub="Players see this on your profile and in Search in the app" />
             <div className="space-y-5">
               <div className="flex items-center gap-4">
                 <button
@@ -287,6 +321,30 @@ export default function CourtOnboardingPage() {
                 />
               </div>
               <div>
+                <FieldLabel>Username</FieldLabel>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
+                  <input
+                    type="text"
+                    value={data.username}
+                    onChange={(e) => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                    placeholder="your_court"
+                    maxLength={20}
+                    className={`${inputClass} pl-8 pr-10`}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
+                    {usernameStatus === 'available' && <Check size={14} className="text-brand-primary" />}
+                    {usernameStatus === 'taken' && <X size={14} className="text-red-500" />}
+                  </div>
+                </div>
+                <div className="mt-1.5 flex justify-between">
+                  <p className="text-[9px] text-[rgba(26,26,26,0.35)]">Letters, numbers and underscores only</p>
+                  {usernameStatus === 'taken' && <p className="text-[9px] text-red-500">Username is taken</p>}
+                  {usernameStatus === 'available' && <p className="text-[9px] text-brand-primary">Available</p>}
+                </div>
+              </div>
+              <div>
                 <FieldLabel>City</FieldLabel>
                 <CityLocationField
                   value={data.city}
@@ -311,7 +369,7 @@ export default function CourtOnboardingPage() {
                 />
               </div>
               <p className="font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.55)]">
-                You can edit every detail later. What you enter here also appears on your court card in Search.
+                You can edit every detail later.
               </p>
             </div>
           </div>
