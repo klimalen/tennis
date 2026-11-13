@@ -27,7 +27,22 @@ const PART_TIMES: Record<DayPart, { start: string; end: string }> = {
 
 export type Availability = Partial<Record<number, DayPart[]>>
 
+export type AvailabilityLine = {
+  key: string
+  label: string
+  parts: DayPart[]
+  anytime?: boolean
+}
+
 const DAY_SET = new Set<number>(DAY_ORDER)
+
+function partsKey(parts: DayPart[]): string {
+  return DAY_PARTS.filter((part) => parts.includes(part)).join(',')
+}
+
+function sameParts(a: DayPart[], b: DayPart[]): boolean {
+  return partsKey(a) === partsKey(b)
+}
 
 export function slotFromStart(start: string | null | undefined): DayPart | null {
   if (!start) return null
@@ -79,6 +94,80 @@ export function daysWithSlots(availability: Availability): number[] {
   return DAY_ORDER.filter((day) => (availability[day]?.length ?? 0) > 0)
 }
 
+/** All seven days, every day-part — “any day, any time”. */
+export function isAnytime(availability: Availability): boolean {
+  return DAY_ORDER.every((day) => sameParts(availability[day] ?? [], [...DAY_PARTS]))
+}
+
+/** All seven days share the same non-empty day-parts. */
+export function isUniformWeek(availability: Availability): boolean {
+  const days = daysWithSlots(availability)
+  if (days.length !== 7) return false
+  const sample = availability[days[0]!] ?? []
+  if (sample.length === 0) return false
+  return days.every((day) => sameParts(availability[day] ?? [], sample))
+}
+
+export function uniformParts(availability: Availability): DayPart[] | null {
+  if (!isUniformWeek(availability) && !isAnytime(availability)) return null
+  return availability[DAY_ORDER[0]] ?? null
+}
+
+export function fillWeek(parts: DayPart[]): Availability {
+  const slots = DAY_PARTS.filter((part) => parts.includes(part))
+  const out: Availability = {}
+  for (const day of DAY_ORDER) out[day] = [...slots]
+  return out
+}
+
+export function anytimeAvailability(): Availability {
+  return fillWeek([...DAY_PARTS])
+}
+
+/** Compact lines for the Usually plays popup — mirrors court hours grouping. */
+export function availabilityLines(availability: Availability): AvailabilityLine[] {
+  if (!hasSlots(availability)) return []
+  if (isAnytime(availability)) {
+    return [{ key: 'anytime', label: 'Any day', parts: [...DAY_PARTS], anytime: true }]
+  }
+  if (isUniformWeek(availability)) {
+    return [{ key: 'everyday', label: 'Every day', parts: availability[DAY_ORDER[0]] ?? [] }]
+  }
+
+  const days = daysWithSlots(availability)
+  const lines: AvailabilityLine[] = []
+  let index = 0
+  while (index < days.length) {
+    const startDay = days[index]!
+    const parts = availability[startDay] ?? []
+    let end = index
+    while (
+      end + 1 < days.length
+      && consecutiveInWeek(days[end]!, days[end + 1]!)
+      && sameParts(availability[days[end + 1]!] ?? [], parts)
+    ) {
+      end += 1
+    }
+    const endDay = days[end]!
+    const startLabel = DAY_LABELS[startDay] ?? String(startDay)
+    const endLabel = DAY_LABELS[endDay] ?? String(endDay)
+    const label = startDay === endDay ? startLabel : `${startLabel}–${endLabel}`
+    lines.push({
+      key: `${startDay}-${endDay}-${partsKey(parts)}`,
+      label,
+      parts,
+    })
+    index = end + 1
+  }
+  return lines
+}
+
+function consecutiveInWeek(a: number, b: number): boolean {
+  const ai = DAY_ORDER.indexOf(a as (typeof DAY_ORDER)[number])
+  const bi = DAY_ORDER.indexOf(b as (typeof DAY_ORDER)[number])
+  return ai >= 0 && bi === ai + 1
+}
+
 export function toggleDay(availability: Availability, day: number): Availability {
   const next: Availability = { ...availability }
   if (next[day]) delete next[day]
@@ -92,6 +181,18 @@ export function togglePart(availability: Availability, day: number, part: DayPar
   if (picked.has(part)) picked.delete(part)
   else picked.add(part)
   return { ...availability, [day]: DAY_PARTS.filter((item) => picked.has(item)) }
+}
+
+/** Toggle a day-part across every day of the week (same-times mode). */
+export function toggleUniformPart(availability: Availability, part: DayPart): Availability {
+  const sample = daysWithSlots(availability)[0]
+  const current = sample != null ? (availability[sample] ?? []) : []
+  const picked = new Set(current)
+  if (picked.has(part)) picked.delete(part)
+  else picked.add(part)
+  const nextParts = DAY_PARTS.filter((item) => picked.has(item))
+  if (nextParts.length === 0) return {}
+  return fillWeek(nextParts)
 }
 
 export function storedAvailability(availability: Availability): Record<string, DayPart[]> {

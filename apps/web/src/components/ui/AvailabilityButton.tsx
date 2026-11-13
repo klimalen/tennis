@@ -4,9 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CalendarDays } from 'lucide-react'
 import {
-  DAY_LABELS,
   PART_LABELS,
-  daysWithSlots,
+  availabilityLines,
   hasSlots,
   normalizeAvailability,
 } from '@/lib/availability'
@@ -21,7 +20,7 @@ export function AvailabilityButton({
   iconSize?: number
 }) {
   const availability = normalizeAvailability(value)
-  const days = daysWithSlots(availability)
+  const lines = availabilityLines(availability)
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -52,7 +51,7 @@ export function AvailabilityButton({
     e.stopPropagation()
     const rect = e.currentTarget.getBoundingClientRect()
     const width = 248
-    const height = 36 + days.length * 32
+    const height = 36 + Math.max(1, lines.length) * 32
     let left = rect.left
     if (left + width > window.innerWidth - 12) left = window.innerWidth - 12 - width
     if (left < 12) left = 12
@@ -83,19 +82,25 @@ export function AvailabilityButton({
         >
           <p className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.45)] mb-2">Usually plays</p>
           <div className="space-y-1.5">
-            {days.map((day) => (
-              <div key={day} className="flex flex-wrap items-center gap-1.5">
-                <span className="w-8 text-[10px] tracking-[0.12em] uppercase font-medium text-[#1a1a1a]">
-                  {DAY_LABELS[day]}
+            {lines.map((line) => (
+              <div key={line.key} className="flex flex-wrap items-center gap-1.5">
+                <span className="min-w-[4.5rem] text-[10px] tracking-[0.12em] uppercase font-medium text-[#1a1a1a]">
+                  {line.label}
                 </span>
-                {(availability[day] ?? []).map((part) => (
-                  <span
-                    key={part}
-                    className="rounded-full bg-[#E8748A] px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a]"
-                  >
-                    {PART_LABELS[part]}
+                {line.anytime ? (
+                  <span className="rounded-full bg-[#E8748A] px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a]">
+                    Any time
                   </span>
-                ))}
+                ) : (
+                  line.parts.map((part) => (
+                    <span
+                      key={part}
+                      className="rounded-full bg-[#E8748A] px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a]"
+                    >
+                      {PART_LABELS[part]}
+                    </span>
+                  ))
+                )}
               </div>
             ))}
           </div>
