@@ -378,7 +378,7 @@ export function CourtPlaceFields({
                     onChange={(event) => chooseAmount(event.target.value.replace(/[^0-9.]/g, '').slice(0, 7))}
                     placeholder="24"
                     aria-label="Court cost amount"
-                    className="h-11 w-28 rounded-full border border-[#1a1a1a]/40 bg-brand-field px-3 text-base leading-none text-[#1a1a1a] focus:outline-none focus:border-brand-primary"
+                    className="h-11 w-28 rounded-full border border-[#1a1a1a]/40 bg-brand-field px-3 text-sm leading-none text-[#1a1a1a] focus:outline-none focus:border-brand-primary"
                   />
                   <div className="flex gap-1.5" role="group" aria-label="Currency">
                     {CURRENCY_OPTIONS.map((option) => {
@@ -388,7 +388,7 @@ export function CourtPlaceFields({
                           key={option.value}
                           type="button"
                           onClick={() => chooseCurrency(option.value)}
-                          className={`inline-flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-base font-medium leading-none transition-colors ${
+                          className={`inline-flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-sm font-medium leading-none transition-colors ${
                             active
                               ? 'border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]'
                               : 'border-[#1a1a1a]/40 bg-brand-field text-[rgba(26,26,26,0.55)] hover:border-[#1a1a1a]/60'
@@ -447,7 +447,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-11 min-h-11 max-h-11 items-center justify-center rounded-full border px-4 text-base font-medium leading-none tracking-[0.08em] transition-colors ${
+      className={`inline-flex h-11 min-h-11 max-h-11 items-center justify-center rounded-full border px-4 text-sm font-medium leading-none tracking-[0.08em] transition-colors ${
         active ? 'border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]' : 'border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a]'
       }`}
     >

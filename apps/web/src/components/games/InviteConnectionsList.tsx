@@ -52,7 +52,7 @@ export function InviteConnectionsList({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by name or @username"
-            className="h-11 w-full rounded-full border border-[#1a1a1a]/40 bg-brand-field py-0 pl-9 pr-10 text-base text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.3)] focus:border-brand-primary focus:outline-none"
+            className="h-11 w-full rounded-full border border-[#1a1a1a]/40 bg-brand-field py-0 pl-9 pr-10 text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.3)] focus:border-brand-primary focus:outline-none"
             aria-label="Search connections"
           />
           {query && (
