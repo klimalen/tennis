@@ -91,9 +91,13 @@ type FactChip = {
   tone: 'count' | 'fee' | 'feature'
 }
 
+/** Same pill chrome for every fact; only the fill/text tint changes. */
+const CHIP_BASE =
+  'inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em]'
+
 const CHIP_TONE: Record<FactChip['tone'], string> = {
-  count: 'bg-[#3A8A7A]/18 text-[#1F5C50]',
-  fee: 'bg-[#E8748A]/22 text-[#7A2F3F]',
+  count: 'bg-[#D7EBE6] text-[#1F5C50]',
+  fee: 'bg-[#F6D9DF] text-[#7A2F3F]',
   feature: 'bg-brand-field text-[#1a1a1a]',
 }
 
@@ -202,10 +206,7 @@ export function CourtProfileDetails({
       {chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">
           {chips.map((chip) => (
-            <span
-              key={chip.key}
-              className={`rounded-full text-[9px] tracking-[0.12em] uppercase font-medium px-2.5 py-0.5 ${CHIP_TONE[chip.tone]}`}
-            >
+            <span key={chip.key} className={`${CHIP_BASE} ${CHIP_TONE[chip.tone]}`}>
               {chip.label}
             </span>
           ))}
