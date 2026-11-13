@@ -5,6 +5,8 @@ import { ArrowLeft, Globe, MapPin, Navigation, Phone } from 'lucide-react'
 import { CourtMapFrame } from '@/components/court/CourtMapFrame'
 import { OpeningHours } from '@/components/court/OpeningHours'
 import { CourtSaveButton } from '@/components/court/CourtSaveButton'
+import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
+import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
 import { LinkState } from '@/components/share/LinkState'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { createClient } from '@/lib/supabase/server'
@@ -72,6 +74,21 @@ export default async function CourtPage({
   const title = courtTitle(court.name, court.address)
   const website = court.website ? (court.website.startsWith('http') ? court.website : `https://${court.website}`) : null
   const closed = court.access === 'private' || court.access === 'members'
+  const accessLabel = closed ? (court.access === 'members' ? 'Members only' : 'Private') : null
+  const chips = buildCourtFactChips({
+    courtCount: court.court_count,
+    surfaces: court.surfaces,
+    surface: court.surface,
+    hasIndoor: court.has_indoor,
+    hasOutdoor: court.has_outdoor,
+    lit: court.lit,
+    feeHourMin: court.fee_hour_min,
+    feeHourMax: court.fee_hour_max,
+    fee: court.fee,
+    accessLabel,
+  })
+  const arrival = arrivalLabel(court)
+  if (arrival) chips.push({ key: 'arrival', label: arrival, tone: 'feature' })
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -89,27 +106,20 @@ export default async function CourtPage({
         <div className="space-y-4 rounded-[28px] bg-white p-5">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(court.kind)}</p>
-            <h1 className="mt-1 font-display text-3xl leading-none tracking-wide text-[#1a1a1a]">{title.toUpperCase()}</h1>
+            <h1 className="mt-1 flex items-center gap-1.5 font-display text-3xl leading-none tracking-wide text-[#1a1a1a]">
+              <span>{title.toUpperCase()}</span>
+              {(court.court_verified || court.profile_username) && <CourtVerifiedBadge />}
+            </h1>
             {court.address && court.address !== title && (
               <p className="mt-2 flex items-center gap-1 text-[12px] text-[rgba(26,26,26,0.5)]">
-                <MapPin size={11} /> {court.address}
+                <MapPin size={11} /> {[court.address, court.city_name].filter(Boolean).join(', ')}
               </p>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {court.surface && <Fact>{court.surface.replace(/_/g, ' ')}</Fact>}
-            {court.court_count != null && <Fact>{`${court.court_count} ${court.court_count === 1 ? 'court' : 'courts'}`}</Fact>}
-            {court.lit && <Fact>Floodlit</Fact>}
-            {court.has_indoor && <Fact>Indoor</Fact>}
-            {court.has_outdoor && court.has_indoor && <Fact>Outdoor</Fact>}
-            {court.fee === false && <Fact>Free</Fact>}
-            {court.fee === true && <Fact>Fee</Fact>}
-            {arrivalLabel(court) && <Fact>{arrivalLabel(court)}</Fact>}
-            {closed && <Fact>{court.access === 'members' ? 'Members only' : 'Private'}</Fact>}
-          </div>
+          <CourtFactChips chips={chips} className="flex flex-wrap gap-2" />
           {court.description && <p className="font-copy text-sm leading-relaxed text-[rgba(26,26,26,0.65)]">{court.description}</p>}
           {court.opening_hours && <OpeningHours hours={court.opening_hours} />}
-          <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Booking isn't available in the app yet. Open the court in Google Maps to get there.</p>
+          <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.</p>
           <div className="grid grid-cols-1 gap-2">
             <CourtSaveButton venueId={court.id} signedIn={Boolean(user)} />
             {website && (
@@ -132,14 +142,10 @@ export default async function CourtPage({
             </a>
           </div>
           <Link href={courtReportHref({ id: court.id, name: title, address: court.address })} className="block px-2 text-center font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.45)] underline decoration-[rgba(26,26,26,0.28)] underline-offset-[3px]">
-            Found an error, or is this your court?<br />Write to us — we'll fix it or add more detail.
+            Found an error, or is this your court?<br />Write to us — we&apos;ll fix it or add more detail.
           </Link>
         </div>
       </div>
     </div>
   )
-}
-
-function Fact({ children }: { children: React.ReactNode }) {
-  return <span className="inline-flex items-center gap-1 border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">{children}</span>
 }

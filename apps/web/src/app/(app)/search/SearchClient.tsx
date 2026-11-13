@@ -1,6 +1,8 @@
 'use client'
 
-import { MapPin, Zap, DollarSign, Globe, Phone, Navigation, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, Globe, Phone, Navigation, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
+import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
+import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
@@ -89,10 +91,13 @@ export interface Venue {
   lng: number
   address: string | null
   surface: string | null
+  surfaces?: string[] | null
   court_count: number | null
   lit: boolean | null
   access: string | null
   fee: boolean | null
+  fee_hour_min?: number | null
+  fee_hour_max?: number | null
   website: string | null
   phone: string | null
   operator: string | null
@@ -104,6 +109,8 @@ export interface Venue {
   member_count: number
   confidence: 'low' | 'medium' | 'high'
   profile_username?: string | null
+  city_name?: string | null
+  court_verified?: boolean
 }
 
 const VENUE_KIND_LABELS: Record<string, string> = {
@@ -178,9 +185,6 @@ function courtTitle(venue: Venue): string {
   return venue.name
 }
 
-function surfaceLabel(surface: string): string {
-  return surface.replace(/_/g, ' ')
-}
 
 type RequestStatus = 'none' | 'pending' | 'accepted' | 'matched' | 'declined'
 
@@ -213,14 +217,6 @@ function placeLine(city: string | null | undefined, distanceKm: number | null | 
   return name || null
 }
 
-// ─── Surface badge ────────────────────────────────────────────────────────────
-
-const SURFACE_STYLES: Record<string, string> = {
-  clay: 'bg-[#D4622A] text-white',
-  grass: 'bg-brand-fern text-white',
-  hard: 'bg-brand-navy text-white',
-}
-
 // Always offered. Chips used to come from courts already on screen, so clay
 // could stay hidden until a later page loaded.
 const COURT_SURFACE_FILTERS = [
@@ -229,15 +225,24 @@ const COURT_SURFACE_FILTERS = [
   { id: 'grass', label: 'Grass' },
 ]
 
-function SurfaceBadge({ surface }: { surface: string | null }) {
-  if (!surface) return null
-  const label = surfaceLabel(surface)
-  const cls = SURFACE_STYLES[surface.toLowerCase()] ?? 'bg-brand-surface text-[rgba(26,26,26,0.6)]'
-  return (
-    <span className={`px-2 py-0.5 text-[9px] tracking-[0.12em] uppercase font-semibold ${cls}`}>
-      {label}
-    </span>
-  )
+function venueAccessLabel(venue: Venue): string | null {
+  if (!isPrivateVenue(venue)) return null
+  return venue.access === 'members' ? 'Members only' : 'Private'
+}
+
+function venueFactChips(venue: Venue) {
+  return buildCourtFactChips({
+    courtCount: venue.court_count,
+    surfaces: venue.surfaces,
+    surface: venue.surface,
+    hasIndoor: venue.has_indoor,
+    hasOutdoor: venue.has_outdoor,
+    lit: venue.lit,
+    feeHourMin: venue.fee_hour_min,
+    feeHourMax: venue.fee_hour_max,
+    fee: venue.fee,
+    accessLabel: venueAccessLabel(venue),
+  })
 }
 
 // ─── Player card ──────────────────────────────────────────────────────────────
@@ -537,41 +542,21 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
           <div className="space-y-4 p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <div>
               <div className="flex items-start justify-between gap-3">
-                <h2 className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{courtTitle(venue)}</h2>
+                <h2 className="flex items-center gap-1.5 font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">
+                  <span>{courtTitle(venue)}</span>
+                  {(venue.court_verified || venue.profile_username) && <CourtVerifiedBadge />}
+                </h2>
                 <span className="mt-1 flex flex-shrink-0 items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
                   <MapPin size={11} />{formatDistance(distanceM)}
                 </span>
               </div>
               {venue.address && courtTitle(venue) !== venue.address && (
-                <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)]">{venue.address}</p>
+                <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)]">
+                  {[venue.address, venue.city_name].filter(Boolean).join(', ')}
+                </p>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <SurfaceBadge surface={venue.surface} />
-              {venue.court_count != null && (
-                <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
-                  {venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}
-                </span>
-              )}
-              {venue.lit && (
-                <span className="inline-flex items-center gap-1 border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
-                  <Zap size={9} /> Floodlit
-                </span>
-              )}
-              {venue.has_indoor && <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">Indoor</span>}
-              {venue.has_outdoor && venue.has_indoor && <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">Outdoor</span>}
-              {venue.fee === false && <span className="border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">Free</span>}
-              {venue.fee === true && (
-                <span className="inline-flex items-center gap-1 border border-brand-divider px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
-                  <DollarSign size={9} /> Fee
-                </span>
-              )}
-              {isPrivateVenue(venue) && (
-                <span className="bg-brand-surface-md px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-[rgba(26,26,26,0.55)]">
-                  {venue.access === 'members' ? 'Members only' : 'Private'}
-                </span>
-              )}
-            </div>
+            <CourtFactChips chips={venueFactChips(venue)} className="flex flex-wrap gap-2" />
             {venue.description && (
               <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
             )}
@@ -641,25 +626,21 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
-            <p className={`font-display leading-none tracking-wide text-[#1a1a1a] uppercase ${vivid ? 'text-2xl' : 'text-[18px]'}`}>{courtTitle(venue)}</p>
+            <p className={`flex items-center gap-1 font-display leading-none tracking-wide text-[#1a1a1a] uppercase ${vivid ? 'text-2xl' : 'text-[18px]'}`}>
+              <span className="min-w-0 truncate">{courtTitle(venue)}</span>
+              {(venue.court_verified || venue.profile_username) && <CourtVerifiedBadge className="flex-shrink-0" />}
+            </p>
             <p className="text-[11px] text-[rgba(26,26,26,0.45)] mt-1 truncate">
               <span className="text-[9px] tracking-[0.1em] uppercase mr-1.5">{venueKindLabel(venue.kind)}</span>
-              {courtTitle(venue) === venue.address ? null : venue.address}
+              {courtTitle(venue) === venue.address ? null : [venue.address, venue.city_name].filter(Boolean).join(', ')}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             {showDistance && <span className={`text-[11px] flex items-center gap-0.5 ${vivid ? 'text-[#D4A017]' : 'text-[rgba(26,26,26,0.4)]'}`}><MapPin size={10} />{formatDistance(distanceM)}</span>}
-            <SurfaceBadge surface={venue.surface} />
-            {venue.lit && <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]"><Zap size={9} />Lit</span>}
-            {venue.has_indoor && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Indoor</span>}
-            {venue.fee === false && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Free</span>}
-            {venue.fee === true && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Fee</span>}
-            {isPrivateVenue(venue) && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">Private</span>}
-            {venue.court_count != null && <span className="text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.45)]">{venue.court_count} {venue.court_count === 1 ? 'court' : 'courts'}</span>}
-            {(venue.phone || venue.website) && (
-              <span className="inline-flex items-center gap-1 text-[rgba(26,26,26,0.35)]">
-                {venue.phone && <Phone size={9} />}
-                {venue.website && <Globe size={9} />}
+            <CourtFactChips chips={venueFactChips(venue)} className="flex flex-wrap items-center gap-1.5" />
+            {venue.website && (
+              <span className="inline-flex items-center text-[rgba(26,26,26,0.35)]">
+                <Globe size={9} />
               </span>
             )}
           </div>

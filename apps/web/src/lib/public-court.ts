@@ -1,9 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { mergeVenueDisplay, type LinkedCourtProfile } from '@/lib/court/merge-venue-display'
+
+const LINKED_PROFILE_SELECT =
+  'username, full_name, phone, website, bio, address, opening_hours, account_kind, city_name, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max'
 
 const COURT_COLUMNS = `
   id, name, kind, lat, lng, address, phone, website, opening_hours, description,
-  court_count, court_count_osm, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri,
-  linked_profile:profiles!profile_id ( username, phone, website, bio, address, opening_hours, account_kind )
+  court_count, court_count_osm, surface, lit, has_indoor, has_outdoor, access, fee,
+  fee_hour_min, fee_hour_max, google_maps_uri,
+  linked_profile:profiles!profile_id ( ${LINKED_PROFILE_SELECT} )
 `
 
 export interface PublicCourt {
@@ -19,13 +24,18 @@ export interface PublicCourt {
   description: string | null
   court_count: number | null
   surface: string | null
+  surfaces: string[]
   lit: boolean | null
   has_indoor: boolean | null
   has_outdoor: boolean | null
   access: string | null
   fee: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
   google_maps_uri: string | null
   profile_username: string | null
+  city_name: string | null
+  court_verified: boolean
 }
 
 interface CourtRow {
@@ -47,52 +57,43 @@ interface CourtRow {
   has_outdoor: boolean | null
   access: string | null
   fee: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
   google_maps_uri: string | null
-  linked_profile: {
-    username: string
-    phone: string | null
-    website: string | null
-    bio: string | null
-    address: string | null
-    opening_hours: string | null
-    account_kind: string
-  } | {
-    username: string
-    phone: string | null
-    website: string | null
-    bio: string | null
-    address: string | null
-    opening_hours: string | null
-    account_kind: string
-  }[] | null
+  linked_profile: LinkedCourtProfile | LinkedCourtProfile[] | null
 }
 
 function toCourt(row: CourtRow): PublicCourt | null {
   if (row.kind === 'residential') return null
   const linkedRaw = row.linked_profile
   const linked = Array.isArray(linkedRaw) ? linkedRaw[0] ?? null : linkedRaw
-  const courtProfile = linked?.account_kind === 'court' ? linked : null
-  return {
+  const catalog = {
     id: row.id,
     name: row.name?.trim() || 'Tennis courts',
     kind: row.kind,
     lat: row.lat,
     lng: row.lng,
-    address: row.address || courtProfile?.address || null,
-    phone: row.phone || courtProfile?.phone || null,
-    website: row.website || courtProfile?.website || null,
-    opening_hours: row.opening_hours || courtProfile?.opening_hours || null,
-    description: courtProfile?.bio?.trim() || row.description,
+    address: row.address,
+    phone: row.phone,
+    website: row.website,
+    opening_hours: row.opening_hours,
+    description: row.description,
     court_count: row.court_count ?? (row.court_count_osm > 0 ? row.court_count_osm : null),
     surface: row.surface,
+    surfaces: row.surface ? [row.surface] : [] as string[],
     lit: row.lit,
     has_indoor: row.has_indoor,
     has_outdoor: row.has_outdoor,
     access: row.access,
     fee: row.fee,
+    fee_hour_min: row.fee_hour_min,
+    fee_hour_max: row.fee_hour_max,
     google_maps_uri: row.google_maps_uri,
-    profile_username: courtProfile?.username ?? null,
+    profile_username: null as string | null,
+    city_name: null as string | null,
+    court_verified: false,
   }
+  return mergeVenueDisplay(catalog, linked)
 }
 
 export async function loadPublicCourt(

@@ -1,8 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
+import { mergeVenueDisplay, type LinkedCourtProfile } from '@/lib/court/merge-venue-display'
 import { NextResponse } from 'next/server'
 
-const VENUE_COLUMNS = 'id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence'
+const LINKED_PROFILE_SELECT =
+  'username, full_name, phone, website, bio, address, opening_hours, account_kind, city_name, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max'
+
+const VENUE_COLUMNS = `id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, fee_hour_min, fee_hour_max, google_maps_uri, confidence, linked_profile:profiles!profile_id(${LINKED_PROFILE_SELECT})`
 
 interface FavoriteVenue {
   id: string
@@ -24,27 +28,35 @@ interface FavoriteVenue {
   has_outdoor: boolean | null
   access: string | null
   fee: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
   google_maps_uri: string | null
   confidence: 'low' | 'medium' | 'high'
+  linked_profile: LinkedCourtProfile | LinkedCourtProfile[] | null
 }
 
 function toCard(venue: FavoriteVenue) {
-  return {
+  const linkedRaw = venue.linked_profile
+  const linked = Array.isArray(linkedRaw) ? linkedRaw[0] ?? null : linkedRaw
+  const catalog = {
     id: venue.id,
-    osm_id: null,
+    osm_id: null as string | null,
     name: venue.name ?? 'Tennis Courts',
     kind: venue.kind,
     lat: venue.lat,
     lng: venue.lng,
     address: venue.address,
     surface: venue.surface,
+    surfaces: venue.surface ? [venue.surface] : [] as string[],
     court_count: venue.court_count ?? (venue.court_count_osm > 0 ? venue.court_count_osm : null),
     lit: venue.lit,
     access: venue.access,
     fee: venue.fee,
+    fee_hour_min: venue.fee_hour_min,
+    fee_hour_max: venue.fee_hour_max,
     website: venue.website,
     phone: venue.phone,
-    operator: null,
+    operator: null as string | null,
     opening_hours: venue.opening_hours,
     description: venue.description,
     has_indoor: venue.has_indoor,
@@ -52,8 +64,11 @@ function toCard(venue: FavoriteVenue) {
     google_maps_uri: venue.google_maps_uri,
     member_count: venue.member_count,
     confidence: venue.confidence,
-    profile_username: null,
+    profile_username: null as string | null,
+    city_name: null as string | null,
+    court_verified: false,
   }
+  return mergeVenueDisplay(catalog, linked)
 }
 
 export async function GET() {
