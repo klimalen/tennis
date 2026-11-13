@@ -21,6 +21,7 @@ const courtLink =
   'inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[rgba(26,26,26,0.55)] transition-colors hover:text-[#1a1a1a]'
 const courtLinkAccent =
   'inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#C45A70] transition-colors hover:text-[#E8406A]'
+const courtLinkArrow = 'flex-shrink-0 text-[rgba(26,26,26,0.3)]'
 
 export interface GameParticipant {
   player_id: string
@@ -313,6 +314,11 @@ export function GameDetailSheet({
 
           {placeName && game.court && (
             <div className="w-full">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.45)]">Court</span>
+                <div className="h-px flex-1 bg-brand-divider" />
+              </div>
+
               <div className="flex min-w-0 items-center gap-1.5">
                 <p className="truncate text-[13px] font-medium uppercase tracking-[0.08em] text-[rgba(26,26,26,0.7)]">{placeName}</p>
                 {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
@@ -337,7 +343,7 @@ export function GameDetailSheet({
                 </div>
               )}
 
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
                 {courtProfileHref && (
                   <Link
                     href={courtProfileHref}
@@ -349,6 +355,7 @@ export function GameDetailSheet({
                     className={courtLinkAccent}
                   >
                     Court profile
+                    <ArrowUpRight size={11} className={courtLinkArrow} aria-hidden />
                   </Link>
                 )}
                 {game.court.website && (
@@ -359,11 +366,13 @@ export function GameDetailSheet({
                     className={courtLink}
                   >
                     <Globe size={11} /> Website
+                    <ArrowUpRight size={11} className={courtLinkArrow} aria-hidden />
                   </a>
                 )}
                 {game.court.phone && (
                   <a href={`tel:${game.court.phone}`} className={courtLink}>
                     <Phone size={11} /> {game.court.phone}
+                    <ArrowUpRight size={11} className={courtLinkArrow} aria-hidden />
                   </a>
                 )}
                 {courtPageHref && (
@@ -377,6 +386,7 @@ export function GameDetailSheet({
                     className={courtLink}
                   >
                     Court page
+                    <ArrowUpRight size={11} className={courtLinkArrow} aria-hidden />
                   </Link>
                 )}
               </div>
@@ -385,6 +395,10 @@ export function GameDetailSheet({
 
           {placeName && !game.court && (
             <div className="text-left">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.45)]">Court</span>
+                <div className="h-px flex-1 bg-brand-divider" />
+              </div>
               <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-[rgba(26,26,26,0.7)]">{placeName}</p>
               {(price || isCancelled) && (
                 <div className="mt-2">
@@ -405,10 +419,13 @@ export function GameDetailSheet({
 
           {game.notes?.trim() && (
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[rgba(26,26,26,0.4)]">
-                About this game
-              </p>
-              <div className="mt-2 rounded-[16px] border border-[#1a1a1a]/10 bg-brand-field px-3.5 py-3">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.45)]">
+                  About this game
+                </span>
+                <div className="h-px flex-1 bg-brand-divider" />
+              </div>
+              <div className="rounded-[16px] border border-[#1a1a1a]/10 bg-brand-field px-3.5 py-3">
                 <p className="font-copy text-sm leading-relaxed text-[#1a1a1a]">{game.notes.trim()}</p>
               </div>
             </div>
