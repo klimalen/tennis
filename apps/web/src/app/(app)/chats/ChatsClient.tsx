@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { membershipNoticeText } from '@/lib/membership-notice'
+import { gameChatAvatarClass } from '@/lib/skill'
 import { ComposeButton } from './ComposeButton'
 
 export interface ChatItem {
@@ -16,6 +17,8 @@ export interface ChatItem {
   title: string
   scheduledAt: string | null
   cancelled: boolean
+  /** Present on game chats — drives letter-avatar color (singles vs doubles). */
+  gameFormat?: string | null
   username: string | null
   avatarUrl: string | null
   initials: string
@@ -306,8 +309,12 @@ export function ChatsClient({ userId, initialChats }: Props) {
             }}
             className="flex items-center gap-4 mx-4 mb-3 px-4 py-4 rounded-[28px] bg-white hover:bg-[#F4F1EC] transition-colors"
           >
-            {/* Avatar */}
-            <div className="w-12 h-12 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
+            {/* Avatar — game chats use format wash (singles teal / doubles pink) */}
+            <div
+              className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ${
+                chat.kind === 'game' ? gameChatAvatarClass(chat.gameFormat) : 'bg-brand-avatar'
+              }`}
+            >
               {chat.avatarUrl ? (
                 <Image src={chat.avatarUrl} alt={chat.title} width={48} height={48} className="w-full h-full object-cover" />
               ) : (

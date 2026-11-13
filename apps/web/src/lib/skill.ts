@@ -15,3 +15,11 @@ export function formatPlayFormat(format: string | null | undefined): string {
   if (format === 'doubles') return 'Doubles'
   return format ?? ''
 }
+
+/** Letter-avatar wash for game chats — keeps singles vs doubles visually distinct. */
+export function gameChatAvatarClass(format: string | null | undefined): string {
+  if (format === 'singles') return 'bg-[#D7EBE6]'
+  if (format === 'mixed_doubles') return 'bg-[#E8DFEE]'
+  if (format === 'doubles') return 'bg-[#F6D9DF]'
+  return 'bg-[#E8E1D7]'
+}
