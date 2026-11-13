@@ -254,9 +254,10 @@ function formatSummary(formats: string[]): string | null {
 }
 
 function styleSummary(style: string | null): string | null {
-  if (style === 'both') return 'Competitive, recreational'
-  if (style === 'recreational') return 'Recreational'
-  if (style === 'competitive') return 'Competitive'
+  // Keep distinct from skill tier "Competitive" (same collision as profile chips).
+  if (style === 'both') return 'For fun, to win'
+  if (style === 'recreational') return 'For fun'
+  if (style === 'competitive') return 'To win'
   return null
 }
 

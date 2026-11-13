@@ -16,11 +16,16 @@ export function formatPlayFormat(format: string | null | undefined): string {
   return format ?? ''
 }
 
-/** Chip labels for profiles.play_style — `both` expands to both options (never "Both"). */
+/**
+ * Chip labels for profiles.play_style.
+ * Wording stays distinct from skill tiers (Beginner…Competitive) so a competitive
+ * skill + competitive intent never shows two identical "Competitive" chips.
+ * `both` expands to both intents (never a vague "Both").
+ */
 export function playStyleLabels(style: string | null | undefined): string[] {
-  if (style === 'recreational') return ['Recreational']
-  if (style === 'competitive') return ['Competitive']
-  if (style === 'both') return ['Recreational', 'Competitive']
+  if (style === 'recreational') return ['For fun']
+  if (style === 'competitive') return ['To win']
+  if (style === 'both') return ['For fun', 'To win']
   return []
 }
 
