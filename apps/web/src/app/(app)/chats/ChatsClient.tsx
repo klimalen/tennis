@@ -273,7 +273,8 @@ export function ChatsClient({ userId, initialChats }: Props) {
         const initials = chat.initials
         let previewBody = lastMsg?.body ?? ''
         if (lastMsg?.type === 'system') {
-          previewBody = membershipNoticeText(lastMsg.body) ?? lastMsg.body
+          // Membership join/leave lines are hidden in the thread — don't surface them in the list either.
+          previewBody = membershipNoticeText(lastMsg.body) ? '' : lastMsg.body
         } else if (lastMsg?.type === 'game_invite') {
           try {
             const parsed = JSON.parse(lastMsg.body) as { updated?: boolean; joined?: boolean }
@@ -286,7 +287,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
             previewBody = 'Confirm participation in a game'
           }
         }
-        const preview = lastMsg
+        const preview = lastMsg && previewBody
           ? (lastMsg.type !== 'system' && lastMsg.sender_id === userId ? 'You: ' : '') + previewBody
           : null
         const unread = hasUnread(chat, userId)
