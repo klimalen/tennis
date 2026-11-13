@@ -80,7 +80,6 @@ async function ProfileContent() {
       || !profile?.city_name?.trim()
       || !profile?.address?.trim()
       || !profile?.phone?.trim()
-      || !profile?.opening_hours?.trim()
     )
   ) {
     return <CourtDetailsGate />

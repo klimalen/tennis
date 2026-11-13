@@ -49,8 +49,7 @@ export async function GET(request: NextRequest) {
         profile.full_name?.trim()
         && profile.city_name?.trim()
         && profile.address?.trim()
-        && profile.phone?.trim()
-        && profile.opening_hours?.trim(),
+        && profile.phone?.trim(),
       )
       if (!courtReady) destination = '/onboarding/court'
       else if (destination === '/onboarding') destination = '/me'

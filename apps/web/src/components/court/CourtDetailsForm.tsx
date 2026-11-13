@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CityLocationField } from '@/components/location/CityLocationField'
 import type { CityCoords } from '@/components/ui/CityInput'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
+import { OpeningHoursEditor } from '@/components/court/OpeningHoursEditor'
 
 const inputClass = 'w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
 
@@ -96,13 +97,12 @@ async function uniqueCourtUsername(name: string, selfId: string): Promise<string
   return `${base.slice(0, 12)}${Date.now().toString().slice(-6)}`
 }
 
-export function courtDetailsComplete(values: Pick<CourtDetailsValues, 'name' | 'city' | 'address' | 'phone' | 'openingHours'>): boolean {
+export function courtDetailsComplete(values: Pick<CourtDetailsValues, 'name' | 'city' | 'address' | 'phone'>): boolean {
   return Boolean(
     values.name.trim()
     && values.city.trim()
     && values.address.trim()
-    && values.phone.trim()
-    && values.openingHours.trim(),
+    && values.phone.trim(),
   )
 }
 
@@ -119,7 +119,7 @@ export async function saveCourtDetails(values: CourtDetailsValues, avatar?: Blob
   if (profile?.account_kind !== 'court') return 'This account is not a court.'
 
   if (!courtDetailsComplete(values)) {
-    return 'Name, city, address, phone, and opening hours are required.'
+    return 'Name, city, address, and phone are required.'
   }
 
   const currentUsername = profile.username ?? ''
@@ -165,7 +165,7 @@ export async function saveCourtDetails(values: CourtDetailsValues, avatar?: Blob
     address: values.address.trim(),
     phone: values.phone.trim(),
     website: values.website.trim() || null,
-    opening_hours: values.openingHours.trim(),
+    opening_hours: values.openingHours.trim() || null,
     bio: values.description.trim() || null,
     court_count: parseOptionalInt(values.courtCount),
     preferred_surfaces: values.surfaces,
@@ -444,15 +444,12 @@ export function CourtDetailsForm({
         />
       </div>
       <div>
-        <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Opening hours</label>
-        <input
-          type="text"
+        <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">
+          Opening hours <span className="normal-case tracking-normal text-[rgba(26,26,26,0.35)]">optional</span>
+        </label>
+        <OpeningHoursEditor
           value={openingHours}
-          onChange={(e) => { setOpeningHours(e.target.value); markDirty() }}
-          placeholder="Mo–Su 6:00–24:00"
-          required
-          maxLength={200}
-          className={inputClass}
+          onChange={(next) => { setOpeningHours(next); markDirty() }}
         />
       </div>
 
