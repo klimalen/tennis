@@ -3,16 +3,26 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
-import { arrivalLabel, costLine, lightsLabel, type GameCourt } from '@/lib/game-court'
+import { costLine, type GameCourt } from '@/lib/game-court'
+import { CourtFactChips } from '@/components/court/CourtFactChips'
+import { courtListingChips, courtListingMapsHref } from '@/components/court/CourtListingDetails'
+import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
 import { GameFaceRow, type GameFace } from '@/components/games/GameFaceRow'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 import { GAME_DETAIL_SELECT, normalizeGameDetail, viewerPlaysInGame } from '@/lib/public-game'
 import { withReturnTo } from '@/lib/return-to'
+
+const secondaryBtn =
+  'flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] transition-colors hover:bg-white'
+const profileBtn =
+  'flex items-center justify-center gap-2 rounded-full bg-[#E8748A] px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A]'
+const pageBtn =
+  'flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-white px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] transition-colors hover:bg-brand-field'
 
 export interface GameParticipant {
   player_id: string
@@ -76,11 +86,6 @@ export async function loadGameDetail(gameId: string): Promise<GameDetail | null>
   const supabase = createClient()
   const { data } = await supabase.from('games').select(GAME_DETAIL_SELECT).eq('id', gameId).maybeSingle()
   return normalizeGameDetail(data)
-}
-
-function Fact({ children }: { children: string | null | undefined }) {
-  if (!children) return null
-  return <span className="px-2 py-0.5 border border-brand-divider text-[9px] tracking-[0.1em] uppercase text-[rgba(26,26,26,0.55)]">{children}</span>
 }
 
 export function GameDetailSheet({
@@ -171,13 +176,19 @@ export function GameDetailSheet({
   const canCancel = isHost && !isPast && !isCancelled
   const price = game.court?.fee === false ? 'Free' : costLine(game.court_cost_cents, game.payment)
   const placeName = game.court?.name?.trim() || game.neighborhood
-  const placeDetail = game.court?.address && game.court.address !== placeName ? game.court.address : null
-  const courtFacts = [
-    lightsLabel(game.court?.lit),
-    game.court?.fee === true && !price ? 'Fee' : null,
-    arrivalLabel(game.court),
-    price,
-  ].filter((fact): fact is string => Boolean(fact))
+  const placeDetail = game.court
+    ? [game.court.address?.trim(), game.court.city_name?.trim()].filter(Boolean).join(', ')
+    : null
+  const placeLine = placeDetail && placeName && placeDetail !== placeName ? placeDetail : null
+  const courtChips = (() => {
+    if (!game.court) return []
+    const base = courtListingChips(game.court)
+    if (!price) return base
+    return [
+      ...base.filter((chip) => chip.key !== 'fee' && chip.key !== 'free'),
+      { key: 'game-price', label: price, tone: 'fee' as const },
+    ]
+  })()
   const hostFace: GameFace = {
     id: game.creator.id,
     name: game.creator.full_name,
@@ -301,85 +312,93 @@ export function GameDetailSheet({
               <span className="text-[rgba(26,26,26,0.45)]"> · {FORMAT_LABELS[game.format] ?? game.format}</span>
             </p>
             {placeName && game.court && (
-              <div className="mt-3 w-full rounded-[16px] bg-[#F4F1EC] px-3 py-3">
+              <div className="mt-3 w-full rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
                 <button
                   type="button"
                   onClick={() => setCourtOpen((open) => !open)}
                   aria-expanded={courtOpen}
+                  aria-label={courtOpen ? 'Hide court details' : 'Show court details'}
                   className="w-full text-left"
                 >
                   <span className="flex items-start justify-between gap-3">
-                    <span className="min-w-0">
+                    <span className="flex min-w-0 items-center gap-1.5">
                       <span className="block font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</span>
-                      {placeDetail && (
-                        <span className="mt-1 flex items-center gap-1 text-[12px] text-[rgba(26,26,26,0.5)]">
-                          <MapPin size={11} />{placeDetail}
-                        </span>
-                      )}
+                      {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
                     </span>
-                    <ChevronDown size={16} className={`mt-1 flex-shrink-0 text-[#3A8A7A] transition-transform ${courtOpen ? 'rotate-180' : ''}`} />
-                  </span>
-                  <span className="mt-2 block text-[10px] tracking-[0.14em] uppercase text-[#3A8A7A]">
-                    {courtOpen ? 'Hide court info' : 'Court info'}
+                    <ChevronDown
+                      size={16}
+                      className={`mt-1 flex-shrink-0 text-[#3A8A7A] transition-transform ${courtOpen ? 'rotate-180' : ''}`}
+                      aria-hidden
+                    />
                   </span>
                 </button>
 
-                {courtFacts.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {courtFacts.map((fact) => (
-                      <Fact key={fact}>{fact}</Fact>
-                    ))}
+                {placeLine && (
+                  <a
+                    href={courtListingMapsHref(game.court, placeName)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group mt-2 flex items-start gap-1.5 text-[12px] font-medium text-[#1a1a1a] transition-opacity hover:opacity-75"
+                  >
+                    <MapPin size={12} className="mt-0.5 flex-shrink-0" />
+                    <span className="underline-offset-2 group-hover:underline">{placeLine}</span>
+                    <ArrowUpRight size={12} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.45)]" aria-hidden />
+                  </a>
+                )}
+
+                {courtChips.length > 0 && (
+                  <div className="mt-3">
+                    <CourtFactChips chips={courtChips} className="flex flex-wrap gap-1.5" />
                   </div>
                 )}
 
                 {courtOpen && (
-                  <div className="mt-3 space-y-2">
-                    {game.court.phone && (
-                      <a href={`tel:${game.court.phone}`} className="flex items-center gap-2 text-[12px] text-[#1a1a1a]">
-                        <Phone size={12} /> {game.court.phone}
-                      </a>
-                    )}
-                    {game.court.website && (
-                      <a href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-[#1a1a1a]">
-                        <Globe size={12} /> Website
-                      </a>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        href={game.court.google_maps_uri ?? `https://www.google.com/maps/search/${encodeURIComponent(game.court.name)}/@${game.court.lat ?? ''},${game.court.lng ?? ''},17z`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full bg-[#E8748A] px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a]"
+                  <div className="mt-3 grid grid-cols-1 gap-2">
+                    {courtProfileHref && (
+                      <Link
+                        href={courtProfileHref}
+                        onClick={(event) => {
+                          if (page) return
+                          event.preventDefault()
+                          goRelated(courtProfileHref)
+                        }}
+                        className={profileBtn}
                       >
-                        <MapPin size={12} /> View on Google Maps
-                      </a>
-                      {courtPageHref && (
-                        <Link
-                          href={courtPageHref}
-                          onClick={(event) => {
-                            if (page) return
-                            event.preventDefault()
-                            goRelated(courtPageHref)
-                          }}
-                          className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
-                        >
-                          Court page
-                        </Link>
-                      )}
-                      {courtProfileHref && (
-                        <Link
-                          href={courtProfileHref}
-                          onClick={(event) => {
-                            if (page) return
-                            event.preventDefault()
-                            goRelated(courtProfileHref)
-                          }}
-                          className="inline-flex items-center gap-2 rounded-full border border-[#1a1a1a]/20 bg-white px-4 py-2 text-[10px] tracking-[0.16em] uppercase font-medium text-[#1a1a1a] hover:bg-brand-field transition-colors"
-                        >
-                          Court profile
-                        </Link>
-                      )}
-                    </div>
+                        Open court profile
+                      </Link>
+                    )}
+                    {(game.court.website || game.court.phone) && (
+                      <div className={`grid gap-2 ${game.court.website && game.court.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {game.court.website && (
+                          <a
+                            href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={secondaryBtn}
+                          >
+                            <Globe size={13} /> Website
+                          </a>
+                        )}
+                        {game.court.phone && (
+                          <a href={`tel:${game.court.phone}`} className={secondaryBtn}>
+                            <Phone size={13} /> {game.court.phone}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {courtPageHref && (
+                      <Link
+                        href={courtPageHref}
+                        onClick={(event) => {
+                          if (page) return
+                          event.preventDefault()
+                          goRelated(courtPageHref)
+                        }}
+                        className={pageBtn}
+                      >
+                        Court page
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
@@ -387,22 +406,21 @@ export function GameDetailSheet({
             {placeName && !game.court && (
               <div className="mt-3 text-left">
                 <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
-                {placeDetail && (
-                  <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)] flex items-center gap-1">
-                    <MapPin size={11} />{placeDetail}
-                  </p>
-                )}
                 {(price || isCancelled) && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {price && <Fact>{price}</Fact>}
-                    {isCancelled && <Fact>Cancelled</Fact>}
+                  <div className="mt-2">
+                    <CourtFactChips
+                      chips={[
+                        ...(price ? [{ key: 'game-price', label: price, tone: 'fee' as const }] : []),
+                        ...(isCancelled ? [{ key: 'cancelled', label: 'Cancelled', tone: 'feature' as const }] : []),
+                      ]}
+                    />
                   </div>
                 )}
               </div>
             )}
             {game.court && isCancelled && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <Fact>Cancelled</Fact>
+              <div className="mt-2">
+                <CourtFactChips chips={[{ key: 'cancelled', label: 'Cancelled', tone: 'feature' }]} />
               </div>
             )}
             {game.notes && (
