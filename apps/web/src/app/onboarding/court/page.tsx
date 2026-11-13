@@ -315,7 +315,7 @@ export default function CourtOnboardingPage() {
                   type="text"
                   value={data.name}
                   onChange={(e) => update({ name: e.target.value })}
-                  placeholder="Caswell Tennis Center"
+                  placeholder="Tennis Center"
                   maxLength={80}
                   className={inputClass}
                 />
