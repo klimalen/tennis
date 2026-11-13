@@ -61,11 +61,13 @@ export function ComposeButton() {
   return (
     <>
       <button
+        type="button"
         onClick={handleOpen}
-        className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] border border-[#1a1a1a]/15 bg-white text-[#1a1a1a] transition-colors hover:bg-brand-field"
         title="New chat"
+        aria-label="New chat"
       >
-        <SquarePen size={16} className="text-[rgba(26,26,26,0.5)]" />
+        <SquarePen size={15} />
       </button>
 
       {open && createPortal(
