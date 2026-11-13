@@ -85,6 +85,18 @@ function FacebookGlyph() {
   )
 }
 
+type FactChip = {
+  key: string
+  label: string
+  tone: 'count' | 'fee' | 'feature'
+}
+
+const CHIP_TONE: Record<FactChip['tone'], string> = {
+  count: 'bg-[#3A8A7A]/18 text-[#1F5C50]',
+  fee: 'bg-[#E8748A]/22 text-[#7A2F3F]',
+  feature: 'bg-brand-field text-[#1a1a1a]',
+}
+
 export function CourtProfileDetails({
   cityName,
   address,
@@ -145,13 +157,26 @@ export function CourtProfileDetails({
     if (feeHourMin != null) return `from ${feeHourMin}/hr`
     return `up to ${feeHourMax}/hr`
   })()
-  const facts = [
-    courtCount != null ? `${courtCount} court${courtCount === 1 ? '' : 's'}` : null,
-    surfaceLabels.length ? surfaceLabels.join(' · ') : null,
-    settingLabels.length ? settingLabels.join(' · ') : null,
-    lit === true ? 'Lit' : lit === false ? 'Unlit' : null,
-    feeLine,
-  ].filter(Boolean) as string[]
+
+  const chips: FactChip[] = []
+  if (courtCount != null) {
+    chips.push({
+      key: 'count',
+      label: `${courtCount} court${courtCount === 1 ? '' : 's'}`,
+      tone: 'count',
+    })
+  }
+  if (surfaceLabels.length) {
+    chips.push({ key: 'surfaces', label: surfaceLabels.join(' · '), tone: 'feature' })
+  }
+  if (settingLabels.length) {
+    chips.push({ key: 'setting', label: settingLabels.join(' · '), tone: 'feature' })
+  }
+  if (lit === true) chips.push({ key: 'lit', label: 'Lit', tone: 'feature' })
+  if (lit === false) chips.push({ key: 'unlit', label: 'Unlit', tone: 'feature' })
+  if (feeLine) chips.push({ key: 'fee', label: feeLine, tone: 'fee' })
+
+  const hasSocials = Boolean(websiteHref || whatsapp || instagram || telegram || facebook)
 
   return (
     <div className="space-y-1.5">
@@ -174,11 +199,14 @@ export function CourtProfileDetails({
           </p>
         )
       )}
-      {facts.length > 0 && (
+      {chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {facts.map((fact) => (
-            <span key={fact} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
-              {fact}
+          {chips.map((chip) => (
+            <span
+              key={chip.key}
+              className={`rounded-full text-[9px] tracking-[0.12em] uppercase font-medium px-2.5 py-0.5 ${CHIP_TONE[chip.tone]}`}
+            >
+              {chip.label}
             </span>
           ))}
         </div>
@@ -193,22 +221,20 @@ export function CourtProfileDetails({
           <OpeningHours hours={openingHours} />
         </div>
       )}
-      {((showPhone && phone) || websiteHref) && (
-        <div className="pt-1 space-y-1">
-          {showPhone && phone && (
-            <a href={`tel:${phone}`} className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)]">
-              <Phone size={12} /> {phone}
-            </a>
-          )}
-          {websiteHref && (
-            <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)] underline underline-offset-2">
-              <Globe size={12} /> {website}
-            </a>
-          )}
+      {showPhone && phone && (
+        <div className="pt-1">
+          <a href={`tel:${phone}`} className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)]">
+            <Phone size={12} /> {phone}
+          </a>
         </div>
       )}
-      {(whatsapp || instagram || telegram || facebook) && (
+      {hasSocials && (
         <div className="flex flex-wrap gap-2 pt-2">
+          {websiteHref ? (
+            <SocialIcon href={websiteHref} label="Website">
+              <Globe size={15} strokeWidth={1.75} />
+            </SocialIcon>
+          ) : null}
           {whatsapp ? (
             <SocialIcon href={whatsappHref(whatsapp)} label="WhatsApp">
               <WhatsAppGlyph />

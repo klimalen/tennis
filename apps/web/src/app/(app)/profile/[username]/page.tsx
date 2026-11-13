@@ -298,20 +298,22 @@ export default async function PlayerProfilePage({
             </div>
           </div>
 
-          {/* Name + meta */}
+          {/* Name + meta — muted @handle on the name row; address follows for courts */}
           <div className="mt-4 space-y-1.5">
-            {courtHref ? (
-              <Link
-                href={courtHref}
-                className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
-              >
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              {courtHref ? (
+                <Link
+                  href={courtHref}
+                  className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
+                >
+                  <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+                  <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
+                </Link>
+              ) : (
                 <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
-                <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
-              </Link>
-            ) : (
-              <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
-            )}
-            <p className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.35)]">@{profile.username}</p>
+              )}
+              <span className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.28)]">@{profile.username}</span>
+            </div>
 
             {!isCourt && profile.city_name && (
               <p className="flex items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
