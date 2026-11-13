@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { Check, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CityLocationField } from '@/components/location/CityLocationField'
 import type { CityCoords } from '@/components/ui/CityInput'
@@ -152,7 +152,10 @@ export async function saveCourtDetails(values: CourtDetailsValues, avatar?: Blob
     if (taken) return 'That username is already taken.'
     username = chosen
   } else if (/^court\d*$/.test(currentUsername)) {
+    // Onboarding placeholder — mint one from the court name if the field was left blank.
     username = await uniqueCourtUsername(values.name, user.id)
+  } else {
+    return 'Username must be at least 3 characters.'
   }
 
   let avatarUrl: string | undefined
@@ -248,6 +251,9 @@ export function CourtDetailsForm({
 }) {
   const seed = { ...emptyCourtDetails(), ...initial }
   const [name, setName] = useState(seed.name)
+  const [username, setUsername] = useState(seed.username)
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
+  const originalUsername = seed.username.trim().toLowerCase()
   const [city, setCity] = useState(seed.city)
   const [coords, setCoords] = useState<CityCoords | null>(
     seed.cityLat != null && seed.cityLng != null
@@ -291,6 +297,38 @@ export function CourtDetailsForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    const next = username.trim().toLowerCase()
+    if (next === originalUsername) {
+      setUsernameStatus('idle')
+      return
+    }
+    if (next.length < 3) {
+      setUsernameStatus('idle')
+      return
+    }
+    setUsernameStatus('checking')
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const userId = session?.user?.id
+        if (!userId) {
+          setUsernameStatus('idle')
+          return
+        }
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', next)
+          .neq('id', userId)
+          .maybeSingle()
+        setUsernameStatus(data ? 'taken' : 'available')
+      })()
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [username, originalUsername])
+
   async function applyCrop() {
     setCropping(true)
     setError(null)
@@ -310,7 +348,7 @@ export function CourtDetailsForm({
 
   const values: CourtDetailsValues = {
     name,
-    username: seed.username,
+    username,
     city,
     cityLat: coords?.lat ?? seed.cityLat ?? null,
     cityLng: coords?.lng ?? seed.cityLng ?? null,
@@ -371,7 +409,8 @@ export function CourtDetailsForm({
 
   const photo = avatarPreview
   const photoInitials = (name || seed.name || 'Court').split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
-  const canSave = courtDetailsComplete(values)
+  const usernameOk = username.trim().length >= 3 && usernameStatus !== 'taken' && usernameStatus !== 'checking'
+  const canSave = courtDetailsComplete(values) && usernameOk
 
   return (
     <form id={formId} onSubmit={handleSubmit} className="space-y-4">
@@ -415,6 +454,35 @@ export function CourtDetailsForm({
           maxLength={80}
           className={inputClass}
         />
+      </div>
+      <div>
+        <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Username</label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))
+              markDirty()
+            }}
+            placeholder="your_court"
+            required
+            minLength={3}
+            maxLength={20}
+            className={`${inputClass} pl-8 pr-10`}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
+            {usernameStatus === 'available' && <Check size={14} className="text-brand-primary" />}
+            {usernameStatus === 'taken' && <X size={14} className="text-red-500" />}
+          </div>
+        </div>
+        <div className="mt-1.5 flex justify-between gap-2">
+          <p className="text-[9px] text-[rgba(26,26,26,0.35)]">Letters, numbers and underscores only</p>
+          {usernameStatus === 'taken' && <p className="text-[9px] text-red-500">Username is taken</p>}
+          {usernameStatus === 'available' && <p className="text-[9px] text-brand-primary">Available</p>}
+        </div>
       </div>
       <div>
         <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">City</label>
