@@ -131,12 +131,14 @@ const FORMAT_LABELS: Record<string, string> = {
 function GameInviteCard({
   msg,
   isMe,
+  conversationId,
   gameStatus,
   gameDetail,
   onRespond,
 }: {
   msg: Message
   isMe: boolean
+  conversationId: string
   gameStatus: GameStatus | undefined
   gameDetail: GameDetail | undefined
   onRespond: (gameId: string, status: 'accepted' | 'declined') => void
@@ -156,6 +158,9 @@ function GameInviteCard({
   const timeStr = dt ? dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''
   const formatLabel = source.format ? (FORMAT_LABELS[source.format] ?? source.format) : ''
   const location = gameDetail ? gameDetail.neighborhood : snapshot.location
+  const gameHref = msg.game_id
+    ? withReturnTo(`/game/${msg.game_id}`, `/chats/${conversationId}`)
+    : null
 
   const myStatus = gameStatus?.myStatus
   const otherStatus = gameStatus?.otherStatus
@@ -203,9 +208,8 @@ function GameInviteCard({
     )
   }
 
-  return (
-    <div className={`max-w-[80%] rounded-[20px] border bg-white overflow-hidden ${isMe ? 'border-[#E8748A]/50' : 'border-[#1a1a1a]/10'}`}>
-      {/* Header */}
+  const details = (
+    <>
       <div className={`px-3 py-2 flex items-center gap-2 ${isMe ? 'bg-brand-primary/5' : 'bg-brand-surface'}`}>
         <Calendar size={12} className="text-brand-primary flex-shrink-0" />
         <span className="text-[9px] tracking-[0.15em] uppercase font-medium text-brand-primary">
@@ -213,7 +217,6 @@ function GameInviteCard({
         </span>
       </div>
 
-      {/* Details */}
       <div className="px-3 py-3 space-y-1">
         <p className="font-display text-lg tracking-wide leading-tight text-[#1a1a1a]">
           {dateStr && timeStr ? `${dateStr} · ${timeStr}` : '—'}
@@ -226,8 +229,18 @@ function GameInviteCard({
           </p>
         )}
       </div>
+    </>
+  )
 
-      {/* Actions / status */}
+  return (
+    <div className={`max-w-[80%] rounded-[20px] border bg-white overflow-hidden ${isMe ? 'border-[#E8748A]/50' : 'border-[#1a1a1a]/10'}`}>
+      {gameHref ? (
+        <Link href={gameHref} className="block hover:bg-brand-field/40 transition-colors">
+          {details}
+        </Link>
+      ) : details}
+
+      {/* Actions / status — outside the link so Accept/Decline stay buttons */}
       <div className="px-3 pb-3">
         {canRespond ? (
           <div className="flex gap-2">
@@ -558,6 +571,7 @@ export function ChatView({
                 <GameInviteCard
                   msg={msg}
                   isMe={isMe}
+                  conversationId={conversationId}
                   gameStatus={msg.game_id ? gameStatuses[msg.game_id] : undefined}
                   gameDetail={msg.game_id ? gameDetails[msg.game_id] : undefined}
                   onRespond={handleGameRespond}
