@@ -81,7 +81,13 @@ function parseOptionalInt(raw: string): number | null {
 }
 
 function cleanHandle(raw: string): string | null {
-  const trimmed = raw.trim().replace(/^@+/, '')
+  let trimmed = raw.trim()
+  if (!trimmed) return null
+  trimmed = trimmed
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
+    .replace(/^https?:\/\/(t\.me|telegram\.me)\//i, '')
+    .replace(/^@+/, '')
+    .replace(/\/$/, '')
   return trimmed || null
 }
 
@@ -489,11 +495,13 @@ export function CourtDetailsForm({
           </div>
         </div>
         <div>
-          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Lighting</label>
+          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">
+            Evening lights <span className="normal-case tracking-normal text-[rgba(26,26,26,0.35)]">optional</span>
+          </label>
+          <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Do the courts have lighting for night play?</p>
           <div className="flex flex-wrap gap-2">
-            <Pill active={lit === true} onClick={() => { setLit(true); markDirty() }}>Lit</Pill>
-            <Pill active={lit === false} onClick={() => { setLit(false); markDirty() }}>Unlit</Pill>
-            <Pill active={lit === null} onClick={() => { setLit(null); markDirty() }}>Skip</Pill>
+            <Pill active={lit === true} onClick={() => { setLit(lit === true ? null : true); markDirty() }}>Yes</Pill>
+            <Pill active={lit === false} onClick={() => { setLit(lit === false ? null : false); markDirty() }}>No</Pill>
           </div>
         </div>
         <div>
@@ -527,11 +535,31 @@ export function CourtDetailsForm({
         </div>
         <div>
           <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Instagram</label>
-          <input type="text" value={instagram} onChange={(e) => { setInstagram(e.target.value); markDirty() }} placeholder="handle" maxLength={60} className={inputClass} />
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
+            <input
+              type="text"
+              value={instagram}
+              onChange={(e) => { setInstagram(e.target.value.replace(/^@+/, '')); markDirty() }}
+              placeholder="yourcourt"
+              maxLength={60}
+              className={`${inputClass} pl-8`}
+            />
+          </div>
         </div>
         <div>
           <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Telegram</label>
-          <input type="text" value={telegram} onChange={(e) => { setTelegram(e.target.value); markDirty() }} placeholder="handle" maxLength={60} className={inputClass} />
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
+            <input
+              type="text"
+              value={telegram}
+              onChange={(e) => { setTelegram(e.target.value.replace(/^@+/, '')); markDirty() }}
+              placeholder="yourcourt"
+              maxLength={60}
+              className={`${inputClass} pl-8`}
+            />
+          </div>
         </div>
         <div>
           <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">Facebook</label>
