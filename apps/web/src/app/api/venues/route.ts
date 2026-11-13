@@ -80,6 +80,8 @@ interface GroupRow {
     phone: string | null
     website: string | null
     bio: string | null
+    address: string | null
+    opening_hours: string | null
     account_kind: string
   } | null
 }
@@ -110,7 +112,7 @@ function groupToCard(g: GroupRow): VenueCard {
     kind: g.kind,
     lat: g.lat,
     lng: g.lng,
-    address: g.address,
+    address: g.address || linked?.address || null,
     surface: g.surface,
     court_count: g.court_count ?? (g.court_count_osm > 0 ? g.court_count_osm : null),
     lit: g.lit,
@@ -119,7 +121,7 @@ function groupToCard(g: GroupRow): VenueCard {
     website: g.website || linked?.website || null,
     phone: g.phone || linked?.phone || null,
     operator: null,
-    opening_hours: g.opening_hours,
+    opening_hours: g.opening_hours || linked?.opening_hours || null,
     description: profileBio ?? g.description,
     has_indoor: g.has_indoor,
     has_outdoor: g.has_outdoor,
@@ -255,7 +257,7 @@ export async function GET(request: NextRequest) {
   const [groupsResult, ungroupedResult] = await Promise.all([
     scanRange((from, to) => supabase
       .from('venue_groups')
-      .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence, linked_profile:profiles!profile_id(username, phone, website, bio, account_kind)')
+      .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence, linked_profile:profiles!profile_id(username, phone, website, bio, address, opening_hours, account_kind)')
       .gte('lat', south)
       .lte('lat', north)
       .gte('lng', west)

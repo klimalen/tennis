@@ -5,13 +5,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { CourtDetailsForm } from '@/components/court/CourtDetailsForm'
+import { courtDetailsComplete } from '@/components/court/CourtDetailsForm'
 
 const inputClass = 'w-full px-4 py-2.5 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
+const cardClass = 'bg-white rounded-[28px] p-8'
 
 export default function CourtSignUpPage() {
   const router = useRouter()
-  const [step, setStep] = useState<'account' | 'details' | 'check-email'>('account')
+  const [step, setStep] = useState<'account' | 'check-email'>('account')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -34,20 +35,25 @@ export default function CourtSignUpPage() {
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('account_kind, full_name, city_name')
+        .select('account_kind, full_name, city_name, address, phone, opening_hours')
         .eq('id', user.id)
         .maybeSingle()
       if (cancelled) return
       if (profile?.account_kind === 'court') {
-        if (!profile.full_name?.trim() || !profile.city_name?.trim()) {
-          setStep('details')
-        } else {
+        if (courtDetailsComplete({
+          name: profile.full_name || '',
+          city: profile.city_name || '',
+          address: profile.address || '',
+          phone: profile.phone || '',
+          openingHours: profile.opening_hours || '',
+        })) {
           router.replace('/me')
           return
         }
-      } else if (profile) {
-        setSignedInAsPlayer(true)
+        router.replace('/onboarding/court')
+        return
       }
+      if (profile) setSignedInAsPlayer(true)
       setReady(true)
     }
     void resume()
@@ -67,7 +73,7 @@ export default function CourtSignUpPage() {
       password,
       options: {
         data: { account_kind: 'court' },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/me`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding/court`,
       },
     })
 
@@ -86,12 +92,12 @@ export default function CourtSignUpPage() {
       setStep('check-email')
       return
     }
-    setStep('details')
+    router.push('/onboarding/court')
   }
 
   if (!ready) {
     return (
-      <div className="bg-white border border-brand-divider p-8 flex justify-center">
+      <div className={`${cardClass} flex justify-center`}>
         <Loader2 size={18} className="animate-spin text-[rgba(26,26,26,0.4)]" />
       </div>
     )
@@ -99,32 +105,17 @@ export default function CourtSignUpPage() {
 
   if (step === 'check-email') {
     return (
-      <div className="bg-white border border-brand-divider p-8">
+      <div className={cardClass}>
         <h1 className="font-display text-4xl tracking-wide mb-2">CHECK YOUR EMAIL</h1>
         <p className="text-sm text-[rgba(26,26,26,0.6)]">
-          We sent a link to {email}. Open it, then sign in. The next screen asks for the court name and city. You can change those details later.
+          We sent a link to {email}. Open it, then continue court setup. You can change every detail later.
         </p>
-      </div>
-    )
-  }
-
-  if (step === 'details') {
-    return (
-      <div className="bg-white border border-brand-divider p-8">
-        <h1 className="font-display text-4xl tracking-wide mb-1">ABOUT THE COURT</h1>
-        <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">
-          Name, city, and how players reach you
-        </p>
-        <CourtDetailsForm
-          submitLabel="Save and continue"
-          onSaved={() => router.push('/me')}
-        />
       </div>
     )
   }
 
   return (
-    <div className="bg-white border border-brand-divider p-8">
+    <div className={cardClass}>
       <h1 className="font-display text-4xl tracking-wide mb-1">COURT ACCOUNT</h1>
       <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">
         Email and password. Court details come next.

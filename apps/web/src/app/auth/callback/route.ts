@@ -41,11 +41,19 @@ export async function GET(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('skill_level_self, is_coach, account_kind')
+      .select('skill_level_self, is_coach, account_kind, full_name, city_name, address, phone, opening_hours')
       .eq('id', user.id)
       .single()
     if (profile?.account_kind === 'court') {
-      if (destination === '/onboarding') destination = '/me'
+      const courtReady = Boolean(
+        profile.full_name?.trim()
+        && profile.city_name?.trim()
+        && profile.address?.trim()
+        && profile.phone?.trim()
+        && profile.opening_hours?.trim(),
+      )
+      if (!courtReady) destination = '/onboarding/court'
+      else if (destination === '/onboarding') destination = '/me'
     } else if (!profile?.skill_level_self && !profile?.is_coach) {
       destination = '/onboarding'
     }

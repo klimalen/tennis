@@ -26,6 +26,7 @@ import { formatDayRange, GameDateRange, type DayRange } from '@/components/games
 import { type NominatimPlace } from '@/lib/place-suggestions'
 import { createClient } from '@/lib/supabase/client'
 import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
+import { readBrowseLocation, writeBrowseLocation } from '@/lib/browse-location'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 import { SectionToolbar } from '@/components/search/SectionToolbar'
 import { OpeningHours } from '@/components/court/OpeningHours'
@@ -1129,6 +1130,12 @@ export function SearchClient({
   }
 
   async function applyAppLocation(location: ProfileLocation) {
+    // Court accounts: browse-only city for Discover/sections — never overwrite profile home.
+    if (viewerIsCourt) {
+      writeBrowseLocation(location)
+      adoptAppLocation(location.name, location.lat, location.lng, { toast: true })
+      return
+    }
     if (user) {
       const { error } = await saveProfileCity(createClient(), user.id, location)
       if (error) throw new Error(error)
@@ -1139,11 +1146,19 @@ export function SearchClient({
   }
 
   // Profile city can change in ME edit while Discover is cached — pull fresh on visit.
+  // Courts prefer a tab-session browse location when set.
   useEffect(() => {
     if (!user) return
     let cancelled = false
 
     async function pullProfileCity() {
+      if (viewerIsCourt) {
+        const browse = readBrowseLocation()
+        if (browse) {
+          if (!cancelled) adoptAppLocation(browse.name, browse.lat, browse.lng)
+          return
+        }
+      }
       const { data } = await createClient()
         .from('profiles')
         .select('city_name, city_lat, city_lng')
@@ -1171,7 +1186,7 @@ export function SearchClient({
       window.removeEventListener('pageshow', onPageShow)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
+  }, [user?.id, viewerIsCourt])
 
   // Guests / first paint: adopt newer RSC props when the soft-nav cache is fresh.
   useEffect(() => {

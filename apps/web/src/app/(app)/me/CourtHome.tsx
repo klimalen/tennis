@@ -1,20 +1,19 @@
-import { CourtDetailsContinue } from '@/components/court/CourtDetailsForm'
+'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
+
+/** Incomplete court profiles finish setup in the multi-step onboarding flow. */
 export function CourtDetailsGate() {
+  const router = useRouter()
+  useEffect(() => {
+    router.replace('/onboarding/court')
+  }, [router])
+
   return (
-    <div className="min-h-screen">
-      <div className="page-header">
-        <div className="mx-auto flex max-w-2xl items-end">
-          <span className="font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">PROFILE</span>
-        </div>
-      </div>
-      <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-        <h1 className="font-display text-4xl tracking-wide mb-1">ABOUT THE COURT</h1>
-        <p className="text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.4)] mb-6">
-          Name, city, and how players reach you
-        </p>
-        <CourtDetailsContinue />
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+      <Loader2 size={22} className="animate-spin text-[rgba(26,26,26,0.35)]" />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/Sq
 import { CityLocationField } from '@/components/location/CityLocationField'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { availabilityFromProfile, legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
+import { CourtEditPage } from './CourtEditPage'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ export default function EditProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cropRef = useRef<SquarePhotoCropHandle>(null)
 
+  const [accountKind, setAccountKind] = useState<'player' | 'court' | null>(null)
   const [loading, setLoading] = useState(true)
   const [applying, setApplying] = useState(false)
   const [cropError, setCropError] = useState('')
@@ -170,7 +172,12 @@ export default function EditProfilePage() {
         if (active) setLoading(false)
         return
       }
-      if (p?.account_kind === 'court') { router.replace('/me'); return }
+      if (p?.account_kind === 'court') {
+        setAccountKind('court')
+        setLoading(false)
+        return
+      }
+      setAccountKind('player')
       if (p) {
         const next: ProfileData = {
           fullName: p.full_name || '',
@@ -340,12 +347,16 @@ export default function EditProfilePage() {
 
   const displayAvatar = previewUrl || d.avatarUrl
 
-  if (loading) {
+  if (loading || accountKind === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-bg">
         <div className="w-6 h-6 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />
       </div>
     )
+  }
+
+  if (accountKind === 'court') {
+    return <CourtEditPage />
   }
 
   if (d.avatarFile) {
