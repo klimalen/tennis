@@ -1,7 +1,8 @@
 'use client'
 
-import { MapPin, Globe, Phone, Navigation, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, Globe, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
+import { CourtListingDetails } from '@/components/court/CourtListingDetails'
 import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -31,8 +32,6 @@ import { saveProfileCity, type ProfileLocation } from '@/lib/profile-location'
 import { readBrowseLocation, writeBrowseLocation } from '@/lib/browse-location'
 import { CityUpdatedToast } from '@/components/location/CityUpdatedToast'
 import { SectionToolbar } from '@/components/search/SectionToolbar'
-import { OpeningHours } from '@/components/court/OpeningHours'
-
 /** Keep discovery/list skeletons from hanging when a fetch never settles (bfcache, flaky mobile nets). */
 const SEARCH_FETCH_MS = 12_000
 
@@ -455,10 +454,6 @@ function MapThumbnail({ lat, lng }: { lat: number; lng: number }) {
 
 // ─── Venue sheet ──────────────────────────────────────────────────────────────
 
-function googleMapsUrl(lat: number, lng: number, name: string): string {
-  return `https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lng},17z`
-}
-
 const COURT_MAP_ZOOM_MIN = 14
 const COURT_MAP_ZOOM_MAX = 20
 
@@ -520,6 +515,7 @@ const sheetIconButton = 'flex h-7 w-7 items-center justify-center rounded-full b
 function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: { venue: Venue; userLat: number; userLng: number; saved?: boolean; onToggleSave?: (venue: Venue) => void; onClose: () => void }) {
   useHideTabBar(true)
   const distanceM = haversineMeters(userLat, userLng, venue.lat, venue.lng)
+  const title = courtTitle(venue)
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose} />
@@ -529,74 +525,33 @@ function VenueSheet({ venue, userLat, userLng, saved, onToggleSave, onClose }: {
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{venueKindLabel(venue.kind)}</span>
           <div className="flex items-center gap-2">
             {onToggleSave && (
-              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from my courts' : 'Save court'} className={sheetIconButton}>
+              <button type="button" onClick={() => onToggleSave(venue)} aria-label={saved ? 'Remove from favorites' : 'Save to favorites'} className={sheetIconButton}>
                 <CourtStar saved={Boolean(saved)} size={14} strokeWidth={saved ? 1.25 : 2} />
               </button>
             )}
-            <ShareLinkButton path={`/court/${venue.id}`} title={`${courtTitle(venue)} on GAME.`} text={`${courtTitle(venue)} on GAME.`} size="sm" />
+            <ShareLinkButton path={`/court/${venue.id}`} title={`${title} on GAME.`} text={`${title} on GAME.`} size="sm" />
             <button type="button" onClick={onClose} aria-label="Close" className={sheetIconButton}><X size={14} /></button>
           </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <CourtMap venue={venue} />
-          <div className="space-y-4 p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="flex items-center gap-1.5 font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">
-                  <span>{courtTitle(venue)}</span>
-                  {(venue.court_verified || venue.profile_username) && <CourtVerifiedBadge />}
-                </h2>
-                <span className="mt-1 flex flex-shrink-0 items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
-                  <MapPin size={11} />{formatDistance(distanceM)}
-                </span>
-              </div>
-              {venue.address && courtTitle(venue) !== venue.address && (
-                <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)]">
-                  {[venue.address, venue.city_name].filter(Boolean).join(', ')}
-                </p>
-              )}
-            </div>
-            <CourtFactChips chips={venueFactChips(venue)} className="flex flex-wrap gap-2" />
-            {venue.description && (
-              <p className="font-copy text-[12px] leading-relaxed text-[rgba(26,26,26,0.65)]">{venue.description}</p>
-            )}
-            {venue.opening_hours && <OpeningHours hours={venue.opening_hours} />}
-            <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
-              Booking isn&apos;t available in the app yet. Open the court in Google Maps to get there.
-            </p>
-            <div className="grid grid-cols-1 gap-2 pt-1">
-              {venue.website && (
-                <a href={venue.website.startsWith('http') ? venue.website : `https://${venue.website}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-white">
-                  <Globe size={13} /> Website
-                </a>
-              )}
-              {venue.phone && (
-                <a href={`tel:${venue.phone}`}
-                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-white">
-                  <Phone size={13} /> {venue.phone}
-                </a>
-              )}
-              {venue.profile_username && (
-                <Link
-                  href={`/profile/${venue.profile_username}`}
-                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-white"
+          <div className="p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <CourtListingDetails
+              court={venue}
+              title={title}
+              distance={formatDistance(distanceM)}
+              reportHref={courtReportHref({ id: venue.id, name: title, address: venue.address })}
+              saveAction={onToggleSave ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleSave(venue)}
+                  className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-white px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] hover:bg-brand-field"
                 >
-                  Open court profile
-                </Link>
-              )}
-              <a href={venue.google_maps_uri ?? googleMapsUrl(venue.lat, venue.lng, venue.name)} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-full bg-[#E8748A] px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A]">
-                <Navigation size={13} /> View on Google Maps
-              </a>
-            </div>
-            <Link
-              href={courtReportHref({ id: venue.id, name: courtTitle(venue), address: venue.address })}
-              className="block px-2 text-center font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.45)] underline decoration-[rgba(26,26,26,0.28)] underline-offset-[3px] hover:text-[#1a1a1a]"
-            >
-              Found an error, or is this your court?<br />
-              Write to us — we&apos;ll fix it or add more detail.
-            </Link>
+                  <CourtStar saved={Boolean(saved)} size={13} />
+                  {saved ? 'Saved to favorites' : 'Save to favorites'}
+                </button>
+              ) : null}
+            />
           </div>
         </div>
         </div>

@@ -55,14 +55,24 @@ export function buildCourtFactChips({
     hasOutdoor ? 'Outdoor' : null,
   ].filter(Boolean) as string[]
 
+  const feeMin = (() => {
+    if (feeHourMin == null) return null
+    const value = Number(feeHourMin)
+    return Number.isFinite(value) ? value : null
+  })()
+  const feeMax = (() => {
+    if (feeHourMax == null) return null
+    const value = Number(feeHourMax)
+    return Number.isFinite(value) ? value : null
+  })()
   const feeLine = (() => {
-    if (feeHourMin == null && feeHourMax == null) return null
-    if (feeHourMin != null && feeHourMax != null) {
-      if (feeHourMin === feeHourMax) return `${feeHourMin}/hr`
-      return `${feeHourMin}–${feeHourMax}/hr`
+    if (feeMin == null && feeMax == null) return null
+    if (feeMin != null && feeMax != null) {
+      if (feeMin === feeMax) return `${feeMin}/hr`
+      return `${feeMin}–${feeMax}/hr`
     }
-    if (feeHourMin != null) return `from ${feeHourMin}/hr`
-    return `up to ${feeHourMax}/hr`
+    if (feeMin != null) return `from ${feeMin}/hr`
+    return `up to ${feeMax}/hr`
   })()
 
   const chips: CourtFactChip[] = []

@@ -48,10 +48,17 @@ function pickText(profile: string | null | undefined, catalog: string | null | u
   return prev || null
 }
 
-function pickNumber(profile: number | null | undefined, catalog: number | null | undefined): number | null {
-  if (profile != null && Number.isFinite(profile)) return profile
-  if (catalog != null && Number.isFinite(catalog)) return catalog
-  return null
+function asFiniteNumber(value: number | string | null | undefined): number | null {
+  if (value == null || value === '') return null
+  const next = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(next) ? next : null
+}
+
+function pickNumber(
+  profile: number | string | null | undefined,
+  catalog: number | string | null | undefined,
+): number | null {
+  return asFiniteNumber(profile) ?? asFiniteNumber(catalog)
 }
 
 function pickBool(profile: boolean | null | undefined, catalog: boolean | null | undefined): boolean | null {

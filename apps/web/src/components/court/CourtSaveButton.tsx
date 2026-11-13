@@ -26,7 +26,7 @@ export function CourtSaveButton({ venueId, signedIn }: { venueId: string; signed
         href={`/sign-in?next=${encodeURIComponent(`/court/${venueId}`)}`}
         className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-white px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] hover:bg-brand-field"
       >
-        <Star size={13} /> Save court
+        <Star size={13} /> Save to favorites
       </Link>
     )
   }
@@ -52,7 +52,7 @@ export function CourtSaveButton({ venueId, signedIn }: { venueId: string; signed
       className="flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-white px-4 py-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] hover:bg-brand-field"
     >
       <Star size={13} fill={saved ? '#E8748A' : 'none'} stroke={saved ? '#E8748A' : 'currentColor'} />
-      {saved ? 'Saved' : 'Save court'}
+      {saved ? 'Saved to favorites' : 'Save to favorites'}
     </button>
   )
 }
