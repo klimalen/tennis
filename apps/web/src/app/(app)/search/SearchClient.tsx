@@ -285,6 +285,7 @@ function PlayerCard({
   }
 
   const [followed, setFollowed] = useState(Boolean(player.following))
+  const [justFollowed, setJustFollowed] = useState(false)
   const [following, setFollowing] = useState(false)
   const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
 
@@ -298,7 +299,10 @@ function PlayerCard({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ following_id: player.id }),
     })
-    if (res.ok) setFollowed(true)
+    if (res.ok) {
+      setFollowed(true)
+      setJustFollowed(true)
+    }
     setFollowing(false)
   }
 
@@ -360,40 +364,48 @@ function PlayerCard({
           </div>
         )}
       </div>
-      <div className="px-4 pb-4">
-        {canPropose ? (
-          <>
-            {pending ? (
-              <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
-            ) : (
-              <button onClick={handleRequest} className={actionClass}>
-                {btnLabel}
-              </button>
-            )}
-            {!followed && (
-              <button
-                type="button"
-                onClick={handleFollow}
-                disabled={following}
-                className="mt-2.5 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
-              >
-                Follow
-              </button>
-            )}
-          </>
-        ) : followed ? (
-          <p className="py-3.5 text-center text-[11px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)]">Following</p>
-        ) : (
-          <button
-            type="button"
-            onClick={handleFollow}
-            disabled={following}
-            className={actionClass}
-          >
-            Follow
-          </button>
-        )}
-      </div>
+      {(canPropose || !followed || justFollowed) && (
+        <div className="px-4 pb-4">
+          {canPropose ? (
+            <>
+              {pending ? (
+                <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
+              ) : (
+                <button onClick={handleRequest} className={actionClass}>
+                  {btnLabel}
+                </button>
+              )}
+              {!followed && (
+                <button
+                  type="button"
+                  onClick={handleFollow}
+                  disabled={following}
+                  className="mt-2.5 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
+                >
+                  Follow
+                </button>
+              )}
+            </>
+          ) : followed ? (
+            <button
+              type="button"
+              disabled
+              className={`${actionClass} cursor-default opacity-70`}
+            >
+              Following
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleFollow}
+              disabled={following}
+              className={actionClass}
+            >
+              Follow
+            </button>
+          )}
+        </div>
+      )}
     </Link>
   )
 }
