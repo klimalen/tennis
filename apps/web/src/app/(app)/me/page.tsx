@@ -163,7 +163,7 @@ async function ProfileContent() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
-        {/* Profile header — coach watermark sits behind the stats (upper-right) */}
+        {/* Profile header — coach watermark in the lower-right empty band */}
         <div className="relative overflow-hidden bg-white rounded-[28px] p-5">
           {!isCourt && profile?.is_coach && (
             <>

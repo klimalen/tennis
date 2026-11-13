@@ -264,7 +264,7 @@ export default async function PlayerProfilePage({
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-2 pb-8 space-y-6">
-        {/* Profile header — coach watermark sits behind the stats (upper-right) */}
+        {/* Profile header — coach watermark in the lower-right empty band */}
         <div className="relative overflow-hidden bg-white rounded-[28px] p-5">
           {!isCourt && profile.is_coach && (
             <>
