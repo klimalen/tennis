@@ -487,7 +487,7 @@ export default function CourtOnboardingPage() {
           ) : (
             <button
               type="button"
-              disabled={saving || !courtDetailsComplete(data)}
+              disabled={saving || !courtDetailsComplete(data) || data.username.trim().length < 3}
               onClick={() => void finish()}
               className="w-full py-3.5 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium disabled:opacity-40 flex items-center justify-center gap-2"
             >
