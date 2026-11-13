@@ -1,4 +1,4 @@
-export type CourtPayment = 'split' | 'host' | 'at_court'
+export type CourtPayment = 'split' | 'host'
 export type CourtCurrency = 'USD' | 'EUR'
 
 export interface GameCourt {
@@ -29,7 +29,6 @@ export interface GameCourt {
 export const PAYMENT_OPTIONS: { value: CourtPayment; label: string; hint: string }[] = [
   { value: 'split', label: 'Split', hint: 'Players divide this total between themselves' },
   { value: 'host', label: 'Host pays', hint: 'The host covers this total' },
-  { value: 'at_court', label: 'Pay at the court', hint: 'Players pay this total at the court' },
 ]
 
 export const CURRENCY_OPTIONS: { value: CourtCurrency; symbol: string; label: string }[] = [
@@ -62,7 +61,8 @@ export function formatCourtCost(
 export function paymentLabel(payment: string | null | undefined): string | null {
   if (payment === 'split') return 'Split'
   if (payment === 'host') return 'Host pays'
-  if (payment === 'at_court') return 'Pay at the court'
+  // Legacy rows / stale clients: treat as split (who pays, not where).
+  if (payment === 'at_court') return 'Split'
   return null
 }
 
@@ -141,10 +141,16 @@ export function parseCourtOffer(
   }
 
   const costCurrency = parseCourtCurrency(currency) ?? 'USD'
-  if (payment !== 'split' && payment !== 'host' && payment !== 'at_court') {
-    return { court_cost_cents: null, payment: null, cost_currency: null, error: 'Choose how players pay for the court' }
+  const how: CourtPayment | null =
+    payment === 'split' || payment === 'host'
+      ? payment
+      : payment === 'at_court'
+        ? 'split'
+        : null
+  if (!how) {
+    return { court_cost_cents: null, payment: null, cost_currency: null, error: 'Choose who pays for the court' }
   }
-  return { court_cost_cents: cents, payment, cost_currency: costCurrency, error: null }
+  return { court_cost_cents: cents, payment: how, cost_currency: costCurrency, error: null }
 }
 
 export function dollarsToCents(dollars: string): number | null {
