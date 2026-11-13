@@ -71,6 +71,7 @@ const FORMAT_LABELS: Record<string, string> = {
   singles: 'Singles',
   doubles: 'Doubles',
   mixed_doubles: 'Mixed',
+  group: 'Group',
 }
 
 export { viewerPlaysInGame }
