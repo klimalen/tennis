@@ -1,7 +1,7 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
-import { ArrowUpRight, Settings, CalendarDays } from 'lucide-react'
+import { ArrowUpRight, Settings, CalendarDays, ChevronRight } from 'lucide-react'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -273,15 +273,22 @@ async function ProfileContent() {
         {/* Schedule section */}
         <div>
           <div className="px-1 py-3 flex items-center gap-2">
-            <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
-            <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Schedule</span>
-            <div className="flex-1 h-px bg-brand-divider" />
+            <Link
+              href="/schedule"
+              className="flex min-w-0 flex-1 items-center gap-2 transition-opacity hover:opacity-70"
+            >
+              <CalendarDays size={14} className="text-[rgba(26,26,26,0.4)]" />
+              <span className="inline-flex items-center gap-0.5 text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">
+                Schedule
+                <ChevronRight size={11} className="text-[rgba(26,26,26,0.4)]" aria-hidden />
+              </span>
+              <div className="flex-1 h-px bg-brand-divider" />
+            </Link>
             <CreateSheet variant="schedule" direct="game" />
           </div>
 
           <SchedulePreview
             items={schedule.preview}
-            seeAllHref="/schedule"
             viewerId={user.id}
             allowEdit
             empty={(
