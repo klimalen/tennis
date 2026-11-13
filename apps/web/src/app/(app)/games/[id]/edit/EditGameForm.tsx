@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
+import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
 import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
 
@@ -33,6 +34,7 @@ interface Game {
   is_open: boolean
   venue_group_id: string | null
   court_cost_cents: number | null
+  cost_currency: string | null
   payment: string | null
   court: CourtPick | null
 }
@@ -77,6 +79,9 @@ export function EditGameForm({
     venue: game.court,
     locationName: game.court ? '' : (game.neighborhood ?? ''),
     courtCostCents: game.court_cost_cents,
+    costCurrency: (game.cost_currency === 'EUR' || game.cost_currency === 'USD')
+      ? game.cost_currency
+      : ((game.court_cost_cents ?? 0) > 0 ? 'USD' : null),
     payment: (game.payment as CourtPayment | null) ?? null,
   })
   const [notes, setNotes] = useState(game.notes ?? '')
@@ -87,6 +92,34 @@ export function EditGameForm({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [connections, setConnections] = useState<InviteConnection[]>([])
+  const [inviteIds, setInviteIds] = useState<Set<string>>(new Set())
+
+  const participantIds = useMemo(
+    () => new Set(participants.map((person) => person.player_id)),
+    [participants],
+  )
+  const inviteable = useMemo(
+    () => connections.filter((person) => !participantIds.has(person.id)),
+    [connections, participantIds],
+  )
+
+  useEffect(() => {
+    if (!isCreator) return
+    fetch('/api/connections')
+      .then((response) => response.json() as Promise<{ connections: InviteConnection[] }>)
+      .then((data) => setConnections(data.connections ?? []))
+      .catch(() => setConnections([]))
+  }, [isCreator])
+
+  function toggleInvite(id: string) {
+    setInviteIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -106,6 +139,7 @@ export function EditGameForm({
         location_name: place.locationName.trim() || null,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
+        cost_currency: place.costCurrency,
         payment: place.payment,
         notes: notes.trim() || null,
         ...(isCreator ? { is_open: isOpen } : {}),
@@ -117,6 +151,14 @@ export function EditGameForm({
       setError(data.error ?? 'Something went wrong')
       setSubmitting(false)
       return
+    }
+
+    if (isCreator && inviteIds.size > 0) {
+      await fetch(`/api/games/${game.id}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_ids: [...inviteIds] }),
+      })
     }
 
     router.push('/me')
@@ -183,12 +225,12 @@ export function EditGameForm({
           />
 
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
+            <FormSectionLabel>Format</FormSectionLabel>
             <div className="flex gap-2">
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    format === opt.value ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  className={`${gameFormOptionPill} ${
+                    format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                   }`}>
                   {opt.label}
                 </button>
@@ -199,9 +241,9 @@ export function EditGameForm({
           <CourtPlaceFields value={place} onChange={setPlace} />
 
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-            </p>
+            <FormSectionLabel>
+              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+            </FormSectionLabel>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder="Any information — for example the training format" rows={3} maxLength={500}
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
@@ -209,17 +251,17 @@ export function EditGameForm({
 
           {isCreator && (
             <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
+              <FormSectionLabel>Visibility</FormSectionLabel>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setIsOpen(false)}
-                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    !isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  className={`${gameFormOptionPill} ${
+                    !isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                   }`}>
                   Private
                 </button>
                 <button type="button" onClick={() => setIsOpen(true)}
-                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  className={`${gameFormOptionPill} ${
+                    isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                   }`}>
                   Public
                 </button>
@@ -230,43 +272,55 @@ export function EditGameForm({
                 </p>
               ) : (
                 <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                  It stays on your profile. Only you and the people you invite can see it. Nobody else can find it or join.
+                  It still shows on your profile schedule. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
                 </p>
               )}
             </div>
           )}
 
-          {/* Participants */}
-          {participants.length > 0 && (
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
-              <div className="space-y-2">
-                {participants.map((p) => {
-                  const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-                  const statusLabel = STATUS_LABELS[p.status] ?? p.status
-                  const isGoing = p.status === 'accepted'
-                  return (
-                    <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
-                      <Link href={`/profile/${p.profiles.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                        <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
-                          {p.profiles.avatar_url ? (
-                            <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
-                          )}
+          {(participants.length > 0 || (isCreator && inviteable.length > 0)) && (
+            <div className="space-y-4">
+              {participants.length > 0 && (
+                <div>
+                  <FormSectionLabel>Players</FormSectionLabel>
+                  <div className={`space-y-2 ${participants.length > 8 ? 'max-h-64 overflow-y-auto pr-0.5' : ''}`}>
+                    {participants.map((p) => {
+                      const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+                      const statusLabel = STATUS_LABELS[p.status] ?? p.status
+                      const isGoing = p.status === 'accepted'
+                      return (
+                        <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
+                          <Link href={`/profile/${p.profiles.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                            <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
+                              {p.profiles.avatar_url ? (
+                                <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profiles.full_name}</p>
+                              <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
+                            </div>
+                          </Link>
+                          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${isGoing ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.35)]'}`}>
+                            {statusLabel}
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profiles.full_name}</p>
-                          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
-                        </div>
-                      </Link>
-                      <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${isGoing ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.35)]'}`}>
-                        {statusLabel}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {isCreator && inviteable.length > 0 && (
+                <InviteConnectionsList
+                  connections={inviteable}
+                  selectedIds={inviteIds}
+                  onToggle={toggleInvite}
+                  title="Invite more"
+                />
+              )}
             </div>
           )}
 

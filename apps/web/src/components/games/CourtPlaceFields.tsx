@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { arrivalLabel, dollarsToCents, lightsLabel, PAYMENT_OPTIONS, type CourtPayment } from '@/lib/game-court'
+import {
+  arrivalLabel,
+  CURRENCY_OPTIONS,
+  currencySymbol,
+  dollarsToCents,
+  lightsLabel,
+  PAYMENT_OPTIONS,
+  type CourtCurrency,
+  type CourtPayment,
+} from '@/lib/game-court'
+import { FormSectionLabel } from '@/components/games/WhenFields'
 import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
 
 export interface CourtPick {
@@ -19,6 +29,8 @@ export interface CourtPlaceValue {
   venue: CourtPick | null
   locationName: string
   courtCostCents: number | null
+  /** Present when a price is set; ignored for Free. */
+  costCurrency: CourtCurrency | null
   payment: CourtPayment | null
 }
 
@@ -31,6 +43,7 @@ const EMPTY: CourtPlaceValue = {
   venue: null,
   locationName: '',
   courtCostCents: null,
+  costCurrency: null,
   payment: null,
 }
 
@@ -180,6 +193,7 @@ export function CourtPlaceFields({
       venue,
       locationName: '',
       courtCostCents: free ? 0 : value.courtCostCents,
+      costCurrency: free ? null : (value.costCurrency ?? 'USD'),
       payment: free ? null : value.payment,
     })
     if (free) {
@@ -195,6 +209,7 @@ export function CourtPlaceFields({
       venue: null,
       locationName: '',
       courtCostCents: value.courtCostCents,
+      costCurrency: value.costCurrency,
       payment: value.payment,
     })
     setCustom(false)
@@ -202,17 +217,26 @@ export function CourtPlaceFields({
 
   function chooseFree() {
     setPricing(false)
-    onChange({ ...value, courtCostCents: 0, payment: null })
+    onChange({ ...value, courtCostCents: 0, costCurrency: null, payment: null })
     setDollars('')
   }
 
   function chooseAmount(nextDollars: string) {
     setDollars(nextDollars)
     const cents = dollarsToCents(nextDollars)
+    const priced = Boolean(cents && cents > 0)
     onChange({
       ...value,
-      courtCostCents: cents && cents > 0 ? cents : null,
-      payment: cents && cents > 0 ? value.payment : null,
+      courtCostCents: priced ? cents : null,
+      costCurrency: priced ? (value.costCurrency ?? 'USD') : null,
+      payment: priced ? value.payment : null,
+    })
+  }
+
+  function chooseCurrency(next: CourtCurrency) {
+    onChange({
+      ...value,
+      costCurrency: (value.courtCostCents ?? 0) > 0 || pricing ? next : value.costCurrency,
     })
   }
 
@@ -229,12 +253,12 @@ export function CourtPlaceFields({
 
   return (
     <div className="space-y-3">
-      <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">
+      <FormSectionLabel>
         Court
         {!locked && (
           <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]"> (optional)</span>
         )}
-      </p>
+      </FormSectionLabel>
 
       {locked ? (
         value.venue || value.locationName ? (
@@ -329,7 +353,7 @@ export function CourtPlaceFields({
       )}
 
       <div className="space-y-2">
-        <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Court cost</p>
+        <FormSectionLabel>Court cost</FormSectionLabel>
         {lockedFree ? (
           <p className="text-[12px] text-[rgba(26,26,26,0.55)]">This court is free. Nothing to pay.</p>
         ) : (
@@ -339,19 +363,48 @@ export function CourtPlaceFields({
             </p>
             <div className="flex gap-2">
                 <Pill active={value.courtCostCents === 0} onClick={chooseFree}>Free</Pill>
-                <Pill active={pricing} onClick={() => { setPricing(true); if (!dollars) onChange({ ...value, courtCostCents: null, payment: null }) }}>Set a price</Pill>
+                <Pill active={pricing} onClick={() => {
+                  setPricing(true)
+                  if (!dollars) {
+                    onChange({ ...value, courtCostCents: null, costCurrency: value.costCurrency ?? 'USD', payment: null })
+                  }
+                }}>Set a price</Pill>
               </div>
               {pricing && (
-                <label className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     inputMode="decimal"
                     value={dollars}
                     onChange={(event) => chooseAmount(event.target.value.replace(/[^0-9.]/g, '').slice(0, 7))}
                     placeholder="24"
-                    className="w-28 px-3 py-2 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:border-brand-primary"
+                    aria-label="Court cost amount"
+                    className="h-11 w-28 rounded-full border border-[#1a1a1a]/40 bg-brand-field px-3 text-base leading-none text-[#1a1a1a] focus:outline-none focus:border-brand-primary"
                   />
-                  <span className="text-sm text-[rgba(26,26,26,0.45)]">$</span>
-                </label>
+                  <div className="flex gap-1.5" role="group" aria-label="Currency">
+                    {CURRENCY_OPTIONS.map((option) => {
+                      const active = (value.costCurrency ?? 'USD') === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => chooseCurrency(option.value)}
+                          className={`inline-flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-base font-medium leading-none transition-colors ${
+                            active
+                              ? 'border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]'
+                              : 'border-[#1a1a1a]/40 bg-brand-field text-[rgba(26,26,26,0.55)] hover:border-[#1a1a1a]/60'
+                          }`}
+                          aria-pressed={active}
+                          aria-label={option.label}
+                        >
+                          {option.symbol}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <span className="text-[11px] text-[rgba(26,26,26,0.4)]">
+                    {currencySymbol(value.costCurrency ?? 'USD')} total for the session
+                  </span>
+                </div>
               )}
               {priced && (
                 <div className="space-y-2">
@@ -394,8 +447,8 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 text-[10px] tracking-[0.14em] uppercase font-medium border transition-colors ${
-        active ? 'rounded-full border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a]'
+      className={`inline-flex h-11 min-h-11 max-h-11 items-center justify-center rounded-full border px-4 text-base font-medium leading-none tracking-[0.08em] transition-colors ${
+        active ? 'border-[#E8748A] bg-[#E8748A] text-[#1a1a1a]' : 'border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a]'
       }`}
     >
       {children}

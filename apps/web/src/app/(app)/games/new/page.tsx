@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
+import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
@@ -87,6 +87,7 @@ function NewGameForm() {
             },
             locationName: '',
             courtCostCents: venue.fee === false ? 0 : null,
+            costCurrency: null,
             payment: null,
           })
         } else {
@@ -98,6 +99,7 @@ function NewGameForm() {
             venue: null,
             locationName: label || profile.full_name || 'My court',
             courtCostCents: null,
+            costCurrency: null,
             payment: null,
           })
         }
@@ -141,6 +143,7 @@ function NewGameForm() {
         location_name: place.locationName.trim() || undefined,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
+        cost_currency: place.costCurrency,
         payment: place.payment,
         notes: about.trim() || undefined,
         is_open: isCourt ? true : isOpen,
@@ -207,16 +210,13 @@ function NewGameForm() {
             onEnd={setEndTime}
           />
 
-          {/* Format */}
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
+            <FormSectionLabel>Format</FormSectionLabel>
             <div className="flex gap-2">
               {FORMAT_OPTIONS.map((opt) => (
                 <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                  className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                    format === opt.value
-                      ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]'
-                      : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                  className={`${gameFormOptionPill} ${
+                    format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                   }`}>
                   {opt.label}
                 </button>
@@ -226,11 +226,10 @@ function NewGameForm() {
 
           <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
 
-          {/* About */}
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-              About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-            </p>
+            <FormSectionLabel>
+              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+            </FormSectionLabel>
             <textarea value={about} onChange={(e) => setAbout(e.target.value)}
               placeholder="Any information — for example the training format"
               rows={3}
@@ -256,43 +255,13 @@ function NewGameForm() {
             </div>
           )}
 
-          {/* Invite more players */}
           {!isCourt && connections.length > 0 && (
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-                {preselectedId ? 'Add more players' : 'Invite players'}{' '}
-                <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-              </p>
-              <div className="space-y-2">
-                {connections.map((c) => {
-                  const selected = selectedIds.has(c.id)
-                  const initials = c.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-                  return (
-                    <button key={c.id} type="button" onClick={() => togglePlayer(c.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 border transition-colors text-left ${
-                        selected ? 'rounded-[20px] border-[#E8748A] bg-[#F8E6EA]' : 'rounded-[20px] bg-brand-field border-[#1a1a1a]/15 hover:border-[#1a1a1a]/35'
-                      }`}>
-                      <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
-                        {c.avatar_url ? (
-                          <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#1a1a1a] truncate">{c.full_name}</p>
-                        <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{c.username}</p>
-                      </div>
-                      <div className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 transition-colors ${
-                        selected ? 'rounded-md border-[#E8748A] bg-[#E8748A]' : 'rounded-md border-[#1a1a1a]/25 bg-white'
-                      }`}>
-                        {selected && <span className="text-[#1a1a1a] text-[10px] font-bold">✓</span>}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <InviteConnectionsList
+              connections={connections}
+              selectedIds={selectedIds}
+              onToggle={togglePlayer}
+              title={preselectedId ? 'Add more players' : 'Invite players'}
+            />
           )}
 
           {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
@@ -304,17 +273,17 @@ function NewGameForm() {
           {/* Visibility */}
           {!isCourt && (
           <div>
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Visibility</p>
+            <FormSectionLabel>Visibility</FormSectionLabel>
             <div className="flex gap-2">
               <button type="button" onClick={() => setIsOpen(false)}
-                className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                  !isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                className={`${gameFormOptionPill} ${
+                  !isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                 }`}>
                 Private
               </button>
               <button type="button" onClick={() => setIsOpen(true)}
-                className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                  isOpen ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]' : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                className={`${gameFormOptionPill} ${
+                  isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                 }`}>
                 Public
               </button>
@@ -325,7 +294,7 @@ function NewGameForm() {
               </p>
             ) : (
               <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                It stays on your profile. Only you and the people you invite can see it. Nobody else can find it or join.
+                It still shows on your profile schedule. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
               </p>
             )}
           </div>

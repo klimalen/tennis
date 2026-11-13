@@ -21,6 +21,7 @@ export async function PATCH(
     location_name?: string | null
     venue_group_id?: string | null
     court_cost_cents?: number | null
+    cost_currency?: string | null
     payment?: string | null
     notes?: string | null
     is_open?: boolean
@@ -48,6 +49,7 @@ export async function PATCH(
     neighborhood?: string | null
     venue_group_id?: string | null
     court_cost_cents?: number | null
+    cost_currency?: string | null
     payment?: string | null
     notes?: string | null
     is_open?: boolean
@@ -58,7 +60,7 @@ export async function PATCH(
   if ('notes' in body) patch.notes = body.notes ?? null
   if (typeof body.is_open === 'boolean') patch.is_open = body.is_open
 
-  if ('venue_group_id' in body || 'location_name' in body || 'court_cost_cents' in body || 'payment' in body) {
+  if ('venue_group_id' in body || 'location_name' in body || 'court_cost_cents' in body || 'payment' in body || 'cost_currency' in body) {
     const venueGroupId = body.venue_group_id || null
     let venueName: string | null = null
     let venueFee: boolean | null = null
@@ -72,11 +74,12 @@ export async function PATCH(
       venueName = venue.name
       venueFee = venue.fee
     }
-    const offer = parseCourtOffer(body.court_cost_cents, body.payment, venueFee)
+    const offer = parseCourtOffer(body.court_cost_cents, body.payment, venueFee, body.cost_currency)
     if (offer.error) return NextResponse.json({ error: offer.error }, { status: 400 })
     patch.venue_group_id = venueGroupId
     patch.neighborhood = venueName ?? (body.location_name?.trim() || null)
     patch.court_cost_cents = offer.court_cost_cents
+    patch.cost_currency = offer.cost_currency
     patch.payment = offer.payment
   }
 

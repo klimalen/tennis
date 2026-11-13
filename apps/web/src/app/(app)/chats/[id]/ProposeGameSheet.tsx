@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
-import Image from 'next/image'
-import { WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
+import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
@@ -88,6 +88,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
         location_name: place.locationName.trim() || undefined,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
+        cost_currency: place.costCurrency,
         payment: place.payment,
         notes: about.trim() || undefined,
       }),
@@ -154,14 +155,12 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* Format */}
               <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Format</p>
+                <FormSectionLabel>Format</FormSectionLabel>
                 <div className="flex gap-2">
                   {FORMAT_OPTIONS.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                      className={`flex-1 py-2.5 text-[10px] tracking-[0.15em] uppercase font-medium border transition-colors ${
-                        format === opt.value
-                          ? 'rounded-full border-[#E8748A] text-[#1a1a1a] bg-[#E8748A]'
-                          : 'rounded-full bg-brand-field border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60'
+                      className={`${gameFormOptionPill} ${
+                        format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
                       }`}>
                       {opt.label}
                     </button>
@@ -173,9 +172,9 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* About */}
               <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">
-                  About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
-                </p>
+                <FormSectionLabel>
+                  About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+                </FormSectionLabel>
                 <textarea value={about} onChange={(e) => setAbout(e.target.value)}
                   placeholder="Any information — for example the training format" rows={3} maxLength={500}
                   className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
@@ -183,7 +182,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               {/* Players */}
               <div>
-                <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
+                <FormSectionLabel>Players</FormSectionLabel>
 
                 {/* Pre-selected chat partner */}
                 <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA] mb-2">
@@ -192,35 +191,14 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                   <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
                 </div>
 
-                {/* Extra connections */}
                 {connections.length > 0 && (
-                  <div className="space-y-1.5 mt-1.5">
-                    <p className="text-[9px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.3)] mb-2">Add more</p>
-                    {connections.map((c) => {
-                      const selected = extraIds.has(c.id)
-                      const initials = c.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-                      return (
-                        <button key={c.id} type="button" onClick={() => toggle(c.id)}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 border transition-colors text-left ${
-                            selected ? 'rounded-[20px] border-[#E8748A] bg-[#F8E6EA]' : 'rounded-[20px] bg-brand-field border-[#1a1a1a]/15 hover:border-[#1a1a1a]/35'
-                          }`}>
-                          <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
-                            {c.avatar_url
-                              ? <Image src={c.avatar_url} alt={c.full_name} width={36} height={36} className="w-full h-full object-cover" />
-                              : <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#1a1a1a] truncate">{c.full_name}</p>
-                            <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{c.username}</p>
-                          </div>
-                          <div className={`w-5 h-5 border flex items-center justify-center flex-shrink-0 transition-colors ${
-                            selected ? 'rounded-md border-[#E8748A] bg-[#E8748A]' : 'rounded-md border-[#1a1a1a]/25 bg-white'
-                          }`}>
-                            {selected && <span className="text-[#1a1a1a] text-[10px] font-bold">✓</span>}
-                          </div>
-                        </button>
-                      )
-                    })}
+                  <div className="mt-3">
+                    <InviteConnectionsList
+                      connections={connections}
+                      selectedIds={extraIds}
+                      onToggle={toggle}
+                      title="Add more"
+                    />
                   </div>
                 )}
               </div>

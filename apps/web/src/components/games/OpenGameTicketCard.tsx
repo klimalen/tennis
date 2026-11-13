@@ -72,6 +72,7 @@ export function OpenGameTicketCard({
   scheduledAt,
   durationMinutes = null,
   courtCostCents = null,
+  costCurrency = null,
   courtFee,
   faces,
   spotsLeft,
@@ -87,6 +88,7 @@ export function OpenGameTicketCard({
   scheduledAt: string
   durationMinutes?: number | null
   courtCostCents?: number | null
+  costCurrency?: string | null
   /** When false, treat as free even if cents are set. */
   courtFee?: boolean | null
   faces: OpenGameTicketFace[]
@@ -100,7 +102,7 @@ export function OpenGameTicketCard({
   badge?: string | null
 }) {
   const formatLabel = FORMAT_LABELS[format] ?? format
-  const amount = courtFee === false ? 'Free' : formatCourtCost(courtCostCents)
+  const amount = courtFee === false ? 'Free' : formatCourtCost(courtCostCents, costCurrency)
   const priceLabel = amount === 'Free' || courtCostCents === 0
     ? 'Free'
     : amount

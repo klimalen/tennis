@@ -162,6 +162,7 @@ function OpenGameCard({
         scheduledAt={basicGame.scheduled_at}
         durationMinutes={gameDetail?.duration_minutes ?? null}
         courtCostCents={gameDetail?.court_cost_cents ?? null}
+        costCurrency={gameDetail?.cost_currency ?? null}
         courtFee={gameDetail?.court?.fee ?? null}
         faces={faces}
         spotsLeft={spotsLeft}

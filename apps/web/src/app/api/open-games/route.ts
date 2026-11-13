@@ -28,6 +28,7 @@ export interface OpenGame {
   neighborhood: string | null
   notes: string | null
   court_cost_cents: number | null
+  cost_currency: string | null
   payment: string | null
   court: GameCourt | null
   creator_id: string
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     .from('games')
     .select(`
       id, scheduled_at, duration_minutes, format, neighborhood, notes, creator_id, max_players,
-      court_cost_cents, payment,
+      court_cost_cents, cost_currency, payment,
       venue:venue_groups!games_venue_group_id_fkey ( id, name, address, lit, fee, access, phone, website, google_maps_uri, lat, lng ),
       creator:profiles!games_creator_id_fkey ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind, city_name, city_lat, city_lng ),
       game_participants ( player_id, status, profiles ( id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind ) )
@@ -103,6 +104,7 @@ export async function GET(request: NextRequest) {
       neighborhood: r.neighborhood ?? null,
       notes: r.notes ?? null,
       court_cost_cents: r.court_cost_cents ?? null,
+      cost_currency: r.cost_currency ?? null,
       payment: r.payment ?? null,
       court: court?.id ? court : null,
       creator_id: r.creator_id,

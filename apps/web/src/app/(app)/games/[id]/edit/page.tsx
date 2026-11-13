@@ -15,7 +15,7 @@ export default async function EditGamePage({
   // Game is visible if user is creator or participant (RLS handles this)
   const { data: game } = await supabase
     .from('games')
-    .select('id, scheduled_at, duration_minutes, format, neighborhood, notes, is_open, creator_id, venue_group_id, court_cost_cents, payment, court:venue_groups!games_venue_group_id_fkey ( id, name, address, fee, lit, access )')
+    .select('id, scheduled_at, duration_minutes, format, neighborhood, notes, is_open, creator_id, venue_group_id, court_cost_cents, cost_currency, payment, court:venue_groups!games_venue_group_id_fkey ( id, name, address, fee, lit, access )')
     .eq('id', id)
     .single()
 
