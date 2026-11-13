@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
 import { costLine, type GameCourt } from '@/lib/game-court'
-import { CourtFactChips } from '@/components/court/CourtFactChips'
-import { courtListingChips, courtListingMapsHref } from '@/components/court/CourtListingDetails'
+import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
+import { courtListingMapsHref } from '@/components/court/CourtListingDetails'
 import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
 import { GameFaceRow, type GameFace } from '@/components/games/GameFaceRow'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
@@ -97,7 +97,6 @@ export function GameDetailSheet({
   onCancelled,
   activeConversationId,
   viewerIsCourt,
-  courtInfoOpen = false,
   mode = 'sheet',
   backHref,
 }: {
@@ -109,7 +108,6 @@ export function GameDetailSheet({
   onCancelled?: () => void
   activeConversationId?: string
   viewerIsCourt?: boolean
-  courtInfoOpen?: boolean
   mode?: 'sheet' | 'page'
   /** Page mode only. Where the header back arrow goes. */
   backHref?: string
@@ -123,7 +121,6 @@ export function GameDetailSheet({
   const [joined, setJoined] = useState(false)
   const [left, setLeft] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
-  const [courtOpen, setCourtOpen] = useState(courtInfoOpen)
   const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
   useHideTabBar(!page)
 
@@ -180,15 +177,16 @@ export function GameDetailSheet({
     ? [game.court.address?.trim(), game.court.city_name?.trim()].filter(Boolean).join(', ')
     : null
   const placeLine = placeDetail && placeName && placeDetail !== placeName ? placeDetail : null
-  const courtChips = (() => {
-    if (!game.court) return []
-    const base = courtListingChips(game.court)
-    if (!price) return base
-    return [
-      ...base.filter((chip) => chip.key !== 'fee' && chip.key !== 'free'),
-      { key: 'game-price', label: price, tone: 'fee' as const },
-    ]
-  })()
+  // Game sheet only shows surface / indoor-outdoor / lights — not fee or arrival chips.
+  const courtChips = game.court
+    ? buildCourtFactChips({
+        surfaces: game.court.surfaces,
+        surface: game.court.surface,
+        hasIndoor: game.court.has_indoor,
+        hasOutdoor: game.court.has_outdoor,
+        lit: game.court.lit,
+      })
+    : []
   const hostFace: GameFace = {
     id: game.creator.id,
     name: game.creator.full_name,
@@ -313,25 +311,10 @@ export function GameDetailSheet({
             </p>
             {placeName && game.court && (
               <div className="mt-3 w-full rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
-                <button
-                  type="button"
-                  onClick={() => setCourtOpen((open) => !open)}
-                  aria-expanded={courtOpen}
-                  aria-label={courtOpen ? 'Hide court details' : 'Show court details'}
-                  className="w-full text-left"
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      <span className="block font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</span>
-                      {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
-                    </span>
-                    <ChevronDown
-                      size={16}
-                      className={`mt-1 flex-shrink-0 text-[#3A8A7A] transition-transform ${courtOpen ? 'rotate-180' : ''}`}
-                      aria-hidden
-                    />
-                  </span>
-                </button>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
+                  {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
+                </div>
 
                 {placeLine && (
                   <a
@@ -352,55 +335,53 @@ export function GameDetailSheet({
                   </div>
                 )}
 
-                {courtOpen && (
-                  <div className="mt-3 grid grid-cols-1 gap-2">
-                    {courtProfileHref && (
-                      <Link
-                        href={courtProfileHref}
-                        onClick={(event) => {
-                          if (page) return
-                          event.preventDefault()
-                          goRelated(courtProfileHref)
-                        }}
-                        className={profileBtn}
-                      >
-                        Open court profile
-                      </Link>
-                    )}
-                    {(game.court.website || game.court.phone) && (
-                      <div className={`grid gap-2 ${game.court.website && game.court.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                        {game.court.website && (
-                          <a
-                            href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={secondaryBtn}
-                          >
-                            <Globe size={13} /> Website
-                          </a>
-                        )}
-                        {game.court.phone && (
-                          <a href={`tel:${game.court.phone}`} className={secondaryBtn}>
-                            <Phone size={13} /> {game.court.phone}
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    {courtPageHref && (
-                      <Link
-                        href={courtPageHref}
-                        onClick={(event) => {
-                          if (page) return
-                          event.preventDefault()
-                          goRelated(courtPageHref)
-                        }}
-                        className={pageBtn}
-                      >
-                        Court page
-                      </Link>
-                    )}
-                  </div>
-                )}
+                <div className="mt-3 grid grid-cols-1 gap-2">
+                  {courtProfileHref && (
+                    <Link
+                      href={courtProfileHref}
+                      onClick={(event) => {
+                        if (page) return
+                        event.preventDefault()
+                        goRelated(courtProfileHref)
+                      }}
+                      className={profileBtn}
+                    >
+                      Open court profile
+                    </Link>
+                  )}
+                  {(game.court.website || game.court.phone) && (
+                    <div className={`grid gap-2 ${game.court.website && game.court.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {game.court.website && (
+                        <a
+                          href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={secondaryBtn}
+                        >
+                          <Globe size={13} /> Website
+                        </a>
+                      )}
+                      {game.court.phone && (
+                        <a href={`tel:${game.court.phone}`} className={secondaryBtn}>
+                          <Phone size={13} /> {game.court.phone}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {courtPageHref && (
+                    <Link
+                      href={courtPageHref}
+                      onClick={(event) => {
+                        if (page) return
+                        event.preventDefault()
+                        goRelated(courtPageHref)
+                      }}
+                      className={pageBtn}
+                    >
+                      Court page
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
             {placeName && !game.court && (
