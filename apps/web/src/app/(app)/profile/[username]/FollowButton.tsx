@@ -89,11 +89,11 @@ export function FollowButton({ followingId, initialFollowing, fullWidth = false 
       </button>
 
       {showMenu && (
-        <div className="absolute top-full mt-1 right-0 w-max bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 overflow-hidden">
+        <div className="absolute left-1/2 top-full z-30 mt-1 w-max -translate-x-1/2 overflow-hidden rounded-2xl border border-[#1a1a1a]/10 bg-white shadow-lg">
           <button
             type="button"
             onClick={handleUnfollow}
-            className="w-full px-4 py-2.5 text-left text-[10px] tracking-[0.15em] uppercase font-medium text-red-500 hover:bg-red-50 transition-colors whitespace-nowrap"
+            className="w-full whitespace-nowrap px-4 py-2.5 text-center text-[10px] font-medium uppercase tracking-[0.15em] text-red-500 transition-colors hover:bg-red-50"
           >
             Unfollow
           </button>
