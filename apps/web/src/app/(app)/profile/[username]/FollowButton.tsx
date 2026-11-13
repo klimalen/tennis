@@ -6,12 +6,14 @@ import { Check, UserPlus } from 'lucide-react'
 interface Props {
   followingId: string
   initialFollowing: boolean
+  /** Stretch across the row (court profiles without a primary CTA). */
+  fullWidth?: boolean
 }
 
 const iconButton =
-  'h-11 rounded-full flex flex-col items-center justify-center gap-0.5 flex-shrink-0 transition-colors disabled:opacity-50'
+  'h-11 rounded-full flex flex-col items-center justify-center gap-0.5 transition-colors disabled:opacity-50'
 
-export function FollowButton({ followingId, initialFollowing }: Props) {
+export function FollowButton({ followingId, initialFollowing, fullWidth = false }: Props) {
   const [following, setFollowing] = useState(initialFollowing)
   const [showMenu, setShowMenu] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -62,7 +64,7 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
         onClick={handleFollow}
         disabled={loading}
         aria-label="Follow"
-        className={`${iconButton} px-3 bg-brand-field border border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60`}
+        className={`${iconButton} ${fullWidth ? 'w-full flex-1' : 'flex-shrink-0 px-3'} bg-brand-field border border-[#1a1a1a]/40 text-[#1a1a1a] hover:border-[#1a1a1a]/60`}
       >
         <UserPlus size={14} />
         <span className="text-[8px] tracking-[0.12em] uppercase leading-none">Follow</span>
@@ -71,16 +73,19 @@ export function FollowButton({ followingId, initialFollowing }: Props) {
   }
 
   return (
-    <div ref={menuRef} className="relative flex-shrink-0">
+    <div ref={menuRef} className={`relative ${fullWidth ? 'min-w-0 flex-1' : 'flex-shrink-0'}`}>
       <button
         type="button"
         onClick={() => setShowMenu((v) => !v)}
         disabled={loading}
         aria-label="Following"
         aria-expanded={showMenu}
-        className={`${iconButton} w-11 bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]`}
+        className={`${iconButton} ${fullWidth ? 'w-full' : 'w-11'} bg-[#E8748A] border border-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]`}
       >
         <Check size={14} />
+        {fullWidth && (
+          <span className="text-[8px] tracking-[0.12em] uppercase leading-none">Following</span>
+        )}
       </button>
 
       {showMenu && (

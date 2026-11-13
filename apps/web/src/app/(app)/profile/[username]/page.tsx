@@ -364,10 +364,18 @@ export default async function PlayerProfilePage({
           {viewer && viewer.id !== profile.id && (
             <div className="mt-4">
               {isCourt || viewerIsCourt ? (
-                <div className="flex items-center gap-2">
-                  <FollowButton followingId={profile.id} initialFollowing={viewerIsFollowing} />
+                <div className="flex w-full items-center gap-2">
+                  <FollowButton
+                    followingId={profile.id}
+                    initialFollowing={viewerIsFollowing}
+                    fullWidth
+                  />
                   {(isCourt || isMutual) && (
-                    <MessageIcon otherUserId={profile.id} existingConvId={existingConvId} />
+                    <MessageIcon
+                      otherUserId={profile.id}
+                      existingConvId={existingConvId}
+                      fullWidth
+                    />
                   )}
                 </div>
               ) : (

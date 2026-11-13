@@ -7,9 +7,12 @@ import { MessageCircle, Loader2 } from 'lucide-react'
 export function MessageIcon({
   otherUserId,
   existingConvId,
+  fullWidth = false,
 }: {
   otherUserId: string
   existingConvId: string | null
+  /** Stretch across the row (court profiles without a primary CTA). */
+  fullWidth?: boolean
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -38,7 +41,9 @@ export function MessageIcon({
       onClick={handleClick}
       disabled={loading}
       aria-label="Open chat"
-      className="h-11 px-3 rounded-full bg-brand-field border border-[#1a1a1a]/40 flex flex-col items-center justify-center gap-0.5 text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50 flex-shrink-0"
+      className={`h-11 rounded-full bg-brand-field border border-[#1a1a1a]/40 flex flex-col items-center justify-center gap-0.5 text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors disabled:opacity-50 ${
+        fullWidth ? 'w-full flex-1 min-w-0' : 'flex-shrink-0 px-3'
+      }`}
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />}
       <span className="text-[8px] tracking-[0.12em] uppercase leading-none">Chat</span>
