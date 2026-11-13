@@ -387,7 +387,7 @@ export function CourtDetailsForm({
           type="text"
           value={name}
           onChange={(e) => { setName(e.target.value); markDirty() }}
-          placeholder="Caswell Tennis Center"
+          placeholder="Tennis Center"
           required
           maxLength={80}
           className={inputClass}
