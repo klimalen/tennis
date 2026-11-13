@@ -494,49 +494,51 @@ export function ChatView({
     items.push({ type: 'message', key: msg._tempId ?? msg.id, msg, isFirst, isLast })
   })
 
+  const chatIsEmpty = visibleMessages.length === 0
+
   return (
     <>
-      {messages.length === 0 && otherName && !gameChat && (
-        <div className="max-w-2xl w-full mx-auto px-4 pt-6">
-          <div className="rounded-[20px] bg-white px-4 py-4 text-center">
-            <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
-              {courtChat ? 'Chat with ' : 'You matched with '}
-              {otherUsername ? (
-                <Link href={`/profile/${otherUsername}`} className="underline underline-offset-4 hover:text-brand-primary">
-                  {otherName}
-                </Link>
-              ) : otherName}
-            </p>
-            {!courtChat && (
-              <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
-            )}
-            <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">
-              {courtChat ? 'Say hello' : canPropose ? 'Say hello and arrange a game' : 'Say hello'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {messages.length === 0 && gameChat && (
-        <div className="max-w-2xl w-full mx-auto px-4 pt-6">
-          <div className="rounded-[20px] bg-white px-4 py-4 text-center">
-            <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
-              This is the game chat
-            </p>
-            <p className="mt-1 text-sm text-[rgba(26,26,26,0.45)] font-fraunces italic">
-              {gameChat.closed
-                ? 'This game was cancelled.'
-                : 'Say hello and coordinate with everyone who joined.'}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Messages */}
       <div ref={scrollRef} onScroll={handleScroll}
         className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 overflow-y-auto relative">
+        {chatIsEmpty && otherName && !gameChat && (
+          <div className="flex min-h-full items-start justify-center pt-6">
+            <div className="w-full rounded-[20px] bg-white px-4 py-4 text-center">
+              <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
+                {courtChat ? 'Chat with ' : 'You matched with '}
+                {otherUsername ? (
+                  <Link href={`/profile/${otherUsername}`} className="underline underline-offset-4 hover:text-brand-primary">
+                    {otherName}
+                  </Link>
+                ) : otherName}
+              </p>
+              {!courtChat && (
+                <p className="text-sm text-[rgba(26,26,26,0.45)] mt-1">You&apos;re now following each other.</p>
+              )}
+              <p className="text-sm text-[rgba(26,26,26,0.4)] font-fraunces italic mt-1">
+                {courtChat ? 'Say hello' : canPropose ? 'Say hello and arrange a game' : 'Say hello'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {chatIsEmpty && gameChat && (
+          <div className="flex min-h-full items-start justify-center pt-6">
+            <div className="w-full rounded-[20px] bg-white px-4 py-4 text-center">
+              <p className="font-display text-2xl tracking-wide text-brand-primary mb-1">✦</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.5)] font-medium">
+                This is the game chat
+              </p>
+              <p className="mt-1 text-sm text-[rgba(26,26,26,0.45)] font-fraunces italic">
+                {gameChat.closed
+                  ? 'This game was cancelled.'
+                  : 'Say hello and coordinate with everyone who joined.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {items.length > 0 && (
           <div className="space-y-0.5">
             {items.map((item) => {
