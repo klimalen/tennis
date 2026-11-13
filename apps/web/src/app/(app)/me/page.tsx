@@ -165,10 +165,12 @@ async function ProfileContent() {
       <div className="max-w-2xl mx-auto px-4 space-y-4">
         {/* Profile header */}
         <div className="relative bg-white rounded-[28px] p-5">
-            {!isCourt && profile?.is_coach && <CoachBadge className="absolute -top-2.5 right-4 z-10 shadow-sm" />}
           <div className="flex items-start gap-5">
-            {/* Avatar */}
-            <div className="flex-shrink-0">
+            {/* Avatar — coach badge sits centered on the top edge */}
+            <div className="relative flex-shrink-0">
+              {!isCourt && profile?.is_coach && (
+                <CoachBadge className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 shadow-sm" />
+              )}
               <div className="w-20 h-20 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt={fullName} width={80} height={80} className="w-full h-full object-cover" />
