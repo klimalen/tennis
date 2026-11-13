@@ -17,12 +17,10 @@ import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 import { GAME_DETAIL_SELECT, normalizeGameDetail, viewerPlaysInGame } from '@/lib/public-game'
 import { withReturnTo } from '@/lib/return-to'
 
-const secondaryBtn =
-  'flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-brand-field px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] transition-colors hover:bg-white'
-const profileBtn =
-  'flex items-center justify-center gap-2 rounded-full bg-[#E8748A] px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A]'
-const pageBtn =
-  'flex items-center justify-center gap-2 rounded-full border border-[#1a1a1a]/15 bg-white px-4 py-2.5 text-[10px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] transition-colors hover:bg-brand-field'
+const courtLink =
+  'inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[rgba(26,26,26,0.55)] transition-colors hover:text-[#1a1a1a]'
+const courtLinkAccent =
+  'inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#C45A70] transition-colors hover:text-[#E8406A]'
 
 export interface GameParticipant {
   player_id: string
@@ -314,9 +312,9 @@ export function GameDetailSheet({
           </div>
 
           {placeName && game.court && (
-            <div className="w-full rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
+            <div className="w-full">
               <div className="flex min-w-0 items-center gap-1.5">
-                <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
+                <p className="truncate text-[13px] font-medium uppercase tracking-[0.08em] text-[rgba(26,26,26,0.7)]">{placeName}</p>
                 {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
               </div>
 
@@ -325,21 +323,21 @@ export function GameDetailSheet({
                   href={courtListingMapsHref(game.court, placeName)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group mt-2 flex items-start gap-1.5 text-[12px] font-medium text-[#1a1a1a] transition-opacity hover:opacity-75"
+                  className="group mt-1.5 flex items-start gap-1.5 text-[12px] text-[rgba(26,26,26,0.5)] transition-opacity hover:opacity-75"
                 >
-                  <MapPin size={12} className="mt-0.5 flex-shrink-0" />
+                  <MapPin size={11} className="mt-0.5 flex-shrink-0" />
                   <span className="underline-offset-2 group-hover:underline">{placeLine}</span>
-                  <ArrowUpRight size={12} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.45)]" aria-hidden />
+                  <ArrowUpRight size={11} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.35)]" aria-hidden />
                 </a>
               )}
 
               {courtChips.length > 0 && (
-                <div className="mt-3">
+                <div className="mt-2">
                   <CourtFactChips chips={courtChips} className="flex flex-wrap gap-1.5" />
                 </div>
               )}
 
-              <div className="mt-3 grid grid-cols-1 gap-2">
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 {courtProfileHref && (
                   <Link
                     href={courtProfileHref}
@@ -348,29 +346,25 @@ export function GameDetailSheet({
                       event.preventDefault()
                       goRelated(courtProfileHref)
                     }}
-                    className={profileBtn}
+                    className={courtLinkAccent}
                   >
-                    Open court profile
+                    Court profile
                   </Link>
                 )}
-                {(game.court.website || game.court.phone) && (
-                  <div className={`grid gap-2 ${game.court.website && game.court.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {game.court.website && (
-                      <a
-                        href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={secondaryBtn}
-                      >
-                        <Globe size={13} /> Website
-                      </a>
-                    )}
-                    {game.court.phone && (
-                      <a href={`tel:${game.court.phone}`} className={secondaryBtn}>
-                        <Phone size={13} /> {game.court.phone}
-                      </a>
-                    )}
-                  </div>
+                {game.court.website && (
+                  <a
+                    href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={courtLink}
+                  >
+                    <Globe size={11} /> Website
+                  </a>
+                )}
+                {game.court.phone && (
+                  <a href={`tel:${game.court.phone}`} className={courtLink}>
+                    <Phone size={11} /> {game.court.phone}
+                  </a>
                 )}
                 {courtPageHref && (
                   <Link
@@ -380,7 +374,7 @@ export function GameDetailSheet({
                       event.preventDefault()
                       goRelated(courtPageHref)
                     }}
-                    className={pageBtn}
+                    className={courtLink}
                   >
                     Court page
                   </Link>
@@ -391,7 +385,7 @@ export function GameDetailSheet({
 
           {placeName && !game.court && (
             <div className="text-left">
-              <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
+              <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-[rgba(26,26,26,0.7)]">{placeName}</p>
               {(price || isCancelled) && (
                 <div className="mt-2">
                   <CourtFactChips
