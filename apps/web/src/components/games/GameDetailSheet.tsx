@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Globe, Loader2, MapPin, Phone, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
@@ -270,6 +270,20 @@ export function GameDetailSheet({
   const shareButton = (
     <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={game.is_open ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
   )
+  const deletePastButton = canDeletePast ? (
+    <button
+      type="button"
+      onClick={() => setShowCancelConfirm(true)}
+      aria-label="Delete game"
+      className={
+        page
+          ? 'flex h-9 w-9 items-center justify-center text-[rgba(26,26,26,0.35)] transition-colors hover:text-red-500'
+          : 'flex h-7 w-7 items-center justify-center text-[rgba(26,26,26,0.35)] transition-colors hover:text-red-500'
+      }
+    >
+      <Trash2 size={page ? 16 : 14} />
+    </button>
+  ) : null
   const gamePath = backHref ? withReturnTo(`/game/${game.id}`, backHref) : `/game/${game.id}`
   const courtPageHref = game.court ? withReturnTo(`/court/${game.court.id}`, gamePath) : null
   const courtProfileHref = game.court?.profile_username
@@ -474,16 +488,6 @@ export function GameDetailSheet({
             </div>
           )}
 
-          {canDeletePast && (
-            <button
-              type="button"
-              onClick={() => setShowCancelConfirm(true)}
-              className="w-full py-4 rounded-full border border-red-200 text-[10px] tracking-[0.2em] uppercase font-medium text-red-500 transition-colors hover:bg-red-50"
-            >
-              Delete game
-            </button>
-          )}
-
           {!isHost && courtViewer === false && canLeave && (
             <button
               type="button"
@@ -571,6 +575,7 @@ export function GameDetailSheet({
             <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
               {game.is_open ? 'OPEN GAME' : 'GAME'}
             </span>
+            {deletePastButton}
             {shareButton}
           </div>
         </div>
@@ -591,6 +596,7 @@ export function GameDetailSheet({
             {game.is_open ? 'Open Game' : 'Game'}
           </span>
           <div className="flex items-center gap-1">
+            {deletePastButton}
             {shareButton}
             <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
               <X size={16} />
