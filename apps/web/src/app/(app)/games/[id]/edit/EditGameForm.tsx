@@ -272,7 +272,7 @@ export function EditGameForm({
                 </p>
               ) : (
                 <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                  It still shows on your profile schedule. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
+                  Shows on your profile schedule for anyone who visits. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
                 </p>
               )}
             </div>
