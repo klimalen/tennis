@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ChevronDown, Globe, Loader2, MapPin, Phone, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
@@ -494,16 +494,6 @@ export function GameDetailSheet({
             <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
               {game.is_open ? 'OPEN GAME' : 'GAME'}
             </span>
-            {canCancel && (
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(true)}
-                className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center text-[rgba(26,26,26,0.45)] hover:text-red-500 hover:border-red-200 transition-colors"
-                aria-label="Cancel game"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
             {shareButton}
           </div>
         </div>
@@ -524,16 +514,6 @@ export function GameDetailSheet({
             {game.is_open ? 'Open Game' : 'Game'}
           </span>
           <div className="flex items-center gap-1">
-            {canCancel && (
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(true)}
-                className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.45)] hover:text-red-500"
-                aria-label="Cancel game"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
             {shareButton}
             <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
               <X size={16} />
