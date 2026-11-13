@@ -199,22 +199,24 @@ async function ProfileContent() {
             </div>
           </div>
 
-          {/* Name + meta */}
+          {/* Name + meta — handle sits on the name row so address/city can come next */}
           <div className="mt-4">
-            {courtHref ? (
-              <Link
-                href={courtHref}
-                className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
-              >
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              {courtHref ? (
+                <Link
+                  href={courtHref}
+                  className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
+                >
+                  <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+                  <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
+                </Link>
+              ) : (
                 <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
-                <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
-              </Link>
-            ) : (
-              <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
-            )}
-            {username && (
-              <p className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.35)] mt-1">@{username}</p>
-            )}
+              )}
+              {username && (
+                <span className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.28)]">@{username}</span>
+              )}
+            </div>
             {!isCourt && profile?.city_name && (
               <p className="text-[11px] text-[rgba(26,26,26,0.4)] mt-0.5 flex items-center gap-1">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 13-8 13S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
