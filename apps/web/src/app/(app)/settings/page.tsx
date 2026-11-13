@@ -81,7 +81,7 @@ export default function SettingsPage() {
           <div className="px-4 py-3 border-b border-brand-divider">
             <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)]">Account</p>
           </div>
-          {isCourt === false && (
+          {isCourt !== null && (
             <Link
               href="/me/edit"
               className="w-full flex items-center gap-3 px-4 py-4 hover:bg-brand-surface transition-colors text-left border-b border-brand-divider"
@@ -91,7 +91,9 @@ export default function SettingsPage() {
               </div>
               <div>
                 <span className="block text-sm font-medium text-[#1a1a1a]">Edit profile</span>
-                <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">City, level and schedule</span>
+                <span className="block text-[11px] text-[rgba(26,26,26,0.45)]">
+                  {isCourt ? 'Name, address, hours and contact' : 'City, level and schedule'}
+                </span>
               </div>
             </Link>
           )}

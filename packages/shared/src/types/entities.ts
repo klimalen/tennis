@@ -58,6 +58,16 @@ export interface Profile {
   is_coach: boolean
   is_club_manager: boolean
   account_kind: 'player' | 'court'
+  address: string | null
+  opening_hours: string | null
+  court_count: number | null
+  lit: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
+  whatsapp: string | null
+  instagram: string | null
+  telegram: string | null
+  facebook: string | null
   phone: string | null
   website: string | null
   reliability_score: number | null

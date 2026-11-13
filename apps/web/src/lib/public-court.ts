@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const COURT_COLUMNS = `
   id, name, kind, lat, lng, address, phone, website, opening_hours, description,
   court_count, court_count_osm, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri,
-  linked_profile:profiles!profile_id ( username, phone, website, bio, account_kind )
+  linked_profile:profiles!profile_id ( username, phone, website, bio, address, opening_hours, account_kind )
 `
 
 export interface PublicCourt {
@@ -53,12 +53,16 @@ interface CourtRow {
     phone: string | null
     website: string | null
     bio: string | null
+    address: string | null
+    opening_hours: string | null
     account_kind: string
   } | {
     username: string
     phone: string | null
     website: string | null
     bio: string | null
+    address: string | null
+    opening_hours: string | null
     account_kind: string
   }[] | null
 }
@@ -74,10 +78,10 @@ function toCourt(row: CourtRow): PublicCourt | null {
     kind: row.kind,
     lat: row.lat,
     lng: row.lng,
-    address: row.address,
+    address: row.address || courtProfile?.address || null,
     phone: row.phone || courtProfile?.phone || null,
     website: row.website || courtProfile?.website || null,
-    opening_hours: row.opening_hours,
+    opening_hours: row.opening_hours || courtProfile?.opening_hours || null,
     description: courtProfile?.bio?.trim() || row.description,
     court_count: row.court_count ?? (row.court_count_osm > 0 ? row.court_count_osm : null),
     surface: row.surface,

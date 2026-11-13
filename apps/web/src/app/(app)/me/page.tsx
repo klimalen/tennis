@@ -1,7 +1,7 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
-import { Settings, CalendarDays, Globe, Phone } from 'lucide-react'
+import { Settings, CalendarDays } from 'lucide-react'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,7 +17,7 @@ import { CoachBadge } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
-import { CourtDetailsEditor } from '@/components/court/CourtDetailsForm'
+import { CourtProfileDetails } from '@/components/court/CourtProfileDetails'
 import { CourtDetailsGate } from './CourtHome'
 
 const SURFACE_LABELS: Record<string, string> = {
@@ -35,7 +35,7 @@ async function ProfileContent() {
   const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, phone, website, account_kind, preferred_surfaces, availability, is_coach')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_surfaces, availability, is_coach, court_count, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
       .eq('id', user.id)
       .single(),
     supabase
@@ -73,7 +73,16 @@ async function ProfileContent() {
 
   const profile = profileResult.data
   const isCourt = profile?.account_kind === 'court'
-  if (isCourt && (!profile?.full_name?.trim() || !profile?.city_name?.trim())) {
+  if (
+    isCourt
+    && (
+      !profile?.full_name?.trim()
+      || !profile?.city_name?.trim()
+      || !profile?.address?.trim()
+      || !profile?.phone?.trim()
+      || !profile?.opening_hours?.trim()
+    )
+  ) {
     return <CourtDetailsGate />
   }
   const followerCount = followerResult.count
@@ -117,9 +126,6 @@ async function ProfileContent() {
   }))
 
   const fullName = profile?.full_name || (isCourt ? 'Court' : 'Tennis Player')
-  const websiteHref = profile?.website
-    ? (profile.website.startsWith('http') ? profile.website : `https://${profile.website}`)
-    : null
   const username = profile?.username || ''
   const avatarUrl = profile?.avatar_url || null
   const rating = profile?.is_coach ? null : (profile?.skill_level_computed ?? profile?.skill_level_self ?? null)
@@ -190,14 +196,14 @@ async function ProfileContent() {
             {username && (
               <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)] mt-1">@{username}</p>
             )}
-            {profile?.city_name && (
+            {!isCourt && profile?.city_name && (
               <p className="text-[11px] text-[rgba(26,26,26,0.4)] mt-0.5 flex items-center gap-1">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 13-8 13S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 {profile.city_name}
               </p>
             )}
             {!isCourt && (skillLabel(rating) || surfaces.length > 0 || hasSlots(availability)) && (
-              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                 {skillLabel(rating) && (
                   <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
                     {skillLabel(rating)}
@@ -211,39 +217,30 @@ async function ProfileContent() {
                 <AvailabilityButton value={availability} />
               </div>
             )}
-            {profile?.bio && (
+            {!isCourt && profile?.bio && (
               <div className="mt-2">
                 <ExpandableText text={profile.bio} className="font-copy text-sm text-[#497250] leading-snug" />
               </div>
             )}
             {!isCourt && <LookingFor text={profile?.looking_for} />}
-            {isCourt && (profile?.phone || websiteHref) && (
-              <div className="mt-2 space-y-1">
-                {profile?.phone && (
-                  <a href={`tel:${profile.phone}`} className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)]">
-                    <Phone size={12} /> {profile.phone}
-                  </a>
-                )}
-                {websiteHref && (
-                  <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[rgba(26,26,26,0.65)] underline underline-offset-2">
-                    <Globe size={12} /> {profile?.website}
-                  </a>
-                )}
-              </div>
-            )}
             {isCourt && (
-              <div className="mt-3">
-                <CourtDetailsEditor
-                  initial={{
-                    name: profile?.full_name ?? '',
-                    city: profile?.city_name ?? '',
-                    cityLat: profile?.city_lat ?? null,
-                    cityLng: profile?.city_lng ?? null,
-                    phone: profile?.phone ?? '',
-                    website: profile?.website ?? '',
-                    description: profile?.bio ?? '',
-                    avatarUrl: profile?.avatar_url ?? null,
-                  }}
+              <div className="mt-2">
+                <CourtProfileDetails
+                  cityName={profile?.city_name}
+                  address={profile?.address}
+                  phone={profile?.phone}
+                  website={profile?.website}
+                  openingHours={profile?.opening_hours}
+                  bio={profile?.bio}
+                  courtCount={profile?.court_count}
+                  surfaces={profile?.preferred_surfaces}
+                  lit={profile?.lit}
+                  feeHourMin={profile?.fee_hour_min}
+                  feeHourMax={profile?.fee_hour_max}
+                  whatsapp={profile?.whatsapp}
+                  instagram={profile?.instagram}
+                  telegram={profile?.telegram}
+                  facebook={profile?.facebook}
                 />
               </div>
             )}
