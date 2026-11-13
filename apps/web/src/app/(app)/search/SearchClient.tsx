@@ -292,7 +292,7 @@ function PlayerCard({
   const [followed, setFollowed] = useState(Boolean(player.following))
   const [justFollowed, setJustFollowed] = useState(false)
   const [following, setFollowing] = useState(false)
-  const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
+  const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Propose a game'
 
   async function handleFollow(e: React.MouseEvent) {
     e.preventDefault()

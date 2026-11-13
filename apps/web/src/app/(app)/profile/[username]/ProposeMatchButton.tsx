@@ -60,7 +60,7 @@ export function ProposeMatchButton({
     state === 'loading' ? 'Sending…' :
     state === 'declined' ? 'Try again' :
     state === 'connected' ? 'Plan a game' :
-    'Play together'
+    'Propose a game'
 
   const helper =
     state === 'sent' ? 'Waiting for them to accept a game' :

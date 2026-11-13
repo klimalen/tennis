@@ -46,7 +46,7 @@ export function PlayTogetherButton({
   }
 
   const labels: Record<ButtonState, string> = {
-    idle:    'Play together',
+    idle:    'Propose a game',
     loading: 'Sending…',
     sent:    'Request sent',
     matched: 'Matched — open chat',
