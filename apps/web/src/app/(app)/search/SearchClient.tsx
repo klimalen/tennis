@@ -254,10 +254,9 @@ function formatSummary(formats: string[]): string | null {
 }
 
 function styleSummary(style: string | null): string | null {
-  // Training intent, not outcomes — and distinct from skill tier "Competitive".
-  if (style === 'both') return 'For fun, for competition'
-  if (style === 'recreational') return 'For fun'
-  if (style === 'competitive') return 'For competition'
+  // Match profile chips: one intent only; both → omit.
+  if (style === 'recreational') return 'Play for fun'
+  if (style === 'competitive') return 'Play for competition'
   return null
 }
 
