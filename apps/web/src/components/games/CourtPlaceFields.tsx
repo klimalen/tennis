@@ -89,9 +89,12 @@ async function resolveCourtAnchor(
 export function CourtPlaceFields({
   value,
   onChange,
+  locked = false,
 }: {
   value: CourtPlaceValue
   onChange: (next: CourtPlaceValue) => void
+  /** When true (court host creating a game), show their court only — no search/change. */
+  locked?: boolean
 }) {
   const [favorites, setFavorites] = useState<VenueResult[]>([])
   const [results, setResults] = useState<VenueResult[]>([])
@@ -227,10 +230,37 @@ export function CourtPlaceFields({
   return (
     <div className="space-y-3">
       <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">
-        Court <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
+        Court
+        {!locked && (
+          <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]"> (optional)</span>
+        )}
       </p>
 
-      {value.venue ? (
+      {locked ? (
+        value.venue || value.locationName ? (
+          <div className="rounded-[20px] border border-[#1a1a1a]/15 bg-brand-field px-3 py-3">
+            <div className="min-w-0">
+              <p className="font-display text-xl leading-none tracking-wide uppercase text-[#1a1a1a]">
+                {value.venue?.name || value.locationName}
+              </p>
+              {value.venue?.address && (
+                <p className="mt-1 text-[12px] text-[rgba(26,26,26,0.5)]">{value.venue.address}</p>
+              )}
+            </div>
+            {value.venue && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {lightsLabel(value.venue.lit) && <Fact>{lightsLabel(value.venue.lit)}</Fact>}
+                {value.venue.fee === false && <Fact>Free</Fact>}
+                {value.venue.fee === true && <Fact>Fee</Fact>}
+                {arrivalLabel(value.venue) && <Fact>{arrivalLabel(value.venue)}</Fact>}
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.45)]">Your court — fixed for games you organise.</p>
+          </div>
+        ) : (
+          <p className="text-[12px] text-[rgba(26,26,26,0.5)]">Loading your court…</p>
+        )
+      ) : value.venue ? (
         <div className="rounded-[20px] border border-[#1a1a1a]/15 bg-brand-field px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">

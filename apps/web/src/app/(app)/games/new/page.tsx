@@ -60,10 +60,47 @@ function NewGameForm() {
     const supabase = createClient()
     void supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setAccountReady(true); return }
-      const { data } = await supabase.from('profiles').select('account_kind').eq('id', user.id).maybeSingle()
-      if (data?.account_kind === 'court') {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_kind, full_name, address, city_name')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (profile?.account_kind === 'court') {
         setIsCourt(true)
         setIsOpen(true)
+        const { data: venue } = await supabase
+          .from('venue_groups')
+          .select('id, name, address, fee, lit, access')
+          .eq('profile_id', user.id)
+          .limit(1)
+          .maybeSingle()
+        if (venue) {
+          setPlace({
+            venueId: venue.id,
+            venue: {
+              id: venue.id,
+              name: venue.name,
+              address: venue.address,
+              fee: venue.fee,
+              lit: venue.lit,
+              access: venue.access,
+            },
+            locationName: '',
+            courtCostCents: venue.fee === false ? 0 : null,
+            payment: null,
+          })
+        } else {
+          const label = [profile.full_name?.trim(), profile.address?.trim(), profile.city_name?.trim()]
+            .filter(Boolean)
+            .join(', ')
+          setPlace({
+            venueId: null,
+            venue: null,
+            locationName: label || profile.full_name || 'My court',
+            courtCostCents: null,
+            payment: null,
+          })
+        }
       }
       setAccountReady(true)
     })
@@ -187,7 +224,7 @@ function NewGameForm() {
             </div>
           </div>
 
-          <CourtPlaceFields value={place} onChange={setPlace} />
+          <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
 
           {/* About */}
           <div>
@@ -195,7 +232,9 @@ function NewGameForm() {
               About <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal">(optional)</span>
             </p>
             <textarea value={about} onChange={(e) => setAbout(e.target.value)}
-              placeholder="Practice, match, group training..." rows={3} maxLength={500}
+              placeholder="Any information — for example the training format"
+              rows={3}
+              maxLength={500}
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 

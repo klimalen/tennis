@@ -31,18 +31,32 @@ export async function POST(request: Request) {
 
   const { data: creator } = await supabase
     .from('profiles')
-    .select('account_kind')
+    .select('account_kind, full_name, address, city_name')
     .eq('id', user.id)
     .maybeSingle()
   const isCourt = creator?.account_kind === 'court'
 
+  let resolvedVenueId = venueGroupId
+  if (isCourt) {
+    const { data: ownVenue } = await supabase
+      .from('venue_groups')
+      .select('id')
+      .eq('profile_id', user.id)
+      .limit(1)
+      .maybeSingle()
+    if (ownVenue?.id) {
+      // Court hosts always play at their own linked venue.
+      resolvedVenueId = ownVenue.id
+    }
+  }
+
   let venueName: string | null = null
   let venueFee: boolean | null = null
-  if (venueGroupId) {
+  if (resolvedVenueId) {
     const { data: venue } = await supabase
       .from('venue_groups')
       .select('id, name, fee')
-      .eq('id', venueGroupId)
+      .eq('id', resolvedVenueId)
       .maybeSingle()
     if (!venue) return NextResponse.json({ error: 'Court not found' }, { status: 400 })
     venueName = venue.name
@@ -54,7 +68,10 @@ export async function POST(request: Request) {
 
   const gameId = crypto.randomUUID()
   const max_players = format === 'singles' ? 2 : 4
-  const placeName = venueName ?? (location_name?.trim() || null)
+  const fallbackPlace = isCourt
+    ? ([creator?.full_name?.trim(), creator?.address?.trim(), creator?.city_name?.trim()].filter(Boolean).join(', ') || creator?.full_name || null)
+    : null
+  const placeName = venueName ?? (location_name?.trim() || fallbackPlace)
 
   const { error: gameErr } = await supabase
     .from('games')
@@ -65,7 +82,7 @@ export async function POST(request: Request) {
       scheduled_at,
       ...(duration_minutes ? { duration_minutes } : {}),
       neighborhood: placeName,
-      venue_group_id: venueGroupId,
+      venue_group_id: resolvedVenueId,
       court_cost_cents: offer.court_cost_cents,
       payment: offer.payment,
       notes: notes ?? null,
