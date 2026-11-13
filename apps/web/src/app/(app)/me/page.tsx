@@ -13,7 +13,7 @@ import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -163,14 +163,16 @@ async function ProfileContent() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
-        {/* Profile header */}
-        <div className="relative bg-white rounded-[28px] p-5">
-          <div className="flex items-start gap-5">
-            {/* Avatar — coach badge sits centered on the top edge */}
+        {/* Profile header — coach watermark sits behind the stats (upper-right) */}
+        <div className="relative overflow-hidden bg-white rounded-[28px] p-5">
+          {!isCourt && profile?.is_coach && (
+            <>
+              <CoachWatermark />
+              <span className="sr-only">Coach</span>
+            </>
+          )}
+          <div className="relative z-10 flex items-start gap-5">
             <div className="relative flex-shrink-0">
-              {!isCourt && profile?.is_coach && (
-                <CoachBadge className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2" />
-              )}
               <div className="w-20 h-20 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt={fullName} width={80} height={80} className="w-full h-full object-cover" />

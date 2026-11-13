@@ -1,6 +1,21 @@
 /**
- * Vintage nameplate Coach chip — cream fill, double teal border,
- * concave corner cuts. Overlay with absolute + left-1/2 -translate-x-1/2.
+ * Large light watermark for profile header cards — sits behind the stats row
+ * (upper-right). Pair with `overflow-hidden` on the card.
+ */
+export function CoachWatermark({ className = '' }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute right-1 top-2 z-0 select-none font-display text-[52px] italic font-bold leading-none tracking-[-0.02em] text-[rgba(26,26,26,0.07)] sm:text-[58px] ${className}`}
+    >
+      COACH
+    </span>
+  )
+}
+
+/**
+ * Compact vintage nameplate Coach chip for lists / search cards.
+ * Overlay with absolute + left-1/2 -translate-x-1/2 when pinning to an avatar.
  */
 export function CoachBadge({ className = '' }: { className?: string }) {
   // Don't force `relative` when the caller already positions with absolute/fixed —
