@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { permanentRedirect, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, CalendarDays } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, CalendarDays } from 'lucide-react'
 import { CourtProfileDetails } from '@/components/court/CourtProfileDetails'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { LinkState } from '@/components/share/LinkState'
@@ -113,6 +113,7 @@ export default async function PlayerProfilePage({
   }
   if (viewer && viewer.id === profile.id) redirect('/me')
 
+  const isCourtAccount = profile.account_kind === 'court'
   const otherId = viewer && viewer.id !== profile.id ? viewer.id : null
   const [
     { count: followerCount },
@@ -128,6 +129,7 @@ export default async function PlayerProfilePage({
     convIdResult,
     viewerProfileResult,
     hasSharedChat,
+    venueResult,
   ] = await Promise.all([
     supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', profile.id),
     supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', profile.id),
@@ -191,6 +193,9 @@ export default async function PlayerProfilePage({
           return !!convParticipant
         })()
       : Promise.resolve(false),
+    isCourtAccount
+      ? supabase.from('venue_groups').select('id').eq('profile_id', profile.id).limit(1).maybeSingle()
+      : Promise.resolve({ data: null as { id: string } | null }),
   ])
 
   const schedule = summarizeSchedule(playerGames)
@@ -217,6 +222,7 @@ export default async function PlayerProfilePage({
   }
 
   const isCourt = profile.account_kind === 'court'
+  const courtHref = isCourt && venueResult.data?.id ? `/court/${venueResult.data.id}` : null
   const rating = profile.is_coach ? null : profile.skill_level_computed ?? profile.skill_level_self
   const skill = isCourt ? null : skillLabel(rating)
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -294,8 +300,18 @@ export default async function PlayerProfilePage({
 
           {/* Name + meta */}
           <div className="mt-4 space-y-1.5">
-            <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
-            <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)]">@{profile.username}</p>
+            {courtHref ? (
+              <Link
+                href={courtHref}
+                className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
+              >
+                <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+                <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
+              </Link>
+            ) : (
+              <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+            )}
+            <p className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.35)]">@{profile.username}</p>
 
             {!isCourt && profile.city_name && (
               <p className="flex items-center gap-1 text-[11px] text-[rgba(26,26,26,0.45)]">
