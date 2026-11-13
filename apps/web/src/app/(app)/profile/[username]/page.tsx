@@ -16,21 +16,13 @@ import { skillLabel } from '@/lib/skill'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
-import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
 import { CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
-import { hasSlots, normalizeAvailability } from '@/lib/availability'
+import { ProfileTraitChips } from '@/components/ui/ProfileTraitChips'
+import { normalizeAvailability } from '@/lib/availability'
 import { returnToFromSearch } from '@/lib/return-to'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const SURFACE_LABELS: Record<string, string> = {
-  hard: 'Hard',
-  clay: 'Clay',
-  grass: 'Grass',
-  carpet: 'Carpet',
-  synthetic: 'Synthetic',
-}
 
 interface PostRow {
   id: string
@@ -203,6 +195,7 @@ export default async function PlayerProfilePage({
     ? playedCountResult.data
     : schedule.playedCount
 
+  const formats: string[] = profile.preferred_formats ?? []
   const surfaces: string[] = profile.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile.availability)
 
@@ -326,20 +319,14 @@ export default async function PlayerProfilePage({
               </p>
             )}
 
-            {!isCourt && (skill || surfaces.length > 0 || hasSlots(availability)) && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                {skill && (
-                  <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
-                    {skill}
-                  </span>
-                )}
-                {surfaces.map((s) => (
-                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
-                    {SURFACE_LABELS[s] ?? s}
-                  </span>
-                ))}
-                <AvailabilityButton value={availability} />
-              </div>
+            {!isCourt && (
+              <ProfileTraitChips
+                skill={skill}
+                formats={formats}
+                surfaces={surfaces}
+                playStyle={profile.play_style}
+                availability={availability}
+              />
             )}
 
             {!isCourt && profile.bio && (

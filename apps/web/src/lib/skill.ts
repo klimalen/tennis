@@ -16,6 +16,14 @@ export function formatPlayFormat(format: string | null | undefined): string {
   return format ?? ''
 }
 
+/** Short chip label for profiles.play_style. */
+export function playStyleLabel(style: string | null | undefined): string | null {
+  if (style === 'recreational') return 'Recreational'
+  if (style === 'competitive') return 'Competitive'
+  if (style === 'both') return 'Both'
+  return null
+}
+
 /** Letter-avatar wash for game chats — keeps singles vs doubles visually distinct. */
 export function gameChatAvatarClass(format: string | null | undefined): string {
   if (format === 'singles') return 'bg-[#D7EBE6]'
