@@ -6,8 +6,7 @@ import { Send, RotateCcw, ChevronDown, Check, CheckCheck, Calendar, MapPin } fro
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { membershipNoticeText, readMembershipNotice } from '@/lib/membership-notice'
-import { withReturnTo } from '@/lib/return-to'
+import { readMembershipNotice } from '@/lib/membership-notice'
 
 interface Message {
   id: string
@@ -463,13 +462,19 @@ export function ChatView({
     | { type: 'date'; key: string; label: string }
     | { type: 'message'; key: string; msg: Message; isFirst: boolean; isLast: boolean }
 
+  // Membership join/leave system lines were confusing and the game link often
+  // failed to open — hide them (new ones are also no longer written).
+  const visibleMessages = messages.filter(
+    (msg) => !(msg.type === 'system' && readMembershipNotice(msg.body)),
+  )
+
   const items: DisplayItem[] = []
-  messages.forEach((msg, i) => {
-    const prev = messages[i - 1]
+  visibleMessages.forEach((msg, i) => {
+    const prev = visibleMessages[i - 1]
     if (!prev || !sameDay(prev.created_at, msg.created_at)) {
       items.push({ type: 'date', key: `date-${msg.id}`, label: formatDateSeparator(msg.created_at) })
     }
-    const next = messages[i + 1]
+    const next = visibleMessages[i + 1]
     const isFirst = !prev || prev.sender_id !== msg.sender_id || !sameDay(prev.created_at, msg.created_at)
     const isLast = !next || next.sender_id !== msg.sender_id || !sameDay(msg.created_at, next.created_at)
     items.push({ type: 'message', key: msg._tempId ?? msg.id, msg, isFirst, isLast })
@@ -517,32 +522,9 @@ export function ChatView({
 
               const { msg, isFirst, isLast } = item
               if (msg.type === 'system') {
-                const notice = readMembershipNotice(msg.body)
-                const when = notice?.scheduledAt ? new Date(notice.scheduledAt) : null
-                const whenLabel = when && !Number.isNaN(when.getTime())
-                  ? `${when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
-                  : null
-                const label = membershipNoticeText(msg.body) ?? msg.body
-                const gameHref = msg.game_id
-                  ? withReturnTo(`/game/${msg.game_id}`, `/chats/${conversationId}`)
-                  : null
-                const body = (
-                  <div className="text-center">
-                    <p className={`text-[12px] text-[rgba(26,26,26,0.55)] ${gameHref ? 'underline underline-offset-4 decoration-[rgba(26,26,26,0.25)] group-hover:text-brand-primary' : ''}`}>
-                      {label}
-                    </p>
-                    {whenLabel && (
-                      <p className="mt-0.5 text-[10px] tracking-[0.12em] uppercase text-[rgba(26,26,26,0.35)]">{whenLabel}</p>
-                    )}
-                  </div>
-                )
                 return (
                   <div key={item.key} className="flex justify-center px-8 py-2">
-                    {gameHref ? (
-                      <Link href={gameHref} className="group rounded-2xl px-3 py-1 hover:bg-white/70 transition-colors">
-                        {body}
-                      </Link>
-                    ) : body}
+                    <p className="text-center text-[12px] text-[rgba(26,26,26,0.55)]">{msg.body}</p>
                   </div>
                 )
               }
