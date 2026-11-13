@@ -214,7 +214,7 @@ export function CourtProfileDetails({
       )}
       {bio && (
         <div className="pt-1">
-          <ExpandableText text={bio} className="font-copy text-sm text-[#497250] leading-snug" />
+          <ExpandableText text={bio} lines={3} className="font-copy text-sm text-[#497250] leading-snug" />
         </div>
       )}
       {openingHours?.trim() && (

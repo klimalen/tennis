@@ -3,7 +3,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 
-export function ExpandableText({ text, className }: { text: string; className?: string }) {
+const CLAMP: Record<1 | 2 | 3, string> = {
+  1: 'line-clamp-1',
+  2: 'line-clamp-2',
+  3: 'line-clamp-3',
+}
+
+export function ExpandableText({
+  text,
+  className,
+  lines = 1,
+}: {
+  text: string
+  className?: string
+  /** Collapsed preview line count (default 1). */
+  lines?: 1 | 2 | 3
+}) {
   const ref = useRef<HTMLParagraphElement>(null)
   const [open, setOpen] = useState(false)
   const [overflows, setOverflows] = useState(false)
@@ -19,7 +34,7 @@ export function ExpandableText({ text, className }: { text: string; className?: 
     const observer = new ResizeObserver(check)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [text, open])
+  }, [text, open, lines])
 
   const canToggle = open || overflows
 
@@ -42,7 +57,7 @@ export function ExpandableText({ text, className }: { text: string; className?: 
       tabIndex={canToggle ? 0 : undefined}
       aria-expanded={canToggle ? open : undefined}
     >
-      <p ref={ref} className={`${className ?? ''} min-w-0 flex-1 ${open ? '' : 'line-clamp-1'}`}>
+      <p ref={ref} className={`${className ?? ''} min-w-0 flex-1 ${open ? '' : CLAMP[lines]}`}>
         {text}
       </p>
       {canToggle && (
