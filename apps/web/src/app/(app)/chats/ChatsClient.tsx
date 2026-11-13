@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ListSearch } from '@/components/ui/ListSearch'
+import { Search, X } from 'lucide-react'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
 import { membershipNoticeText } from '@/lib/membership-notice'
+import { ComposeButton } from './ComposeButton'
 
 export interface ChatItem {
   id: string
@@ -89,9 +90,18 @@ const SKILL_LABELS: Record<number, string> = {
   4: '4.0', 4.5: '4.5', 5: '5.0', 5.5: '5.5', 6: '6.0', 6.5: '6.5', 7: '7.0',
 }
 
+const controlBase = 'h-9 border transition-colors'
+const controlIdle = `${controlBase} border-[#1a1a1a]/15 bg-white text-[#1a1a1a] hover:bg-brand-field`
+const controlActive = `${controlBase} border-[#1a1a1a] bg-[#1a1a1a] text-[#FAF7F2]`
+const iconBtn = 'flex w-9 items-center justify-center rounded-[12px]'
+const panelClass = 'rounded-[20px] border border-[#1a1a1a]/10 bg-white p-3 space-y-2'
+const fieldClass =
+  'w-full rounded-lg border border-[#1a1a1a]/40 bg-brand-field py-2.5 pl-8 pr-8 text-sm text-[#1a1a1a] outline-none placeholder:text-[rgba(26,26,26,0.4)] focus:border-brand-primary'
+
 export function ChatsClient({ userId, initialChats }: Props) {
   const [chats, setChats] = useState<ChatItem[]>(initialChats)
   const [query, setQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
   const [showCompose, setShowCompose] = useState(false)
   const [connections, setConnections] = useState<MutualConnection[]>([])
   const [allChatsExist, setAllChatsExist] = useState(false)
@@ -99,6 +109,11 @@ export function ChatsClient({ userId, initialChats }: Props) {
   const [startingChat, setStartingChat] = useState<string | null>(null)
   const router = useRouter()
   const supabase = useRef(createClient()).current
+  const searchActive = Boolean(query.trim())
+
+  useEffect(() => {
+    if (searchActive) setSearchOpen(true)
+  }, [searchActive])
 
   useEffect(() => {
     // Subscribe to new messages across all conversations
@@ -163,24 +178,6 @@ export function ChatsClient({ userId, initialChats }: Props) {
     setStartingChat(null)
   }
 
-  if (chats.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-        <p className="font-display text-7xl text-brand-surface-lg leading-none mb-6">✦</p>
-        <p className="text-[10px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.35)] mb-2">No chats yet</p>
-        <p className="text-sm text-[rgba(26,26,26,0.4)] max-w-xs font-script italic">
-          When someone accepts your game request, a chat will open here
-        </p>
-        <Link
-          href="/search"
-          className="mt-6 px-6 py-2.5 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
-        >
-          Find players
-        </Link>
-      </div>
-    )
-  }
-
   const needle = query.trim().toLowerCase()
   const ordered = [...chats].sort(byLatestMessage)
   const visible = needle
@@ -190,11 +187,84 @@ export function ChatsClient({ userId, initialChats }: Props) {
       })
     : ordered
 
-  return (
-    <div>
-      <div className="px-4 pb-3">
-        <ListSearch value={query} onChange={setQuery} placeholder="Search chats" />
+  const header = (
+    <div className="page-header max-w-full !py-3">
+      <div className="mx-auto flex min-w-0 max-w-2xl flex-col gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="shrink-0 font-display text-2xl tracking-wide text-[#1a1a1a]">CHATS</span>
+          <div className="ml-auto flex min-w-0 items-center gap-1.5">
+            {chats.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSearchOpen((open) => !open)}
+                className={`${iconBtn} shrink-0 ${searchOpen || searchActive ? controlActive : controlIdle}`}
+                aria-expanded={searchOpen}
+                aria-label="Search"
+              >
+                <Search size={15} />
+              </button>
+            )}
+            <ComposeButton />
+          </div>
+        </div>
+
+        {searchOpen && chats.length > 0 && (
+          <div className={panelClass}>
+            <div className="relative">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.35)]"
+              />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search chats"
+                autoFocus
+                className={fieldClass}
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[rgba(26,26,26,0.45)] hover:bg-white"
+                  aria-label="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+    </div>
+  )
+
+  if (chats.length === 0) {
+    return (
+      <>
+        {header}
+        <div className="mx-auto flex max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
+          <p className="mb-6 font-display text-7xl leading-none text-brand-surface-lg">✦</p>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.25em] text-[rgba(26,26,26,0.35)]">No chats yet</p>
+          <p className="max-w-xs font-script text-sm italic text-[rgba(26,26,26,0.4)]">
+            When someone accepts your game request, a chat will open here
+          </p>
+          <Link
+            href="/search"
+            className="mt-6 rounded-full bg-[#E8748A] px-6 py-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A]"
+          >
+            Find players
+          </Link>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      {header}
+      <div className="mx-auto max-w-2xl">
       {visible.length === 0 ? (
         <p className="px-4 py-8 text-center text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No matches</p>
       ) : null}
@@ -283,6 +353,7 @@ export function ChatsClient({ userId, initialChats }: Props) {
           </Link>
         )
       })}
-    </div>
+      </div>
+    </>
   )
 }
