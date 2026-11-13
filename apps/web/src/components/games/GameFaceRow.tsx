@@ -63,12 +63,12 @@ export function GameFaceRow({
           </div>
         </div>
       )}
-      {spotsLeft > 0 && (
-        <div className="flex flex-col items-center w-14 flex-shrink-0">
+      {Array.from({ length: Math.max(0, spotsLeft) }, (_, index) => (
+        <div key={`open-${index}`} className="flex flex-col items-center w-14 flex-shrink-0">
           <div className={`w-12 h-12 rounded-full border border-dashed flex items-center justify-center text-lg ${emptyClass}`}>+</div>
           <span className={`mt-1 text-[10px] ${nameClass}`}>Open</span>
         </div>
-      )}
+      ))}
     </div>
   )
 }

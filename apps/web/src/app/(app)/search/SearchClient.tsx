@@ -757,12 +757,12 @@ function TicketFaces({ people, spotsLeft }: { people: { id: string; name: string
       {extra > 0 && (
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0EBE3]/15 text-[11px] text-[#F0EBE3] @[540px]:h-10 @[540px]:w-10">+{extra}</span>
       )}
-      {spotsLeft > 0 && (
-        <span className="flex w-8 flex-col items-center @[540px]:w-11">
+      {Array.from({ length: Math.max(0, spotsLeft) }, (_, index) => (
+        <span key={`open-${index}`} className="flex w-8 flex-col items-center @[540px]:w-11">
           <span className="flex h-8 w-8 items-center justify-center rounded-full border border-dashed border-[#F0EBE3]/70 text-base leading-none text-[#F0EBE3] @[540px]:h-10 @[540px]:w-10 @[540px]:text-lg">+</span>
           <span className="mt-1 text-[10px] text-[#F0EBE3]/80">Open</span>
         </span>
-      )}
+      ))}
     </span>
   )
 }
