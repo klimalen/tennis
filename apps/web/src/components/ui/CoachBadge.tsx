@@ -1,15 +1,15 @@
 /**
- * Large light watermark for profile header cards — flush to the bottom edge
- * (under stats, beside left-aligned meta). Pair with `overflow-hidden` on the card;
+ * Large light watermark for profile header cards — flush to the bottom edge.
+ * Experiment: short Cyrillic "СФ" mark instead of full COACH. Pair with overflow-hidden;
  * clipping into the bottom radius is intentional.
  */
 export function CoachWatermark({ className = '' }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute bottom-0 right-2 z-0 select-none font-display text-[52px] italic font-bold leading-none tracking-[-0.02em] text-[rgba(26,26,26,0.07)] sm:text-[58px] ${className}`}
+      className={`pointer-events-none absolute bottom-0 right-3 z-0 select-none font-display text-[72px] italic font-bold leading-none tracking-[-0.04em] text-[rgba(26,26,26,0.07)] sm:text-[80px] ${className}`}
     >
-      COACH
+      СФ
     </span>
   )
 }
