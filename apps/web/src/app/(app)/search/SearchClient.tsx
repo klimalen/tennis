@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, Globe, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
 import { CourtListingDetails } from '@/components/court/CourtListingDetails'
 import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
@@ -593,11 +593,6 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {showDistance && <span className={`text-[11px] flex items-center gap-0.5 ${vivid ? 'text-[#D4A017]' : 'text-[rgba(26,26,26,0.4)]'}`}><MapPin size={10} />{formatDistance(distanceM)}</span>}
             <CourtFactChips chips={venueFactChips(venue)} className="flex flex-wrap items-center gap-1.5" />
-            {venue.website && (
-              <span className="inline-flex items-center text-[rgba(26,26,26,0.35)]">
-                <Globe size={9} />
-              </span>
-            )}
           </div>
         </div>
         <div className="relative w-9 flex-shrink-0 self-stretch">
@@ -939,7 +934,6 @@ export function SearchClient({
   const [joinedGameIds, setJoinedGameIds] = useState<Set<string>>(new Set())
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameDetail | null>(null)
-  const [courtInfoOpen, setCourtInfoOpen] = useState(false)
   const [viewedVenues, setViewedVenues] = useState<Set<string>>(new Set())
 
   // ── Discovery previews ──────────────────────────────────────────────────────
@@ -1536,10 +1530,9 @@ export function SearchClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, geocodeDone, userGeoCoords, userCityName, searchEpoch])
 
-  async function openGameDetail(gameId: string, options?: { court?: boolean }) {
+  async function openGameDetail(gameId: string) {
     const detail = await loadGameDetail(gameId)
     if (!detail || !viewerCanOpenGame(detail, user?.id ?? null)) return
-    setCourtInfoOpen(Boolean(options?.court && detail.court))
     setSelectedGame(detail)
   }
 
@@ -1622,7 +1615,6 @@ export function SearchClient({
           game={selectedGame}
           currentUserId={user?.id ?? null}
           viewerIsCourt={viewerIsCourt}
-          courtInfoOpen={courtInfoOpen}
           onJoined={() => {
             const id = selectedGame.id
             setJoinedGameIds((prev) => new Set(prev).add(id))
@@ -1758,7 +1750,7 @@ export function SearchClient({
                     onJoin={handleJoin}
                     canJoin={!viewerIsCourt}
                     onClick={() => { void openGameDetail(previewGame.id) }}
-                    onCourt={() => { void openGameDetail(previewGame.id, { court: true }) }}
+                    onCourt={() => { void openGameDetail(previewGame.id) }}
                   />
                 ) : (
                   <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
@@ -1950,7 +1942,7 @@ export function SearchClient({
                       onJoin={handleJoin}
                       canJoin={!viewerIsCourt}
                       onClick={() => { void openGameDetail(game.id) }}
-                      onCourt={() => { void openGameDetail(game.id, { court: true }) }}
+                      onCourt={() => { void openGameDetail(game.id) }}
                     />
                   ))}
                 </>

@@ -17,13 +17,15 @@ export function viewerPlaysInGame(
   return game.participants.some((participant) => participant.player_id === viewerId && holdsGameSeat(participant.status))
 }
 
-const COURT_LINKED_PROFILE_SELECT = 'username, full_name, phone, website, address, account_kind'
+const COURT_LINKED_PROFILE_SELECT =
+  'username, full_name, phone, website, address, opening_hours, account_kind, city_name, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max'
 
 export const GAME_DETAIL_SELECT = `
   id, format, scheduled_at, duration_minutes, skill_level_min, skill_level_max,
   neighborhood, notes, court_cost_cents, payment, status, max_players, is_open, creator_id,
   court:venue_groups!games_venue_group_id_fkey (
     id, name, address, lit, fee, access, phone, website, google_maps_uri, lat, lng,
+    surface, court_count, has_indoor, has_outdoor, fee_hour_min, fee_hour_max, opening_hours,
     linked_profile:profiles!profile_id ( ${COURT_LINKED_PROFILE_SELECT} )
   ),
   creator:profiles!creator_id (id, full_name, username, avatar_url, skill_level_self, skill_level_computed, account_kind),
@@ -46,12 +48,22 @@ type LinkedCourtProfile = {
   phone: string | null
   website: string | null
   address: string | null
+  opening_hours: string | null
   account_kind: string
+  city_name: string | null
+  court_count: number | null
+  preferred_surfaces: string[] | null
+  has_indoor: boolean | null
+  has_outdoor: boolean | null
+  lit: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
 }
 
-type CourtRow = Omit<GameCourt, 'profile_username'> & {
+type CourtRow = Omit<GameCourt, 'profile_username' | 'surfaces'> & {
   linked_profile?: LinkedCourtProfile | LinkedCourtProfile[] | null
   profile_username?: string | null
+  surfaces?: string[] | null
 }
 
 function pickText(profile: string | null | undefined, catalog: string | null | undefined): string | null {
@@ -61,23 +73,52 @@ function pickText(profile: string | null | undefined, catalog: string | null | u
   return prev || null
 }
 
+function pickNumber(profile: number | null | undefined, catalog: number | null | undefined): number | null {
+  if (profile != null && Number.isFinite(Number(profile))) return Number(profile)
+  if (catalog != null && Number.isFinite(Number(catalog))) return Number(catalog)
+  return null
+}
+
+function pickBool(profile: boolean | null | undefined, catalog: boolean | null | undefined): boolean | null {
+  if (profile !== null && profile !== undefined) return profile
+  if (catalog !== null && catalog !== undefined) return catalog
+  return null
+}
+
 function normalizeGameCourt(raw: CourtRow | null | undefined): GameCourt | null {
   if (!raw?.id) return null
   const linkedRaw = raw.linked_profile
   const linkedRow = Array.isArray(linkedRaw) ? linkedRaw[0] ?? null : linkedRaw ?? null
   const linked = linkedRow?.account_kind === 'court' ? linkedRow : null
+  const profileSurfaces = (linked?.preferred_surfaces ?? []).filter(Boolean)
+  const surfaces = profileSurfaces.length > 0
+    ? profileSurfaces
+    : raw.surface
+      ? [raw.surface]
+      : []
+  const feeHourMin = pickNumber(linked?.fee_hour_min, raw.fee_hour_min ?? null)
+  const feeHourMax = pickNumber(linked?.fee_hour_max, raw.fee_hour_max ?? null)
   return {
     id: raw.id,
     name: pickText(linked?.full_name, raw.name) ?? raw.name,
     address: pickText(linked?.address, raw.address),
-    lit: raw.lit,
-    fee: raw.fee,
+    lit: pickBool(linked?.lit, raw.lit),
+    fee: feeHourMin != null || feeHourMax != null ? true : raw.fee,
     access: raw.access,
     phone: pickText(linked?.phone, raw.phone),
     website: pickText(linked?.website, raw.website),
     google_maps_uri: raw.google_maps_uri,
     lat: raw.lat,
     lng: raw.lng,
+    surface: surfaces[0] ?? raw.surface ?? null,
+    surfaces,
+    court_count: pickNumber(linked?.court_count, raw.court_count ?? null),
+    has_indoor: pickBool(linked?.has_indoor, raw.has_indoor ?? null),
+    has_outdoor: pickBool(linked?.has_outdoor, raw.has_outdoor ?? null),
+    fee_hour_min: feeHourMin,
+    fee_hour_max: feeHourMax,
+    city_name: pickText(linked?.city_name, raw.city_name ?? null),
+    opening_hours: pickText(linked?.opening_hours, raw.opening_hours ?? null),
     profile_username: linked?.username ?? raw.profile_username ?? null,
   }
 }

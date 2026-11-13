@@ -12,6 +12,15 @@ export interface GameCourt {
   google_maps_uri: string | null
   lat: number | null
   lng: number | null
+  surface?: string | null
+  surfaces?: string[] | null
+  court_count?: number | null
+  has_indoor?: boolean | null
+  has_outdoor?: boolean | null
+  fee_hour_min?: number | null
+  fee_hour_max?: number | null
+  city_name?: string | null
+  opening_hours?: string | null
   /** Present when this catalog court is linked to a court account profile. */
   profile_username?: string | null
 }
