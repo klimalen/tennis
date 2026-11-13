@@ -104,7 +104,8 @@ html.game-native body {
 .page-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  /* Above in-page badges (coach chip on avatar, etc.) so they scroll under the bar. */
+  z-index: 20;
   /* Slightly lighter than brand-bg cream so sticky headers lift off the page. */
   background-color: rgb(255 253 250 / 0.96);
   padding-bottom: 0.75rem;

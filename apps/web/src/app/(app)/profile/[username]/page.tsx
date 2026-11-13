@@ -270,7 +270,7 @@ export default async function PlayerProfilePage({
             {/* Avatar — coach badge sits centered on the top edge */}
             <div className="relative flex-shrink-0">
               {!isCourt && profile.is_coach && (
-                <CoachBadge className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 shadow-sm" />
+                <CoachBadge className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 shadow-sm" />
               )}
               <div className="w-20 h-20 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
                 {profile.avatar_url ? (
