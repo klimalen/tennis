@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
+import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
 import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
 
@@ -91,6 +92,34 @@ export function EditGameForm({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [connections, setConnections] = useState<InviteConnection[]>([])
+  const [inviteIds, setInviteIds] = useState<Set<string>>(new Set())
+
+  const participantIds = useMemo(
+    () => new Set(participants.map((person) => person.player_id)),
+    [participants],
+  )
+  const inviteable = useMemo(
+    () => connections.filter((person) => !participantIds.has(person.id)),
+    [connections, participantIds],
+  )
+
+  useEffect(() => {
+    if (!isCreator) return
+    fetch('/api/connections')
+      .then((response) => response.json() as Promise<{ connections: InviteConnection[] }>)
+      .then((data) => setConnections(data.connections ?? []))
+      .catch(() => setConnections([]))
+  }, [isCreator])
+
+  function toggleInvite(id: string) {
+    setInviteIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -122,6 +151,14 @@ export function EditGameForm({
       setError(data.error ?? 'Something went wrong')
       setSubmitting(false)
       return
+    }
+
+    if (isCreator && inviteIds.size > 0) {
+      await fetch(`/api/games/${game.id}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_ids: [...inviteIds] }),
+      })
     }
 
     router.push('/me')
@@ -241,37 +278,49 @@ export function EditGameForm({
             </div>
           )}
 
-          {/* Participants */}
-          {participants.length > 0 && (
-            <div>
-              <FormSectionLabel>Players</FormSectionLabel>
-              <div className="space-y-2">
-                {participants.map((p) => {
-                  const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-                  const statusLabel = STATUS_LABELS[p.status] ?? p.status
-                  const isGoing = p.status === 'accepted'
-                  return (
-                    <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
-                      <Link href={`/profile/${p.profiles.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                        <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
-                          {p.profiles.avatar_url ? (
-                            <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
-                          )}
+          {(participants.length > 0 || (isCreator && inviteable.length > 0)) && (
+            <div className="space-y-4">
+              {participants.length > 0 && (
+                <div>
+                  <FormSectionLabel>Players</FormSectionLabel>
+                  <div className={`space-y-2 ${participants.length > 8 ? 'max-h-64 overflow-y-auto pr-0.5' : ''}`}>
+                    {participants.map((p) => {
+                      const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+                      const statusLabel = STATUS_LABELS[p.status] ?? p.status
+                      const isGoing = p.status === 'accepted'
+                      return (
+                        <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
+                          <Link href={`/profile/${p.profiles.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                            <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
+                              {p.profiles.avatar_url ? (
+                                <Image src={p.profiles.avatar_url} alt={p.profiles.full_name} width={36} height={36} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="font-display text-sm text-[#1a1a1a]">{initials}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profiles.full_name}</p>
+                              <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
+                            </div>
+                          </Link>
+                          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${isGoing ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.35)]'}`}>
+                            {statusLabel}
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#1a1a1a] truncate">{p.profiles.full_name}</p>
-                          <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
-                        </div>
-                      </Link>
-                      <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${isGoing ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.35)]'}`}>
-                        {statusLabel}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {isCreator && inviteable.length > 0 && (
+                <InviteConnectionsList
+                  connections={inviteable}
+                  selectedIds={inviteIds}
+                  onToggle={toggleInvite}
+                  title="Invite more"
+                />
+              )}
             </div>
           )}
 
