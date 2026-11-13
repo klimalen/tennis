@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { mergeVenueDisplay, type LinkedCourtProfile } from '@/lib/court/merge-venue-display'
 import { TRAVEL_RADIUS_KM, boundingBox, haversineKm } from '@/lib/travel'
 
 // Max venues to return to the client
@@ -36,10 +37,13 @@ export interface VenueCard {
   lng: number
   address: string | null
   surface: string | null
+  surfaces: string[]
   court_count: number | null
   lit: boolean | null
   access: string | null
   fee: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
   website: string | null
   phone: string | null
   operator: string | null
@@ -51,6 +55,8 @@ export interface VenueCard {
   member_count: number
   confidence: 'low' | 'medium' | 'high'
   profile_username: string | null
+  city_name: string | null
+  court_verified: boolean
 }
 
 interface GroupRow {
@@ -73,17 +79,11 @@ interface GroupRow {
   has_outdoor: boolean | null
   access: string | null
   fee: boolean | null
+  fee_hour_min: number | null
+  fee_hour_max: number | null
   google_maps_uri: string | null
   confidence: 'low' | 'medium' | 'high'
-  linked_profile: {
-    username: string
-    phone: string | null
-    website: string | null
-    bio: string | null
-    address: string | null
-    opening_hours: string | null
-    account_kind: string
-  } | null
+  linked_profile: LinkedCourtProfile | null
 }
 
 const GENERIC_SINGLE_NAME = /^(tennis courts?|teniski teren(i)?|teren|sports field)$/iu
@@ -100,40 +100,48 @@ function isUnlistedSingle(card: VenueCard): boolean {
   return true
 }
 
+const LINKED_PROFILE_SELECT =
+  'username, full_name, phone, website, bio, address, opening_hours, account_kind, city_name, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max'
+
 function groupToCard(g: GroupRow): VenueCard {
   const rawLinked = g.linked_profile as GroupRow['linked_profile'] | GroupRow['linked_profile'][] | null
   const linkedRow = Array.isArray(rawLinked) ? rawLinked[0] ?? null : rawLinked
-  const linked = linkedRow?.account_kind === 'court' ? linkedRow : null
-  const profileBio = linked?.bio?.trim() ? linked.bio.trim() : null
-  return {
+  const catalog = {
     id: g.id,
-    osm_id: null,
+    osm_id: null as string | null,
     name: g.name ?? 'Tennis Courts',
     kind: g.kind,
     lat: g.lat,
     lng: g.lng,
-    address: g.address || linked?.address || null,
+    address: g.address,
     surface: g.surface,
+    surfaces: g.surface ? [g.surface] : [] as string[],
     court_count: g.court_count ?? (g.court_count_osm > 0 ? g.court_count_osm : null),
     lit: g.lit,
     access: g.access,
     fee: g.fee,
-    website: g.website || linked?.website || null,
-    phone: g.phone || linked?.phone || null,
-    operator: null,
-    opening_hours: g.opening_hours || linked?.opening_hours || null,
-    description: profileBio ?? g.description,
+    fee_hour_min: g.fee_hour_min,
+    fee_hour_max: g.fee_hour_max,
+    website: g.website,
+    phone: g.phone,
+    operator: null as string | null,
+    opening_hours: g.opening_hours,
+    description: g.description,
     has_indoor: g.has_indoor,
     has_outdoor: g.has_outdoor,
     google_maps_uri: g.google_maps_uri,
     member_count: g.member_count,
     confidence: g.confidence,
-    profile_username: linked?.username ?? null,
+    profile_username: null as string | null,
+    city_name: null as string | null,
+    court_verified: false,
   }
+  return mergeVenueDisplay(catalog, linkedRow)
 }
 
 function rawToCard(v: Record<string, unknown>): VenueCard {
   const name = typeof v['name'] === 'string' && v['name'] ? v['name'] : 'Tennis Court'
+  const surface = (v['surface'] as string | null) ?? null
   return {
     id: v['id'] as string,
     osm_id: (v['osm_id'] as string | null) ?? null,
@@ -142,11 +150,14 @@ function rawToCard(v: Record<string, unknown>): VenueCard {
     lat: v['lat'] as number,
     lng: v['lng'] as number,
     address: (v['address'] as string | null) ?? null,
-    surface: (v['surface'] as string | null) ?? null,
+    surface,
+    surfaces: surface ? [surface] : [],
     court_count: typeof v['court_count'] === 'number' ? v['court_count'] : 1,
     lit: (v['lit'] as boolean | null) ?? null,
     access: (v['access'] as string | null) ?? null,
     fee: (v['fee'] as boolean | null) ?? null,
+    fee_hour_min: null,
+    fee_hour_max: null,
     website: (v['website'] as string | null) ?? null,
     phone: (v['phone'] as string | null) ?? null,
     operator: (v['operator'] as string | null) ?? null,
@@ -158,6 +169,8 @@ function rawToCard(v: Record<string, unknown>): VenueCard {
     member_count: 1,
     confidence: 'low',
     profile_username: null,
+    city_name: null,
+    court_verified: false,
   }
 }
 
@@ -257,7 +270,7 @@ export async function GET(request: NextRequest) {
   const [groupsResult, ungroupedResult] = await Promise.all([
     scanRange((from, to) => supabase
       .from('venue_groups')
-      .select('id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, google_maps_uri, confidence, linked_profile:profiles!profile_id(username, phone, website, bio, address, opening_hours, account_kind)')
+      .select(`id, name, kind, lat, lng, address, phone, website, opening_hours, description, court_count, court_count_osm, member_count, surface, lit, has_indoor, has_outdoor, access, fee, fee_hour_min, fee_hour_max, google_maps_uri, confidence, linked_profile:profiles!profile_id(${LINKED_PROFILE_SELECT})`)
       .gte('lat', south)
       .lte('lat', north)
       .gte('lng', west)
@@ -308,7 +321,11 @@ export async function GET(request: NextRequest) {
     .filter(({ card, distance }) => {
       if (isUnlistedSingle(card)) return false
       if (!includePrivate && card.kind === 'residential') return false
-      if (surfaces.size > 0 && !surfaces.has((card.surface ?? '').toLowerCase())) return false
+      if (surfaces.size > 0) {
+        const cardSurfaces = (card.surfaces?.length ? card.surfaces : card.surface ? [card.surface] : [])
+          .map((value) => value.toLowerCase())
+        if (!cardSurfaces.some((value) => surfaces.has(value))) return false
+      }
       if (Number.isFinite(minKm) && minKm > 0 && distance < minKm) return false
       if (!query) return true
       const kindLabel = KIND_SEARCH_LABELS[card.kind] ?? card.kind.replace(/_/g, ' ')

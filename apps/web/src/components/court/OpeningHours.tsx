@@ -42,10 +42,10 @@ export function OpeningHours({ hours }: { hours: string }) {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 text-left hover:text-[#1a1a1a] transition-colors"
+        className="inline-flex max-w-full items-center gap-1.5 text-left hover:text-[#1a1a1a] transition-colors"
       >
         <Clock size={13} className="flex-shrink-0 text-[rgba(26,26,26,0.35)]" />
-        <span className="flex-1 min-w-0 font-medium tracking-[0.02em]">Hours by day</span>
+        <span className="min-w-0 font-medium tracking-[0.02em]">Hours by day</span>
         <ChevronDown
           size={14}
           className={`flex-shrink-0 text-[rgba(26,26,26,0.4)] transition-transform ${open ? 'rotate-180' : ''}`}

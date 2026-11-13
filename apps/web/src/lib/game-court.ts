@@ -12,6 +12,8 @@ export interface GameCourt {
   google_maps_uri: string | null
   lat: number | null
   lng: number | null
+  /** Present when this catalog court is linked to a court account profile. */
+  profile_username?: string | null
 }
 
 export const PAYMENT_OPTIONS: { value: CourtPayment; label: string; hint: string }[] = [

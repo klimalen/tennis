@@ -1,14 +1,7 @@
 import { ArrowUpRight, Globe, MapPin, Phone } from 'lucide-react'
 import { OpeningHours } from '@/components/court/OpeningHours'
+import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
 import { ExpandableText } from '@/components/ui/ExpandableText'
-
-const SURFACE_LABELS: Record<string, string> = {
-  hard: 'Hard',
-  clay: 'Clay',
-  grass: 'Grass',
-  carpet: 'Carpet',
-  synthetic: 'Synthetic',
-}
 
 export function courtMapsHref(address: string, city?: string | null): string {
   const query = [address.trim(), city?.trim()].filter(Boolean).join(', ')
@@ -85,22 +78,6 @@ function FacebookGlyph() {
   )
 }
 
-type FactChip = {
-  key: string
-  label: string
-  tone: 'count' | 'fee' | 'feature'
-}
-
-/** Same pill chrome for every fact; only the fill/text tint changes. */
-const CHIP_BASE =
-  'inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em]'
-
-const CHIP_TONE: Record<FactChip['tone'], string> = {
-  count: 'bg-[#D7EBE6] text-[#1F5C50]',
-  fee: 'bg-[#F6D9DF] text-[#7A2F3F]',
-  feature: 'bg-brand-field text-[#1a1a1a]',
-}
-
 export function CourtProfileDetails({
   cityName,
   address,
@@ -145,40 +122,15 @@ export function CourtProfileDetails({
     : null
   const mapsHref = address?.trim() ? courtMapsHref(address, cityName) : null
   const placeLine = [address?.trim(), cityName?.trim()].filter(Boolean).join(', ')
-  const surfaceLabels = (surfaces ?? [])
-    .map((s) => SURFACE_LABELS[s])
-    .filter(Boolean) as string[]
-  const settingLabels = [
-    hasIndoor ? 'Indoor' : null,
-    hasOutdoor ? 'Outdoor' : null,
-  ].filter(Boolean) as string[]
-  const feeLine = (() => {
-    if (feeHourMin == null && feeHourMax == null) return null
-    if (feeHourMin != null && feeHourMax != null) {
-      if (feeHourMin === feeHourMax) return `${feeHourMin}/hr`
-      return `${feeHourMin}–${feeHourMax}/hr`
-    }
-    if (feeHourMin != null) return `from ${feeHourMin}/hr`
-    return `up to ${feeHourMax}/hr`
-  })()
-
-  const chips: FactChip[] = []
-  if (courtCount != null) {
-    chips.push({
-      key: 'count',
-      label: `${courtCount} court${courtCount === 1 ? '' : 's'}`,
-      tone: 'count',
-    })
-  }
-  if (surfaceLabels.length) {
-    chips.push({ key: 'surfaces', label: surfaceLabels.join(' · '), tone: 'feature' })
-  }
-  if (settingLabels.length) {
-    chips.push({ key: 'setting', label: settingLabels.join(' · '), tone: 'feature' })
-  }
-  if (lit === true) chips.push({ key: 'lit', label: 'Lit', tone: 'feature' })
-  if (lit === false) chips.push({ key: 'unlit', label: 'Unlit', tone: 'feature' })
-  if (feeLine) chips.push({ key: 'fee', label: feeLine, tone: 'fee' })
+  const chips = buildCourtFactChips({
+    courtCount,
+    surfaces,
+    hasIndoor,
+    hasOutdoor,
+    lit,
+    feeHourMin,
+    feeHourMax,
+  })
 
   const hasSocials = Boolean(websiteHref || whatsapp || instagram || telegram || facebook)
 
@@ -204,12 +156,8 @@ export function CourtProfileDetails({
         )
       )}
       {chips.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {chips.map((chip) => (
-            <span key={chip.key} className={`${CHIP_BASE} ${CHIP_TONE[chip.tone]}`}>
-              {chip.label}
-            </span>
-          ))}
+        <div className="pt-1">
+          <CourtFactChips chips={chips} />
         </div>
       )}
       {bio && (
