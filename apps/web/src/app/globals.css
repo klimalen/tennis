@@ -105,7 +105,8 @@ html.game-native body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: rgb(250 247 242 / 0.95);
+  /* Slightly lighter than brand-bg cream so sticky headers lift off the page. */
+  background-color: rgb(255 253 250 / 0.96);
   padding-bottom: 0.75rem;
   padding-top: calc(1.5rem + var(--app-safe-top));
   -webkit-backdrop-filter: blur(4px);
