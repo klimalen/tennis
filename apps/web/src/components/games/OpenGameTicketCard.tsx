@@ -162,12 +162,12 @@ export function OpenGameTicketCard({
         </button>
       )}
       {effectiveBeard === 'in' && (
-        <div className="flex w-full items-center justify-center py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#F0EBE3]">
+        <div className="flex w-full items-center justify-center py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-white">
           You&apos;re in
         </div>
       )}
       {effectiveBeard === 'full' && (
-        <div className="flex w-full items-center justify-center py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#F0EBE3]/75">
+        <div className="flex w-full items-center justify-center py-3 text-[11px] font-medium uppercase tracking-[0.16em] text-white/75">
           Full
         </div>
       )}
