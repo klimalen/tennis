@@ -1,7 +1,7 @@
 import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
-import { Settings, CalendarDays } from 'lucide-react'
+import { ArrowUpRight, Settings, CalendarDays } from 'lucide-react'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -24,7 +24,8 @@ const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
   clay: 'Clay',
   grass: 'Grass',
-  indoor: 'Indoor',
+  carpet: 'Carpet',
+  synthetic: 'Synthetic',
 }
 
 async function ProfileContent() {
@@ -32,10 +33,10 @@ async function ProfileContent() {
   const user = await getCurrentUser()
   if (!user) return null
 
-  const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult] = await Promise.all([
+  const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult, venueResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_surfaces, availability, is_coach, court_count, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_surfaces, availability, is_coach, court_count, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
       .eq('id', user.id)
       .single(),
     supabase
@@ -69,6 +70,12 @@ async function ProfileContent() {
     .limit(30),
     supabase.rpc('played_games_count', { p_player_id: user.id }),
     supabase.from('post_likes').select('post_id').eq('user_id', user.id),
+    supabase
+      .from('venue_groups')
+      .select('id')
+      .eq('profile_id', user.id)
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const profile = profileResult.data
@@ -126,6 +133,9 @@ async function ProfileContent() {
 
   const fullName = profile?.full_name || (isCourt ? 'Court' : 'Tennis Player')
   const username = profile?.username || ''
+  const courtHref = isCourt
+    ? (venueResult.data?.id ? `/court/${venueResult.data.id}` : (username ? `/profile/${username}` : null))
+    : null
   const avatarUrl = profile?.avatar_url || null
   const rating = profile?.is_coach ? null : (profile?.skill_level_computed ?? profile?.skill_level_self ?? null)
   const surfaces: string[] = profile?.preferred_surfaces ?? []
@@ -191,9 +201,19 @@ async function ProfileContent() {
 
           {/* Name + meta */}
           <div className="mt-4">
-            <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+            {courtHref ? (
+              <Link
+                href={courtHref}
+                className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
+              >
+                <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+                <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
+              </Link>
+            ) : (
+              <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+            )}
             {username && (
-              <p className="font-fraunces italic text-sm text-[rgba(26,26,26,0.55)] mt-1">@{username}</p>
+              <p className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.35)] mt-1">@{username}</p>
             )}
             {!isCourt && profile?.city_name && (
               <p className="text-[11px] text-[rgba(26,26,26,0.4)] mt-0.5 flex items-center gap-1">
@@ -233,6 +253,8 @@ async function ProfileContent() {
                   bio={profile?.bio}
                   courtCount={profile?.court_count}
                   surfaces={profile?.preferred_surfaces}
+                  hasIndoor={profile?.has_indoor}
+                  hasOutdoor={profile?.has_outdoor}
                   lit={profile?.lit}
                   feeHourMin={profile?.fee_hour_min}
                   feeHourMax={profile?.fee_hour_max}

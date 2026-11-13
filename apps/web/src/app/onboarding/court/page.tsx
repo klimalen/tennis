@@ -21,8 +21,11 @@ const SURFACE_OPTIONS = [
   { value: 'hard', label: 'Hard' },
   { value: 'clay', label: 'Clay' },
   { value: 'grass', label: 'Grass' },
-  { value: 'indoor', label: 'Indoor' },
+  { value: 'carpet', label: 'Carpet' },
+  { value: 'synthetic', label: 'Synthetic' },
 ]
+
+const VALID_SURFACES = new Set(SURFACE_OPTIONS.map((o) => o.value))
 
 function StepHeading({ title, sub }: { title: string; sub: string }) {
   return (
@@ -95,7 +98,7 @@ export default function CourtOnboardingPage() {
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+        .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
         .eq('id', session.user.id)
         .single()
       if (cancelled) return
@@ -118,7 +121,9 @@ export default function CourtOnboardingPage() {
         description: profile.bio || '',
         avatarUrl: profile.avatar_url,
         courtCount: profile.court_count != null ? String(profile.court_count) : '',
-        surfaces: profile.preferred_surfaces ?? [],
+        surfaces: (profile.preferred_surfaces ?? []).filter((s: string) => VALID_SURFACES.has(s)),
+        hasIndoor: profile.has_indoor ?? null,
+        hasOutdoor: profile.has_outdoor ?? null,
         lit: profile.lit ?? null,
         feeHourMin: profile.fee_hour_min != null ? String(profile.fee_hour_min) : '',
         feeHourMax: profile.fee_hour_max != null ? String(profile.fee_hour_max) : '',
@@ -369,9 +374,11 @@ export default function CourtOnboardingPage() {
                   className={inputClass}
                 />
               </div>
-              <p className="font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.55)]">
-                You can edit every detail later.
-              </p>
+              <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-3">
+                <p className="font-copy text-[13px] leading-snug text-[#1a1a1a]">
+                  You can edit every detail later in Settings → Edit profile.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -401,7 +408,7 @@ export default function CourtOnboardingPage() {
 
         {step === 3 && (
           <div>
-            <StepHeading title="EXTRA DETAILS" sub="All optional — you can edit everything later" />
+            <StepHeading title="EXTRA DETAILS" sub="All optional" />
             <div className="space-y-5">
               <div>
                 <FieldLabel optional>Number of courts</FieldLabel>
@@ -426,11 +433,29 @@ export default function CourtOnboardingPage() {
                 </div>
               </div>
               <div>
-                <FieldLabel optional>Lighting</FieldLabel>
+                <FieldLabel optional>Indoor / outdoor</FieldLabel>
+                <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Select both if you have both.</p>
                 <div className="flex flex-wrap gap-2.5">
-                  <Pill active={data.lit === true} onClick={() => update({ lit: true })}>Lit</Pill>
-                  <Pill active={data.lit === false} onClick={() => update({ lit: false })}>Unlit</Pill>
-                  <Pill active={data.lit === null} onClick={() => update({ lit: null })}>Skip</Pill>
+                  <Pill
+                    active={data.hasIndoor === true}
+                    onClick={() => update({ hasIndoor: data.hasIndoor === true ? null : true })}
+                  >
+                    Indoor
+                  </Pill>
+                  <Pill
+                    active={data.hasOutdoor === true}
+                    onClick={() => update({ hasOutdoor: data.hasOutdoor === true ? null : true })}
+                  >
+                    Outdoor
+                  </Pill>
+                </div>
+              </div>
+              <div>
+                <FieldLabel optional>Evening lights</FieldLabel>
+                <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Do the courts have lighting for night play?</p>
+                <div className="flex flex-wrap gap-2.5">
+                  <Pill active={data.lit === true} onClick={() => update({ lit: data.lit === true ? null : true })}>Yes</Pill>
+                  <Pill active={data.lit === false} onClick={() => update({ lit: data.lit === false ? null : false })}>No</Pill>
                 </div>
               </div>
               <div>
@@ -442,15 +467,35 @@ export default function CourtOnboardingPage() {
               </div>
               <div>
                 <FieldLabel optional>WhatsApp</FieldLabel>
-                <input type="text" value={data.whatsapp} onChange={(e) => update({ whatsapp: e.target.value })} placeholder="+1…" maxLength={40} className={inputClass} />
+                <input type="text" value={data.whatsapp} onChange={(e) => update({ whatsapp: e.target.value })} placeholder="+1 512 000 0000" maxLength={40} className={inputClass} />
               </div>
               <div>
                 <FieldLabel optional>Instagram</FieldLabel>
-                <input type="text" value={data.instagram} onChange={(e) => update({ instagram: e.target.value })} placeholder="handle" maxLength={60} className={inputClass} />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
+                  <input
+                    type="text"
+                    value={data.instagram}
+                    onChange={(e) => update({ instagram: e.target.value.replace(/^@+/, '') })}
+                    placeholder="yourcourt"
+                    maxLength={60}
+                    className={`${inputClass} pl-8`}
+                  />
+                </div>
               </div>
               <div>
                 <FieldLabel optional>Telegram</FieldLabel>
-                <input type="text" value={data.telegram} onChange={(e) => update({ telegram: e.target.value })} placeholder="handle" maxLength={60} className={inputClass} />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
+                  <input
+                    type="text"
+                    value={data.telegram}
+                    onChange={(e) => update({ telegram: e.target.value.replace(/^@+/, '') })}
+                    placeholder="yourcourt"
+                    maxLength={60}
+                    className={`${inputClass} pl-8`}
+                  />
+                </div>
               </div>
               <div>
                 <FieldLabel optional>Facebook</FieldLabel>
@@ -467,9 +512,6 @@ export default function CourtOnboardingPage() {
                   className={`${inputClass} resize-none`}
                 />
               </div>
-              <p className="font-copy text-[12px] text-[rgba(26,26,26,0.5)] leading-snug">
-                You can change every field later from Settings → Edit profile.
-              </p>
             </div>
           </div>
         )}
