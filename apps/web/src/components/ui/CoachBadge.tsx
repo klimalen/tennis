@@ -1,13 +1,19 @@
 /** Ticket-stub Coach chip — cream fill, teal stroke/type, side notches. */
 export function CoachBadge({ className = '' }: { className?: string }) {
+  // Don't force `relative` when the caller already positions with absolute/fixed —
+  // otherwise Tailwind's conflicting utilities can leave the chip in flow and shove the avatar.
+  const positioned = /\b(absolute|fixed|sticky)\b/.test(className)
+
   return (
     <span
-      className={`relative inline-flex h-[22px] w-[78px] shrink-0 items-center justify-center drop-shadow-[0_1px_2px_rgba(26,26,26,0.18)] ${className}`}
+      className={`inline-flex h-[22px] w-[78px] shrink-0 items-center justify-center drop-shadow-[0_1px_2px_rgba(26,26,26,0.18)] ${
+        positioned ? '' : 'relative'
+      } ${className}`}
       aria-label="Coach"
     >
       <svg
         viewBox="0 0 78 26"
-        className="absolute inset-0 h-full w-full"
+        className="pointer-events-none absolute inset-0 h-full w-full"
         aria-hidden
       >
         <path
