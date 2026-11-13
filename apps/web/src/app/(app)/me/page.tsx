@@ -209,11 +209,11 @@ async function ProfileContent() {
                   href={courtHref}
                   className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
                 >
-                  <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+                  <p className="font-display text-xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
                   <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
                 </Link>
               ) : (
-                <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+                <p className="font-display text-xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
               )}
               {username && (
                 <span className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.28)]">@{username}</span>
