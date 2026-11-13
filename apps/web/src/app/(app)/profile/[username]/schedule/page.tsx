@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { ActivityHeatmap } from '@/components/schedule/ActivityHeatmap'
+import { ScheduleHeader } from '@/components/schedule/ScheduleHeader'
 import { ScheduleSections } from '@/components/schedule/ScheduleBlocks'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
@@ -33,14 +32,7 @@ export default async function ProfileSchedulePage({
 
   return (
     <div className="min-h-screen">
-      <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href={`/profile/${profile.username}`} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
-            <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
-          </Link>
-          <span className="font-display text-3xl tracking-wide">SCHEDULE</span>
-        </div>
-      </div>
+      <ScheduleHeader backHref={`/profile/${profile.username}`} />
 
       <div className="max-w-2xl mx-auto pt-2">
         <ActivityHeatmap scheduledAts={activityDates} />

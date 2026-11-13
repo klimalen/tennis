@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
 import Link from 'next/link'
 import { ActivityHeatmap } from '@/components/schedule/ActivityHeatmap'
+import { ScheduleHeader } from '@/components/schedule/ScheduleHeader'
 import { ScheduleSections } from '@/components/schedule/ScheduleBlocks'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
@@ -27,17 +28,17 @@ async function ScheduleContent() {
 
   return (
     <div className="min-h-screen">
-      <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <span className="font-display text-4xl tracking-wide leading-none">SCHEDULE</span>
+      <ScheduleHeader
+        backHref="/me"
+        action={
           <Link
             href="/games/new"
-            className="text-[10px] tracking-[0.16em] uppercase font-medium text-brand-primary hover:underline"
+            className="text-[10px] font-medium uppercase tracking-[0.16em] text-brand-primary hover:underline"
           >
             New game
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-2xl mx-auto pt-2">
         <ActivityHeatmap scheduledAts={activityDates} />
