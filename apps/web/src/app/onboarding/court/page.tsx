@@ -21,8 +21,11 @@ const SURFACE_OPTIONS = [
   { value: 'hard', label: 'Hard' },
   { value: 'clay', label: 'Clay' },
   { value: 'grass', label: 'Grass' },
-  { value: 'indoor', label: 'Indoor' },
+  { value: 'carpet', label: 'Carpet' },
+  { value: 'synthetic', label: 'Synthetic' },
 ]
+
+const VALID_SURFACES = new Set(SURFACE_OPTIONS.map((o) => o.value))
 
 function StepHeading({ title, sub }: { title: string; sub: string }) {
   return (
@@ -95,7 +98,7 @@ export default function CourtOnboardingPage() {
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+        .select('account_kind, username, full_name, city_name, city_lat, city_lng, address, phone, website, opening_hours, bio, avatar_url, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
         .eq('id', session.user.id)
         .single()
       if (cancelled) return
@@ -118,7 +121,9 @@ export default function CourtOnboardingPage() {
         description: profile.bio || '',
         avatarUrl: profile.avatar_url,
         courtCount: profile.court_count != null ? String(profile.court_count) : '',
-        surfaces: profile.preferred_surfaces ?? [],
+        surfaces: (profile.preferred_surfaces ?? []).filter((s: string) => VALID_SURFACES.has(s)),
+        hasIndoor: profile.has_indoor ?? null,
+        hasOutdoor: profile.has_outdoor ?? null,
         lit: profile.lit ?? null,
         feeHourMin: profile.fee_hour_min != null ? String(profile.fee_hour_min) : '',
         feeHourMax: profile.fee_hour_max != null ? String(profile.fee_hour_max) : '',
@@ -425,6 +430,24 @@ export default function CourtOnboardingPage() {
                       {option.label}
                     </Pill>
                   ))}
+                </div>
+              </div>
+              <div>
+                <FieldLabel optional>Indoor / outdoor</FieldLabel>
+                <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Select both if you have both.</p>
+                <div className="flex flex-wrap gap-2.5">
+                  <Pill
+                    active={data.hasIndoor === true}
+                    onClick={() => update({ hasIndoor: data.hasIndoor === true ? null : true })}
+                  >
+                    Indoor
+                  </Pill>
+                  <Pill
+                    active={data.hasOutdoor === true}
+                    onClick={() => update({ hasOutdoor: data.hasOutdoor === true ? null : true })}
+                  >
+                    Outdoor
+                  </Pill>
                 </div>
               </div>
               <div>

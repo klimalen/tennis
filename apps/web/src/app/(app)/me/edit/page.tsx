@@ -34,7 +34,8 @@ const SURFACE_OPTIONS = [
   { value: 'hard', label: 'Hard' },
   { value: 'clay', label: 'Clay' },
   { value: 'grass', label: 'Grass' },
-  { value: 'indoor', label: 'Indoor' },
+  { value: 'carpet', label: 'Carpet' },
+  { value: 'synthetic', label: 'Synthetic' },
 ]
 
 // ─── Small UI helpers ─────────────────────────────────────────────────────────

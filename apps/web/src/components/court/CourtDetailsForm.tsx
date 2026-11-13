@@ -15,8 +15,15 @@ const SURFACE_OPTIONS = [
   { value: 'hard', label: 'Hard' },
   { value: 'clay', label: 'Clay' },
   { value: 'grass', label: 'Grass' },
-  { value: 'indoor', label: 'Indoor' },
-]
+  { value: 'carpet', label: 'Carpet' },
+  { value: 'synthetic', label: 'Synthetic' },
+] as const
+
+const VALID_SURFACES = new Set(SURFACE_OPTIONS.map((o) => o.value))
+
+function sanitizeSurfaces(values: string[]): Array<(typeof SURFACE_OPTIONS)[number]['value']> {
+  return values.filter((v): v is (typeof SURFACE_OPTIONS)[number]['value'] => VALID_SURFACES.has(v as (typeof SURFACE_OPTIONS)[number]['value']))
+}
 
 export interface CourtDetailsValues {
   name: string
@@ -32,6 +39,8 @@ export interface CourtDetailsValues {
   avatarUrl?: string | null
   courtCount: string
   surfaces: string[]
+  hasIndoor: boolean | null
+  hasOutdoor: boolean | null
   lit: boolean | null
   feeHourMin: string
   feeHourMax: string
@@ -56,6 +65,8 @@ export function emptyCourtDetails(): CourtDetailsValues {
     avatarUrl: null,
     courtCount: '',
     surfaces: [],
+    hasIndoor: null,
+    hasOutdoor: null,
     lit: null,
     feeHourMin: '',
     feeHourMax: '',
@@ -174,7 +185,9 @@ export async function saveCourtDetails(values: CourtDetailsValues, avatar?: Blob
     opening_hours: values.openingHours.trim() || null,
     bio: values.description.trim() || null,
     court_count: parseOptionalInt(values.courtCount),
-    preferred_surfaces: values.surfaces,
+    preferred_surfaces: sanitizeSurfaces(values.surfaces),
+    has_indoor: values.hasIndoor,
+    has_outdoor: values.hasOutdoor,
     lit: values.lit,
     fee_hour_min: feeMin,
     fee_hour_max: feeMax,
@@ -247,7 +260,9 @@ export function CourtDetailsForm({
   const [openingHours, setOpeningHours] = useState(seed.openingHours)
   const [description, setDescription] = useState(seed.description)
   const [courtCount, setCourtCount] = useState(seed.courtCount)
-  const [surfaces, setSurfaces] = useState<string[]>(seed.surfaces)
+  const [surfaces, setSurfaces] = useState<string[]>(sanitizeSurfaces(seed.surfaces))
+  const [hasIndoor, setHasIndoor] = useState<boolean | null>(seed.hasIndoor)
+  const [hasOutdoor, setHasOutdoor] = useState<boolean | null>(seed.hasOutdoor)
   const [lit, setLit] = useState<boolean | null>(seed.lit)
   const [feeHourMin, setFeeHourMin] = useState(seed.feeHourMin)
   const [feeHourMax, setFeeHourMax] = useState(seed.feeHourMax)
@@ -306,6 +321,8 @@ export function CourtDetailsForm({
     description,
     courtCount,
     surfaces,
+    hasIndoor,
+    hasOutdoor,
     lit,
     feeHourMin,
     feeHourMax,
@@ -492,6 +509,26 @@ export function CourtDetailsForm({
                 {option.label}
               </Pill>
             ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] tracking-[0.15em] uppercase text-[rgba(26,26,26,0.5)] mb-1.5">
+            Indoor / outdoor <span className="normal-case tracking-normal text-[rgba(26,26,26,0.35)]">optional</span>
+          </label>
+          <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">Select both if you have both.</p>
+          <div className="flex flex-wrap gap-2">
+            <Pill
+              active={hasIndoor === true}
+              onClick={() => { setHasIndoor(hasIndoor === true ? null : true); markDirty() }}
+            >
+              Indoor
+            </Pill>
+            <Pill
+              active={hasOutdoor === true}
+              onClick={() => { setHasOutdoor(hasOutdoor === true ? null : true); markDirty() }}
+            >
+              Outdoor
+            </Pill>
           </div>
         </div>
         <div>

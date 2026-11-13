@@ -28,7 +28,8 @@ const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
   clay: 'Clay',
   grass: 'Grass',
-  indoor: 'Indoor',
+  carpet: 'Carpet',
+  synthetic: 'Synthetic',
 }
 
 interface PostRow {
@@ -98,7 +99,7 @@ export default async function PlayerProfilePage({
     supabase
       .from('profiles')
       .select(
-        'id, full_name, username, avatar_url, bio, looking_for, city_name, address, phone, website, opening_hours, account_kind, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach, court_count, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook',
+        'id, full_name, username, avatar_url, bio, looking_for, city_name, address, phone, website, opening_hours, account_kind, skill_level_self, skill_level_computed, preferred_formats, play_style, years_playing, preferred_surfaces, availability, is_coach, court_count, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook',
       )
       .eq('username', username)
       .is('deleted_at', null)
@@ -335,6 +336,8 @@ export default async function PlayerProfilePage({
                 showPhone={Boolean(viewer) || isCourt}
                 courtCount={profile.court_count}
                 surfaces={profile.preferred_surfaces}
+                hasIndoor={profile.has_indoor}
+                hasOutdoor={profile.has_outdoor}
                 lit={profile.lit}
                 feeHourMin={profile.fee_hour_min}
                 feeHourMax={profile.fee_hour_max}

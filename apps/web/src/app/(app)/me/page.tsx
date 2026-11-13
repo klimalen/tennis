@@ -24,7 +24,8 @@ const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
   clay: 'Clay',
   grass: 'Grass',
-  indoor: 'Indoor',
+  carpet: 'Carpet',
+  synthetic: 'Synthetic',
 }
 
 async function ProfileContent() {
@@ -35,7 +36,7 @@ async function ProfileContent() {
   const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_surfaces, availability, is_coach, court_count, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_surfaces, availability, is_coach, court_count, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
       .eq('id', user.id)
       .single(),
     supabase
@@ -233,6 +234,8 @@ async function ProfileContent() {
                   bio={profile?.bio}
                   courtCount={profile?.court_count}
                   surfaces={profile?.preferred_surfaces}
+                  hasIndoor={profile?.has_indoor}
+                  hasOutdoor={profile?.has_outdoor}
                   lit={profile?.lit}
                   feeHourMin={profile?.fee_hour_min}
                   feeHourMax={profile?.fee_hour_max}

@@ -37,7 +37,7 @@ export function CourtEditPage() {
       const [{ data: profile }, { data: venue }] = await Promise.all([
         supabase
           .from('profiles')
-          .select('full_name, username, avatar_url, bio, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, court_count, preferred_surfaces, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+          .select('full_name, username, avatar_url, bio, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
           .eq('id', user.id)
           .single(),
         supabase
@@ -69,7 +69,11 @@ export function CourtEditPage() {
         description: profile.bio || '',
         avatarUrl: profile.avatar_url || null,
         courtCount: profile.court_count != null ? String(profile.court_count) : '',
-        surfaces: profile.preferred_surfaces ?? [],
+        surfaces: (profile.preferred_surfaces ?? []).filter((s: string) =>
+          s === 'hard' || s === 'clay' || s === 'grass' || s === 'carpet' || s === 'synthetic',
+        ),
+        hasIndoor: profile.has_indoor ?? null,
+        hasOutdoor: profile.has_outdoor ?? null,
         lit: profile.lit ?? null,
         feeHourMin: profile.fee_hour_min != null ? String(profile.fee_hour_min) : '',
         feeHourMax: profile.fee_hour_max != null ? String(profile.fee_hour_max) : '',

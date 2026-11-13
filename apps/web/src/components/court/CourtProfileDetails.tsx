@@ -6,7 +6,8 @@ const SURFACE_LABELS: Record<string, string> = {
   hard: 'Hard',
   clay: 'Clay',
   grass: 'Grass',
-  indoor: 'Indoor',
+  carpet: 'Carpet',
+  synthetic: 'Synthetic',
 }
 
 export function courtMapsHref(address: string, city?: string | null): string {
@@ -61,6 +62,8 @@ export function CourtProfileDetails({
   showPhone = true,
   courtCount,
   surfaces,
+  hasIndoor,
+  hasOutdoor,
   lit,
   feeHourMin,
   feeHourMax,
@@ -78,6 +81,8 @@ export function CourtProfileDetails({
   showPhone?: boolean
   courtCount?: number | null
   surfaces?: string[] | null
+  hasIndoor?: boolean | null
+  hasOutdoor?: boolean | null
   lit?: boolean | null
   feeHourMin?: number | null
   feeHourMax?: number | null
@@ -91,7 +96,13 @@ export function CourtProfileDetails({
     : null
   const mapsHref = address?.trim() ? courtMapsHref(address, cityName) : null
   const placeLine = [address?.trim(), cityName?.trim()].filter(Boolean).join(', ')
-  const surfaceLabels = (surfaces ?? []).map((s) => SURFACE_LABELS[s] ?? s).filter(Boolean)
+  const surfaceLabels = (surfaces ?? [])
+    .map((s) => SURFACE_LABELS[s])
+    .filter(Boolean) as string[]
+  const settingLabels = [
+    hasIndoor ? 'Indoor' : null,
+    hasOutdoor ? 'Outdoor' : null,
+  ].filter(Boolean) as string[]
   const feeLine = (() => {
     if (feeHourMin == null && feeHourMax == null) return null
     if (feeHourMin != null && feeHourMax != null) {
@@ -104,6 +115,7 @@ export function CourtProfileDetails({
   const facts = [
     courtCount != null ? `${courtCount} court${courtCount === 1 ? '' : 's'}` : null,
     surfaceLabels.length ? surfaceLabels.join(' · ') : null,
+    settingLabels.length ? settingLabels.join(' · ') : null,
     lit === true ? 'Lit' : lit === false ? 'Unlit' : null,
     feeLine,
   ].filter(Boolean) as string[]
