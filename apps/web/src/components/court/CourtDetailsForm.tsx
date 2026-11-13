@@ -385,9 +385,9 @@ export function CourtDetailsForm({
               <span className="font-display text-2xl text-[#1a1a1a]">{photoInitials}</span>
             )}
           </div>
-          <label className="text-[11px] tracking-[0.14em] uppercase font-medium text-[#1a1a1a] underline underline-offset-2 cursor-pointer">
-            {photo ? 'Change photo' : 'Add photo'}
-            <span className="ml-2 normal-case tracking-normal text-[rgba(26,26,26,0.35)] no-underline">optional</span>
+          <label className="text-[11px] tracking-[0.14em] uppercase font-medium text-[#1a1a1a] cursor-pointer">
+            <span className="underline underline-offset-2">{photo ? 'Change photo' : 'Add photo'}</span>
+            <span className="ml-2 normal-case tracking-normal text-[rgba(26,26,26,0.35)]">optional</span>
             <input
               type="file"
               accept="image/*"

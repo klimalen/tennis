@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { ArrowLeft, Check, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CourtDetailsForm, type CourtDetailsValues } from '@/components/court/CourtDetailsForm'
@@ -13,8 +12,6 @@ export function CourtEditPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [initial, setInitial] = useState<CourtDetailsValues | null>(null)
-  const [username, setUsername] = useState('')
-  const [previewHref, setPreviewHref] = useState('/me')
   const [dirty, setDirty] = useState(false)
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'error' | null>(null)
@@ -34,19 +31,11 @@ export function CourtEditPage() {
         return
       }
 
-      const [{ data: profile }, { data: venue }] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('full_name, username, avatar_url, bio, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
-          .eq('id', user.id)
-          .single(),
-        supabase
-          .from('venue_groups')
-          .select('id')
-          .eq('profile_id', user.id)
-          .limit(1)
-          .maybeSingle(),
-      ])
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, username, avatar_url, bio, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, court_count, preferred_surfaces, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+        .eq('id', user.id)
+        .single()
 
       if (!active) return
       if (!profile || profile.account_kind !== 'court') {
@@ -54,8 +43,6 @@ export function CourtEditPage() {
         return
       }
 
-      setUsername(profile.username || '')
-      setPreviewHref(venue?.id ? `/court/${venue.id}` : (profile.username ? `/profile/${profile.username}` : '/me'))
       setInitial({
         name: profile.full_name || '',
         username: profile.username || '',
@@ -165,20 +152,9 @@ export function CourtEditPage() {
             setSaveStatus((prev) => (prev === 'saving' ? null : prev))
           }}
           footer={(
-            <div className="rounded-[20px] bg-white px-4 py-4 space-y-2 border border-[#1a1a1a]/08">
-              <p className="font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.55)]">
-                This info also appears on your court card in Search. Updates may take a moment to show there.
-              </p>
-              <Link
-                href={previewHref}
-                className="inline-flex text-[10px] tracking-[0.14em] uppercase font-medium text-[#1a1a1a] underline underline-offset-2"
-              >
-                View profile as players see it
-              </Link>
-              {username ? (
-                <p className="text-[10px] text-[rgba(26,26,26,0.35)]">@{username}</p>
-              ) : null}
-            </div>
+            <p className="font-copy text-[12px] leading-snug text-[rgba(26,26,26,0.5)]">
+              This information also appears on your court card in Search.
+            </p>
           )}
           onSaved={() => {
             setDirty(false)
