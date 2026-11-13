@@ -168,7 +168,7 @@ export interface Game {
   court_id: string | null
   venue_group_id: string | null
   court_cost_cents: number | null
-  payment: 'split' | 'host' | 'at_court' | null
+  payment: 'split' | 'host' | null
   court_booking_id: string | null
   status: GameStatus
   is_open: boolean

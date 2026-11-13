@@ -408,7 +408,7 @@ export function CourtPlaceFields({
               )}
               {priced && (
                 <div className="space-y-2">
-                  <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">How players pay</p>
+                  <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium">Who pays</p>
                   <div className="flex flex-wrap gap-2">
                     {PAYMENT_OPTIONS.map((option) => (
                       <Pill key={option.value} active={value.payment === option.value} onClick={() => onChange({ ...value, payment: option.value })}>
