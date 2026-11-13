@@ -102,16 +102,7 @@ export function ActivityHeatmap({
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="min-h-[1rem] text-[11px] text-[rgba(26,26,26,0.4)]">{tip ?? '\u00a0'}</p>
-        <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.12em] text-[rgba(26,26,26,0.35)]">
-          <span>Less</span>
-          {([0, 1, 2, 3] as HeatLevel[]).map((level) => (
-            <span key={level} className={`h-[11px] w-[11px] rounded-[2px] ${LEVEL_CLASS[level]}`} aria-hidden />
-          ))}
-          <span>More</span>
-        </div>
-      </div>
+      <p className="mt-2 min-h-[1rem] text-[11px] text-[rgba(26,26,26,0.4)]">{tip ?? '\u00a0'}</p>
     </section>
   )
 }
