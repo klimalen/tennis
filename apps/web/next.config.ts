@@ -23,8 +23,12 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // Default imageSizes omit common avatar widths (36/40/44/56/72/80).
+    // next/image then requests e.g. w=80 and Vercel returns 400 — broken avatars.
+    imageSizes: [16, 32, 36, 40, 44, 48, 56, 64, 72, 80, 96, 128, 256, 384],
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
+      { protocol: 'https', hostname: 'xyqubkrkmhqzwjqkqhzh.supabase.co' },
       { protocol: 'https', hostname: '*.cloudflare.com' },
     ],
   },
