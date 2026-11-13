@@ -87,6 +87,7 @@ async function ChatsData() {
         title,
         scheduledAt: conv.game?.scheduled_at ?? null,
         cancelled: Boolean(conv.closed_at || conv.game?.status === 'cancelled'),
+        gameFormat: conv.game?.format ?? null,
         username: null,
         avatarUrl: null,
         initials: title.slice(0, 1).toUpperCase() || 'G',
