@@ -287,20 +287,6 @@ export function GameDetailSheet({
 
   const body = (
         <div className={page ? 'space-y-5' : 'p-5 pb-8 space-y-5'}>
-          <GameFaceRow
-            people={faces}
-            spotsLeft={game.is_open && !isCancelled && !isPast ? spotsLeft : 0}
-            onPerson={(person) => {
-              if (!person.username) return
-              goRelated(withReturnTo(`/profile/${person.username}`, gamePath))
-            }}
-          />
-          {game.is_open && !isCancelled && !isPast && (
-            <p className="text-[10px] tracking-[0.14em] uppercase text-[rgba(26,26,26,0.45)]">
-              {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-            </p>
-          )}
-
           <div>
             <p className="font-display text-3xl tracking-wide leading-none text-[#1a1a1a]">
               <LocalGameDay iso={game.scheduled_at} /> <LocalGameMonth iso={game.scheduled_at} />
@@ -309,105 +295,130 @@ export function GameDetailSheet({
               <LocalGameTimeRange iso={game.scheduled_at} durationMinutes={game.duration_minutes} />
               <span className="text-[rgba(26,26,26,0.45)]"> · {FORMAT_LABELS[game.format] ?? game.format}</span>
             </p>
-            {placeName && game.court && (
-              <div className="mt-3 w-full rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
-                  {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
-                </div>
+          </div>
 
-                {placeLine && (
-                  <a
-                    href={courtListingMapsHref(game.court, placeName)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group mt-2 flex items-start gap-1.5 text-[12px] font-medium text-[#1a1a1a] transition-opacity hover:opacity-75"
-                  >
-                    <MapPin size={12} className="mt-0.5 flex-shrink-0" />
-                    <span className="underline-offset-2 group-hover:underline">{placeLine}</span>
-                    <ArrowUpRight size={12} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.45)]" aria-hidden />
-                  </a>
-                )}
-
-                {courtChips.length > 0 && (
-                  <div className="mt-3">
-                    <CourtFactChips chips={courtChips} className="flex flex-wrap gap-1.5" />
-                  </div>
-                )}
-
-                <div className="mt-3 grid grid-cols-1 gap-2">
-                  {courtProfileHref && (
-                    <Link
-                      href={courtProfileHref}
-                      onClick={(event) => {
-                        if (page) return
-                        event.preventDefault()
-                        goRelated(courtProfileHref)
-                      }}
-                      className={profileBtn}
-                    >
-                      Open court profile
-                    </Link>
-                  )}
-                  {(game.court.website || game.court.phone) && (
-                    <div className={`grid gap-2 ${game.court.website && game.court.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                      {game.court.website && (
-                        <a
-                          href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={secondaryBtn}
-                        >
-                          <Globe size={13} /> Website
-                        </a>
-                      )}
-                      {game.court.phone && (
-                        <a href={`tel:${game.court.phone}`} className={secondaryBtn}>
-                          <Phone size={13} /> {game.court.phone}
-                        </a>
-                      )}
-                    </div>
-                  )}
-                  {courtPageHref && (
-                    <Link
-                      href={courtPageHref}
-                      onClick={(event) => {
-                        if (page) return
-                        event.preventDefault()
-                        goRelated(courtPageHref)
-                      }}
-                      className={pageBtn}
-                    >
-                      Court page
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
-            {placeName && !game.court && (
-              <div className="mt-3 text-left">
-                <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
-                {(price || isCancelled) && (
-                  <div className="mt-2">
-                    <CourtFactChips
-                      chips={[
-                        ...(price ? [{ key: 'game-price', label: price, tone: 'fee' as const }] : []),
-                        ...(isCancelled ? [{ key: 'cancelled', label: 'Cancelled', tone: 'feature' as const }] : []),
-                      ]}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-            {game.court && isCancelled && (
-              <div className="mt-2">
-                <CourtFactChips chips={[{ key: 'cancelled', label: 'Cancelled', tone: 'feature' }]} />
-              </div>
-            )}
-            {game.notes && (
-              <p className="font-copy mt-3 text-sm text-[rgba(26,26,26,0.55)]">{game.notes}</p>
+          <div className="space-y-2">
+            <GameFaceRow
+              people={faces}
+              spotsLeft={game.is_open && !isCancelled && !isPast ? spotsLeft : 0}
+              onPerson={(person) => {
+                if (!person.username) return
+                goRelated(withReturnTo(`/profile/${person.username}`, gamePath))
+              }}
+            />
+            {game.is_open && !isCancelled && !isPast && (
+              <p className="text-[10px] tracking-[0.14em] uppercase text-[rgba(26,26,26,0.45)]">
+                {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+              </p>
             )}
           </div>
+
+          {placeName && game.court && (
+            <div className="w-full rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
+                {game.court.profile_username && <CourtVerifiedBadge className="flex-shrink-0" />}
+              </div>
+
+              {placeLine && (
+                <a
+                  href={courtListingMapsHref(game.court, placeName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group mt-2 flex items-start gap-1.5 text-[12px] font-medium text-[#1a1a1a] transition-opacity hover:opacity-75"
+                >
+                  <MapPin size={12} className="mt-0.5 flex-shrink-0" />
+                  <span className="underline-offset-2 group-hover:underline">{placeLine}</span>
+                  <ArrowUpRight size={12} className="mt-0.5 flex-shrink-0 text-[rgba(26,26,26,0.45)]" aria-hidden />
+                </a>
+              )}
+
+              {courtChips.length > 0 && (
+                <div className="mt-3">
+                  <CourtFactChips chips={courtChips} className="flex flex-wrap gap-1.5" />
+                </div>
+              )}
+
+              <div className="mt-3 grid grid-cols-1 gap-2">
+                {courtProfileHref && (
+                  <Link
+                    href={courtProfileHref}
+                    onClick={(event) => {
+                      if (page) return
+                      event.preventDefault()
+                      goRelated(courtProfileHref)
+                    }}
+                    className={profileBtn}
+                  >
+                    Open court profile
+                  </Link>
+                )}
+                {(game.court.website || game.court.phone) && (
+                  <div className={`grid gap-2 ${game.court.website && game.court.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {game.court.website && (
+                      <a
+                        href={game.court.website.startsWith('http') ? game.court.website : `https://${game.court.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={secondaryBtn}
+                      >
+                        <Globe size={13} /> Website
+                      </a>
+                    )}
+                    {game.court.phone && (
+                      <a href={`tel:${game.court.phone}`} className={secondaryBtn}>
+                        <Phone size={13} /> {game.court.phone}
+                      </a>
+                    )}
+                  </div>
+                )}
+                {courtPageHref && (
+                  <Link
+                    href={courtPageHref}
+                    onClick={(event) => {
+                      if (page) return
+                      event.preventDefault()
+                      goRelated(courtPageHref)
+                    }}
+                    className={pageBtn}
+                  >
+                    Court page
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {placeName && !game.court && (
+            <div className="text-left">
+              <p className="font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a]">{placeName}</p>
+              {(price || isCancelled) && (
+                <div className="mt-2">
+                  <CourtFactChips
+                    chips={[
+                      ...(price ? [{ key: 'game-price', label: price, tone: 'fee' as const }] : []),
+                      ...(isCancelled ? [{ key: 'cancelled', label: 'Cancelled', tone: 'feature' as const }] : []),
+                    ]}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {game.court && isCancelled && (
+            <CourtFactChips chips={[{ key: 'cancelled', label: 'Cancelled', tone: 'feature' }]} />
+          )}
+
+          {game.notes?.trim() && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[rgba(26,26,26,0.4)]">
+                About this game
+              </p>
+              <div className="mt-2 rounded-[16px] border border-[#1a1a1a]/10 bg-brand-field px-3.5 py-3">
+                <p className="font-copy text-sm leading-relaxed text-[#1a1a1a]">{game.notes.trim()}</p>
+              </div>
+            </div>
+          )}
 
           {chatId && chatId !== activeConversationId && (
             <Link
