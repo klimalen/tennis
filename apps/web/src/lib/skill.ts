@@ -18,14 +18,14 @@ export function formatPlayFormat(format: string | null | undefined): string {
 
 /**
  * Chip labels for profiles.play_style.
- * Wording stays distinct from skill tiers (Beginner…Competitive) so a competitive
- * skill + competitive intent never shows two identical "Competitive" chips.
+ * Wording stays distinct from skill tiers (Beginner…Competitive) and talks about
+ * training intent (fun vs competition), not match outcomes ("to win").
  * `both` expands to both intents (never a vague "Both").
  */
 export function playStyleLabels(style: string | null | undefined): string[] {
   if (style === 'recreational') return ['For fun']
-  if (style === 'competitive') return ['To win']
-  if (style === 'both') return ['For fun', 'To win']
+  if (style === 'competitive') return ['For competition']
+  if (style === 'both') return ['For fun', 'For competition']
   return []
 }
 
