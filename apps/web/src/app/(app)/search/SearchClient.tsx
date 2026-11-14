@@ -770,14 +770,16 @@ function CourtCardSkeleton() {
 
 // ─── Discovery section wrapper ─────────────────────────────────────────────────
 
-function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeAll: () => void; children: React.ReactNode }) {
+function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeAll?: () => void; children: React.ReactNode }) {
   return (
     <div>
       <div className="mb-3 flex min-w-0 items-end justify-between gap-3">
         <span className="min-w-0 font-display text-4xl tracking-wide leading-none text-[#1a1a1a]">{title}</span>
-        <button onClick={onSeeAll} className="flex flex-shrink-0 items-center gap-1 pb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#1E3A6E] hover:underline">
-          See all <ChevronRight size={11} />
-        </button>
+        {onSeeAll && (
+          <button type="button" onClick={onSeeAll} className="flex flex-shrink-0 items-center gap-1 pb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#1E3A6E] hover:underline">
+            See all <ChevronRight size={11} />
+          </button>
+        )}
       </div>
       {children}
     </div>
@@ -785,6 +787,45 @@ function DiscoverySection({ title, onSeeAll, children }: { title: string; onSeeA
 }
 
 // ─── No city state ─────────────────────────────────────────────────────────────
+
+/** Guest cannot load open games (API requires auth) and should not see Propose/Follow. */
+function GuestSignInStub({
+  title,
+  hint,
+  vivid = true,
+}: {
+  title: string
+  hint: string
+  vivid?: boolean
+}) {
+  const href = '/sign-in?next=/search'
+  if (vivid) {
+    return (
+      <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
+        <p className="font-display text-5xl leading-none">{title}</p>
+        <p className="font-fraunces italic text-lg text-[#F0EBE3]">{hint}</p>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium"
+        >
+          Sign in
+        </Link>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center space-y-3">
+      <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">{title}</p>
+      <p className="text-sm text-[rgba(26,26,26,0.55)]">{hint}</p>
+      <Link
+        href={href}
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors"
+      >
+        Sign in
+      </Link>
+    </div>
+  )
+}
 
 function NoCityState({ guest, onBrowseCourts, vivid = true }: { guest?: boolean; onBrowseCourts?: () => void; vivid?: boolean }) {
   if (vivid) {
@@ -1065,17 +1106,25 @@ export function SearchClient({
       return
     }
 
+    // Guests get sign-in stubs for players/games — skip those fetches.
+    if (!user) {
+      setLoadingPreviewPlayer(false)
+      setLoadingPreviewGame(false)
+      setPreviewPlayer(null)
+      setPreviewGame(null)
+    }
+
     let cancelled = false
     let playerLoaded = previewPlayerReady
-    if (!previewPlayerReady) setLoadingPreviewPlayer(true)
-    setLoadingPreviewGame(true)
+    if (user && !previewPlayerReady) setLoadingPreviewPlayer(true)
+    if (user) setLoadingPreviewGame(true)
     setLoadingPreviewVenue(true)
 
     async function loadPreviewPlayer(coords?: { lat: number; lng: number }) {
-      if (previewPlayerReady) return
+      if (!user || previewPlayerReady) return
       playerLoaded = true
       const playerParams = new URLSearchParams({ city: userCityName! })
-      if (user) playerParams.set('exclude', user.id)
+      playerParams.set('exclude', user.id)
       if (coords) {
         playerParams.set('lat', String(coords.lat))
         playerParams.set('lng', String(coords.lng))
@@ -1095,6 +1144,7 @@ export function SearchClient({
     }
 
     function loadPreviewGames(coords?: { lat: number; lng: number }) {
+      if (!user) return
       const params = new URLSearchParams({ city: userCityName! })
       if (coords) {
         params.set('lat', String(coords.lat))
@@ -1210,7 +1260,7 @@ export function SearchClient({
 
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userCityName, userCityLat, userCityLng, searchEpoch])
+  }, [user, userCityName, userCityLat, userCityLng, searchEpoch])
 
   // ── Full players view ───────────────────────────────────────────────────────
   const [players, setPlayers] = useState<Player[]>([])
@@ -1697,8 +1747,14 @@ export function SearchClient({
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} vivid />
           ) : (
             <>
-              <DiscoverySection title="PLAYERS" onSeeAll={() => navigateTo('players')}>
-                {loadingPreviewPlayer ? (
+              <DiscoverySection title="PLAYERS" {...(user ? { onSeeAll: () => navigateTo('players') } : {})}>
+                {!user ? (
+                  <GuestSignInStub
+                    vivid
+                    title="SIGN IN TO SEE PLAYERS"
+                    hint="Sign in to browse people near you and propose a game"
+                  />
+                ) : loadingPreviewPlayer ? (
                   <PlayerCardSkeleton />
                 ) : previewPlayer ? (
                   <PlayerCard
@@ -1743,8 +1799,14 @@ export function SearchClient({
                 )}
               </DiscoverySection>
 
-              <DiscoverySection title="GAMES" onSeeAll={() => navigateTo('games')}>
-                {loadingPreviewGame ? (
+              <DiscoverySection title="GAMES" {...(user ? { onSeeAll: () => navigateTo('games') } : {})}>
+                {!user ? (
+                  <GuestSignInStub
+                    vivid
+                    title="SIGN IN TO SEE OPEN GAMES"
+                    hint="Sign in to find games near you and join a match"
+                  />
+                ) : loadingPreviewGame ? (
                   <GameCardSkeleton />
                 ) : previewGame ? (
                   <OpenGameCard
@@ -1760,11 +1822,9 @@ export function SearchClient({
                   <div className="rounded-[28px] bg-[#3A8A7A] text-[#F0EBE3] px-5 py-8 space-y-3">
                     <p className="font-display text-5xl leading-none">NO OPEN GAMES</p>
                     <p className="font-fraunces italic text-lg text-[#F0EBE3]">Nothing posted near {userCityName} yet</p>
-                    {user && (
-                      <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
-                        <Plus size={12} /> Create a game
-                      </Link>
-                    )}
+                    <Link href="/games/new" className="inline-flex items-center gap-1.5 rounded-full px-4 py-3 bg-[#E8748A] text-[#1a1a1a] text-[11px] tracking-[0.16em] uppercase font-medium">
+                      <Plus size={12} /> Create a game
+                    </Link>
                   </div>
                 )}
               </DiscoverySection>
@@ -1831,7 +1891,12 @@ export function SearchClient({
           }
         />
         <div className="mx-auto min-w-0 max-w-2xl space-y-3 px-4 pt-2 pb-4">
-          {!userCityName ? (
+          {!user ? (
+            <GuestSignInStub
+              title="SIGN IN TO SEE PLAYERS"
+              hint="Sign in to browse people near you and propose a game"
+            />
+          ) : !userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingPlayers || !geocodeDone ? (
             [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)
@@ -1915,18 +1980,21 @@ export function SearchClient({
           }
         />
         <div className="max-w-2xl mx-auto min-w-0 px-4 pt-2 pb-4 space-y-3">
-          {!userCityName ? (
+          {!user ? (
+            <GuestSignInStub
+              title="SIGN IN TO SEE OPEN GAMES"
+              hint="Sign in to find games near you and join a match"
+            />
+          ) : !userCityName ? (
             <NoCityState guest={!user} onBrowseCourts={() => navigateTo('courts')} />
           ) : loadingOpenGames ? (
             [...Array(3)].map((_, i) => <GameCardSkeleton key={i} />)
           ) : openGames.length === 0 ? (
             <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center space-y-3">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)]">No open games near {userCityName}</p>
-              {user && (
-                <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
-                  <Plus size={12} /> Create a game
-                </Link>
-              )}
+              <Link href="/games/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors">
+                <Plus size={12} /> Create a game
+              </Link>
             </div>
           ) : (
             <>
