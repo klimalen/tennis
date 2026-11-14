@@ -602,7 +602,7 @@ export default function OnboardingPage() {
 
     try {
       const ok = await saveProfile()
-      if (ok) router.push('/search')
+      if (ok) router.push('/notifications/enable')
     } finally {
       clearInterval(msgInterval)
       setSaving(false)
@@ -613,7 +613,7 @@ export default function OnboardingPage() {
     setSaving(true)
     try {
       const ok = await saveProfile()
-      if (ok) router.push('/search')
+      if (ok) router.push('/notifications/enable')
     } finally {
       setSaving(false)
     }

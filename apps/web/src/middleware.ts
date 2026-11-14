@@ -80,7 +80,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protect routes that require auth
-  const PROTECTED = ['/me/edit', '/create', '/schedule/book', '/settings', '/chats', '/games', '/feed/new']
+  const PROTECTED = ['/me/edit', '/create', '/schedule/book', '/settings', '/chats', '/games', '/feed/new', '/notifications/enable']
 
   if (PROTECTED.some((r) => pathname.startsWith(r)) && !user) {
     const url = request.nextUrl.clone()

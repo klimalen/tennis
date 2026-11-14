@@ -10,6 +10,7 @@ export type NotificationKind =
   | 'game_cancelled'
   | 'game_joined'
   | 'game_left'
+  | 'message'
 
 export interface NotificationActor {
   id: string
@@ -26,6 +27,9 @@ export interface NotificationPayload {
   scheduled_at?: string
   format?: string
   location?: string | null
+  conversation_id?: string
+  message_id?: string
+  preview?: string
 }
 
 export interface NotificationItem {
