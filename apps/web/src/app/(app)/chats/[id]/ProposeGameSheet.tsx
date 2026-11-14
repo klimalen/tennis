@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
-import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
@@ -159,9 +159,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                 <div className="flex gap-2">
                   {FORMAT_OPTIONS.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                      className={`${gameFormOptionPill} ${
-                        format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                      }`}>
+                      className={gameFormOptionPillClass(format === opt.value)}>
                       {opt.label}
                     </button>
                   ))}
