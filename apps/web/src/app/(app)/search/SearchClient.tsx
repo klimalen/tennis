@@ -254,9 +254,9 @@ function formatSummary(formats: string[]): string | null {
 }
 
 function styleSummary(style: string | null): string | null {
-  if (style === 'both') return 'Competitive, recreational'
-  if (style === 'recreational') return 'Recreational'
-  if (style === 'competitive') return 'Competitive'
+  // Match profile chips: one intent only; both → omit.
+  if (style === 'recreational') return 'Play for fun'
+  if (style === 'competitive') return 'Play for competition'
   return null
 }
 
@@ -292,7 +292,7 @@ function PlayerCard({
   const [followed, setFollowed] = useState(Boolean(player.following))
   const [justFollowed, setJustFollowed] = useState(false)
   const [following, setFollowing] = useState(false)
-  const btnLabel = matched ? 'Plan a game' : status === 'declined' ? 'Try again' : 'Play together'
+  const btnLabel = status === 'declined' ? 'Try again' : 'Propose a game'
 
   async function handleFollow(e: React.MouseEvent) {
     e.preventDefault()
@@ -343,7 +343,7 @@ function PlayerCard({
             )}
           </div>
           <div className={`min-w-0 flex-1 ${namePad}`}>
-            <p className="font-display text-2xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2 break-words">{player.full_name}</p>
+            <p className="font-display text-xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2 break-words">{player.full_name}</p>
             {level && (
               <p className="mt-1.5 text-[11px] font-medium leading-none tracking-[0.14em] uppercase text-[#D4A017]">{level}</p>
             )}
@@ -582,7 +582,7 @@ function VenueCard({ venue, userLat, userLng, viewed, onClick, saved, onToggleSa
         <MapThumbnail lat={venue.lat} lng={venue.lng} />
         <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
           <div>
-            <p className={`flex items-center gap-1 font-display leading-none tracking-wide text-[#1a1a1a] uppercase ${vivid ? 'text-2xl' : 'text-[18px]'}`}>
+            <p className={`flex items-center gap-1 font-display leading-none tracking-wide text-[#1a1a1a] uppercase ${vivid ? 'text-xl' : 'text-[18px]'}`}>
               <span className="min-w-0 truncate">{courtTitle(venue)}</span>
               {(venue.court_verified || venue.profile_username) && <CourtVerifiedBadge className="flex-shrink-0" />}
             </p>

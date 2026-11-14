@@ -12,21 +12,13 @@ import { skillLabel } from '@/lib/skill'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
-import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
-import { hasSlots, normalizeAvailability } from '@/lib/availability'
+import { ProfileTraitChips } from '@/components/ui/ProfileTraitChips'
+import { normalizeAvailability } from '@/lib/availability'
 import { CourtProfileDetails } from '@/components/court/CourtProfileDetails'
 import { CourtDetailsGate } from './CourtHome'
-
-const SURFACE_LABELS: Record<string, string> = {
-  hard: 'Hard',
-  clay: 'Clay',
-  grass: 'Grass',
-  carpet: 'Carpet',
-  synthetic: 'Synthetic',
-}
 
 async function ProfileContent() {
   const supabase = await createClient()
@@ -36,7 +28,7 @@ async function ProfileContent() {
   const [profileResult, followerResult, followingResult, playerGames, postsResult, playedCountResult, myLikesResult, venueResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_surfaces, availability, is_coach, court_count, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
+      .select('full_name, username, avatar_url, skill_level_self, skill_level_computed, bio, looking_for, city_name, city_lat, city_lng, address, phone, website, opening_hours, account_kind, preferred_formats, play_style, preferred_surfaces, availability, is_coach, court_count, has_indoor, has_outdoor, lit, fee_hour_min, fee_hour_max, whatsapp, instagram, telegram, facebook')
       .eq('id', user.id)
       .single(),
     supabase
@@ -138,6 +130,7 @@ async function ProfileContent() {
     : null
   const avatarUrl = profile?.avatar_url || null
   const rating = profile?.is_coach ? null : (profile?.skill_level_computed ?? profile?.skill_level_self ?? null)
+  const formats: string[] = profile?.preferred_formats ?? []
   const surfaces: string[] = profile?.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile?.availability)
 
@@ -163,14 +156,16 @@ async function ProfileContent() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
-        {/* Profile header */}
-        <div className="relative bg-white rounded-[28px] p-5">
-          <div className="flex items-start gap-5">
-            {/* Avatar — coach badge sits centered on the top edge */}
+        {/* Profile header — coach watermark in the lower-right empty band */}
+        <div className="relative overflow-hidden bg-white rounded-[28px] p-5">
+          {!isCourt && profile?.is_coach && (
+            <>
+              <CoachWatermark />
+              <span className="sr-only">Coach</span>
+            </>
+          )}
+          <div className="relative z-10 flex items-start gap-5">
             <div className="relative flex-shrink-0">
-              {!isCourt && profile?.is_coach && (
-                <CoachBadge className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 shadow-sm" />
-              )}
               <div className="w-20 h-20 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
                   <Image src={avatarUrl} alt={fullName} width={80} height={80} className="w-full h-full object-cover" />
@@ -209,11 +204,11 @@ async function ProfileContent() {
                   href={courtHref}
                   className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
                 >
-                  <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+                  <p className="font-display text-xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
                   <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
                 </Link>
               ) : (
-                <p className="font-display text-2xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
+                <p className="font-display text-xl tracking-wide leading-none">{fullName.toUpperCase()}</p>
               )}
               {username && (
                 <span className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.28)]">@{username}</span>
@@ -225,20 +220,14 @@ async function ProfileContent() {
                 {profile.city_name}
               </p>
             )}
-            {!isCourt && (skillLabel(rating) || surfaces.length > 0 || hasSlots(availability)) && (
-              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                {skillLabel(rating) && (
-                  <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
-                    {skillLabel(rating)}
-                  </span>
-                )}
-                {surfaces.map((s) => (
-                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
-                    {SURFACE_LABELS[s] ?? s}
-                  </span>
-                ))}
-                <AvailabilityButton value={availability} />
-              </div>
+            {!isCourt && (
+              <ProfileTraitChips
+                skill={skillLabel(rating)}
+                formats={formats}
+                surfaces={surfaces}
+                playStyle={profile?.play_style}
+                availability={availability}
+              />
             )}
             {!isCourt && profile?.bio && (
               <div className="mt-2">

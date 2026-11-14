@@ -13,15 +13,24 @@ export async function loadPlayerGames(supabase: SupabaseClient, playerId: string
       .neq('status', 'draft'),
     supabase
       .from('game_participants')
-      .select('game_id, status')
+      .select('game_id, status, schedule_hidden_at')
       .eq('player_id', playerId)
       .in('status', ['accepted', 'invited']),
   ])
   if (createdError) throw createdError
   if (participationError) throw participationError
 
-  const createdIds = new Set((created ?? []).map((game) => game.id as string))
-  const seated = (participations ?? []).filter((row) => !createdIds.has(row.game_id as string))
+  const hiddenIds = new Set(
+    (participations ?? [])
+      .filter((row) => row.schedule_hidden_at != null)
+      .map((row) => row.game_id as string),
+  )
+
+  const visibleCreated = (created ?? []).filter((game) => !hiddenIds.has(game.id as string))
+  const createdIds = new Set(visibleCreated.map((game) => game.id as string))
+  const seated = (participations ?? []).filter(
+    (row) => !createdIds.has(row.game_id as string) && row.schedule_hidden_at == null && !hiddenIds.has(row.game_id as string),
+  )
   const statusByGame = new Map(seated.map((row) => [row.game_id as string, row.status as string]))
 
   const joinedIds = seated.map((row) => row.game_id as string)
@@ -52,7 +61,7 @@ export async function loadPlayerGames(supabase: SupabaseClient, playerId: string
     chatByGame.set(chat.game_id, chat.id)
   }
 
-  const createdGames: ScheduleGame[] = (created ?? []).map((game) => ({
+  const createdGames: ScheduleGame[] = visibleCreated.map((game) => ({
     ...(game as Omit<ScheduleGame, 'participation' | 'chatId'>),
     participation: 'creator',
     chatId: chatByGame.get(game.id as string) ?? null,

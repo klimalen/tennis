@@ -72,7 +72,7 @@ export default async function CourtPage({
           <Link href={backHref} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
-          <span className="flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">{title.toUpperCase()}</span>
+          <span className="flex-1 truncate font-display text-xl tracking-wide text-[#1a1a1a]">{title.toUpperCase()}</span>
           <ShareLinkButton path={`/court/${court.id}`} title={`${title} on GAME.`} text={`${title} on GAME.`} />
         </div>
       </div>

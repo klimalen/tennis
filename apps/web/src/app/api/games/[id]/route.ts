@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
-import { parseDurationMinutes } from '@/lib/game-time'
+import { gameEndMs, parseDurationMinutes } from '@/lib/game-time'
 import { parseCourtOffer } from '@/lib/game-court'
 import { postGameNotice } from '@/lib/game-notice'
 import { NextResponse } from 'next/server'
@@ -139,12 +139,20 @@ export async function DELETE(
   // Verify ownership and fetch game details for notification snapshot
   const { data: game } = await supabase
     .from('games')
-    .select('id, scheduled_at, format, neighborhood, creator_id')
+    .select('id, scheduled_at, duration_minutes, format, neighborhood, creator_id')
     .eq('id', id)
     .eq('creator_id', user.id)
     .single()
 
   if (!game) return NextResponse.json({ error: 'Not found or not creator' }, { status: 404 })
+
+  // Past games stay shared — hosts/participants soft-dismiss via POST .../hide.
+  if (gameEndMs(game.scheduled_at, game.duration_minutes) <= Date.now()) {
+    return NextResponse.json(
+      { error: 'Past games cannot be deleted; remove them from your schedule instead' },
+      { status: 400 },
+    )
+  }
 
   // Notify before deletion. ON DELETE SET NULL flips game_id → null;
   // chat cards then show that the game was fully cancelled.
