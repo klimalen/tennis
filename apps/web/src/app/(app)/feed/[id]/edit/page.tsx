@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Image as ImageIcon, X, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import { clampPostBody, POST_BODY_MAX } from '@/lib/post-limits'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../../SquarePhotoCrop'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 
@@ -24,7 +25,7 @@ export default function EditPostPage() {
   useEffect(() => {
     supabase.from('posts').select('body, image_url').eq('id', id).single().then(({ data }) => {
       if (data) {
-        setText(data.body ?? '')
+        setText(clampPostBody(data.body ?? ''))
         setImageUrl(data.image_url)
       }
       setLoading(false)
@@ -110,12 +111,16 @@ export default function EditPostPage() {
       <div className="max-w-2xl mx-auto px-4 py-5">
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setText(clampPostBody(e.target.value))}
           placeholder="What's on your mind?"
           rows={5}
+          maxLength={POST_BODY_MAX}
           className="font-copy w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
           autoFocus
         />
+        <p className="mt-1 text-right text-[9px] text-[rgba(26,26,26,0.45)]">
+          {text.length}/{POST_BODY_MAX}
+        </p>
 
         {newImageFile && (
           <SquarePhotoCrop ref={cropRef} file={newImageFile} onRemove={removeImage} />
