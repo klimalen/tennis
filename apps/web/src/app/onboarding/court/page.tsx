@@ -13,6 +13,11 @@ import {
   type CourtDetailsValues,
 } from '@/components/court/CourtDetailsForm'
 import { OpeningHoursEditor } from '@/components/court/OpeningHoursEditor'
+import {
+  PROFILE_LENGTH_ERROR,
+  PROFILE_USERNAME_MAX,
+  exceedsProfileLimit,
+} from '@/lib/profile-limits'
 
 const TOTAL_STEPS = 3
 const inputClass = 'w-full px-4 py-3 rounded-lg border border-[#1a1a1a]/40 bg-brand-field text-[#1a1a1a] placeholder-[rgba(26,26,26,0.4)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all text-sm'
@@ -184,6 +189,7 @@ export default function CourtOnboardingPage() {
         && data.city.trim()
         && data.address.trim()
         && data.username.trim().length >= 3
+        && !exceedsProfileLimit(data.username, PROFILE_USERNAME_MAX)
         && usernameStatus === 'available',
       )
     }
@@ -211,6 +217,10 @@ export default function CourtOnboardingPage() {
 
   async function finish() {
     if (saving) return
+    if (exceedsProfileLimit(data.username, PROFILE_USERNAME_MAX)) {
+      setError(PROFILE_LENGTH_ERROR)
+      return
+    }
     setSaving(true)
     setError(null)
     const message = await saveCourtDetails(data, pendingAvatar)
@@ -340,9 +350,11 @@ export default function CourtOnboardingPage() {
                   <input
                     type="text"
                     value={data.username}
-                    onChange={(e) => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                    onChange={(e) => update({
+                      username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, PROFILE_USERNAME_MAX),
+                    })}
                     placeholder="your_court"
-                    maxLength={20}
+                    maxLength={PROFILE_USERNAME_MAX}
                     className={`${inputClass} pl-8 pr-10`}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -351,10 +363,17 @@ export default function CourtOnboardingPage() {
                     {usernameStatus === 'taken' && <X size={14} className="text-red-500" />}
                   </div>
                 </div>
-                <div className="mt-1.5 flex justify-between">
+                <div className="mt-1.5 flex justify-between gap-2">
                   <p className="text-[9px] text-[rgba(26,26,26,0.35)]">Letters, numbers and underscores only</p>
-                  {usernameStatus === 'taken' && <p className="text-[9px] text-red-500">Username is taken</p>}
-                  {usernameStatus === 'available' && <p className="text-[9px] text-brand-primary">Available</p>}
+                  {exceedsProfileLimit(data.username, PROFILE_USERNAME_MAX) ? (
+                    <p className="text-[9px] text-red-500">{PROFILE_LENGTH_ERROR}</p>
+                  ) : usernameStatus === 'taken' ? (
+                    <p className="text-[9px] text-red-500">Username is taken</p>
+                  ) : usernameStatus === 'available' ? (
+                    <p className="text-[9px] text-brand-primary">Available</p>
+                  ) : (
+                    <p className="text-[9px] text-[rgba(26,26,26,0.35)]">{data.username.length}/{PROFILE_USERNAME_MAX}</p>
+                  )}
                 </div>
               </div>
               <div>
@@ -540,7 +559,12 @@ export default function CourtOnboardingPage() {
           ) : (
             <button
               type="button"
-              disabled={saving || !courtDetailsComplete(data) || data.username.trim().length < 3}
+              disabled={
+                saving
+                || !courtDetailsComplete(data)
+                || data.username.trim().length < 3
+                || exceedsProfileLimit(data.username, PROFILE_USERNAME_MAX)
+              }
               onClick={() => void finish()}
               className="w-full py-3.5 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium disabled:opacity-40 flex items-center justify-center gap-2"
             >

@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, Globe, Loader2, MapPin, Phone, X } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Globe, Loader2, MapPin, Phone, Trash2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
+import { gameEndMs } from '@/lib/game-time'
 import { costLine, type GameCourt } from '@/lib/game-court'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
 import { courtListingMapsHref } from '@/components/court/CourtListingDetails'
@@ -167,11 +168,13 @@ export function GameDetailSheet({
   const isFull = spotsLeft <= 0
   const isHost = Boolean(currentUserId && currentUserId === game.creator_id)
   const isCourtHost = game.creator.account_kind === 'court' && isHost
-  const isPast = new Date(game.scheduled_at) < new Date()
+  const isPast = gameEndMs(game.scheduled_at, game.duration_minutes) <= Date.now()
   const isCancelled = game.status === 'cancelled'
   const alreadyIn = !isCourtHost && !left && (viewerPlaysInGame(game, currentUserId) || joined)
   const canLeave = alreadyIn && !isPast && !isCancelled && !isHost
   const canCancel = isHost && !isPast && !isCancelled
+  // Past: any seat-holder or host can soft-dismiss from their own schedule only.
+  const canHidePast = Boolean(currentUserId) && isPast && !isCancelled && (isHost || alreadyIn)
   const price = game.court?.fee === false
     ? 'Free'
     : costLine(game.court_cost_cents, game.payment, game.cost_currency)
@@ -252,6 +255,21 @@ export function GameDetailSheet({
     }
   }
 
+  async function handleHidePast() {
+    if (!canHidePast || cancelling) return
+    setCancelling(true)
+    const res = await fetch(`/api/games/${game.id}/hide`, { method: 'POST' })
+    setCancelling(false)
+    setShowCancelConfirm(false)
+    if (!res.ok) return
+    onCancelled?.()
+    onClose?.()
+    if (page) {
+      router.push(backHref ?? '/me')
+      router.refresh()
+    }
+  }
+
   const joinLabel = isHost
     ? 'You organised this'
     : alreadyIn
@@ -269,6 +287,20 @@ export function GameDetailSheet({
   const shareButton = (
     <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={game.is_open ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
   )
+  const hidePastButton = canHidePast ? (
+    <button
+      type="button"
+      onClick={() => setShowCancelConfirm(true)}
+      aria-label="Remove from your schedule"
+      className={
+        page
+          ? 'flex h-9 w-9 items-center justify-center text-[rgba(26,26,26,0.35)] transition-colors hover:text-red-500'
+          : 'flex h-7 w-7 items-center justify-center text-[rgba(26,26,26,0.35)] transition-colors hover:text-red-500'
+      }
+    >
+      <Trash2 size={page ? 16 : 14} />
+    </button>
+  ) : null
   const gamePath = backHref ? withReturnTo(`/game/${game.id}`, backHref) : `/game/${game.id}`
   const courtPageHref = game.court ? withReturnTo(`/court/${game.court.id}`, gamePath) : null
   const courtProfileHref = game.court?.profile_username
@@ -499,7 +531,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {isHost && !canCancel && (
+          {isHost && !canCancel && !canHidePast && (
             <button
               type="button"
               disabled
@@ -511,14 +543,19 @@ export function GameDetailSheet({
         </div>
   )
 
+  const removingPast = canHidePast && !canCancel
   const cancelConfirm = showCancelConfirm ? (
     <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-[28px] max-w-sm w-full p-6">
-        <span className="font-display text-2xl tracking-wide block mb-3">CANCEL GAME?</span>
+        <span className="font-display text-2xl tracking-wide block mb-3">
+          {removingPast ? 'REMOVE FROM SCHEDULE?' : 'CANCEL GAME?'}
+        </span>
         <p className="text-sm text-[rgba(26,26,26,0.5)] mb-5">
-          {accepted.length > 0
-            ? 'Players who joined will be notified in chat that this game is fully cancelled.'
-            : 'This game will be removed from your schedule.'}
+          {removingPast
+            ? 'This removes the game from your schedule only. Other players will still see it.'
+            : accepted.length > 0
+              ? 'Players who joined will be notified in chat that this game is fully cancelled.'
+              : 'This game will be removed from your schedule.'}
         </p>
         <div className="flex gap-3">
           <button
@@ -531,11 +568,13 @@ export function GameDetailSheet({
           </button>
           <button
             type="button"
-            onClick={() => { void handleCancel() }}
+            onClick={() => { void (removingPast ? handleHidePast() : handleCancel()) }}
             disabled={cancelling}
             className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-colors"
           >
-            {cancelling ? 'Cancelling…' : 'Cancel game'}
+            {cancelling
+              ? (removingPast ? 'Removing…' : 'Cancelling…')
+              : (removingPast ? 'Remove' : 'Cancel game')}
           </button>
         </div>
       </div>
@@ -553,6 +592,7 @@ export function GameDetailSheet({
             <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
               {game.is_open ? 'OPEN GAME' : 'GAME'}
             </span>
+            {hidePastButton}
             {shareButton}
           </div>
         </div>
@@ -573,6 +613,7 @@ export function GameDetailSheet({
             {game.is_open ? 'Open Game' : 'Game'}
           </span>
           <div className="flex items-center gap-1">
+            {hidePastButton}
             {shareButton}
             <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-[rgba(26,26,26,0.5)] hover:text-[#1a1a1a]">
               <X size={16} />

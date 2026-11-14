@@ -17,6 +17,17 @@ export function formatPlayFormat(format: string | null | undefined): string {
   return format ?? ''
 }
 
+/**
+ * Chip labels for profiles.play_style.
+ * One intent → one chip; `both` → no chips (not a third vague label, not a pair).
+ * Wording stays distinct from the Competitive skill tier.
+ */
+export function playStyleLabels(style: string | null | undefined): string[] {
+  if (style === 'recreational') return ['Play for fun']
+  if (style === 'competitive') return ['Play for competition']
+  return []
+}
+
 /** Letter-avatar wash for game chats — keeps singles vs doubles visually distinct. */
 export function gameChatAvatarClass(format: string | null | undefined): string {
   if (format === 'singles') return 'bg-[#D7EBE6]'

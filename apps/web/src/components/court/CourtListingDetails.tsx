@@ -102,7 +102,7 @@ export function CourtListingDetails({
           <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(26,26,26,0.4)]">{kindLabel}</p>
         )}
         <div className={`flex items-start justify-between gap-3 ${kindLabel ? 'mt-1' : ''}`}>
-          <h2 className="flex min-w-0 items-center gap-1.5 font-display text-2xl leading-none tracking-wide uppercase text-[#1a1a1a] md:text-3xl">
+          <h2 className="flex min-w-0 items-center gap-1.5 font-display text-xl leading-none tracking-wide uppercase text-[#1a1a1a] md:text-2xl">
             <span className="min-w-0">{title}</span>
             {verified && <CourtVerifiedBadge className="flex-shrink-0" />}
           </h2>

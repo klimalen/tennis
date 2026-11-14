@@ -16,21 +16,13 @@ import { skillLabel } from '@/lib/skill'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
-import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
-import { hasSlots, normalizeAvailability } from '@/lib/availability'
+import { ProfileTraitChips } from '@/components/ui/ProfileTraitChips'
+import { normalizeAvailability } from '@/lib/availability'
 import { returnToFromSearch } from '@/lib/return-to'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const SURFACE_LABELS: Record<string, string> = {
-  hard: 'Hard',
-  clay: 'Clay',
-  grass: 'Grass',
-  carpet: 'Carpet',
-  synthetic: 'Synthetic',
-}
 
 interface PostRow {
   id: string
@@ -203,6 +195,7 @@ export default async function PlayerProfilePage({
     ? playedCountResult.data
     : schedule.playedCount
 
+  const formats: string[] = profile.preferred_formats ?? []
   const surfaces: string[] = profile.preferred_surfaces ?? []
   const availability = normalizeAvailability(profile.availability)
 
@@ -252,7 +245,7 @@ export default async function PlayerProfilePage({
           <Link href={backHref} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
             <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
           </Link>
-          <span className="flex-1 truncate font-display text-2xl tracking-wide text-[#1a1a1a]">
+          <span className="flex-1 truncate font-display text-xl tracking-wide text-[#1a1a1a]">
             {profile.full_name.toUpperCase()}
           </span>
           <ShareLinkButton
@@ -264,14 +257,16 @@ export default async function PlayerProfilePage({
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-2 pb-8 space-y-6">
-        {/* Profile header */}
-        <div className="relative bg-white rounded-[28px] p-5">
-          <div className="flex items-start gap-5">
-            {/* Avatar — coach badge sits centered on the top edge */}
+        {/* Profile header — coach watermark in the lower-right empty band */}
+        <div className="relative overflow-hidden bg-white rounded-[28px] p-5">
+          {!isCourt && profile.is_coach && (
+            <>
+              <CoachWatermark />
+              <span className="sr-only">Coach</span>
+            </>
+          )}
+          <div className="relative z-10 flex items-start gap-5">
             <div className="relative flex-shrink-0">
-              {!isCourt && profile.is_coach && (
-                <CoachBadge className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 shadow-sm" />
-              )}
               <div className="w-20 h-20 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
                 {profile.avatar_url ? (
                   <Image src={profile.avatar_url} alt={profile.full_name} width={80} height={80} className="w-full h-full object-cover" />
@@ -308,11 +303,11 @@ export default async function PlayerProfilePage({
                   href={courtHref}
                   className="group inline-flex items-center gap-1.5 max-w-full hover:opacity-80 transition-opacity"
                 >
-                  <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+                  <p className="font-display text-xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
                   <ArrowUpRight size={16} className="flex-shrink-0 text-[rgba(26,26,26,0.4)] group-hover:text-[#1a1a1a] transition-colors" aria-hidden />
                 </Link>
               ) : (
-                <p className="font-display text-2xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
+                <p className="font-display text-xl tracking-wide leading-none">{profile.full_name.toUpperCase()}</p>
               )}
               <span className="text-[11px] tracking-[0.04em] text-[rgba(26,26,26,0.28)]">@{profile.username}</span>
             </div>
@@ -324,20 +319,14 @@ export default async function PlayerProfilePage({
               </p>
             )}
 
-            {!isCourt && (skill || surfaces.length > 0 || hasSlots(availability)) && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                {skill && (
-                  <span className="rounded-full text-[9px] tracking-[0.15em] uppercase text-[#F0EBE3] font-medium bg-[#3A8A7A] px-2.5 py-0.5">
-                    {skill}
-                  </span>
-                )}
-                {surfaces.map((s) => (
-                  <span key={s} className="rounded-full text-[9px] tracking-[0.12em] uppercase text-[#1a1a1a] bg-brand-field px-2.5 py-0.5">
-                    {SURFACE_LABELS[s] ?? s}
-                  </span>
-                ))}
-                <AvailabilityButton value={availability} />
-              </div>
+            {!isCourt && (
+              <ProfileTraitChips
+                skill={skill}
+                formats={formats}
+                surfaces={surfaces}
+                playStyle={profile.play_style}
+                availability={availability}
+              />
             )}
 
             {!isCourt && profile.bio && (

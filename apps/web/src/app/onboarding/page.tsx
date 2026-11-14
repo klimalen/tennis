@@ -9,6 +9,11 @@ import { detectProfileLocation, type ProfileLocation } from '@/lib/profile-locat
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
 import { legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
+import {
+  PROFILE_LENGTH_ERROR,
+  PROFILE_USERNAME_MAX,
+  exceedsProfileLimit,
+} from '@/lib/profile-limits'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -453,9 +458,11 @@ function Step5({
           <input
             type="text"
             value={data.username}
-            onChange={(e) => onChange({ username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+            onChange={(e) => onChange({
+              username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, PROFILE_USERNAME_MAX),
+            })}
             placeholder="your_username"
-            maxLength={20}
+            maxLength={PROFILE_USERNAME_MAX}
             className="w-full pl-8 pr-10 py-3 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-[#1a1a1a] placeholder-[rgba(26,26,26,0.3)] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all text-sm"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -464,10 +471,17 @@ function Step5({
             {usernameStatus === 'taken' && <X size={14} className="text-red-500" />}
           </div>
         </div>
-        <div className="mt-1.5 flex justify-between">
+        <div className="mt-1.5 flex justify-between gap-2">
           <p className="text-[9px] text-[rgba(26,26,26,0.35)]">Letters, numbers and underscores only</p>
-          {usernameStatus === 'taken' && <p className="text-[9px] text-red-500">Username is taken</p>}
-          {usernameStatus === 'available' && <p className="text-[9px] text-brand-primary">Available</p>}
+          {exceedsProfileLimit(data.username, PROFILE_USERNAME_MAX) ? (
+            <p className="text-[9px] text-red-500">{PROFILE_LENGTH_ERROR}</p>
+          ) : usernameStatus === 'taken' ? (
+            <p className="text-[9px] text-red-500">Username is taken</p>
+          ) : usernameStatus === 'available' ? (
+            <p className="text-[9px] text-brand-primary">Available</p>
+          ) : (
+            <p className="text-[9px] text-[rgba(26,26,26,0.35)]">{data.username.length}/{PROFILE_USERNAME_MAX}</p>
+          )}
         </div>
       </div>
     </div>
@@ -524,7 +538,10 @@ export default function OnboardingPage() {
 
   function canProceed() {
     if (step === 1) return data.city.trim().length > 0
-    if (step === 5) return data.username.trim().length >= 3
+    if (step === 5) {
+      return data.username.trim().length >= 3
+        && !exceedsProfileLimit(data.username, PROFILE_USERNAME_MAX)
+    }
     return true
   }
 
@@ -549,6 +566,7 @@ export default function OnboardingPage() {
 
     const schedule = legacySchedule(data.availability)
     const username = data.username.trim()
+    if (exceedsProfileLimit(username, PROFILE_USERNAME_MAX)) return false
     await supabase.from('profiles').update({
       city_name: data.city || null,
       city_lat: data.cityLat,

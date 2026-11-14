@@ -59,13 +59,12 @@ export function ProposeMatchButton({
   const label =
     state === 'loading' ? 'Sending…' :
     state === 'declined' ? 'Try again' :
-    state === 'connected' ? 'Plan a game' :
-    'Play together'
+    'Propose a game'
 
   const helper =
     state === 'sent' ? 'Waiting for them to accept a game' :
     state === 'declined' ? 'They declined. You can send the request again.' :
-    state === 'connected' ? 'You can chat and plan a game. You follow each other now.' :
+    state === 'connected' ? 'You can chat and propose a game. You follow each other now.' :
     'They need to accept before a chat opens.'
 
   return (
