@@ -61,32 +61,23 @@ export function ProposeMatchButton({
     state === 'declined' ? 'Try again' :
     'Propose a game'
 
-  const helper =
-    state === 'sent' ? 'Waiting for them to accept a game' :
-    state === 'declined' ? 'They declined. You can send the request again.' :
-    state === 'connected' ? 'You can chat and propose a game. You follow each other now.' :
-    'They need to accept before a chat opens.'
-
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <div className="flex-1 min-w-0">
-          {state === 'sent' ? (
-            <PlayRequestSentButton compact onCancel={() => void cancelRequest()} />
-          ) : (
-            <button
-              type="button"
-              onClick={handleClick}
-              disabled={state === 'loading'}
-              className="w-full h-11 px-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.12em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-60 disabled:cursor-default truncate"
-            >
-              {label}
-            </button>
-          )}
-        </div>
-        {children}
+    <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0">
+        {state === 'sent' ? (
+          <PlayRequestSentButton compact onCancel={() => void cancelRequest()} />
+        ) : (
+          <button
+            type="button"
+            onClick={handleClick}
+            disabled={state === 'loading'}
+            className="w-full h-11 px-3 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.12em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-60 disabled:cursor-default truncate"
+          >
+            {label}
+          </button>
+        )}
       </div>
-      <p className="text-[11px] text-[rgba(26,26,26,0.45)] leading-snug">{helper}</p>
+      {children}
     </div>
   )
 }
