@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { FollowersList, type FollowerProfile } from '@/app/(app)/me/followers/FollowersList'
+import { FollowListView, type FollowerProfile } from '@/app/(app)/me/followers/FollowersList'
 
 export async function PlayerFollowList({
   username,
@@ -49,28 +47,12 @@ export async function PlayerFollowList({
     : 'People this player follows appear here'
 
   return (
-    <div className="min-h-screen">
-      <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href={`/profile/${profile.username}`} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
-            <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
-          </Link>
-          <span className="font-display text-3xl tracking-wide">{title}</span>
-          <span className="text-[rgba(26,26,26,0.35)] text-sm font-numbers">{people.length}</span>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto">
-        {people.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-            <p className="font-display text-5xl text-brand-surface-lg mb-2">✦</p>
-            <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">{emptyTitle}</p>
-            <p className="text-xs font-fraunces italic text-[#85648F]">{emptyBody}</p>
-          </div>
-        ) : (
-          <FollowersList followers={people} />
-        )}
-      </div>
-    </div>
+    <FollowListView
+      people={people}
+      title={title}
+      backHref={`/profile/${profile.username}`}
+      emptyTitle={emptyTitle}
+      emptyBody={emptyBody}
+    />
   )
 }

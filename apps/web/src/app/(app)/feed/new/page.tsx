@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { clampPostBody, POST_BODY_MAX } from '@/lib/post-limits'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../SquarePhotoCrop'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 
@@ -113,12 +114,16 @@ export default function NewPostPage() {
         {/* Text input */}
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setText(clampPostBody(e.target.value))}
           placeholder="What's on your mind?"
           rows={5}
+          maxLength={POST_BODY_MAX}
           className="font-copy w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
           autoFocus
         />
+        <p className="mt-1 text-right text-[9px] text-[rgba(26,26,26,0.45)]">
+          {text.length}/{POST_BODY_MAX}
+        </p>
 
         {error && (
           <p className="mt-3 text-sm text-red-600">{error}</p>

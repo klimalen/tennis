@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
 import { ownPostImageUrl } from '@/lib/post-image'
+import { exceedsPostBodyLimit, POST_BODY_LENGTH_ERROR } from '@/lib/post-limits'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -13,6 +14,10 @@ export async function PATCH(
 
   const { id } = await params
   const body = await request.json() as { body?: string | null; image_url?: string | null }
+  const text = body.body?.trim() ? body.body.trim() : null
+  if (text && exceedsPostBodyLimit(text)) {
+    return NextResponse.json({ error: POST_BODY_LENGTH_ERROR }, { status: 400 })
+  }
   const imageUrl = body.image_url ? ownPostImageUrl(body.image_url, user.id) : null
   if (body.image_url && !imageUrl) {
     return NextResponse.json({ error: 'Photo must be uploaded to your account' }, { status: 400 })
@@ -20,7 +25,7 @@ export async function PATCH(
 
   const { error } = await supabase
     .from('posts')
-    .update({ body: body.body ?? null, image_url: imageUrl })
+    .update({ body: text, image_url: imageUrl })
     .eq('id', id)
     .eq('author_id', user.id)
 

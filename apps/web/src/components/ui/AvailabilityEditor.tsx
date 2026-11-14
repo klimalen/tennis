@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import {
   DAY_LABELS,
   DAY_ORDER,
@@ -98,13 +99,16 @@ export function AvailabilityEditor({
   }
 
   function clearAll() {
-    setSameEveryDay(true)
+    // Wipe every selection and leave the day grid empty — do not bounce
+    // back into “Same times every day” (that looked like a failed clear).
+    setSameEveryDay(false)
     onChange({})
   }
 
   const showSharedParts = !anytime && sameEveryDay
   const showDayGrid = !anytime && !sameEveryDay
   const openDays = selectedDays(value)
+  const isCleared = !anytime && !hasSlots(value) && !sameEveryDay && openDays.length === 0
 
   return (
     <div className="space-y-3 rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
@@ -189,8 +193,10 @@ export function AvailabilityEditor({
       <button
         type="button"
         onClick={clearAll}
-        className="text-[10px] tracking-[0.14em] uppercase font-medium text-[rgba(26,26,26,0.45)]"
+        disabled={isCleared}
+        className="inline-flex items-center gap-1.5 rounded-full border border-[#1a1a1a]/25 bg-brand-field px-3 py-1.5 text-[10px] tracking-[0.14em] uppercase font-medium text-[rgba(26,26,26,0.7)] transition-colors hover:border-[#1a1a1a]/45 hover:bg-white disabled:pointer-events-none disabled:opacity-40"
       >
+        <X size={12} aria-hidden />
         Clear schedule
       </button>
     </div>

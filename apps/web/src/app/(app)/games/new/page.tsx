@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
@@ -261,15 +261,11 @@ function NewGameForm() {
             <FormSectionLabel>Visibility</FormSectionLabel>
             <div className="flex gap-2">
               <button type="button" onClick={() => setIsOpen(false)}
-                className={`${gameFormOptionPill} ${
-                  !isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                }`}>
+                className={gameFormOptionPillClass(!isOpen)}>
                 Private
               </button>
               <button type="button" onClick={() => setIsOpen(true)}
-                className={`${gameFormOptionPill} ${
-                  isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                }`}>
+                className={gameFormOptionPillClass(isOpen)}>
                 Public
               </button>
             </div>

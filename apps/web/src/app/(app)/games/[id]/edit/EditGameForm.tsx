@@ -6,7 +6,7 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
@@ -242,15 +242,11 @@ export function EditGameForm({
               <FormSectionLabel>Visibility</FormSectionLabel>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setIsOpen(false)}
-                  className={`${gameFormOptionPill} ${
-                    !isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                  }`}>
+                  className={gameFormOptionPillClass(!isOpen)}>
                   Private
                 </button>
                 <button type="button" onClick={() => setIsOpen(true)}
-                  className={`${gameFormOptionPill} ${
-                    isOpen ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                  }`}>
+                  className={gameFormOptionPillClass(isOpen)}>
                   Public
                 </button>
               </div>
