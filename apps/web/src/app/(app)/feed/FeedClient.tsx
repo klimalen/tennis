@@ -42,6 +42,7 @@ const KIND_LABEL: Record<NotificationKind, string> = {
   game_cancelled: 'Cancelled',
   game_joined: 'Joined',
   game_left: 'Left',
+  message: 'Message',
 }
 
 function gameSummary(payload: NotificationPayload): string | null {
@@ -76,6 +77,8 @@ function detailLine(kind: NotificationKind): string | null {
       return 'Joined your game.'
     case 'game_left':
       return 'Left your game.'
+    case 'message':
+      return 'Sent you a message.'
     default:
       return null
   }
@@ -137,6 +140,9 @@ function NotificationCard({
           {detail && (
             <p className="text-[12px] text-[rgba(26,26,26,0.55)] mt-1">{detail}</p>
           )}
+          {item.kind === 'message' && item.payload.preview && (
+            <p className="mt-1 line-clamp-2 text-[12px] text-[#1a1a1a]">{item.payload.preview}</p>
+          )}
           {summary && (
             <p className="text-[12px] text-[#1a1a1a] mt-1">{summary}</p>
           )}
@@ -178,6 +184,15 @@ function NotificationCard({
           {followingBack ? <UserCheck size={12} /> : <UserPlus size={12} />}
           {followingBack ? 'Following' : 'Follow back'}
         </button>
+      )}
+
+      {item.kind === 'message' && item.payload.conversation_id && (
+        <Link
+          href={`/chats/${item.payload.conversation_id}`}
+          className="mt-3 flex w-full items-center justify-center rounded-full bg-[#E8748A] py-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A]"
+        >
+          Open chat
+        </Link>
       )}
     </div>
   )

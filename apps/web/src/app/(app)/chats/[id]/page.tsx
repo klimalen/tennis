@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { ChatView } from './ChatView'
+import { ChatMuteButton } from './ChatMuteButton'
 import { GameChatHeaderButton } from './GameChatHeaderButton'
 import { formatPlayFormat } from '@/lib/skill'
 import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/LocalGameTime'
@@ -66,11 +67,12 @@ export default async function ChatPage({
 
   const { data: participantsData } = await supabase
     .from('conversation_participants')
-    .select('user_id, last_read_at, profiles ( id, full_name, username, avatar_url, account_kind )')
+    .select('user_id, last_read_at, muted_at, profiles ( id, full_name, username, avatar_url, account_kind )')
     .eq('conversation_id', id)
 
   const myParticipant = participantsData?.find((p) => p.user_id === user.id)
   if (!myParticipant) notFound()
+  const chatMuted = Boolean((myParticipant as { muted_at?: string | null }).muted_at)
 
   const otherParticipant = participantsData?.find((p) => p.user_id !== user.id)
   const other = (otherParticipant as unknown as { user_id: string; last_read_at: string | null; profiles: { id: string; full_name: string; username: string; avatar_url: string | null } } | undefined)
@@ -161,7 +163,7 @@ export default async function ChatPage({
     <div className="relative flex flex-col min-h-screen">
       <div className="page-header">
         <div className={isGameChat
-          ? 'max-w-2xl mx-auto grid grid-cols-[2.25rem_minmax(0,1fr)_2.25rem] items-center gap-x-3'
+          ? 'max-w-2xl mx-auto grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3'
           : 'max-w-2xl mx-auto flex items-center gap-3'}>
           <Link
             href="/chats"
@@ -184,14 +186,16 @@ export default async function ChatPage({
                 )}
                 {gameClosed ? ' · cancelled' : ''}
               </span>
-              {conversation?.game_id && (
-                <GameChatHeaderButton
-                  gameId={conversation.game_id}
-                  userId={user.id}
-                  conversationId={id}
-                  className="col-start-3 row-start-2"
-                />
-              )}
+              <div className="col-start-3 row-start-2 flex items-center gap-2">
+                <ChatMuteButton conversationId={id} initiallyMuted={chatMuted} />
+                {conversation?.game_id && (
+                  <GameChatHeaderButton
+                    gameId={conversation.game_id}
+                    userId={user.id}
+                    conversationId={id}
+                  />
+                )}
+              </div>
             </>
           )}
           {!isGameChat && otherProfile && (
@@ -215,6 +219,7 @@ export default async function ChatPage({
                   {unreadCount} new
                 </span>
               )}
+              <ChatMuteButton conversationId={id} initiallyMuted={chatMuted} />
             </div>
           )}
         </div>

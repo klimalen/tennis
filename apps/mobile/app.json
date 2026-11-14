@@ -16,13 +16,14 @@
     },
     "ios": {
       "bundleIdentifier": "com.klimalen.tennis",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["remote-notification"],
         "NSCameraUsageDescription": "GAME. uses the camera when you add a profile photo or a post.",
         "NSPhotoLibraryUsageDescription": "GAME. uses your photos when you add a profile photo or a post.",
         "NSPhotoLibraryAddUsageDescription": "GAME. saves a photo you take for your profile or a post.",
@@ -62,7 +63,18 @@
       },
       "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2F6667",
+          "sounds": [],
+          "mode": "production"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "299cd76c-57f3-478a-9c98-a9bc0fb2a8ef"

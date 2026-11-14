@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { WebView } from 'react-native-webview'
+import { WebView, type WebViewMessageEvent } from 'react-native-webview'
+import * as Notifications from 'expo-notifications'
+import { pathFromNotificationData, requestGamePushPermission } from '../lib/push'
 
 const WEB_URL = 'https://www.game-tennis.space'
 
@@ -39,10 +41,43 @@ function isAppUrl(url: string): boolean {
   return /^(tel:|mailto:|sms:|geo:|itms-apps:)/i.test(url)
 }
 
+function replyPushResult(result: unknown): string {
+  const payload = JSON.stringify(result)
+  return `(function(){
+    try {
+      if (typeof window.__gamePushResult === 'function') {
+        window.__gamePushResult(${payload});
+      }
+    } catch (e) {}
+  })(); true;`
+}
+
 export default function Index() {
+  const webRef = useRef<WebView>(null)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [pendingPath, setPendingPath] = useState<string | null>(null)
+
+  const navigateInApp = useCallback((path: string) => {
+    const target = path.startsWith('/') ? path : `/${path}`
+    webRef.current?.injectJavaScript(`(function(){
+      try { window.location.assign(${JSON.stringify(target)}); } catch (e) {}
+    })(); true;`)
+  }, [])
+
+  useEffect(() => {
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      const path = pathFromNotificationData(response?.notification.request.content.data as Record<string, unknown> | undefined)
+      if (path) setPendingPath(path)
+    })
+
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const path = pathFromNotificationData(response.notification.request.content.data as Record<string, unknown> | undefined)
+      if (path) navigateInApp(path)
+    })
+    return () => sub.remove()
+  }, [navigateInApp])
 
   function onShouldStartLoadWithRequest(request: { url: string }) {
     const url = request.url
@@ -52,6 +87,21 @@ export default function Index() {
       return false
     }
     return true
+  }
+
+  async function onMessage(event: WebViewMessageEvent) {
+    let raw: unknown
+    try {
+      raw = JSON.parse(event.nativeEvent.data)
+    } catch {
+      return
+    }
+    if (!raw || typeof raw !== 'object') return
+    const message = raw as { type?: string }
+    if (message.type !== 'request-push') return
+
+    const result = await requestGamePushPermission()
+    webRef.current?.injectJavaScript(replyPushResult(result))
   }
 
   return (
@@ -74,6 +124,7 @@ export default function Index() {
       ) : (
         <View style={styles.webWrap}>
           <WebView
+            ref={webRef}
             key={attempt}
             source={{ uri: WEB_URL }}
             style={styles.web}
@@ -95,8 +146,17 @@ export default function Index() {
             injectedJavaScriptBeforeContentLoaded={NATIVE_BOOT}
             injectedJavaScript={NATIVE_BOOT}
             onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+            onMessage={(event) => {
+              void onMessage(event)
+            }}
             onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
+            onLoadEnd={() => {
+              setLoading(false)
+              if (pendingPath) {
+                navigateInApp(pendingPath)
+                setPendingPath(null)
+              }
+            }}
             onError={() => {
               setLoading(false)
               setFailed(true)
