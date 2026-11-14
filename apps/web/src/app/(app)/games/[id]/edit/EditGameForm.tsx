@@ -5,18 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { FormatFields } from '@/components/games/FormatFields'
 import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
 import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
-
-type Format = 'singles' | 'doubles'
-
-const FORMAT_OPTIONS: { value: Format; label: string }[] = [
-  { value: 'singles', label: 'Singles' },
-  { value: 'doubles', label: 'Doubles' },
-]
+import { GROUP_SEAT_DEFAULT, type GameFormatChoice } from '@/lib/game-seats'
 
 const STATUS_LABELS: Record<string, string> = {
   accepted: 'Going',
@@ -29,6 +24,7 @@ interface Game {
   scheduled_at: string
   duration_minutes: number | null
   format: string
+  max_players: number
   neighborhood: string | null
   notes: string | null
   is_open: boolean
@@ -73,7 +69,10 @@ export function EditGameForm({
   const [date, setDate] = useState(toDateInput(game.scheduled_at))
   const [time, setTime] = useState(initialStart)
   const [endTime, setEndTime] = useState(clockFromDuration(game.scheduled_at, game.duration_minutes ?? 90))
-  const [format, setFormat] = useState<Format>(game.format as Format)
+  const [format, setFormat] = useState<GameFormatChoice>(
+    game.format === 'doubles' || game.format === 'group' ? game.format : 'singles',
+  )
+  const [maxPlayers, setMaxPlayers] = useState(game.format === 'group' ? game.max_players : GROUP_SEAT_DEFAULT)
   const [place, setPlace] = useState<CourtPlaceValue>({
     venueId: game.venue_group_id,
     venue: game.court,
@@ -136,6 +135,7 @@ export function EditGameForm({
         scheduled_at,
         duration_minutes,
         format,
+        ...(format === 'group' ? { max_players: maxPlayers } : {}),
         location_name: place.locationName.trim() || null,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
@@ -224,19 +224,7 @@ export function EditGameForm({
             onEnd={setEndTime}
           />
 
-          <div>
-            <FormSectionLabel>Format</FormSectionLabel>
-            <div className="flex gap-2">
-              {FORMAT_OPTIONS.map((opt) => (
-                <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                  className={`${gameFormOptionPill} ${
-                    format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                  }`}>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
 
           <CourtPlaceFields value={place} onChange={setPlace} />
 

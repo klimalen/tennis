@@ -1,6 +1,6 @@
 export type SportType = 'tennis' | 'padel' | 'squash' | 'pickleball' | 'badminton'
 
-export type PlayFormat = 'singles' | 'doubles' | 'mixed_doubles'
+export type PlayFormat = 'singles' | 'doubles' | 'mixed_doubles' | 'group'
 
 export type PlayStyle = 'recreational' | 'competitive' | 'both'
 

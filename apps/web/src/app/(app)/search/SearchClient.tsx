@@ -174,6 +174,7 @@ const FORMAT_LABELS: Record<string, string> = {
   singles: 'Singles',
   doubles: 'Doubles',
   mixed_doubles: 'Mixed',
+  group: 'Group',
 }
 
 function isGenericCourtName(name: string): boolean {
@@ -667,12 +668,13 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
 
 // ─── Participant avatars ───────────────────────────────────────────────────────
 
-const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed' }
+const OPEN_FORMAT_LABELS: Record<string, string> = { singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed', group: 'Group' }
 
 const GAME_FILTERS = [
   { id: 'spots', label: 'Open spots' },
   { id: 'singles', label: 'Singles' },
   { id: 'doubles', label: 'Doubles' },
+  { id: 'group', label: 'Group' },
 ]
 
 // ─── Open game card ───────────────────────────────────────────────────────────

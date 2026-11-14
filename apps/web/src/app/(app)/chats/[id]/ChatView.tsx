@@ -123,7 +123,7 @@ function addMessage(prev: Message[], msg: Message): Message[] {
 }
 
 const FORMAT_LABELS: Record<string, string> = {
-  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed',
+  singles: 'Singles', doubles: 'Doubles', mixed_doubles: 'Mixed', group: 'Group',
 }
 
 // ─── Game Invite Card ─────────────────────────────────────────────────────────

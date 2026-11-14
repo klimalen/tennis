@@ -5,17 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { FormatFields } from '@/components/games/FormatFields'
 import { FormSectionLabel, gameFormOptionPill, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
-
-type Format = 'singles' | 'doubles'
-
-const FORMAT_OPTIONS: { value: Format; label: string }[] = [
-  { value: 'singles', label: 'Singles' },
-  { value: 'doubles', label: 'Doubles' },
-]
+import { GROUP_SEAT_DEFAULT, type GameFormatChoice } from '@/lib/game-seats'
 
 interface Connection {
   id: string
@@ -44,7 +39,8 @@ function NewGameForm() {
   const [date, setDate] = useState(todayInput())
   const [time, setTime] = useState(initialStart)
   const [endTime, setEndTime] = useState(plusMinutes(initialStart, 60))
-  const [format, setFormat] = useState<Format>('singles')
+  const [format, setFormat] = useState<GameFormatChoice>('singles')
+  const [maxPlayers, setMaxPlayers] = useState(GROUP_SEAT_DEFAULT)
   const [place, setPlace] = useState<CourtPlaceValue>(emptyCourtPlace())
   const [about, setAbout] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -140,6 +136,7 @@ function NewGameForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         scheduled_at, duration_minutes, format,
+        ...(format === 'group' ? { max_players: maxPlayers } : {}),
         location_name: place.locationName.trim() || undefined,
         venue_group_id: place.venueId,
         court_cost_cents: place.courtCostCents,
@@ -210,19 +207,7 @@ function NewGameForm() {
             onEnd={setEndTime}
           />
 
-          <div>
-            <FormSectionLabel>Format</FormSectionLabel>
-            <div className="flex gap-2">
-              {FORMAT_OPTIONS.map((opt) => (
-                <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                  className={`${gameFormOptionPill} ${
-                    format === opt.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-                  }`}>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
 
           <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
 
@@ -239,7 +224,7 @@ function NewGameForm() {
 
           {isCourt && (
             <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
-              This game is public. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four.
+              This game is public. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four, and Group uses the maximum you set.
             </p>
           )}
 

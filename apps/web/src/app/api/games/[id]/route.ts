@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
 import { gameEndMs, parseDurationMinutes } from '@/lib/game-time'
 import { parseCourtOffer } from '@/lib/game-court'
+import { seatsForFormat } from '@/lib/game-seats'
 import { postGameNotice } from '@/lib/game-notice'
 import { NextResponse } from 'next/server'
 
@@ -25,13 +26,14 @@ export async function PATCH(
     payment?: string | null
     notes?: string | null
     is_open?: boolean
+    max_players?: number
   }
   const duration_minutes = parseDurationMinutes(body.duration_minutes)
 
   // Fetch current game to detect if scheduled_at is changing
   const { data: current } = await supabase
     .from('games')
-    .select('scheduled_at, format, neighborhood, creator_id, is_open')
+    .select('scheduled_at, format, neighborhood, creator_id, is_open, max_players')
     .eq('id', id)
     .single()
 
@@ -53,10 +55,26 @@ export async function PATCH(
     payment?: string | null
     notes?: string | null
     is_open?: boolean
+    max_players?: number
   } = {}
   if (body.scheduled_at) patch.scheduled_at = body.scheduled_at
   if (duration_minutes) patch.duration_minutes = duration_minutes
-  if (body.format) patch.format = body.format
+  if (body.format) {
+    const nextFormat = body.format
+    const requested = nextFormat === 'group' ? (body.max_players ?? current.max_players) : undefined
+    const seats = seatsForFormat(nextFormat, requested)
+    if ('error' in seats) return NextResponse.json({ error: seats.error }, { status: 400 })
+    const { count } = await supabase
+      .from('game_participants')
+      .select('id', { count: 'exact', head: true })
+      .eq('game_id', id)
+      .in('status', ['accepted', 'invited'])
+    if ((count ?? 0) > seats.max_players) {
+      return NextResponse.json({ error: 'That is fewer seats than people already in the game' }, { status: 400 })
+    }
+    patch.format = nextFormat
+    patch.max_players = seats.max_players
+  }
   if ('notes' in body) patch.notes = body.notes ?? null
   if (typeof body.is_open === 'boolean') patch.is_open = body.is_open
 

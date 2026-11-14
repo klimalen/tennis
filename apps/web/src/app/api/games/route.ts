@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
 import { parseDurationMinutes } from '@/lib/game-time'
 import { parseCourtOffer } from '@/lib/game-court'
+import { seatsForFormat } from '@/lib/game-seats'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     payment?: string | null
     notes?: string
     is_open?: boolean
+    max_players?: number
   }
 
   const { scheduled_at, format, location_name, notes, is_open } = body
@@ -67,8 +69,11 @@ export async function POST(request: Request) {
   const offer = parseCourtOffer(body.court_cost_cents, body.payment, venueFee, body.cost_currency)
   if (offer.error) return NextResponse.json({ error: offer.error }, { status: 400 })
 
+  const seats = seatsForFormat(format, body.max_players)
+  if ('error' in seats) return NextResponse.json({ error: seats.error }, { status: 400 })
+
   const gameId = crypto.randomUUID()
-  const max_players = format === 'singles' ? 2 : 4
+  const max_players = seats.max_players
   const fallbackPlace = isCourt
     ? ([creator?.full_name?.trim(), creator?.address?.trim(), creator?.city_name?.trim()].filter(Boolean).join(', ') || creator?.full_name || null)
     : null

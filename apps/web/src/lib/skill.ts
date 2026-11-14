@@ -13,6 +13,7 @@ export function formatPlayFormat(format: string | null | undefined): string {
   if (format === 'singles') return 'Singles'
   if (format === 'mixed_doubles') return 'Mixed'
   if (format === 'doubles') return 'Doubles'
+  if (format === 'group') return 'Group'
   return format ?? ''
 }
 
@@ -32,5 +33,6 @@ export function gameChatAvatarClass(format: string | null | undefined): string {
   if (format === 'singles') return 'bg-[#D7EBE6]'
   if (format === 'mixed_doubles') return 'bg-[#E8DFEE]'
   if (format === 'doubles') return 'bg-[#F6D9DF]'
+  if (format === 'group') return 'bg-[#E7E3C8]'
   return 'bg-[#E8E1D7]'
 }
