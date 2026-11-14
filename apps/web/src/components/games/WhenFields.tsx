@@ -16,9 +16,20 @@ const fieldClass =
   '[&::-webkit-datetime-edit-text]:p-0 [&::-webkit-datetime-edit-text]:text-[15px] [&::-webkit-datetime-edit-hour-field]:p-0 [&::-webkit-datetime-edit-hour-field]:text-[15px] [&::-webkit-datetime-edit-minute-field]:p-0 [&::-webkit-datetime-edit-minute-field]:text-[15px] [&::-webkit-datetime-edit-day-field]:p-0 [&::-webkit-datetime-edit-day-field]:text-[15px] [&::-webkit-datetime-edit-month-field]:p-0 [&::-webkit-datetime-edit-month-field]:text-[15px] [&::-webkit-datetime-edit-year-field]:p-0 [&::-webkit-datetime-edit-year-field]:text-[15px] ' +
   '[&::-webkit-calendar-picker-indicator]:hidden'
 
-/** Option chips (Format / Visibility) — same height & type size as date/time. */
+/**
+ * Option chips (Format / Visibility) — same height & type size as date/time.
+ * No baked-in bg/border color: Tailwind would otherwise keep `bg-brand-field`
+ * over the selected pink fill when both utilities appear in one class string.
+ */
 export const gameFormOptionPill =
-  `${gameFormPill} flex flex-1 items-center justify-center px-3 text-center font-medium tracking-[0.08em] focus:outline-none`
+  'h-11 min-h-11 max-h-11 box-border rounded-full border flex flex-1 items-center justify-center px-3 text-center text-sm font-medium leading-none tracking-[0.08em] text-[#1a1a1a] transition-colors focus:outline-none'
+
+export const gameFormOptionPillActive = 'border-[#E8748A] bg-[#E8748A]'
+export const gameFormOptionPillIdle = 'border-[#1a1a1a]/40 bg-brand-field hover:border-[#1a1a1a]/60'
+
+export function gameFormOptionPillClass(active: boolean) {
+  return `${gameFormOptionPill} ${active ? gameFormOptionPillActive : gameFormOptionPillIdle}`
+}
 
 /** Section title + hairline — same rhythm as game detail Court / Price blocks. */
 export function FormSectionLabel({ children }: { children: ReactNode }) {

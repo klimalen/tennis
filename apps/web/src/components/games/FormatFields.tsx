@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { FormSectionLabel, gameFormOptionPill, gameFormPill } from '@/components/games/WhenFields'
+import { FormSectionLabel, gameFormOptionPillClass, gameFormPill } from '@/components/games/WhenFields'
 import { GROUP_SEAT_DEFAULT, GROUP_SEAT_MAX, GROUP_SEAT_MIN, type GameFormatChoice } from '@/lib/game-seats'
 
 const FORMAT_OPTIONS: { value: GameFormatChoice; label: string }[] = [
@@ -48,9 +48,7 @@ export function FormatFields({
                 onMaxPlayers(GROUP_SEAT_DEFAULT)
               }
             }}
-            className={`${gameFormOptionPill} ${
-              format === option.value ? 'border-[#E8748A] bg-[#E8748A]' : 'hover:border-[#1a1a1a]/60'
-            }`}
+            className={gameFormOptionPillClass(format === option.value)}
           >
             {option.label}
           </button>
