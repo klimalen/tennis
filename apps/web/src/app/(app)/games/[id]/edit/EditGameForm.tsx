@@ -11,6 +11,7 @@ import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/compon
 import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
 import { clockFromDuration, durationFromClock, plusMinutes } from '@/lib/game-time'
+import { CALENDAR_STALE_NOTE } from '@/lib/calendar-event'
 import { GROUP_SEAT_DEFAULT, type GameFormatChoice } from '@/lib/game-seats'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -310,10 +311,15 @@ export function EditGameForm({
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <button onClick={handleSubmit} disabled={submitting}
-            className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
-            {submitting ? 'Saving...' : 'Save changes'}
-          </button>
+          <div>
+            <button onClick={handleSubmit} disabled={submitting}
+              className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
+              {submitting ? 'Saving...' : 'Save changes'}
+            </button>
+            <p className="mt-2.5 text-center text-[11px] leading-snug text-[rgba(26,26,26,0.38)]">
+              {CALENDAR_STALE_NOTE}
+            </p>
+          </div>
 
           {!isCreator && (
             <button type="button" onClick={() => setShowLeaveConfirm(true)}
