@@ -14,6 +14,7 @@ import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFac
 import { courtListingMapsHref } from '@/components/court/CourtListingDetails'
 import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
 import { GameFaceRow, type GameFace } from '@/components/games/GameFaceRow'
+import { AddToCalendar } from '@/components/games/AddToCalendar'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 import { GAME_DETAIL_SELECT, normalizeGameDetail, viewerPlaysInGame } from '@/lib/public-game'
 import { withReturnTo } from '@/lib/return-to'
@@ -270,6 +271,13 @@ export function GameDetailSheet({
     }
   }
 
+  const acceptedSeat = Boolean(
+    currentUserId && game.participants.some((participant) => participant.player_id === currentUserId && participant.status === 'accepted'),
+  )
+  const canAddToCalendar = Boolean(
+    currentUserId && !isPast && !isCancelled && !left && game.status !== 'draft' && (isHost || joined || acceptedSeat),
+  )
+
   const joinLabel = isHost
     ? 'You organised this'
     : alreadyIn
@@ -470,6 +478,10 @@ export function GameDetailSheet({
                 <p className="font-copy text-sm leading-relaxed text-[#1a1a1a]">{game.notes.trim()}</p>
               </div>
             </div>
+          )}
+
+          {canAddToCalendar && currentUserId && (
+            <AddToCalendar game={game} viewerId={currentUserId} />
           )}
 
           {chatId && chatId !== activeConversationId && (
