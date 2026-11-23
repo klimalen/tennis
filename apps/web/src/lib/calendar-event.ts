@@ -131,35 +131,6 @@ function utcBasic(date: Date): string {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
 }
 
-function utcIso(date: Date): string {
-  return date.toISOString().replace(/\.\d{3}Z$/, 'Z')
-}
-
-/** Opens Google Calendar with the event filled in. Nothing is saved until the person taps Save. */
-export function googleCalendarUrl(event: CalendarEvent): string {
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: event.title,
-    details: event.details,
-    location: event.location,
-  })
-  return `https://calendar.google.com/calendar/render?${params.toString()}&dates=${utcBasic(event.start)}/${utcBasic(event.end)}`
-}
-
-/** Opens Outlook on the web with the event filled in. */
-export function outlookCalendarUrl(event: CalendarEvent): string {
-  const params = new URLSearchParams({
-    path: '/calendar/action/compose',
-    rru: 'addevent',
-    subject: event.title,
-    startdt: utcIso(event.start),
-    enddt: utcIso(event.end),
-    body: event.details,
-    location: event.location,
-  })
-  return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`
-}
-
 function icsEscape(value: string): string {
   return value
     .replace(/\\/g, '\\\\')

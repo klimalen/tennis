@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { GameDetail } from '@/components/games/GameDetailSheet'
 import {
   CALENDAR_STALE_NOTE,
   buildCalendarEvent,
-  googleCalendarUrl,
-  outlookCalendarUrl,
   type CalendarGameInput,
 } from '@/lib/calendar-event'
 
@@ -84,38 +82,13 @@ export function AddToCalendar({ game, viewerId }: { game: GameDetail; viewerId: 
     }
   }, [open])
 
-  const links = useMemo(() => {
-    const event = buildCalendarEvent(calendarInput(game, viewerId, origin))
-    if (!event) return null
-    return {
-      google: googleCalendarUrl(event),
-      outlook: outlookCalendarUrl(event),
-    }
-  }, [game, viewerId, origin])
+  const fileHref = `/api/games/${game.id}/calendar`
+  const ready = useMemo(
+    () => buildCalendarEvent(calendarInput(game, viewerId, origin)) !== null,
+    [game, viewerId, origin],
+  )
 
-  if (!links) return null
-
-  function onApple(event: MouseEvent<HTMLAnchorElement>) {
-    setOpen(false)
-    // iPhone and iPad open a real calendar file in the system sheet. Desktop downloads it.
-    const ua = navigator.userAgent
-    const ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
-    if (ios) return
-    event.preventDefault()
-    const href = event.currentTarget.href
-    void fetch(href).then(async (res) => {
-      if (!res.ok) return
-      const blob = await res.blob()
-      const url = URL.createObjectURL(new Blob([blob], { type: 'text/calendar;charset=utf-8' }))
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'tennis-game.ics'
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.setTimeout(() => URL.revokeObjectURL(url), 1500)
-    })
-  }
+  if (!ready) return null
 
   return (
     <div ref={rootRef}>
@@ -132,13 +105,13 @@ export function AddToCalendar({ game, viewerId }: { game: GameDetail; viewerId: 
       </button>
       {open && (
         <div id={menuId} role="menu" aria-label="Add to calendar" className="mt-2 overflow-hidden rounded-2xl border border-[#1a1a1a]/10 bg-white">
-          <a role="menuitem" href={links.google} target="_blank" rel="noopener noreferrer" className={choice} onClick={() => setOpen(false)}>
+          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={choice} onClick={() => setOpen(false)}>
             Google Calendar
           </a>
-          <a role="menuitem" href={`/api/games/${game.id}/calendar`} className={`${choice} border-t border-[#1a1a1a]/10`} onClick={onApple}>
+          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={() => setOpen(false)}>
             Apple Calendar
           </a>
-          <a role="menuitem" href={links.outlook} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={() => setOpen(false)}>
+          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={() => setOpen(false)}>
             Outlook
           </a>
         </div>

@@ -23,15 +23,14 @@ type ParticipantBits = { player_id: string; status: string; profile: ProfileBits
 type CourtBits = {
   name: string | null
   address: string | null
-  city_name: string | null
   lat: number | string | null
   lng: number | string | null
   fee: boolean | null
 }
 
 /**
- * Apple Calendar (and any other app) opens this file.
- * Google and Outlook use prefilled links built in the browser from the same event.
+ * One event file. Google, Apple, and Outlook all open it.
+ * Their websites send a logged-out browser to a marketing page and drop the event.
  */
 export async function GET(
   _request: Request,
@@ -47,7 +46,7 @@ export async function GET(
     .select(`
       id, format, scheduled_at, duration_minutes, neighborhood, notes,
       court_cost_cents, cost_currency, payment, status, creator_id,
-      court:venue_groups!games_venue_group_id_fkey (name, address, city_name, lat, lng, fee),
+      court:venue_groups!games_venue_group_id_fkey (name, address, lat, lng, fee),
       creator:profiles!creator_id (id, full_name, account_kind),
       city:cities (name),
       participants:game_participants (
@@ -103,7 +102,7 @@ export async function GET(
     neighborhood: row.neighborhood,
     courtName: court?.name ?? null,
     courtAddress: court?.address ?? null,
-    courtCity: court?.city_name?.trim() || city?.name || null,
+    courtCity: city?.name?.trim() || null,
     lat: num(court?.lat),
     lng: num(court?.lng),
     fee: court?.fee ?? null,
@@ -129,7 +128,7 @@ export async function GET(
     status: 200,
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="tennis-game.ics"',
+      'Content-Disposition': 'inline; filename="tennis-game.ics"',
       'Cache-Control': 'private, no-store',
     },
   })
