@@ -14,9 +14,13 @@ interface Props {
   onChange: (city: string, coords?: CityCoords) => void
   placeholder?: string
   className?: string
+  /** Replaces the default field chrome (fill, border, radius, height). */
+  inputClassName?: string
 }
 
-export function CityInput({ value, onChange, placeholder = 'Your city...', className = '' }: Props) {
+const DEFAULT_INPUT = 'py-2.5 bg-brand-field border border-[#1a1a1a]/40 rounded-lg focus:border-brand-primary'
+
+export function CityInput({ value, onChange, placeholder = 'Your city...', className = '', inputClassName = DEFAULT_INPUT }: Props) {
   const [input, setInput] = useState(value)
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([])
   const [loading, setLoading] = useState(false)
@@ -125,7 +129,7 @@ export function CityInput({ value, onChange, placeholder = 'Your city...', class
           onBlur={handleBlur}
           onFocus={() => suggestions.length > 0 && showSuggestions && setShowSuggestions(true)}
           placeholder={placeholder}
-          className="w-full pl-8 pr-8 py-2.5 bg-brand-field border border-[#1a1a1a]/40 rounded-lg text-sm text-[#1a1a1a] outline-none focus:border-brand-primary placeholder:text-[rgba(26,26,26,0.4)]"
+          className={`w-full pl-8 pr-8 text-sm text-[#1a1a1a] outline-none placeholder:text-[rgba(26,26,26,0.4)] ${inputClassName}`}
         />
         {loading && (
           <div className="absolute right-3 w-3.5 h-3.5 border-2 border-brand-surface-md border-t-brand-primary rounded-full animate-spin" />

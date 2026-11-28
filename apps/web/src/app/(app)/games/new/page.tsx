@@ -7,7 +7,8 @@ import { ArrowLeft, Globe, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { FormatFields } from '@/components/games/FormatFields'
 import { AboutField } from '@/components/games/AboutField'
-import { FormNote, FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
+import { WhenFields } from '@/components/games/WhenFields'
+import { FormNote, FormSectionLabel, formPanel } from '@/components/ui/FormCard'
 import { VisibilityFields } from '@/components/games/VisibilityFields'
 import type { GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
@@ -224,7 +225,7 @@ function NewGameForm() {
         {!isCourt && preselectedId && preselectedName && preselectedOk && (
           <section>
             <FormSectionLabel>Players</FormSectionLabel>
-            <div className={`${gameFormPanel} p-2`}>
+            <div className={`${formPanel} p-2`}>
               <InvitedPlayerRow name={preselectedName} />
             </div>
           </section>

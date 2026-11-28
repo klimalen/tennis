@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
 import { AboutField } from '@/components/games/AboutField'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
+import { WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, formPanel } from '@/components/ui/FormCard'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList, InvitedPlayerRow } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
@@ -164,7 +165,7 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
 
               <section>
                 <FormSectionLabel>Players</FormSectionLabel>
-                <div className={`${gameFormPanel} p-2`}>
+                <div className={`${formPanel} p-2`}>
                   <InvitedPlayerRow name={otherName} />
                 </div>
               </section>

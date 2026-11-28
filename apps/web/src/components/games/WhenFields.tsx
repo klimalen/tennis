@@ -1,43 +1,6 @@
-import type { ReactNode } from 'react'
-import { CalendarDays, ChevronDown, Clock, Info } from 'lucide-react'
+import { CalendarDays, ChevronDown, Clock } from 'lucide-react'
+import { FormSectionLabel, formPanel, formWell } from '@/components/ui/FormCard'
 import { durationFromClock } from '@/lib/game-time'
-
-/** White card that holds one form block. */
-export const gameFormPanel = 'rounded-[28px] bg-white p-4'
-
-/** Quiet inner field: time, search, amount. */
-export const gameFormWell = 'rounded-[20px] bg-brand-surface'
-
-/** Selectable tile inside a panel (access, cost, who pays). */
-export function gameFormChoiceClass(selected: boolean) {
-  return `border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
-    selected
-      ? 'border-[#E8748A] bg-[#F8E6EA] text-[#1a1a1a]'
-      : 'border-transparent bg-brand-surface text-[#1a1a1a] hover:border-[#1a1a1a]/15'
-  }`
-}
-
-export function FormSectionLabel({ children, hint }: { children: ReactNode; hint?: string | undefined }) {
-  return (
-    <div className="mb-3 flex items-center gap-3">
-      <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[rgba(26,26,26,0.5)]">
-        {children}
-        {hint && <span className="ml-1.5 normal-case tracking-normal text-[rgba(26,26,26,0.35)]">{hint}</span>}
-      </span>
-      <div className="h-px flex-1 bg-brand-divider" aria-hidden />
-    </div>
-  )
-}
-
-/** One muted line with an icon, for hints under a choice. */
-export function FormNote({ children, icon = <Info size={15} strokeWidth={1.7} /> }: { children: ReactNode; icon?: ReactNode }) {
-  return (
-    <p className="flex items-start gap-2 text-[12.5px] leading-snug text-[rgba(26,26,26,0.55)]">
-      <span className="mt-px flex-none text-[rgba(26,26,26,0.4)]" aria-hidden>{icon}</span>
-      <span>{children}</span>
-    </p>
-  )
-}
 
 function openDatePicker(input: HTMLInputElement) {
   // Phones already open the system calendar on tap.
@@ -63,7 +26,7 @@ const timeInputClass =
 
 function TimeTile({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className={`${gameFormWell} block cursor-text px-3.5 py-3 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
+    <label className={`${formWell} block cursor-text px-3.5 py-3 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
       <span className="mb-1 block text-[10px] uppercase tracking-[0.2em] text-[rgba(26,26,26,0.5)]">{label}</span>
       <input type="time" value={value} onChange={(e) => onChange(e.target.value)} required className={timeInputClass} />
     </label>
@@ -97,7 +60,7 @@ export function WhenFields({
   return (
     <section>
       <FormSectionLabel>When</FormSectionLabel>
-      <div className={gameFormPanel}>
+      <div className={formPanel}>
         <div className="relative flex items-center gap-3 rounded-[20px] focus-within:ring-2 focus-within:ring-brand-primary/40">
           <span className="grid h-12 w-12 flex-none place-items-center rounded-[16px] bg-brand-primary-muted text-brand-primary" aria-hidden>
             <CalendarDays size={22} strokeWidth={1.6} />

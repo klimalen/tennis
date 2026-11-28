@@ -13,7 +13,7 @@ import {
   type CourtPayment,
 } from '@/lib/game-court'
 import { Check, MapPin, Search, Star } from 'lucide-react'
-import { FormNote, FormSectionLabel, gameFormChoiceClass, gameFormPanel, gameFormWell } from '@/components/games/WhenFields'
+import { FormNote, FormSectionLabel, formChoiceClass, formPanel, formWell } from '@/components/ui/FormCard'
 import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
 
 export interface CourtPick {
@@ -258,7 +258,7 @@ export function CourtPlaceFields({
     <>
       <section>
         <FormSectionLabel hint={locked ? undefined : '(optional)'}>Court</FormSectionLabel>
-        <div className={gameFormPanel}>
+        <div className={formPanel}>
           {locked ? (
             value.venue || value.locationName ? (
               <PickedCourt
@@ -279,7 +279,7 @@ export function CourtPlaceFields({
             />
           ) : custom ? (
             <div className="space-y-3">
-              <label className={`${gameFormWell} flex h-12 items-center gap-2.5 px-4 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
+              <label className={`${formWell} flex h-12 items-center gap-2.5 px-4 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
                 <MapPin size={17} strokeWidth={1.7} className="flex-none text-[rgba(26,26,26,0.45)]" aria-hidden />
                 <input
                   type="text"
@@ -296,7 +296,7 @@ export function CourtPlaceFields({
             </div>
           ) : (
             <div className="space-y-3">
-              <label className={`${gameFormWell} flex h-12 items-center gap-2.5 px-4 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
+              <label className={`${formWell} flex h-12 items-center gap-2.5 px-4 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
                 <Search size={17} strokeWidth={1.7} className="flex-none text-[rgba(26,26,26,0.45)]" aria-hidden />
                 <input
                   type="search"
@@ -341,7 +341,7 @@ export function CourtPlaceFields({
 
       <section>
         <FormSectionLabel>Court cost</FormSectionLabel>
-        <div className={`${gameFormPanel} space-y-3`}>
+        <div className={`${formPanel} space-y-3`}>
           {lockedFree ? (
             <div className="flex items-center gap-3">
               <span className="grid h-10 w-10 flex-none place-items-center rounded-[14px] bg-brand-primary-muted text-brand-primary" aria-hidden>
@@ -366,7 +366,7 @@ export function CourtPlaceFields({
 
               {pricing && (
                 <>
-                  <div className={`${gameFormWell} flex h-14 items-center gap-2 pl-4 pr-1.5 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
+                  <div className={`${formWell} flex h-14 items-center gap-2 pl-4 pr-1.5 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
                     <span className="font-numbers text-[22px] leading-none text-[rgba(26,26,26,0.45)]" aria-hidden>
                       {currencySymbol(value.costCurrency ?? 'USD')}
                     </span>
@@ -507,7 +507,7 @@ function Choice({ active, onClick, children }: { active: boolean; onClick: () =>
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`h-11 rounded-[16px] px-3 text-[14px] font-semibold ${gameFormChoiceClass(active)}`}
+      className={`h-11 rounded-[16px] px-3 text-[14px] font-semibold ${formChoiceClass(active)}`}
     >
       {children}
     </button>

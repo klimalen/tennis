@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { CalendarDays, Infinity as InfinityIcon, Moon, Repeat, Sun, Sunrise, X, type LucideIcon } from 'lucide-react'
+import { formChoiceClass } from '@/components/ui/FormCard'
 import {
   DAY_LABELS,
   DAY_ORDER,
@@ -21,55 +22,54 @@ import {
   selectedDays,
 } from '@/lib/availability'
 
-function ToggleRow({
-  checked,
-  label,
-  hint,
-  onChange,
-}: {
-  checked: boolean
-  label: string
-  hint?: string
-  onChange: (next: boolean) => void
-}) {
-  return (
-    <label className="flex items-start gap-3 cursor-pointer select-none">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded border-[#1a1a1a]/40 accent-[#E8748A]"
-      />
-      <span>
-        <span className="block text-[12px] font-medium text-[#1a1a1a]">{label}</span>
-        {hint ? <span className="block text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{hint}</span> : null}
-      </span>
-    </label>
-  )
+const PART_ICONS: Record<DayPart, LucideIcon> = {
+  morning: Sunrise,
+  afternoon: Sun,
+  evening: Moon,
 }
 
-function PartPill({ part, active, onClick }: { part: DayPart; active: boolean; onClick: () => void }) {
+type ScheduleMode = 'anytime' | 'same' | 'byday'
+
+const SCHEDULE_MODES: { value: ScheduleMode; label: string; hint: string; icon: LucideIcon }[] = [
+  { value: 'anytime', label: 'Any time', hint: 'Free every day, morning to evening', icon: InfinityIcon },
+  { value: 'same', label: 'Every day', hint: 'Pick times once for Mon–Sun', icon: Repeat },
+  { value: 'byday', label: 'By day', hint: 'Pick days, then times for each', icon: CalendarDays },
+]
+
+function PartTiles({ isOn, onToggle, compact = false }: { isOn: (part: DayPart) => boolean; onToggle: (part: DayPart) => void; compact?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
-        active
-          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-          : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-      }`}
-    >
-      {PART_LABELS[part]}
-    </button>
+    <div className="grid flex-1 grid-cols-3 gap-2">
+      {DAY_PARTS.map((part) => {
+        const Icon = PART_ICONS[part]
+        const active = isOn(part)
+        return (
+          <button
+            key={part}
+            type="button"
+            onClick={() => onToggle(part)}
+            aria-pressed={active}
+            className={`flex items-center justify-center gap-1.5 rounded-[16px] font-semibold ${
+              compact ? 'h-9 text-[12px]' : 'h-[60px] flex-col text-[13px]'
+            } ${formChoiceClass(active)}`}
+          >
+            <Icon size={compact ? 14 : 18} strokeWidth={1.7} className={active ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
+            {compact ? PART_LABELS[part].slice(0, 3) : PART_LABELS[part]}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
 export function AvailabilityEditor({
   value,
   onChange,
+  framed = true,
 }: {
   value: Availability
   onChange: (next: Availability) => void
+  /** Draw its own card. Off when a parent card already frames it. */
+  framed?: boolean
 }) {
   const anytime = isAnytime(value)
   const uniform = isUniformWeek(value) && !anytime
@@ -81,21 +81,23 @@ export function AvailabilityEditor({
     return day != null ? (value[day] ?? []) : []
   })()
 
-  function setAnytime(on: boolean) {
-    if (on) {
+  const mode: ScheduleMode = anytime ? 'anytime' : sameEveryDay ? 'same' : 'byday'
+
+  function chooseMode(next: ScheduleMode) {
+    if (next === mode) return
+    if (next === 'anytime') {
       setSameEveryDay(true)
       onChange(anytimeAvailability())
       return
     }
-    setSameEveryDay(true)
-    onChange(fillWeek(['morning']))
-  }
-
-  function setSameTimes(on: boolean) {
-    setSameEveryDay(on)
-    if (!on) return
-    const parts = sharedParts.length > 0 ? sharedParts : (['morning'] as DayPart[])
-    onChange(fillWeek(parts))
+    if (next === 'same') {
+      setSameEveryDay(true)
+      const parts = !anytime && sharedParts.length > 0 ? sharedParts : (['morning'] as DayPart[])
+      onChange(fillWeek(parts))
+      return
+    }
+    setSameEveryDay(false)
+    if (anytime) onChange(fillWeek(['morning']))
   }
 
   function clearAll() {
@@ -111,44 +113,39 @@ export function AvailabilityEditor({
   const isCleared = !anytime && !hasSlots(value) && !sameEveryDay && openDays.length === 0
 
   return (
-    <div className="space-y-3 rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
-      <ToggleRow
-        checked={anytime}
-        label="Any day, any time"
-        hint="Free whenever — mornings, afternoons, and evenings"
-        onChange={setAnytime}
-      />
-      {!anytime && (
-        <ToggleRow
-          checked={sameEveryDay}
-          label="Same times every day"
-          hint="Pick day-parts once, apply Mon–Sun"
-          onChange={setSameTimes}
-        />
-      )}
-
-      {anytime && (
-        <p className="font-copy text-[12px] text-[rgba(26,26,26,0.55)]">
-          Saved as available every day, morning–evening.
+    <div className={`space-y-4 ${framed ? 'rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3.5 py-3.5' : ''}`}>
+      <div>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="When you play">
+          {SCHEDULE_MODES.map((option) => {
+            const active = mode === option.value
+            const Icon = option.icon
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => chooseMode(option.value)}
+                className={`flex flex-col items-center gap-1.5 rounded-[20px] px-1 py-3 text-[13px] font-semibold leading-tight ${formChoiceClass(active)}`}
+              >
+                <Icon size={19} strokeWidth={1.7} className={active ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
+        <p className="mt-2.5 px-1 text-[12.5px] leading-snug text-[rgba(26,26,26,0.55)]" aria-live="polite">
+          {SCHEDULE_MODES.find((option) => option.value === mode)?.hint}
         </p>
-      )}
+      </div>
 
       {showSharedParts && (
-        <div className="flex flex-wrap items-center gap-2 pl-7">
-          {DAY_PARTS.map((part) => (
-            <PartPill
-              key={part}
-              part={part}
-              active={sharedParts.includes(part)}
-              onClick={() => onChange(toggleUniformPart(value, part))}
-            />
-          ))}
-        </div>
+        <PartTiles isOn={(part) => sharedParts.includes(part)} onToggle={(part) => onChange(toggleUniformPart(value, part))} />
       )}
 
       {showDayGrid && (
-        <div>
-          <div className="flex gap-3 flex-wrap">
+        <div className="space-y-3">
+          <div className="grid grid-cols-7 gap-1">
             {DAY_ORDER.map((day) => {
               const on = value[day] !== undefined
               return (
@@ -156,33 +153,27 @@ export function AvailabilityEditor({
                   key={day}
                   type="button"
                   onClick={() => onChange(toggleDay(value, day))}
-                  className={`w-10 h-10 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
-                    on
-                      ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-                      : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                  }`}
+                  aria-pressed={on}
+                  className={`h-9 rounded-full text-[11px] font-semibold uppercase ${formChoiceClass(on)}`}
                 >
-                  {DAY_LABELS[day]}
+                  {DAY_LABELS[day]?.slice(0, 2)}
                 </button>
               )
             })}
           </div>
 
           {openDays.length > 0 && (
-            <div className="mt-4 space-y-2.5">
+            <div className="space-y-2">
               {openDays.map((day) => (
-                <div key={day} className="flex flex-wrap items-center gap-2">
-                  <span className="w-9 text-[10px] tracking-[0.14em] uppercase font-medium text-[rgba(26,26,26,0.55)]">
+                <div key={day} className="flex items-center gap-2.5">
+                  <span className="w-9 flex-none text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgba(26,26,26,0.55)]">
                     {DAY_LABELS[day]}
                   </span>
-                  {DAY_PARTS.map((part) => (
-                    <PartPill
-                      key={part}
-                      part={part}
-                      active={value[day]?.includes(part) ?? false}
-                      onClick={() => onChange(togglePart(value, day, part))}
-                    />
-                  ))}
+                  <PartTiles
+                    compact
+                    isOn={(part) => value[day]?.includes(part) ?? false}
+                    onToggle={(part) => onChange(togglePart(value, day, part))}
+                  />
                 </div>
               ))}
             </div>
@@ -194,7 +185,7 @@ export function AvailabilityEditor({
         type="button"
         onClick={clearAll}
         disabled={isCleared}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#1a1a1a]/25 bg-brand-field px-3 py-1.5 text-[10px] tracking-[0.14em] uppercase font-medium text-[rgba(26,26,26,0.7)] transition-colors hover:border-[#1a1a1a]/45 hover:bg-white disabled:pointer-events-none disabled:opacity-40"
+        className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[rgba(26,26,26,0.55)] transition-colors hover:text-[#1a1a1a] disabled:pointer-events-none disabled:opacity-40"
       >
         <X size={12} aria-hidden />
         Clear schedule

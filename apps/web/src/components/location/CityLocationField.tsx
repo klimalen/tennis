@@ -10,6 +10,7 @@ interface Props {
   onChange: (city: string, coords?: CityCoords) => void
   helper?: string
   placeholder?: string
+  inputClassName?: string
 }
 
 /** City autocomplete + one-shot GPS for profile / onboarding / ME edit. */
@@ -18,6 +19,7 @@ export function CityLocationField({
   onChange,
   helper = 'Used for courts, players, and games near you.',
   placeholder = 'Search your city...',
+  inputClassName,
 }: Props) {
   const [error, setError] = useState<string | null>(null)
 
@@ -29,7 +31,7 @@ export function CityLocationField({
   return (
     <div>
       {helper && <p className="text-[11px] text-[rgba(26,26,26,0.45)] mb-2">{helper}</p>}
-      <CityInput value={value} onChange={onChange} placeholder={placeholder} />
+      <CityInput value={value} onChange={onChange} placeholder={placeholder} {...(inputClassName ? { inputClassName } : {})} />
       <UseMyLocationButton
         className="mt-2"
         onDetected={applyLocation}

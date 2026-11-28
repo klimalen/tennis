@@ -1,4 +1,4 @@
-import { FormSectionLabel } from '@/components/games/WhenFields'
+import { FormSectionLabel } from '@/components/ui/FormCard'
 
 export function AboutField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
