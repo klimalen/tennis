@@ -18,7 +18,7 @@ import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachBadge, CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -319,13 +319,17 @@ function PlayerCard({
   const bio = player.bio?.trim() || null
   const lookingFor = player.looking_for?.trim() || null
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
-  const namePad = showSchedule && coach ? 'pr-28' : showSchedule ? 'pr-12' : coach ? 'pr-16' : ''
+  // Watermark sits behind content; only pad for the schedule control.
+  const namePad = showSchedule ? 'pr-12' : ''
   void vivid
 
   return (
-    <Link href={`/profile/${player.username}`} className="relative block min-w-0 max-w-full rounded-[28px] bg-white active:bg-[#F4F1EC]">
+    <Link href={`/profile/${player.username}`} className="relative block min-w-0 max-w-full overflow-hidden rounded-[28px] bg-white active:bg-[#F4F1EC]">
       {coach && (
-        <CoachBadge className={`absolute z-20 shadow-sm ${showSchedule ? 'right-16 top-3' : '-top-2.5 right-4'}`} />
+        <>
+          <CoachWatermark className="top-0 right-2 text-[42px] sm:text-[46px]" />
+          <span className="sr-only">Coach</span>
+        </>
       )}
       {showSchedule && (
         <AvailabilityButton
@@ -334,7 +338,7 @@ function PlayerCard({
           className="absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-[20px] bg-[#F6F1EA] text-[#1a1a1a]"
         />
       )}
-      <div className="p-4 pb-3">
+      <div className="relative z-[1] p-4 pb-3">
         <div className="flex items-start gap-3">
           <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
             {player.avatar_url ? (
@@ -371,7 +375,7 @@ function PlayerCard({
         )}
       </div>
       {(canPropose || !followed || justFollowed) && (
-        <div className="px-4 pb-4">
+        <div className="relative z-[1] px-4 pb-4">
           {canPropose ? (
             <>
               {pending ? (
