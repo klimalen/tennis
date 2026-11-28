@@ -193,7 +193,8 @@ target_type        player | coach | club   -- для unified reviews
 | court_id | uuid FK courts | Заполняется после бронирования |
 | court_booking_id | uuid FK court_bookings | |
 | status | game_status | |
-| is_open | bool | Open Game — могут присоединиться другие |
+| visibility | private \| friends \| open | Кто входит и кто видит игру. private — только приглашённые. friends — взаимные подписки. open — любой вошедший игрок; гости видят, но не входят. |
+| is_open | bool | Синхронизируется с visibility: true только для open. |
 | max_players | int | |
 | notes | text | |
 | created_at | timestamptz | |

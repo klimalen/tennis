@@ -6,7 +6,10 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
+import { AboutField } from '@/components/games/AboutField'
+import { FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
+import { VisibilityFields } from '@/components/games/VisibilityFields'
+import { visibilityOf, type GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
@@ -29,6 +32,7 @@ interface Game {
   neighborhood: string | null
   notes: string | null
   is_open: boolean
+  visibility?: string | null
   venue_group_id: string | null
   court_cost_cents: number | null
   cost_currency: string | null
@@ -59,10 +63,12 @@ export function EditGameForm({
   game,
   isCreator,
   participants,
+  lockVisibility = false,
 }: {
   game: Game
   isCreator: boolean
   participants: Participant[]
+  lockVisibility?: boolean
 }) {
   const router = useRouter()
 
@@ -85,7 +91,8 @@ export function EditGameForm({
     payment: (game.payment as CourtPayment | null) ?? null,
   })
   const [notes, setNotes] = useState(game.notes ?? '')
-  const [isOpen, setIsOpen] = useState(game.is_open)
+  const [visibility, setVisibility] = useState<GameVisibility>(visibilityOf(game))
+  const savedVisibility = visibilityOf(game)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -106,9 +113,9 @@ export function EditGameForm({
 
   useEffect(() => {
     if (!isCreator) return
-    fetch('/api/connections')
-      .then((response) => response.json() as Promise<{ connections: InviteConnection[] }>)
-      .then((data) => setConnections(data.connections ?? []))
+    fetch('/api/follows/mutual')
+      .then((response) => response.json() as Promise<{ friends: InviteConnection[] }>)
+      .then((data) => setConnections(data.friends ?? []))
       .catch(() => setConnections([]))
   }, [isCreator])
 
@@ -143,7 +150,7 @@ export function EditGameForm({
         cost_currency: place.costCurrency,
         payment: place.payment,
         notes: notes.trim() || null,
-        ...(isCreator ? { is_open: isOpen } : {}),
+        ...(isCreator && !lockVisibility ? { visibility } : {}),
       }),
     })
 
@@ -194,7 +201,7 @@ export function EditGameForm({
     <div className="min-h-screen pb-8">
       {/* Header */}
       <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+        <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
               <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
@@ -210,7 +217,7 @@ export function EditGameForm({
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-xl mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
 
           <WhenFields
@@ -227,54 +234,30 @@ export function EditGameForm({
 
           <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
 
-          <CourtPlaceFields value={place} onChange={setPlace} />
-
-          <div>
-            <FormSectionLabel>
-              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-            </FormSectionLabel>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any information — for example the training format" rows={3} maxLength={500}
-              className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
-          </div>
-
-          {isCreator && (
-            <div>
-              <FormSectionLabel>Visibility</FormSectionLabel>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setIsOpen(false)}
-                  className={gameFormOptionPillClass(!isOpen)}>
-                  Private
-                </button>
-                <button type="button" onClick={() => setIsOpen(true)}
-                  className={gameFormOptionPillClass(isOpen)}>
-                  Public
-                </button>
-              </div>
-              {isOpen ? (
-                <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
-                  Anyone in your city can find and join this game
-                </p>
-              ) : (
-                <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                  Shows on your profile schedule for anyone who visits. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
-                </p>
-              )}
-            </div>
+          {isCreator && !lockVisibility && (
+            <VisibilityFields
+              value={visibility}
+              onChange={setVisibility}
+              notePrivateChange={savedVisibility !== 'private'}
+            />
           )}
+
+          <AboutField value={notes} onChange={setNotes} />
+
+          <CourtPlaceFields value={place} onChange={setPlace} />
 
           {(participants.length > 0 || (isCreator && inviteable.length > 0)) && (
             <div className="space-y-4">
               {participants.length > 0 && (
                 <div>
                   <FormSectionLabel>Players</FormSectionLabel>
-                  <div className={`space-y-2 ${participants.length > 8 ? 'max-h-64 overflow-y-auto pr-0.5' : ''}`}>
+                  <div className={`${gameFormPanel} space-y-0.5 p-2 ${participants.length > 8 ? 'max-h-72 overflow-y-auto' : ''}`}>
                     {participants.map((p) => {
                       const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
                       const statusLabel = STATUS_LABELS[p.status] ?? p.status
                       const isGoing = p.status === 'accepted'
                       return (
-                        <div key={p.player_id} className="flex items-center gap-3 px-3 py-2.5 rounded-[20px] bg-brand-field border border-[#1a1a1a]/15">
+                        <div key={p.player_id} className="flex items-center gap-3 rounded-[20px] px-2.5 py-2">
                           <Link href={`/profile/${p.profiles.username}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                             <div className="w-9 h-9 rounded-full bg-brand-avatar overflow-hidden flex items-center justify-center flex-shrink-0">
                               {p.profiles.avatar_url ? (
@@ -288,7 +271,7 @@ export function EditGameForm({
                               <p className="text-[11px] text-[rgba(26,26,26,0.4)]">@{p.profiles.username}</p>
                             </div>
                           </Link>
-                          <span className={`text-[9px] tracking-[0.12em] uppercase font-medium ${isGoing ? 'text-brand-primary' : 'text-[rgba(26,26,26,0.35)]'}`}>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${isGoing ? 'bg-brand-primary-muted text-brand-primary' : 'bg-brand-surface text-[rgba(26,26,26,0.5)]'}`}>
                             {statusLabel}
                           </span>
                         </div>

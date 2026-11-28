@@ -4,6 +4,7 @@ import { gameEndMs, parseDurationMinutes } from '@/lib/game-time'
 import { parseCourtOffer } from '@/lib/game-court'
 import { seatsForFormat } from '@/lib/game-seats'
 import { postGameNotice } from '@/lib/game-notice'
+import { parseVisibility, type GameVisibility } from '@/lib/game-visibility'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -26,6 +27,7 @@ export async function PATCH(
     payment?: string | null
     notes?: string | null
     is_open?: boolean
+    visibility?: string
     max_players?: number
   }
   const duration_minutes = parseDurationMinutes(body.duration_minutes)
@@ -33,16 +35,27 @@ export async function PATCH(
   // Fetch current game to detect if scheduled_at is changing
   const { data: current } = await supabase
     .from('games')
-    .select('scheduled_at, format, neighborhood, creator_id, is_open, max_players')
+    .select('scheduled_at, format, neighborhood, creator_id, is_open, visibility, max_players')
     .eq('id', id)
     .single()
 
   if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (current.creator_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const canChangeVisibility = typeof body.is_open === 'boolean'
-  const opening = canChangeVisibility && body.is_open === true && current.is_open === false
-  const closing = canChangeVisibility && body.is_open === false && current.is_open === true
+  const { data: creator } = await supabase
+    .from('profiles')
+    .select('account_kind')
+    .eq('id', user.id)
+    .maybeSingle()
+  const isCourt = creator?.account_kind === 'court'
+  const nextVisibility = nextGameVisibility(body.visibility, body.is_open, isCourt)
+  if (nextVisibility === 'invalid') return NextResponse.json({ error: 'Choose who can join' }, { status: 400 })
+
+  const previousVisibility: GameVisibility = current.visibility === 'friends' || current.visibility === 'open' || current.visibility === 'private'
+    ? current.visibility
+    : (current.is_open ? 'open' : 'private')
+  const opening = nextVisibility != null && nextVisibility !== 'private' && previousVisibility === 'private'
+  const closing = nextVisibility === 'private' && previousVisibility !== 'private'
 
   const patch: {
     scheduled_at?: string
@@ -54,7 +67,7 @@ export async function PATCH(
     cost_currency?: string | null
     payment?: string | null
     notes?: string | null
-    is_open?: boolean
+    visibility?: GameVisibility
     max_players?: number
   } = {}
   if (body.scheduled_at) patch.scheduled_at = body.scheduled_at
@@ -76,7 +89,7 @@ export async function PATCH(
     patch.max_players = seats.max_players
   }
   if ('notes' in body) patch.notes = body.notes ?? null
-  if (typeof body.is_open === 'boolean') patch.is_open = body.is_open
+  if (nextVisibility) patch.visibility = nextVisibility
 
   if ('venue_group_id' in body || 'location_name' in body || 'court_cost_cents' in body || 'payment' in body || 'cost_currency' in body) {
     const venueGroupId = body.venue_group_id || null
@@ -191,4 +204,12 @@ export async function DELETE(
 
   if (error) return apiError(500, 'Could not delete the game', error)
   return NextResponse.json({ ok: true })
+}
+
+function nextGameVisibility(visibility: unknown, isOpen: unknown, isCourt: boolean): GameVisibility | null | 'invalid' {
+  const parsed = parseVisibility(visibility)
+  if (parsed) return isCourt && parsed !== 'open' ? 'invalid' : parsed
+  if (visibility != null) return 'invalid'
+  if (typeof isOpen === 'boolean') return isOpen ? 'open' : 'private'
+  return null
 }

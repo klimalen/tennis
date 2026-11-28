@@ -3,7 +3,8 @@ import { GameDetailSheet } from '@/components/games/GameDetailSheet'
 import { LinkState } from '@/components/share/LinkState'
 import { createClient } from '@/lib/supabase/server'
 import { formatPlayFormat } from '@/lib/skill'
-import { isUuid, loadGameDetailRow, loadGameLinkState, viewerPlaysInGame } from '@/lib/public-game'
+import { isUuid, loadGameDetailRow, loadGameLinkState } from '@/lib/public-game'
+import { visibilityOf } from '@/lib/game-visibility'
 import { courtTitle } from '@/lib/venue-label'
 import { returnToFromSearch } from '@/lib/return-to'
 
@@ -26,10 +27,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!isUuid(id)) return hidden('Game on GAME.', 'This game isn’t on GAME.')
   const supabase = await createClient()
   const game = await loadGameDetailRow(supabase, id)
-  if (!game || game.status === 'draft' || !game.is_open) {
+  if (!game || game.status === 'draft') {
     const state = game?.status === 'draft' ? 'gone' : await loadGameLinkState(supabase, id)
     if (state === 'private') return hidden('Private game on GAME.', 'Sign in if you were invited.')
     return hidden('Game on GAME.', 'This game isn’t on GAME.')
+  }
+  if (visibilityOf(game) === 'friends') {
+    return hidden('Friends game on GAME.', 'For people who follow each other.')
+  }
+  if (visibilityOf(game) === 'private') {
+    return hidden('Private game on GAME.', 'Only the host and invited players.')
   }
   const place = courtTitle(game.court?.name, game.court?.address) || game.neighborhood
   const description = [formatPlayFormat(game.format), utcStamp(game.scheduled_at), place].filter(Boolean).join(' · ')
@@ -66,15 +73,19 @@ export default async function GamePage({
     : null
   const viewerIsCourt = viewerKind?.data?.account_kind === 'court'
 
-  const allowed = Boolean(game && game.status !== 'draft' && (game.is_open || viewerPlaysInGame(game, user?.id ?? null)))
+  const allowed = Boolean(game && game.status !== 'draft')
   if (!game || !allowed) {
     const state = game?.status === 'draft' ? 'gone' : await loadGameLinkState(supabase, id)
     if (state === 'private') {
       return (
         <LinkState
           title="PRIVATE GAME"
-          body="Sign in if you were invited. The time and place stay with the players."
-          action={{ href: `/sign-in?next=${encodeURIComponent(`/game/${id}`)}`, label: 'Sign in' }}
+          body={user
+            ? 'This game isn’t open to you.'
+            : 'Sign in if you were invited. The time and place stay with the players.'}
+          action={user
+            ? { href: '/search', label: 'Find a game' }
+            : { href: `/sign-in?next=${encodeURIComponent(`/game/${id}`)}`, label: 'Sign in' }}
           share={{ path: `/game/${id}`, title: 'Private game on GAME.', text: 'Private game on GAME.' }}
         />
       )

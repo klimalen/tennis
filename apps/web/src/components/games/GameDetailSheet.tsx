@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/ui/LocalGameTime'
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
+import { gameAccessKicker, gameAllowsSelfJoin, gameShareTitle } from '@/lib/game-visibility'
 import { gameEndMs } from '@/lib/game-time'
 import { costLine, type GameCourt } from '@/lib/game-court'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
@@ -55,6 +56,7 @@ export interface GameDetail {
   status: string
   max_players: number
   is_open: boolean
+  visibility?: string | null
   creator_id: string
   creator: {
     id: string
@@ -79,10 +81,15 @@ const FORMAT_LABELS: Record<string, string> = {
 export { viewerPlaysInGame }
 
 export function viewerCanOpenGame(
-  game: { is_open: boolean; creator_id: string; participants: { player_id: string; status: string }[] },
+  game: {
+    is_open: boolean
+    visibility?: string | null
+    creator_id: string
+    participants: { player_id: string; status: string }[]
+  },
   viewerId: string | null,
 ) {
-  return game.is_open || viewerPlaysInGame(game, viewerId)
+  return gameAllowsSelfJoin(game) || viewerPlaysInGame(game, viewerId)
 }
 
 export async function loadGameDetail(gameId: string): Promise<GameDetail | null> {
@@ -214,7 +221,7 @@ export function GameDetailSheet({
   const shareText = [FORMAT_LABELS[game.format] ?? game.format, shareWhen, placeName].filter(Boolean).join(' · ')
 
   async function handleJoin() {
-    if (!game.is_open || joining || alreadyIn || isFull || isPast || isCancelled) return
+    if (!gameAllowsSelfJoin(game) || joining || alreadyIn || isFull || isPast || isCancelled) return
     if (!currentUserId) {
       router.push(`/sign-in?next=${encodeURIComponent(`/game/${game.id}`)}`)
       return
@@ -289,11 +296,12 @@ export function GameDetailSheet({
           : isCancelled
             ? 'Cancelled'
             : 'Join game'
-  const joinDisabled = isHost || !game.is_open || alreadyIn || isFull || isPast || isCancelled || joining
+  const canSelfJoin = gameAllowsSelfJoin(game)
+  const joinDisabled = isHost || !canSelfJoin || alreadyIn || isFull || isPast || isCancelled || joining
 
-  const shareTitle = game.is_open ? 'Open game on GAME.' : 'Private game on GAME.'
+  const shareTitle = gameShareTitle(game)
   const shareButton = (
-    <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={game.is_open ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
+    <ShareLinkButton path={`/game/${game.id}`} title={shareTitle} text={canSelfJoin ? shareText : shareTitle} size={page ? 'md' : 'sm'} />
   )
   const hidePastButton = canHidePast ? (
     <button
@@ -343,13 +351,13 @@ export function GameDetailSheet({
           <div className="space-y-2">
             <GameFaceRow
               people={faces}
-              spotsLeft={game.is_open && !isCancelled && !isPast ? spotsLeft : 0}
+              spotsLeft={!isCancelled && !isPast ? spotsLeft : 0}
               onPerson={(person) => {
                 if (!person.username) return
                 goRelated(withReturnTo(`/profile/${person.username}`, gamePath))
               }}
             />
-            {game.is_open && !isCancelled && !isPast && (
+            {!isCancelled && !isPast && (
               <p className="text-[10px] tracking-[0.14em] uppercase text-[rgba(26,26,26,0.45)]">
                 {isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
               </p>
@@ -602,7 +610,7 @@ export function GameDetailSheet({
               <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
             </Link>
             <span className="flex-1 font-display text-2xl tracking-wide text-[#1a1a1a]">
-              {game.is_open ? 'OPEN GAME' : 'GAME'}
+              {gameAccessKicker(game, true)}
             </span>
             {hidePastButton}
             {shareButton}
@@ -622,7 +630,7 @@ export function GameDetailSheet({
       <div className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-[28px] max-h-[85vh] overflow-y-auto md:max-w-lg md:left-1/2 md:-translate-x-1/2 md:bottom-8 md:rounded-[28px] md:shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand-divider">
           <span className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] font-medium">
-            {game.is_open ? 'Open Game' : 'Game'}
+            {gameAccessKicker(game, false)}
           </span>
           <div className="flex items-center gap-1">
             {hidePastButton}

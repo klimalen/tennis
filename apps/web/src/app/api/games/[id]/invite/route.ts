@@ -39,7 +39,19 @@ export async function POST(
         : 'A court cannot be invited as a player',
     }, { status: 400 })
   }
-  const invitees = userIds
+  const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+    supabase.from('follows').select('following_id').eq('follower_id', user.id).in('following_id', userIds),
+    supabase.from('follows').select('follower_id').eq('following_id', user.id).in('follower_id', userIds),
+  ])
+  const following = new Set((outgoing ?? []).map((row) => row.following_id as string))
+  const followers = new Set((incoming ?? []).map((row) => row.follower_id as string))
+  const invitees = userIds.filter((id) => id !== user.id && following.has(id) && followers.has(id))
+  if (invitees.length !== userIds.filter((id) => id !== user.id).length) {
+    return NextResponse.json(
+      { error: 'You can only invite people you follow who follow you back' },
+      { status: 400 },
+    )
+  }
 
   // Build message body (snapshot shown on card)
   const snapshot = JSON.stringify({

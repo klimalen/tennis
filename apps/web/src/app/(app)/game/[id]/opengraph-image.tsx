@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { holdsGameSeat } from '@/lib/schedule'
 import { formatPlayFormat } from '@/lib/skill'
 import { isUuid, loadGameDetailRow, loadGameLinkState } from '@/lib/public-game'
+import { visibilityOf } from '@/lib/game-visibility'
 import { courtTitle } from '@/lib/venue-label'
 
 export const alt = 'Open game on GAME.'
@@ -24,7 +25,7 @@ export default async function GameImage({ params }: { params: Promise<{ id: stri
 
   const supabase = await createClient()
   const game = await loadGameDetailRow(supabase, id)
-  if (!game || game.status === 'draft' || !game.is_open) {
+  if (!game || game.status === 'draft' || visibilityOf(game) !== 'open') {
     const state = await loadGameLinkState(supabase, id)
     const card = state === 'private'
       ? shareCard({ kicker: 'Game', title: 'Private game', line: 'Sign in if you were invited.' })

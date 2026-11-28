@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
+import { visibilityOf } from '@/lib/game-visibility'
 import { NextResponse } from 'next/server'
 
 export async function POST(
@@ -14,12 +15,12 @@ export async function POST(
 
   const { data: game } = await supabase
     .from('games')
-    .select('id, is_open')
+    .select('id, is_open, visibility')
     .eq('id', gameId)
     .single()
 
-  if (!game || !game.is_open) {
-    return NextResponse.json({ error: 'Game not found or not public' }, { status: 404 })
+  if (!game || visibilityOf(game) === 'private') {
+    return NextResponse.json({ error: 'Game not found or not open to you' }, { status: 404 })
   }
 
   const { data: joined, error } = await supabase.rpc('join_open_game', { p_game_id: gameId })
@@ -29,7 +30,7 @@ export async function POST(
       return NextResponse.json({ error: 'Game is full' }, { status: 409 })
     }
     if (error.message.includes('game not open')) {
-      return NextResponse.json({ error: 'Game not found or not public' }, { status: 404 })
+      return NextResponse.json({ error: 'Game not found or not open to you' }, { status: 404 })
     }
     if (error.message.includes('court cannot join')) {
       return NextResponse.json({ error: 'A court organises games and does not take a spot' }, { status: 403 })

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { PostCard, type PostItem } from './PostCard'
+import { showGamePost } from '@/lib/game-visibility'
 
 interface Props {
   userId: string
@@ -36,7 +37,7 @@ export function PostsFeed({ userId, initialPosts }: Props) {
               ),
               game:games (
                 id, format, scheduled_at, skill_level_min, skill_level_max,
-                neighborhood, status, max_players, is_open,
+                neighborhood, status, max_players, is_open, visibility,
                 city:cities (name)
               ),
               likes:post_likes (count)
@@ -64,6 +65,7 @@ export function PostsFeed({ userId, initialPosts }: Props) {
             liked_by_me: false,
           }
 
+          if (post.type === 'open_game' && !showGamePost(post.game)) return
           setPosts((prev) => [post, ...prev])
         },
       )

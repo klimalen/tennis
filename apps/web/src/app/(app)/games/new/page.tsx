@@ -3,12 +3,15 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Globe, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
+import { AboutField } from '@/components/games/AboutField'
+import { FormNote, FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
+import { VisibilityFields } from '@/components/games/VisibilityFields'
+import type { GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
-import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
+import { InviteConnectionsList, InvitedPlayerRow } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 import { GROUP_SEAT_DEFAULT, type GameFormatChoice } from '@/lib/game-seats'
 
@@ -48,7 +51,8 @@ function NewGameForm() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [connectionsLoaded, setConnectionsLoaded] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [isOpen, setIsOpen] = useState(false)
+  const [visibility, setVisibility] = useState<GameVisibility>('friends')
+  const [preselectedOk, setPreselectedOk] = useState(!preselectedId)
   const [isCourt, setIsCourt] = useState(false)
   const [accountReady, setAccountReady] = useState(false)
 
@@ -63,7 +67,6 @@ function NewGameForm() {
         .maybeSingle()
       if (profile?.account_kind === 'court') {
         setIsCourt(true)
-        setIsOpen(true)
         const { data: venue } = await supabase
           .from('venue_groups')
           .select('id, name, address, fee, lit, access')
@@ -105,11 +108,12 @@ function NewGameForm() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/connections')
-      .then((r) => r.json() as Promise<{ connections: Connection[] }>)
+    fetch('/api/follows/mutual')
+      .then((r) => r.json() as Promise<{ friends: Connection[] }>)
       .then((data) => {
-        // Don't show the pre-selected person in the optional list
-        setConnections((data.connections ?? []).filter((c) => c.id !== preselectedId))
+        const friends = data.friends ?? []
+        setPreselectedOk(!preselectedId || friends.some((friend) => friend.id === preselectedId))
+        setConnections(friends.filter((friend) => friend.id !== preselectedId))
       })
       .catch(() => {})
       .finally(() => setConnectionsLoaded(true))
@@ -143,7 +147,7 @@ function NewGameForm() {
         cost_currency: place.costCurrency,
         payment: place.payment,
         notes: about.trim() || undefined,
-        is_open: isCourt ? true : isOpen,
+        visibility: isCourt ? 'open' : visibility,
       }),
     })
 
@@ -157,7 +161,7 @@ function NewGameForm() {
     const { id: gameId } = await res.json() as { id: string }
 
     const allInvitees = [
-      ...(preselectedId ? [preselectedId] : []),
+      ...(preselectedId && preselectedOk ? [preselectedId] : []),
       ...Array.from(selectedIds),
     ]
     if (!isCourt && allInvitees.length > 0) {
@@ -179,116 +183,78 @@ function NewGameForm() {
       : 'Save game'
 
   return (
-    <div className="min-h-screen pb-8">
-      {/* Header with Save button */}
+    <div className="min-h-screen pb-10">
       <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
-              <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
-            </Link>
-            <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">NEW GAME</span>
-          </div>
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <Link href="/me" aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#1a1a1a]/10 bg-white transition-colors hover:bg-brand-surface">
+            <ArrowLeft size={17} className="text-[rgba(26,26,26,0.6)]" />
+          </Link>
+          <span className="font-display text-[28px] leading-none tracking-wide text-[#1a1a1a]">NEW GAME</span>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-xl space-y-6 px-4 py-6">
+        <WhenFields
+          date={date}
+          start={time}
+          end={endTime}
+          minDate={todayInput()}
+          onDate={setDate}
+          onStart={(value) => {
+            setTime(value)
+            setEndTime(plusMinutes(value, 60))
+          }}
+          onEnd={setEndTime}
+        />
 
-          <WhenFields
-            date={date}
-            start={time}
-            end={endTime}
-            minDate={todayInput()}
-            onDate={setDate}
-            onStart={(value) => {
-              setTime(value)
-              setEndTime(plusMinutes(value, 60))
-            }}
-            onEnd={setEndTime}
+        <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
+
+        {!isCourt && <VisibilityFields value={visibility} onChange={setVisibility} />}
+
+        <AboutField value={about} onChange={setAbout} />
+
+        <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
+
+        {isCourt && (
+          <FormNote icon={<Globe size={15} strokeWidth={1.7} />}>
+            Open game. Players join on their own, and the court doesn&apos;t take a spot.
+          </FormNote>
+        )}
+
+        {!isCourt && preselectedId && preselectedName && preselectedOk && (
+          <section>
+            <FormSectionLabel>Players</FormSectionLabel>
+            <div className={`${gameFormPanel} p-2`}>
+              <InvitedPlayerRow name={preselectedName} />
+            </div>
+          </section>
+        )}
+        {!isCourt && connectionsLoaded && preselectedId && !preselectedOk && (
+          <FormNote>{preselectedName || 'That player'} has to follow you back before you can invite them</FormNote>
+        )}
+
+        {!isCourt && connections.length > 0 && (
+          <InviteConnectionsList
+            connections={connections}
+            selectedIds={selectedIds}
+            onToggle={togglePlayer}
+            title={preselectedId ? 'Add more players' : 'Invite players'}
           />
+        )}
 
-          <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
+        {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
+          <FormNote icon={<UserPlus size={15} strokeWidth={1.7} />}>
+            You can invite players who follow you back
+          </FormNote>
+        )}
 
-          <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <div>
-            <FormSectionLabel>
-              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-            </FormSectionLabel>
-            <textarea value={about} onChange={(e) => setAbout(e.target.value)}
-              placeholder="Any information — for example the training format"
-              rows={3}
-              maxLength={500}
-              className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
-          </div>
-
-          {isCourt && (
-            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
-              This game is public. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four, and Group uses the maximum you set.
-            </p>
-          )}
-
-          {/* Pre-selected player from chat */}
-          {!isCourt && preselectedId && preselectedName && (
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
-              <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA]">
-                <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
-                <span className="text-sm text-[#1a1a1a] flex-1">{preselectedName}</span>
-                <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
-              </div>
-            </div>
-          )}
-
-          {!isCourt && connections.length > 0 && (
-            <InviteConnectionsList
-              connections={connections}
-              selectedIds={selectedIds}
-              onToggle={togglePlayer}
-              title={preselectedId ? 'Add more players' : 'Invite players'}
-            />
-          )}
-
-          {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
-            <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
-              You can invite people after you have matched with them. Until then, this game stays on your profile.
-            </p>
-          )}
-
-          {/* Visibility */}
-          {!isCourt && (
-          <div>
-            <FormSectionLabel>Visibility</FormSectionLabel>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setIsOpen(false)}
-                className={gameFormOptionPillClass(!isOpen)}>
-                Private
-              </button>
-              <button type="button" onClick={() => setIsOpen(true)}
-                className={gameFormOptionPillClass(isOpen)}>
-                Public
-              </button>
-            </div>
-            {isOpen ? (
-              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
-                Anyone in your city can find and join this game
-              </p>
-            ) : (
-              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                Shows on your profile schedule for anyone who visits. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
-              </p>
-            )}
-          </div>
-          )}
-
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <button onClick={handleSubmit} disabled={submitting || !accountReady || !date || !time || !endTime}
-            className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
-            {submitLabel}
-          </button>
-        </div>
-
+        <button onClick={handleSubmit} disabled={submitting || !accountReady || !date || !time || !endTime}
+          className="w-full rounded-full bg-[#E8748A] py-[18px] text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A] disabled:opacity-50">
+          {submitLabel}
+        </button>
+      </div>
     </div>
   )
 }

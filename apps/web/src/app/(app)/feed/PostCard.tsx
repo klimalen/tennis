@@ -43,6 +43,7 @@ export interface PostItem {
     status: string
     max_players: number
     is_open: boolean
+    visibility?: string | null
     city: { name: string } | null
   } | null
   likes_count: number
