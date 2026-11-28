@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Moon, Sun, Sunrise, X, type LucideIcon } from 'lucide-react'
-import { FormSwitch, formChoiceClass } from '@/components/ui/FormCard'
+import { CalendarDays, Infinity as InfinityIcon, Moon, Repeat, Sun, Sunrise, X, type LucideIcon } from 'lucide-react'
+import { formChoiceClass } from '@/components/ui/FormCard'
 import {
   DAY_LABELS,
   DAY_ORDER,
@@ -28,27 +28,13 @@ const PART_ICONS: Record<DayPart, LucideIcon> = {
   evening: Moon,
 }
 
-function ToggleRow({
-  checked,
-  label,
-  hint,
-  onChange,
-}: {
-  checked: boolean
-  label: string
-  hint?: string
-  onChange: (next: boolean) => void
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold text-[#1a1a1a]">{label}</span>
-        {hint ? <span className="mt-0.5 block text-[12px] text-[rgba(26,26,26,0.5)]">{hint}</span> : null}
-      </span>
-      <FormSwitch checked={checked} onChange={onChange} label={label} />
-    </div>
-  )
-}
+type ScheduleMode = 'anytime' | 'same' | 'byday'
+
+const SCHEDULE_MODES: { value: ScheduleMode; label: string; hint: string; icon: LucideIcon }[] = [
+  { value: 'anytime', label: 'Any time', hint: 'Free every day, morning to evening', icon: InfinityIcon },
+  { value: 'same', label: 'Every day', hint: 'Pick times once for Mon–Sun', icon: Repeat },
+  { value: 'byday', label: 'By day', hint: 'Pick days, then times for each', icon: CalendarDays },
+]
 
 function PartTiles({ isOn, onToggle, compact = false }: { isOn: (part: DayPart) => boolean; onToggle: (part: DayPart) => void; compact?: boolean }) {
   return (
@@ -63,7 +49,7 @@ function PartTiles({ isOn, onToggle, compact = false }: { isOn: (part: DayPart) 
             onClick={() => onToggle(part)}
             aria-pressed={active}
             className={`flex items-center justify-center gap-1.5 rounded-[16px] font-semibold ${
-              compact ? 'h-10 text-[12px]' : 'h-[60px] flex-col text-[13px]'
+              compact ? 'h-9 text-[12px]' : 'h-[60px] flex-col text-[13px]'
             } ${formChoiceClass(active)}`}
           >
             <Icon size={compact ? 14 : 18} strokeWidth={1.7} className={active ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
@@ -95,21 +81,23 @@ export function AvailabilityEditor({
     return day != null ? (value[day] ?? []) : []
   })()
 
-  function setAnytime(on: boolean) {
-    if (on) {
+  const mode: ScheduleMode = anytime ? 'anytime' : sameEveryDay ? 'same' : 'byday'
+
+  function chooseMode(next: ScheduleMode) {
+    if (next === mode) return
+    if (next === 'anytime') {
       setSameEveryDay(true)
       onChange(anytimeAvailability())
       return
     }
-    setSameEveryDay(true)
-    onChange(fillWeek(['morning']))
-  }
-
-  function setSameTimes(on: boolean) {
-    setSameEveryDay(on)
-    if (!on) return
-    const parts = sharedParts.length > 0 ? sharedParts : (['morning'] as DayPart[])
-    onChange(fillWeek(parts))
+    if (next === 'same') {
+      setSameEveryDay(true)
+      const parts = !anytime && sharedParts.length > 0 ? sharedParts : (['morning'] as DayPart[])
+      onChange(fillWeek(parts))
+      return
+    }
+    setSameEveryDay(false)
+    if (anytime) onChange(fillWeek(['morning']))
   }
 
   function clearAll() {
@@ -126,28 +114,38 @@ export function AvailabilityEditor({
 
   return (
     <div className={`space-y-4 ${framed ? 'rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3.5 py-3.5' : ''}`}>
-      <ToggleRow
-        checked={anytime}
-        label="Any day, any time"
-        hint="Mornings, afternoons, and evenings"
-        onChange={setAnytime}
-      />
-      {!anytime && (
-        <ToggleRow
-          checked={sameEveryDay}
-          label="Same times every day"
-          hint="Pick once for Mon–Sun"
-          onChange={setSameTimes}
-        />
-      )}
+      <div>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="When you play">
+          {SCHEDULE_MODES.map((option) => {
+            const active = mode === option.value
+            const Icon = option.icon
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => chooseMode(option.value)}
+                className={`flex flex-col items-center gap-1.5 rounded-[20px] px-1 py-3 text-[13px] font-semibold leading-tight ${formChoiceClass(active)}`}
+              >
+                <Icon size={19} strokeWidth={1.7} className={active ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
+        <p className="mt-2.5 px-1 text-[12.5px] leading-snug text-[rgba(26,26,26,0.55)]" aria-live="polite">
+          {SCHEDULE_MODES.find((option) => option.value === mode)?.hint}
+        </p>
+      </div>
 
       {showSharedParts && (
         <PartTiles isOn={(part) => sharedParts.includes(part)} onToggle={(part) => onChange(toggleUniformPart(value, part))} />
       )}
 
       {showDayGrid && (
-        <div className="space-y-3 border-t border-[#EAE5DF] pt-4">
-          <div className="grid grid-cols-7 gap-1.5">
+        <div className="space-y-3">
+          <div className="grid grid-cols-7 gap-1">
             {DAY_ORDER.map((day) => {
               const on = value[day] !== undefined
               return (
@@ -156,7 +154,7 @@ export function AvailabilityEditor({
                   type="button"
                   onClick={() => onChange(toggleDay(value, day))}
                   aria-pressed={on}
-                  className={`aspect-square rounded-full text-[11px] font-semibold uppercase ${formChoiceClass(on)}`}
+                  className={`h-9 rounded-full text-[11px] font-semibold uppercase ${formChoiceClass(on)}`}
                 >
                   {DAY_LABELS[day]?.slice(0, 2)}
                 </button>

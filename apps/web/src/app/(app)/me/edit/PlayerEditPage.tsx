@@ -555,7 +555,7 @@ export function PlayerEditPage() {
         </section>
 
         <section>
-          <FormSectionLabel hint="(optional)">Your game</FormSectionLabel>
+          <FormSectionLabel hint="(optional)">Your level</FormSectionLabel>
           <div className="space-y-2.5">
             <div className={`${formPanel} flex items-center gap-3 py-3.5`}>
               <span
@@ -575,8 +575,7 @@ export function PlayerEditPage() {
 
             {!d.isCoach && (
               <div className={`${formPanel} p-2`}>
-                <FormEyebrow className="px-2 pb-2 pt-1.5">Level</FormEyebrow>
-                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                   {SKILL_LEVELS.map((s) => {
                     const selected = d.skillLevel === s.value
                     return (
@@ -606,6 +605,12 @@ export function PlayerEditPage() {
               </div>
             )}
 
+          </div>
+        </section>
+
+        <section>
+          <FormSectionLabel hint="(optional)">Preferences</FormSectionLabel>
+          <div className="space-y-2.5">
             <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="Preferred format">
               {FORMAT_OPTIONS.map((o) => {
                 const selected = d.playFormats.includes(o.value)
