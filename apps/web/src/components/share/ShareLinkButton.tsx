@@ -88,6 +88,7 @@ export function ShareLinkButton({
   }
 
   function showCopied() {
+    rememberAnchor()
     setCopied(true)
     closePanel()
     buttonRef.current?.focus()
@@ -161,7 +162,16 @@ export function ShareLinkButton({
           ? <Check size={icon} className="text-[#1a1a1a]" />
           : <Share2 size={icon} className="text-[rgba(26,26,26,0.55)]" />}
       </button>
-      <span className="sr-only" aria-live="polite">{copied ? 'Link copied' : ''}</span>
+      {copied && anchor ? createPortal(
+        <div
+          role="status"
+          style={{ top: anchor.top, right: anchor.right }}
+          className="pointer-events-none fixed z-[80] rounded-full bg-[#1a1a1a] px-3 py-2 text-[12px] font-medium text-[#FAF7F2] shadow-lg"
+        >
+          Link copied
+        </div>,
+        document.body,
+      ) : null}
       {panelOpen && anchor ? createPortal(
         <div
           ref={panelRef}
