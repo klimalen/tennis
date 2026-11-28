@@ -279,6 +279,72 @@ function PostMenu({
   )
 }
 
+function RecapPhotos({ urls }: { urls: string[] }) {
+  const scroller = useRef<HTMLDivElement>(null)
+  const [index, setIndex] = useState(0)
+  const many = urls.length > 1
+
+  function readIndex() {
+    const node = scroller.current
+    const slide = node?.firstElementChild as HTMLElement | null
+    if (!node || !slide) return
+    const step = slide.offsetWidth + 8
+    if (step <= 0) return
+    const next = Math.min(urls.length - 1, Math.max(0, Math.round(node.scrollLeft / step)))
+    setIndex((current) => (current === next ? current : next))
+  }
+
+  function go(next: number) {
+    const node = scroller.current
+    const slide = node?.children[next] as HTMLElement | undefined
+    if (!node || !slide) return
+    node.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' })
+  }
+
+  if (!many) {
+    const only = urls[0]
+    if (!only) return null
+    return (
+      <div className="relative mb-3 aspect-square overflow-hidden rounded-[20px] bg-brand-field">
+        <Image src={only} alt="" fill sizes="(max-width: 672px) 100vw, 640px" className="object-cover" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-3">
+      <div className="relative">
+        <div
+          ref={scroller}
+          onScroll={readIndex}
+          className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Recap photos"
+        >
+          {urls.map((url) => (
+            <div key={url} className="relative aspect-square w-[84%] flex-none snap-start overflow-hidden rounded-[20px] bg-brand-field">
+              <Image src={url} alt="" fill sizes="(max-width: 672px) 84vw, 540px" className="object-cover" />
+            </div>
+          ))}
+        </div>
+        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-[#1a1a1a]/55 px-2 py-1 text-[10px] font-medium tracking-[0.08em] text-white">
+          {index + 1} / {urls.length}
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center justify-center gap-1.5">
+        {urls.map((url, dot) => (
+          <button
+            key={url}
+            type="button"
+            aria-label={`Photo ${dot + 1} of ${urls.length}`}
+            onClick={() => go(dot)}
+            className={`h-1.5 rounded-full transition-all ${dot === index ? 'w-4 bg-[#1a1a1a]' : 'w-1.5 bg-[#1a1a1a]/25'}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main PostCard ─────────────────────────────────────────────────────────────
 
 export function PostCard({
@@ -357,15 +423,7 @@ export function PostCard({
         <OpenGameCard game={post.game} currentUserId={currentUserId} />
       )}
 
-      {recapPhotos.length > 0 && (
-        <div className={`mb-3 grid gap-2 ${recapPhotos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {recapPhotos.map((url) => (
-            <div key={url} className="relative aspect-[3/4] overflow-hidden rounded-[20px] bg-brand-field">
-              <Image src={url} alt="" fill sizes="(max-width: 672px) 100vw, 672px" className="object-cover" />
-            </div>
-          ))}
-        </div>
-      )}
+      {recapPhotos.length > 0 && <RecapPhotos urls={recapPhotos} />}
 
       {/* Body text */}
       {post.body && (
