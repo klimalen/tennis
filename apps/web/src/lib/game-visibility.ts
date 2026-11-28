@@ -9,19 +9,19 @@ export const VISIBILITY_OPTIONS: {
   {
     value: 'private',
     title: 'Private',
-    join: 'Only the players you invite can join and see it.',
-    seen: 'It shows in the schedule.',
+    join: 'Only you and invited players can see and join.',
+    seen: '',
   },
   {
     value: 'friends',
     title: 'Friends',
-    join: 'Only people you follow who follow you back can see it and join.',
+    join: 'Only mutual followers can see and join.',
     seen: '',
   },
   {
     value: 'open',
     title: 'Open',
-    join: 'Anyone can find this game in Search and join it.',
+    join: 'Anyone can discover and join your game.',
     seen: '',
   },
 ]
