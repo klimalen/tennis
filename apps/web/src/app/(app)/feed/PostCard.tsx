@@ -361,7 +361,7 @@ export function PostCard({
   const isOwn = post.author.id === currentUserId
   const isRecap = post.type === 'game_recap'
   const initials = post.author.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
-  const recapPhotos = isRecap ? post.image_urls : []
+  const photos = post.image_urls.length > 0 ? post.image_urls : post.image_url ? [post.image_url] : []
   const canOpenRecap = isRecap && post.can_open_game
 
   async function toggleLike() {
@@ -423,7 +423,7 @@ export function PostCard({
         <OpenGameCard game={post.game} currentUserId={currentUserId} />
       )}
 
-      {recapPhotos.length > 0 && <RecapPhotos urls={recapPhotos} />}
+      {isRecap && photos.length > 0 && <RecapPhotos urls={photos} />}
 
       {/* Body text */}
       {post.body && (
@@ -439,18 +439,7 @@ export function PostCard({
         />
       )}
 
-      {/* Image */}
-      {post.image_url && (
-        <div className="relative w-full aspect-square rounded-[20px] bg-brand-field overflow-hidden mb-3">
-          <Image
-            src={post.image_url}
-            alt="Post image"
-            fill
-            sizes="(max-width: 672px) 100vw, 672px"
-            className="object-cover"
-          />
-        </div>
-      )}
+      {!isRecap && photos.length > 0 && <RecapPhotos urls={photos} />}
 
       {/* Like button */}
       <button

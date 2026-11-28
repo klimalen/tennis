@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
 import { gameEndMs } from '@/lib/game-time'
 import { parseRecapVisibility, RECAP_PHOTO_MAX, type RecapVisibility } from '@/lib/game-recap'
-import { ownPostImageUrl, postImageStoragePath } from '@/lib/post-image'
+import { postImageStoragePath, readOwnPostImageUrls } from '@/lib/post-image'
 import { exceedsPostBodyLimit, POST_BODY_LENGTH_ERROR } from '@/lib/post-limits'
 import { holdsGameSeat } from '@/lib/schedule'
 import { NextResponse } from 'next/server'
@@ -31,16 +31,8 @@ function readPayload(raw: RecapBody, userId: string): {
   if (text && exceedsPostBodyLimit(text)) return { error: POST_BODY_LENGTH_ERROR }
   const visibility = parseRecapVisibility(raw.visibility)
   if (!visibility) return { error: 'Choose who can see this recap' }
-  const incoming = raw.image_urls ?? []
-  if (!Array.isArray(incoming)) return { error: 'Photo must be uploaded to your account' }
-  if (incoming.length > RECAP_PHOTO_MAX) return { error: `Up to ${RECAP_PHOTO_MAX} photos` }
-  const imageUrls: string[] = []
-  for (const entry of incoming) {
-    if (typeof entry !== 'string') return { error: 'Photo must be uploaded to your account' }
-    const url = ownPostImageUrl(entry, userId)
-    if (!url) return { error: 'Photo must be uploaded to your account' }
-    imageUrls.push(url)
-  }
+  const imageUrls = readOwnPostImageUrls(raw.image_urls ?? [], userId, RECAP_PHOTO_MAX)
+  if (!Array.isArray(imageUrls)) return imageUrls
   if (!text && imageUrls.length === 0) return { error: 'Add a note or a photo' }
   return { text, visibility, imageUrls }
 }

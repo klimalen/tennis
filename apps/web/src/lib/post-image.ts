@@ -1,3 +1,5 @@
+import { POST_PHOTO_MAX } from '@/lib/post-limits'
+
 /** Storage object path inside the post-images bucket, or null when the URL is not one of ours. */
 export function postImageStoragePath(url: string | null | undefined): string | null {
   if (!url) return null
@@ -38,4 +40,19 @@ export function ownPostImageUrl(url: string | null | undefined, userId: string):
   const path = decodeURIComponent(parsed.pathname.slice(index + marker.length))
   if (!path.startsWith(`${userId}/`) || path.includes('..')) return null
   return `${expected.origin}${parsed.pathname}`
+}
+
+/** Photo URLs the signed-in user uploaded, capped at the shared post limit. */
+export function readOwnPostImageUrls(raw: unknown, userId: string, max = POST_PHOTO_MAX): string[] | { error: string } {
+  if (raw == null) return []
+  if (!Array.isArray(raw)) return { error: 'Photo must be uploaded to your account' }
+  if (raw.length > max) return { error: `Up to ${max} photos` }
+  const urls: string[] = []
+  for (const entry of raw) {
+    if (typeof entry !== 'string') return { error: 'Photo must be uploaded to your account' }
+    const url = ownPostImageUrl(entry, userId)
+    if (!url) return { error: 'Photo must be uploaded to your account' }
+    urls.push(url)
+  }
+  return urls
 }

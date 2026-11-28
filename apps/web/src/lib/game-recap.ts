@@ -1,4 +1,5 @@
 import { gameEndMs } from '@/lib/game-time'
+import { POST_PHOTO_MAX } from '@/lib/post-limits'
 import { holdsGameSeat } from '@/lib/schedule'
 import type { RecapVisibility } from '@tennis/shared'
 
@@ -6,7 +7,7 @@ export type { RecapVisibility }
 
 export const RECAP_VISIBILITIES = ['private', 'friends', 'public'] as const
 
-export const RECAP_PHOTO_MAX = 6
+export const RECAP_PHOTO_MAX = POST_PHOTO_MAX
 
 export interface RecapPlayer {
   id: string

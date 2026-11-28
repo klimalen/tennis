@@ -1,38 +1,62 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { clampPostBody, POST_BODY_MAX } from '@/lib/post-limits'
-import { SquarePhotoCrop, type SquarePhotoCropHandle } from '../SquarePhotoCrop'
+import { clampPostBody, POST_BODY_MAX, POST_PHOTO_MAX } from '@/lib/post-limits'
+import { compressRecapPhoto } from '@/lib/recap-image'
+import { PostPhotoPicker } from '@/components/feed/PostPhotoPicker'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
+
+type DraftPhoto = { id: string; file: File; preview: string }
 
 export default function NewPostPage() {
   useHideTabBar(true)
   const [text, setText] = useState('')
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [photos, setPhotos] = useState<DraftPhoto[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
-  const cropRef = useRef<SquarePhotoCropHandle>(null)
+  const photosRef = useRef<DraftPhoto[]>([])
   const router = useRouter()
   const supabase = useRef(createClient()).current
 
-  function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setImageFile(file)
+  photosRef.current = photos
+  useEffect(() => {
+    return () => {
+      for (const photo of photosRef.current) URL.revokeObjectURL(photo.preview)
+    }
+  }, [])
+
+  function addPhotos(list: FileList | null) {
+    if (!list || list.length === 0) return
+    const incoming = [...list]
+    const room = POST_PHOTO_MAX - photos.length
+    if (room <= 0 || incoming.length > room) setError(`Up to ${POST_PHOTO_MAX} photos`)
+    else setError('')
+    const accepted = incoming.slice(0, Math.max(0, room))
+    if (accepted.length === 0) return
+    setPhotos((current) => [
+      ...current,
+      ...accepted.map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        preview: URL.createObjectURL(file),
+      })),
+    ])
   }
 
-  function removeImage() {
-    setImageFile(null)
-    if (fileRef.current) fileRef.current.value = ''
+  function removePhoto(photoId: string) {
+    setPhotos((current) => {
+      const photo = current.find((item) => item.id === photoId)
+      if (photo) URL.revokeObjectURL(photo.preview)
+      return current.filter((item) => item.id !== photoId)
+    })
   }
 
   async function handleSubmit() {
     if (submitting) return
-    if (!text.trim() && !imageFile) return
+    if (!text.trim() && photos.length === 0) return
     setSubmitting(true)
     setError('')
 
@@ -43,38 +67,26 @@ export default function NewPostPage() {
       return
     }
 
-    let imageUrl: string | null = null
-
-    if (imageFile) {
-      let square: Blob
-      try {
-        square = await cropRef.current!.exportSquare()
-      } catch {
-        setError('Could not prepare the photo. Try again.')
-        setSubmitting(false)
-        return
-      }
-      const path = `${user.id}/${Date.now()}.jpg`
-      const { error: uploadError } = await supabase.storage
-        .from('post-images')
-        .upload(path, square, { contentType: 'image/jpeg' })
-
-      if (uploadError) {
-        setError('Could not upload the photo. Try again.')
-        setSubmitting(false)
-        return
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('post-images')
-        .getPublicUrl(path)
-      imageUrl = publicUrl
+    let imageUrls: string[]
+    try {
+      imageUrls = await Promise.all(photos.map(async (photo) => {
+        const blob = await compressRecapPhoto(photo.file)
+        const path = `${user.id}/${crypto.randomUUID()}.jpg`
+        const { error: uploadError } = await supabase.storage.from('post-images').upload(path, blob, { contentType: 'image/jpeg' })
+        if (uploadError) throw new Error('upload')
+        const { data: { publicUrl } } = supabase.storage.from('post-images').getPublicUrl(path)
+        return publicUrl
+      }))
+    } catch {
+      setError('Could not upload a photo. Try again.')
+      setSubmitting(false)
+      return
     }
 
     const res = await fetch('/api/posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: text.trim() || null, image_url: imageUrl }),
+      body: JSON.stringify({ body: text.trim() || null, image_urls: imageUrls }),
     })
 
     if (res.ok) {
@@ -86,11 +98,10 @@ export default function NewPostPage() {
     setSubmitting(false)
   }
 
-  const canPost = (text.trim().length > 0 || imageFile !== null) && !submitting
+  const canPost = (text.trim().length > 0 || photos.length > 0) && !submitting
 
   return (
     <div className="min-h-screen pb-8">
-      {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <button
@@ -110,47 +121,31 @@ export default function NewPostPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-5">
-        {/* Text input */}
-        <textarea
-          value={text}
-          onChange={(e) => setText(clampPostBody(e.target.value))}
-          placeholder="What's on your mind?"
-          rows={5}
-          maxLength={POST_BODY_MAX}
-          className="font-copy w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
-          autoFocus
-        />
-        <p className="mt-1 text-right text-[9px] text-[rgba(26,26,26,0.45)]">
-          {text.length}/{POST_BODY_MAX}
-        </p>
+      <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+        <div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(clampPostBody(e.target.value))}
+            placeholder="What's on your mind?"
+            rows={5}
+            maxLength={POST_BODY_MAX}
+            className="font-copy w-full bg-brand-field border border-[#1a1a1a]/40 rounded-lg resize-none text-[#1a1a1a] text-base placeholder:text-[rgba(26,26,26,0.4)] outline-none leading-relaxed px-4 py-3"
+            autoFocus
+          />
+          <p className="mt-1 text-right text-[9px] text-[rgba(26,26,26,0.45)]">
+            {text.length}/{POST_BODY_MAX}
+          </p>
+        </div>
 
         {error && (
-          <p className="mt-3 text-sm text-red-600">{error}</p>
+          <p className="text-sm text-red-600">{error}</p>
         )}
 
-        {/* Image preview */}
-        {imageFile && (
-          <SquarePhotoCrop ref={cropRef} file={imageFile} onRemove={removeImage} />
-        )}
-
-        {/* Divider */}
-        <div className="border-t border-brand-divider mt-6 pt-4">
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-brand-field border border-[#1a1a1a]/15 text-[#1a1a1a] hover:border-[#1a1a1a]/60 transition-colors"
-          >
-            <ImageIcon size={18} />
-            <span className="text-[10px] tracking-[0.15em] uppercase font-medium">Add photo</span>
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImagePick}
-          />
-        </div>
+        <PostPhotoPicker
+          photos={photos.map((photo) => ({ id: photo.id, src: photo.preview }))}
+          onAdd={addPhotos}
+          onRemove={removePhoto}
+        />
       </div>
     </div>
   )

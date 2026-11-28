@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Check, Globe, ImagePlus, Info, Loader2, Lock, Users, X } from 'lucide-react'
+import { ArrowLeft, Check, Globe, Info, Loader2, Lock, Users, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useHideTabBar } from '@/components/navigation/TabBarVisibility'
 import { loadGameDetail, type GameDetail } from '@/components/games/GameDetailSheet'
@@ -21,6 +21,7 @@ import { clampPostBody, POST_BODY_MAX } from '@/lib/post-limits'
 import { holdsGameSeat } from '@/lib/schedule'
 import { formatPlayFormat } from '@/lib/skill'
 import { compressRecapPhoto } from '@/lib/recap-image'
+import { PostPhotoPicker } from '@/components/feed/PostPhotoPicker'
 
 type DraftPhoto =
   | { id: string; kind: 'saved'; url: string }
@@ -62,7 +63,6 @@ export default function GameRecapPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const supabase = useRef(createClient()).current
-  const fileRef = useRef<HTMLInputElement>(null)
   const photosRef = useRef<DraftPhoto[]>([])
   const [game, setGame] = useState<GameDetail | null>(null)
   const [recapId, setRecapId] = useState<string | null>(null)
@@ -129,10 +129,7 @@ export default function GameRecapPage() {
     if (room <= 0 || incoming.length > room) setError(`Up to ${RECAP_PHOTO_MAX} photos`)
     else setError('')
     const accepted = incoming.slice(0, Math.max(0, room))
-    if (accepted.length === 0) {
-      if (fileRef.current) fileRef.current.value = ''
-      return
-    }
+    if (accepted.length === 0) return
     setPhotos((current) => [
       ...current,
       ...accepted.map((file) => ({
@@ -142,7 +139,6 @@ export default function GameRecapPage() {
         preview: URL.createObjectURL(file),
       })),
     ])
-    if (fileRef.current) fileRef.current.value = ''
   }
 
   function removePhoto(photoId: string) {
@@ -298,50 +294,15 @@ export default function GameRecapPage() {
               <p className="mt-1 text-right text-[9px] text-[rgba(26,26,26,0.4)]">{text.length}/{POST_BODY_MAX}</p>
             </div>
 
-            <div>
-              <div className="mb-2 flex items-baseline justify-between">
-                <p className="text-sm font-medium text-[#1a1a1a]">Photos</p>
-                <p className="text-[11px] text-[rgba(26,26,26,0.4)]">Optional</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {photos.map((photo) => (
-                  <div key={photo.id} className="relative h-[88px] w-[88px] overflow-hidden rounded-2xl bg-brand-field">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.kind === 'saved' ? photo.url : photo.preview}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(photo.id)}
-                      aria-label="Remove photo"
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white"
-                    >
-                      <X size={11} />
-                    </button>
-                  </div>
-                ))}
-                {photos.length < RECAP_PHOTO_MAX && (
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="flex h-[88px] w-[88px] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-[#1a1a1a]/25 text-[rgba(26,26,26,0.45)] hover:border-[#1a1a1a]/50"
-                  >
-                    <ImagePlus size={16} />
-                    <span className="text-[9px] uppercase tracking-[0.12em]">Add photos</span>
-                  </button>
-                )}
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(event) => addPhotos(event.target.files)}
-              />
-            </div>
+            <PostPhotoPicker
+              photos={photos.map((photo) => ({
+                id: photo.id,
+                src: photo.kind === 'saved' ? photo.url : photo.preview,
+              }))}
+              max={RECAP_PHOTO_MAX}
+              onAdd={addPhotos}
+              onRemove={removePhoto}
+            />
 
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-[#1a1a1a]">Who can see your recap?</legend>
