@@ -21,6 +21,7 @@ import { ProfileTraitChips } from '@/components/ui/ProfileTraitChips'
 import { normalizeAvailability } from '@/lib/availability'
 import { CourtProfileDetails } from '@/components/court/CourtProfileDetails'
 import { CourtDetailsGate } from './CourtHome'
+import { ScrollToHash } from './ScrollToHash'
 
 async function ProfileContent() {
   const supabase = await createClient()
@@ -106,6 +107,7 @@ async function ProfileContent() {
 
   return (
     <div className="min-h-screen">
+      <ScrollToHash />
       {/* Header */}
       <div className="page-header">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -259,7 +261,7 @@ async function ProfileContent() {
           />
         </div>
 
-        <div>
+        <div id="posts" className="scroll-mt-24">
           <div className="px-1 pt-2 pb-3 flex items-center gap-2">
             <span className="text-brand-accent font-display text-lg leading-none">✦</span>
             <span className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.45)] font-medium">Posts</span>

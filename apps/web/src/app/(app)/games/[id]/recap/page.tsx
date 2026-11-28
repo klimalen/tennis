@@ -194,8 +194,7 @@ export default function GameRecapPage() {
       setSubmitting(false)
       return
     }
-    router.push(`/game/${id}`)
-    router.refresh()
+    router.push('/me#posts')
   }
 
   async function removeRecap() {
