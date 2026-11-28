@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Globe, Heart, Lock, MoreHorizontal, Pencil, Trash2, Trophy, Users, Loader2 } from 'lucide-react'
+import { viewerCanWriteRecap } from '@/lib/game-recap'
 import { holdsGameSeat } from '@/lib/schedule'
 import { createClient } from '@/lib/supabase/client'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
@@ -47,6 +48,7 @@ function OpenGameCard({
 }) {
   const [gameDetail, setGameDetail] = useState<GameDetail | null>(null)
   const [showSheet, setShowSheet] = useState(false)
+  const router = useRouter()
   const [canJoin, setCanJoin] = useState<boolean | null>(null)
 
   const isCancelled = basicGame.status === 'cancelled'
@@ -106,15 +108,18 @@ function OpenGameCard({
     : []
 
   const muted = isCancelled || isPast
-  const beard = muted || canJoin === false
-    ? null
-    : !gameDetail
+  const canRecap = Boolean(gameDetail && viewerCanWriteRecap(gameDetail, currentUserId))
+  const beard = canRecap
+    ? 'recap' as const
+    : muted || canJoin === false
       ? null
-      : alreadyIn
-        ? 'in' as const
-        : isFull
-          ? 'full' as const
-          : 'join' as const
+      : !gameDetail
+        ? null
+        : alreadyIn
+          ? 'in' as const
+          : isFull
+            ? 'full' as const
+            : 'join' as const
 
   function openSheet() {
     if (gameDetail && !viewerCanOpenGame(gameDetail, currentUserId)) return
@@ -139,6 +144,7 @@ function OpenGameCard({
         badge={isCancelled ? 'Cancelled' : isPast ? 'Past' : null}
         onOpen={openSheet}
         onJoin={openSheet}
+        onRecap={() => router.push(`/games/${basicGame.id}/recap`)}
       />
 
       {showSheet && gameDetail && viewerCanOpenGame(gameDetail, currentUserId) && (
