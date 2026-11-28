@@ -30,7 +30,7 @@ export function VisibilityFields({
             >
               <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a]">{option.title}</p>
               <p className="mt-1.5 text-[12px] leading-snug text-[rgba(26,26,26,0.62)]">
-                {option.join} {option.seen}
+                {[option.join, option.seen].filter(Boolean).join(' ')}
               </p>
             </button>
           )

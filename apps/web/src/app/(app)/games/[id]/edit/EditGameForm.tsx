@@ -233,7 +233,13 @@ export function EditGameForm({
 
           <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
 
-          <CourtPlaceFields value={place} onChange={setPlace} />
+          {isCreator && !lockVisibility && (
+            <VisibilityFields
+              value={visibility}
+              onChange={setVisibility}
+              notePrivateChange={savedVisibility !== 'private'}
+            />
+          )}
 
           <div>
             <FormSectionLabel>
@@ -244,13 +250,7 @@ export function EditGameForm({
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
-          {isCreator && !lockVisibility && (
-            <VisibilityFields
-              value={visibility}
-              onChange={setVisibility}
-              notePrivateChange={savedVisibility !== 'private'}
-            />
-          )}
+          <CourtPlaceFields value={place} onChange={setPlace} />
 
           {(participants.length > 0 || (isCreator && inviteable.length > 0)) && (
             <div className="space-y-4">

@@ -50,7 +50,7 @@ function NewGameForm() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [connectionsLoaded, setConnectionsLoaded] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [visibility, setVisibility] = useState<GameVisibility>('open')
+  const [visibility, setVisibility] = useState<GameVisibility>('friends')
   const [preselectedOk, setPreselectedOk] = useState(!preselectedId)
   const [isCourt, setIsCourt] = useState(false)
   const [accountReady, setAccountReady] = useState(false)
@@ -212,7 +212,9 @@ function NewGameForm() {
 
           <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
 
-          <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
+          {!isCourt && (
+            <VisibilityFields value={visibility} onChange={setVisibility} />
+          )}
 
           <div>
             <FormSectionLabel>
@@ -224,6 +226,8 @@ function NewGameForm() {
               maxLength={500}
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
+
+          <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
 
           {isCourt && (
             <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
@@ -261,10 +265,6 @@ function NewGameForm() {
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
               You can invite people you follow who follow you back. A one-way follow is not enough.
             </p>
-          )}
-
-          {!isCourt && (
-            <VisibilityFields value={visibility} onChange={setVisibility} />
           )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}

@@ -9,20 +9,20 @@ export const VISIBILITY_OPTIONS: {
   {
     value: 'private',
     title: 'Private',
-    join: 'Only people you invite can join.',
-    seen: 'Only you and the people you invite can see it. It stays off Search and the feed, and on your calendar.',
+    join: 'Only the players you invite can join and see it.',
+    seen: 'It shows in the schedule.',
   },
   {
     value: 'friends',
     title: 'Friends',
-    join: 'People you follow who follow you back can join, without you approving each one.',
-    seen: 'Those friends, people you invite, and players in the game can see it. Search and the feed show it only to them.',
+    join: 'Only people you follow who follow you back can see it and join.',
+    seen: '',
   },
   {
     value: 'open',
     title: 'Open',
-    join: 'Any signed-in player can join. Guests can look, and they sign in to join.',
-    seen: 'Everyone can find it in Search and on your profile. Followers also see it in the feed.',
+    join: 'Anyone can find this game in Search and join it.',
+    seen: '',
   },
 ]
 
