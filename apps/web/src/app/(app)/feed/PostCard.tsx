@@ -4,51 +4,17 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Heart, MoreHorizontal, Pencil, Trash2, Trophy, Loader2 } from 'lucide-react'
+import { Globe, Heart, Lock, MoreHorizontal, Pencil, Trash2, Trophy, Users, Loader2 } from 'lucide-react'
+import { viewerCanWriteRecap } from '@/lib/game-recap'
 import { holdsGameSeat } from '@/lib/schedule'
 import { createClient } from '@/lib/supabase/client'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
+import { GameRecapCard } from '@/components/games/GameRecapCard'
 import { OpenGameTicketCard } from '@/components/games/OpenGameTicketCard'
+import { formatRecapDate } from '@/components/ui/LocalGameTime'
+import type { PostItem } from '@/lib/post-feed'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface PostItem {
-  id: string
-  type: 'manual' | 'match_result' | 'open_game'
-  body: string | null
-  image_url: string | null
-  created_at: string
-  author: {
-    id: string
-    full_name: string
-    username: string
-    avatar_url: string | null
-  }
-  match_result: {
-    id: string
-    winner_id: string | null
-    winning_team: number | null
-    played_at: string | null
-    winner: { full_name: string; username: string } | null
-    game: { format: string; scheduled_at: string } | null
-  } | null
-  game: {
-    id: string
-    creator_id: string
-    format: string
-    scheduled_at: string
-    skill_level_min: number | null
-    skill_level_max: number | null
-    neighborhood: string | null
-    status: string
-    max_players: number
-    is_open: boolean
-    visibility?: string | null
-    city: { name: string } | null
-  } | null
-  likes_count: number
-  liked_by_me: boolean
-}
+export type { PostItem }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,7 +48,9 @@ function OpenGameCard({
 }) {
   const [gameDetail, setGameDetail] = useState<GameDetail | null>(null)
   const [showSheet, setShowSheet] = useState(false)
+  const router = useRouter()
   const [canJoin, setCanJoin] = useState<boolean | null>(null)
+  const [hasRecap, setHasRecap] = useState<boolean | null>(null)
 
   const isCancelled = basicGame.status === 'cancelled'
   const isPast = new Date(basicGame.scheduled_at) < new Date()
@@ -140,16 +108,38 @@ function OpenGameCard({
       ]
     : []
 
+  useEffect(() => {
+    if (!gameDetail || !viewerCanWriteRecap(gameDetail, currentUserId)) {
+      setHasRecap(null)
+      return
+    }
+    let cancelled = false
+    const supabase = createClient()
+    void supabase
+      .from('posts')
+      .select('id', { head: true, count: 'exact' })
+      .eq('author_id', currentUserId)
+      .eq('game_id', basicGame.id)
+      .eq('type', 'game_recap')
+      .then(({ count, error }) => {
+        if (!cancelled) setHasRecap(!error && (count ?? 0) > 0)
+      })
+    return () => { cancelled = true }
+  }, [gameDetail, currentUserId, basicGame.id])
+
   const muted = isCancelled || isPast
-  const beard = muted || canJoin === false
-    ? null
-    : !gameDetail
+  const canRecap = Boolean(gameDetail && viewerCanWriteRecap(gameDetail, currentUserId) && hasRecap !== null)
+  const beard = canRecap
+    ? (hasRecap ? 'recap' as const : 'add-recap' as const)
+    : muted || canJoin === false
       ? null
-      : alreadyIn
-        ? 'in' as const
-        : isFull
-          ? 'full' as const
-          : 'join' as const
+      : !gameDetail
+        ? null
+        : alreadyIn
+          ? 'in' as const
+          : isFull
+            ? 'full' as const
+            : 'join' as const
 
   function openSheet() {
     if (gameDetail && !viewerCanOpenGame(gameDetail, currentUserId)) return
@@ -174,6 +164,7 @@ function OpenGameCard({
         badge={isCancelled ? 'Cancelled' : isPast ? 'Past' : null}
         onOpen={openSheet}
         onJoin={openSheet}
+        onRecap={() => router.push(`/games/${basicGame.id}/recap`)}
       />
 
       {showSheet && gameDetail && viewerCanOpenGame(gameDetail, currentUserId) && (
@@ -240,7 +231,17 @@ function MatchResultCard({ matchResult }: { matchResult: NonNullable<PostItem['m
 
 // ─── Post menu (edit / delete) ────────────────────────────────────────────────
 
-function PostMenu({ postId, onDeleted }: { postId: string; onDeleted: () => void }) {
+function PostMenu({
+  postId,
+  gameId,
+  recap,
+  onDeleted,
+}: {
+  postId: string
+  gameId?: string | null
+  recap?: boolean
+  onDeleted: () => void
+}) {
   const [open, setOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -276,21 +277,86 @@ function PostMenu({ postId, onDeleted }: { postId: string; onDeleted: () => void
       {open && (
         <div className="absolute top-full right-0 mt-1 bg-white border border-[#1a1a1a]/10 rounded-2xl shadow-lg z-30 min-w-[140px] overflow-hidden">
           <button
-            onClick={() => { setOpen(false); router.push(`/feed/${postId}/edit`) }}
+            onClick={() => {
+              setOpen(false)
+              router.push(recap && gameId ? `/games/${gameId}/recap` : `/feed/${postId}/edit`)
+            }}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] text-[rgba(26,26,26,0.7)] hover:bg-brand-surface transition-colors"
           >
             <Pencil size={13} />
-            Edit post
+            {recap ? 'Edit recap' : 'Edit post'}
           </button>
           <button
             onClick={handleDelete}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-[11px] text-red-500 hover:bg-red-50 transition-colors"
           >
             <Trash2 size={13} />
-            Delete post
+            {recap ? 'Delete recap' : 'Delete post'}
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function RecapPhotos({ urls }: { urls: string[] }) {
+  const scroller = useRef<HTMLDivElement>(null)
+  const [index, setIndex] = useState(0)
+  const many = urls.length > 1
+
+  function readIndex() {
+    const node = scroller.current
+    const first = node?.children[0] as HTMLElement | undefined
+    const second = node?.children[1] as HTMLElement | undefined
+    if (!node || !first) return
+    const step = second ? second.offsetLeft - first.offsetLeft : first.offsetWidth
+    if (step <= 0) return
+    const next = Math.min(urls.length - 1, Math.max(0, Math.round(node.scrollLeft / step)))
+    setIndex((current) => (current === next ? current : next))
+  }
+
+  function go(next: number) {
+    const node = scroller.current
+    const slide = node?.children[next] as HTMLElement | undefined
+    if (!node || !slide) return
+    node.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' })
+  }
+
+  if (!many) {
+    const only = urls[0]
+    if (!only) return null
+    return (
+      <div className="relative mb-3 aspect-square overflow-hidden rounded-[20px] bg-brand-field">
+        <Image src={only} alt="" fill sizes="(max-width: 672px) 100vw, 640px" className="object-cover" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-3">
+      <div
+        ref={scroller}
+        onScroll={readIndex}
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Photos"
+      >
+        {urls.map((url) => (
+          <div key={url} className="relative aspect-square w-full flex-none snap-start overflow-hidden rounded-[20px] bg-brand-field">
+            <Image src={url} alt="" fill sizes="(max-width: 672px) 100vw, 640px" className="object-cover" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-2.5 flex items-center justify-center gap-1.5">
+        {urls.map((url, dot) => (
+          <button
+            key={url}
+            type="button"
+            aria-label={`Photo ${dot + 1} of ${urls.length}`}
+            onClick={() => go(dot)}
+            className={`h-1.5 rounded-full transition-all ${dot === index ? 'w-4 bg-[#1a1a1a]' : 'w-1.5 bg-[#1a1a1a]/25'}`}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -309,7 +375,10 @@ export function PostCard({
   const [liked, setLiked] = useState(post.liked_by_me)
   const [likesCount, setLikesCount] = useState(post.likes_count)
   const isOwn = post.author.id === currentUserId
+  const isRecap = post.type === 'game_recap'
   const initials = post.author.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
+  const photos = post.image_urls.length > 0 ? post.image_urls : post.image_url ? [post.image_url] : []
+  const canOpenRecap = isRecap && post.can_open_game
 
   async function toggleLike() {
     const newLiked = !liked
@@ -340,11 +409,25 @@ export function PostCard({
           <Link href={`/profile/${post.author.username}`} className="hover:text-brand-primary transition-colors">
             <span className="font-display text-sm tracking-wide text-[#1a1a1a]">{post.author.full_name.toUpperCase()}</span>
           </Link>
-          <p className="text-[10px] text-[rgba(26,26,26,0.4)] mt-0.5">{timeAgo(post.created_at)}</p>
+          <p className="mt-0.5 flex items-center gap-1 text-[10px] text-[rgba(26,26,26,0.4)]">
+            {isRecap && post.game?.scheduled_at ? (
+              <>
+                <span>{formatRecapDate(post.game.scheduled_at, 'long')}</span>
+                <span aria-hidden>·</span>
+                {post.visibility === 'public' ? <Globe size={10} /> : post.visibility === 'private' ? <Lock size={10} /> : <Users size={10} />}
+                <span>{post.visibility === 'public' ? 'Public' : post.visibility === 'private' ? 'Private' : 'Friends'}</span>
+              </>
+            ) : timeAgo(post.created_at)}
+          </p>
         </div>
 
-        {isOwn && post.type === 'manual' && (
-          <PostMenu postId={post.id} onDeleted={() => onDeleted?.(post.id)} />
+        {isOwn && (post.type === 'manual' || isRecap) && (
+          <PostMenu
+            postId={post.id}
+            gameId={post.game?.id ?? null}
+            recap={isRecap}
+            onDeleted={() => onDeleted?.(post.id)}
+          />
         )}
       </div>
 
@@ -356,23 +439,23 @@ export function PostCard({
         <OpenGameCard game={post.game} currentUserId={currentUserId} />
       )}
 
+      {isRecap && photos.length > 0 && <RecapPhotos urls={photos} />}
+
       {/* Body text */}
       {post.body && (
         <p className="font-copy text-sm text-[rgba(26,26,26,0.85)] leading-relaxed mb-3 whitespace-pre-wrap">{post.body}</p>
       )}
 
-      {/* Image */}
-      {post.image_url && (
-        <div className="relative w-full aspect-square rounded-[20px] bg-brand-field overflow-hidden mb-3">
-          <Image
-            src={post.image_url}
-            alt="Post image"
-            fill
-            sizes="(max-width: 672px) 100vw, 672px"
-            className="object-cover"
-          />
-        </div>
+      {isRecap && post.game && (
+        <GameRecapCard
+          gameId={post.game.id}
+          scheduledAt={post.game.scheduled_at}
+          players={post.recap_players}
+          canOpen={canOpenRecap}
+        />
       )}
+
+      {!isRecap && photos.length > 0 && <RecapPhotos urls={photos} />}
 
       {/* Like button */}
       <button

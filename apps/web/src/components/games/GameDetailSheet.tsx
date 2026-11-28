@@ -9,6 +9,7 @@ import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/u
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
 import { gameAccessKicker, gameAllowsSelfJoin, gameShareTitle } from '@/lib/game-visibility'
+import { viewerCanWriteRecap } from '@/lib/game-recap'
 import { gameEndMs } from '@/lib/game-time'
 import { costLine, type GameCourt } from '@/lib/game-court'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
@@ -132,6 +133,8 @@ export function GameDetailSheet({
   const [left, setLeft] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
   const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
+  const [hasRecap, setHasRecap] = useState(false)
+  const [recapKnown, setRecapKnown] = useState(false)
   useHideTabBar(!page)
 
   useEffect(() => {
@@ -171,6 +174,29 @@ export function GameDetailSheet({
     return () => { cancelled = true }
   }, [game.id])
 
+  useEffect(() => {
+    if (!currentUserId || !viewerCanWriteRecap(game, currentUserId)) {
+      setHasRecap(false)
+      setRecapKnown(true)
+      return
+    }
+    let cancelled = false
+    setRecapKnown(false)
+    const supabase = createClient()
+    void supabase
+      .from('posts')
+      .select('id', { head: true, count: 'exact' })
+      .eq('author_id', currentUserId)
+      .eq('game_id', game.id)
+      .eq('type', 'game_recap')
+      .then(({ count, error }) => {
+        if (cancelled) return
+        setHasRecap(!error && (count ?? 0) > 0)
+        setRecapKnown(true)
+      })
+    return () => { cancelled = true }
+  }, [currentUserId, game])
+
   const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court')
   const spotsLeft = game.max_players - accepted.length
   const isFull = spotsLeft <= 0
@@ -183,6 +209,7 @@ export function GameDetailSheet({
   const canCancel = isHost && !isPast && !isCancelled
   // Past: any seat-holder or host can soft-dismiss from their own schedule only.
   const canHidePast = Boolean(currentUserId) && isPast && !isCancelled && (isHost || alreadyIn)
+  const canRecap = viewerCanWriteRecap(game, currentUserId)
   const price = game.court?.fee === false
     ? 'Free'
     : costLine(game.court_cost_cents, game.payment, game.cost_currency)
@@ -502,6 +529,19 @@ export function GameDetailSheet({
             </Link>
           )}
 
+          {canRecap && recapKnown && (
+            <Link
+              href={`/games/${game.id}/recap`}
+              className={`block w-full rounded-full py-4 text-center text-[10px] font-medium uppercase tracking-[0.2em] transition-colors ${
+                hasRecap
+                  ? 'bg-brand-fern text-white hover:bg-[#3d6144]'
+                  : 'bg-brand-conifer text-[#1a1a1a] hover:bg-[#A8C44A]'
+              }`}
+            >
+              {hasRecap ? 'Your Game Recap' : 'Add recap'}
+            </Link>
+          )}
+
           {canCancel && (
             <div className="flex gap-3">
               <Link
@@ -536,7 +576,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {!isHost && courtViewer === false && !canLeave && (
+          {!isHost && courtViewer === false && !canLeave && !canRecap && (
             <button
               type="button"
               onClick={handleJoin}
@@ -551,7 +591,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {isHost && !canCancel && !canHidePast && (
+          {isHost && !canCancel && !canHidePast && !canRecap && (
             <button
               type="button"
               disabled

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { apiError } from '@/lib/api-error'
-import { ownPostImageUrl } from '@/lib/post-image'
+import { ownPostImageUrl, postImageStoragePath, readOwnPostImageUrls } from '@/lib/post-image'
 import { exceedsPostBodyLimit, POST_BODY_LENGTH_ERROR } from '@/lib/post-limits'
 import { NextResponse } from 'next/server'
 
@@ -13,23 +13,91 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const body = await request.json() as { body?: string | null; image_url?: string | null }
+  const { data: current } = await supabase
+    .from('posts')
+    .select('type, image_url, media:post_media (url)')
+    .eq('id', id)
+    .eq('author_id', user.id)
+    .maybeSingle()
+  if (!current) return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+  if (current.type === 'game_recap') {
+    return NextResponse.json({ error: 'Edit this recap from the game' }, { status: 400 })
+  }
+
+  const body = await request.json() as { body?: string | null; image_url?: string | null; image_urls?: unknown }
   const text = body.body?.trim() ? body.body.trim() : null
   if (text && exceedsPostBodyLimit(text)) {
     return NextResponse.json({ error: POST_BODY_LENGTH_ERROR }, { status: 400 })
   }
-  const imageUrl = body.image_url ? ownPostImageUrl(body.image_url, user.id) : null
-  if (body.image_url && !imageUrl) {
-    return NextResponse.json({ error: 'Photo must be uploaded to your account' }, { status: 400 })
+
+  if (body.image_urls == null) {
+    const imageUrl = body.image_url ? ownPostImageUrl(body.image_url, user.id) : null
+    if (body.image_url && !imageUrl) {
+      return NextResponse.json({ error: 'Photo must be uploaded to your account' }, { status: 400 })
+    }
+    const { error } = await supabase
+      .from('posts')
+      .update({ body: text, image_url: imageUrl })
+      .eq('id', id)
+      .eq('author_id', user.id)
+    if (error) return apiError(500, 'Could not save the post', error)
+    return NextResponse.json({ ok: true })
+  }
+
+  const imageUrls = readOwnPostImageUrls(body.image_urls, user.id)
+  if (!Array.isArray(imageUrls)) return NextResponse.json({ error: imageUrls.error }, { status: 400 })
+  if (!text && imageUrls.length === 0) {
+    return NextResponse.json({ error: 'Post must have text or image' }, { status: 400 })
   }
 
   const { error } = await supabase
     .from('posts')
-    .update({ body: text, image_url: imageUrl })
+    .update({ body: text, image_url: imageUrls[0] ?? null })
     .eq('id', id)
     .eq('author_id', user.id)
-
   if (error) return apiError(500, 'Could not save the post', error)
+
+  const previous = [
+    current.image_url as string | null,
+    ...((current.media ?? []) as { url: string }[]).map((item) => item.url),
+  ].filter((url): url is string => Boolean(url))
+
+  const { error: clearError } = await supabase.from('post_media').delete().eq('post_id', id)
+  if (clearError) return apiError(500, 'Could not save the photos', clearError)
+
+  if (imageUrls.length > 0) {
+    const { error: mediaError } = await supabase.from('post_media').insert(
+      imageUrls.map((url, index) => ({
+        post_id: id,
+        author_id: user.id,
+        url,
+        sort_order: index,
+      })),
+    )
+    if (mediaError) {
+      const restore = [...new Set(previous)]
+      if (restore.length > 0) {
+        await supabase.from('post_media').insert(
+          restore.map((url, index) => ({
+            post_id: id,
+            author_id: user.id,
+            url,
+            sort_order: index,
+          })),
+        )
+        await supabase.from('posts').update({ image_url: restore[0] }).eq('id', id).eq('author_id', user.id)
+      }
+      return apiError(500, 'Could not save the photos', mediaError)
+    }
+  }
+
+  const keep = new Set(imageUrls)
+  const dropped = [...new Set(previous.filter((url) => !keep.has(url)))]
+  const paths = dropped.flatMap((url) => {
+    const path = postImageStoragePath(url)
+    return path ? [path] : []
+  })
+  if (paths.length > 0) await supabase.storage.from('post-images').remove(paths)
   return NextResponse.json({ ok: true })
 }
 
@@ -43,29 +111,26 @@ export async function DELETE(
 
   const { id } = await params
 
-  // Also delete image from storage if present
   const { data: post } = await supabase
     .from('posts')
-    .select('image_url')
+    .select('image_url, media:post_media (url)')
     .eq('id', id)
     .eq('author_id', user.id)
-    .single()
-
-  if (post?.image_url) {
-    // Extract path from public URL: .../post-images/{userId}/{filename}
-    const url = new URL(post.image_url)
-    const pathParts = url.pathname.split('/post-images/')
-    if (pathParts[1]) {
-      await supabase.storage.from('post-images').remove([pathParts[1]])
-    }
-  }
+    .maybeSingle()
+  if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 })
 
   const { error } = await supabase
     .from('posts')
     .delete()
     .eq('id', id)
     .eq('author_id', user.id)
-
   if (error) return apiError(500, 'Could not delete the post', error)
+
+  const media = (post.media ?? []) as { url: string }[]
+  const paths = [post.image_url, ...media.map((item) => item.url)].flatMap((url) => {
+    const path = postImageStoragePath(url)
+    return path ? [path] : []
+  })
+  if (paths.length > 0) await supabase.storage.from('post-images').remove(paths)
   return NextResponse.json({ ok: true })
 }

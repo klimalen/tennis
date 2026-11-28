@@ -1,9 +1,28 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { PostCard, type PostItem } from './PostCard'
+import { PostCard } from './PostCard'
 import { showGamePost } from '@/lib/game-visibility'
+import { viewerCanOpenRecapGame } from '@/lib/game-recap'
+import { attachRecapPlayers, mapPostRow, POST_FEED_SELECT, shownInFeed, type PostItem } from '@/lib/post-feed'
+
+async function withRecapAccess(supabase: SupabaseClient, userId: string, post: PostItem): Promise<PostItem> {
+  if (post.type !== 'game_recap' || !post.game) return post
+  let mutual = false
+  if (post.game.creator_id !== userId) {
+    const [{ data: outgoing }, { data: incoming }] = await Promise.all([
+      supabase.from('follows').select('follower_id').eq('follower_id', userId).eq('following_id', post.game.creator_id).maybeSingle(),
+      supabase.from('follows').select('follower_id').eq('follower_id', post.game.creator_id).eq('following_id', userId).maybeSingle(),
+    ])
+    mutual = Boolean(outgoing && incoming)
+  }
+  return {
+    ...post,
+    can_open_game: viewerCanOpenRecapGame(post.game, post.recap_player_ids, userId, mutual),
+  }
+}
 
 interface Props {
   userId: string
@@ -27,27 +46,17 @@ export function PostsFeed({ userId, initialPosts }: Props) {
           // Fetch full post with author + related data
           const { data } = await supabase
             .from('posts')
-            .select(`
-              id, type, body, image_url, created_at, updated_at,
-              author:profiles!author_id (id, full_name, username, avatar_url),
-              match_result:match_results (
-                id, winner_id, winning_team, played_at,
-                winner:profiles!winner_id (full_name, username),
-                game:games (format, scheduled_at)
-              ),
-              game:games (
-                id, format, scheduled_at, skill_level_min, skill_level_max,
-                neighborhood, status, max_players, is_open, visibility,
-                city:cities (name)
-              ),
-              likes:post_likes (count)
-            `)
+            .select(POST_FEED_SELECT)
             .eq('id', newPost.id)
-            .single()
+            .maybeSingle()
 
           if (!data) return
+          const mapped = mapPostRow(data as never, false)
+          if (!shownInFeed(mapped)) return
+          if (mapped.type === 'open_game' && !showGamePost(mapped.game)) return
 
-          // Only show posts from self or following
+          // Only show posts from self or following. Friends-only recaps are already
+          // hidden by row security unless the follow is mutual.
           if (newPost.author_id !== userId) {
             const { data: follow } = await supabase
               .from('follows')
@@ -58,15 +67,54 @@ export function PostsFeed({ userId, initialPosts }: Props) {
             if (!follow) return
           }
 
-          const likes = data.likes as unknown as [{ count: number }] | []
-          const post: PostItem = {
-            ...(data as unknown as Omit<PostItem, 'likes_count' | 'liked_by_me'>),
-            likes_count: likes[0]?.count ?? 0,
-            liked_by_me: false,
+          const [hydrated] = await attachRecapPlayers(supabase, [mapped])
+          const post = hydrated ? await withRecapAccess(supabase, userId, hydrated) : null
+          if (!post) return
+          setPosts((prev) => prev.some((item) => item.id === post.id) ? prev : [post, ...prev])
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        async (payload) => {
+          const updatedId = (payload.new as { id?: string }).id
+          if (!updatedId) return
+          const { data } = await supabase
+            .from('posts')
+            .select(POST_FEED_SELECT)
+            .eq('id', updatedId)
+            .maybeSingle()
+          if (!data) {
+            setPosts((prev) => prev.filter((item) => item.id !== updatedId))
+            return
           }
-
-          if (post.type === 'open_game' && !showGamePost(post.game)) return
-          setPosts((prev) => [post, ...prev])
+          const mapped = mapPostRow(data as never, false)
+          if (!shownInFeed(mapped) || (mapped.type === 'open_game' && !showGamePost(mapped.game))) {
+            setPosts((prev) => prev.filter((item) => item.id !== updatedId))
+            return
+          }
+          const authorId = mapped.author.id
+          if (authorId !== userId) {
+            const { data: follow } = await supabase
+              .from('follows')
+              .select('follower_id')
+              .eq('follower_id', userId)
+              .eq('following_id', authorId)
+              .maybeSingle()
+            if (!follow) {
+              setPosts((prev) => prev.filter((item) => item.id !== updatedId))
+              return
+            }
+          }
+          const [hydrated] = await attachRecapPlayers(supabase, [mapped])
+          const post = hydrated ? await withRecapAccess(supabase, userId, hydrated) : null
+          if (!post) return
+          setPosts((prev) => {
+            const existing = prev.find((item) => item.id === updatedId)
+            const next = { ...post, liked_by_me: existing?.liked_by_me ?? false }
+            if (!existing) return [next, ...prev]
+            return prev.map((item) => item.id === updatedId ? next : item)
+          })
         },
       )
       .subscribe()

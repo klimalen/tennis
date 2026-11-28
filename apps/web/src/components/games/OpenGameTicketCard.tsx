@@ -17,7 +17,7 @@ export type OpenGameTicketFace = {
   avatarUrl: string | null
 }
 
-export type OpenGameTicketBeard = 'join' | 'in' | 'full' | null
+export type OpenGameTicketBeard = 'join' | 'in' | 'full' | 'recap' | 'add-recap' | null
 
 function ticketInitials(name: string) {
   return name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -81,6 +81,7 @@ export function OpenGameTicketCard({
   beard,
   onOpen,
   onJoin,
+  onRecap,
   muted = false,
   badge,
 }: {
@@ -98,6 +99,7 @@ export function OpenGameTicketCard({
   beard: OpenGameTicketBeard
   onOpen: () => void
   onJoin?: () => void
+  onRecap?: () => void
   /** Cancelled / past — keep layout, mute interaction strip. */
   muted?: boolean
   badge?: string | null
@@ -116,14 +118,16 @@ export function OpenGameTicketCard({
     ? 'bg-[#E8748A] text-[#1a1a1a]'
     : 'bg-[#BCD85E] text-[#1a1a1a]'
 
-  const effectiveBeard: OpenGameTicketBeard = muted ? null : beard
-  const beardBg = effectiveBeard === 'join'
-    ? 'bg-[#BCD85E]'
+  const effectiveBeard: OpenGameTicketBeard = muted && beard !== 'recap' && beard !== 'add-recap' ? null : beard
+  const beardBg = effectiveBeard === 'join' || effectiveBeard === 'add-recap'
+    ? 'bg-brand-conifer'
     : effectiveBeard === 'full'
       ? 'bg-[#163A32]'
       : effectiveBeard === 'in'
         ? 'bg-[#1E3A6E]'
-        : undefined
+        : effectiveBeard === 'recap'
+          ? 'bg-brand-fern'
+          : undefined
 
   return (
     <div className={effectiveBeard ? `overflow-hidden rounded-[28px] ${beardBg}` : undefined}>
@@ -161,6 +165,23 @@ export function OpenGameTicketCard({
           className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a] hover:bg-[#A8C44A]"
         >
           Join
+          <ArrowRight size={16} strokeWidth={1.75} />
+        </button>
+      )}
+      {(effectiveBeard === 'recap' || effectiveBeard === 'add-recap') && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onRecap?.()
+          }}
+          className={`flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium uppercase tracking-[0.16em] ${
+            effectiveBeard === 'add-recap'
+              ? 'text-[#1a1a1a] hover:bg-[#A8C44A]'
+              : 'text-white hover:bg-[#3d6144]'
+          }`}
+        >
+          {effectiveBeard === 'add-recap' ? 'Add recap' : 'Your Game Recap'}
           <ArrowRight size={16} strokeWidth={1.75} />
         </button>
       )}

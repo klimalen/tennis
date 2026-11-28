@@ -1,3 +1,6 @@
+/** Shared cap for photos on a recap or a regular post. */
+export const POST_PHOTO_MAX = 5
+
 /** Shared cap for manual feed post body (new + edit + API). */
 export const POST_BODY_MAX = 1000
 

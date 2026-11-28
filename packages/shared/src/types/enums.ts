@@ -26,6 +26,9 @@ export type MessageType = 'text' | 'game_invite' | 'system' | 'media'
 
 export type PostType = 'regular' | 'match_result' | 'achievement' | 'review'
 
+/** Audience of a game recap. Independent of whether the game itself is open. */
+export type RecapVisibility = 'private' | 'friends' | 'public'
+
 export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded'
 
 export type ReviewTargetType = 'player' | 'coach' | 'club'

@@ -71,6 +71,7 @@ async function ScheduleContent() {
             past={past}
             viewerId={user.id}
             allowEdit
+            allowRecap
           />
         )}
       </div>

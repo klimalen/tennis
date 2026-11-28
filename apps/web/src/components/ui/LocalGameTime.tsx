@@ -31,6 +31,14 @@ export function LocalGameTimeRange({ iso, durationMinutes }: { iso: string; dura
   return <>{startLabel}–{endLabel}</>
 }
 
+/** Calendar day only — a recap never shows the clock to people outside the game. */
+export function formatRecapDate(iso: string, style: 'long' | 'short' = 'long') {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: style === 'long' ? 'long' : 'short',
+    day: 'numeric',
+  })
+}
+
 /** Date plus start and end, for the ticket stub on an open-game card. */
 export function formatGameTicketTime(iso: string, durationMinutes: number | null) {
   const { start, startLabel, endLabel } = gameClock(iso, durationMinutes)
