@@ -7,7 +7,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { FormatFields } from '@/components/games/FormatFields'
 import { AboutField } from '@/components/games/AboutField'
-import { FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
+import { WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, formPanel } from '@/components/ui/FormCard'
 import { VisibilityFields } from '@/components/games/VisibilityFields'
 import { visibilityOf, type GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
@@ -251,7 +252,7 @@ export function EditGameForm({
               {participants.length > 0 && (
                 <div>
                   <FormSectionLabel>Players</FormSectionLabel>
-                  <div className={`${gameFormPanel} space-y-0.5 p-2 ${participants.length > 8 ? 'max-h-72 overflow-y-auto' : ''}`}>
+                  <div className={`${formPanel} space-y-0.5 p-2 ${participants.length > 8 ? 'max-h-72 overflow-y-auto' : ''}`}>
                     {participants.map((p) => {
                       const initials = p.profiles.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
                       const statusLabel = STATUS_LABELS[p.status] ?? p.status

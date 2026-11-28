@@ -3,10 +3,16 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Camera, Check, Loader2, X } from 'lucide-react'
+import {
+  ArrowLeft, Camera, Check, GraduationCap, Loader2, MapPin, Shuffle, Smile, Trophy, UserRound, X, type LucideIcon,
+} from 'lucide-react'
 import { SquarePhotoCrop, type SquarePhotoCropHandle } from '@/app/(app)/feed/SquarePhotoCrop'
 import { CityLocationField } from '@/components/location/CityLocationField'
 import { AvailabilityEditor } from '@/components/ui/AvailabilityEditor'
+import { CourtDiagram, DOUBLES_PLAYERS, SINGLES_PLAYERS } from '@/components/games/FormatFields'
+import {
+  FormEyebrow, FormNote, FormSectionLabel, FormSwitch, formChoiceClass, formPanel, formWell,
+} from '@/components/ui/FormCard'
 import { availabilityFromProfile, legacySchedule, storedAvailability, type Availability } from '@/lib/availability'
 import {
   PROFILE_LENGTH_ERROR,
@@ -16,70 +22,74 @@ import {
 } from '@/lib/profile-limits'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// Fill and text follow the level colors in ref/brand-book-final.md.
 const SKILL_LEVELS = [
-  { value: 1.5, label: 'Beginner', sub: 'Just started or playing casually' },
-  { value: 2.5, label: 'Intermediate', sub: 'Consistent rallies, learning strategy' },
-  { value: 4.0, label: 'Advanced', sub: 'Competitive club player' },
-  { value: 6.0, label: 'Competitive', sub: 'Ranked player, tournament regular' },
+  { value: 1.5, label: 'Beginner', sub: 'Just started or casual', bars: 1, fill: '#E8E1D7', ink: '#1a1a1a' },
+  { value: 2.5, label: 'Intermediate', sub: 'Steady rallies', bars: 2, fill: '#3A8A7A', ink: '#F0EBE3' },
+  { value: 4.0, label: 'Advanced', sub: 'Club competitor', bars: 3, fill: '#E8748A', ink: '#1a1a1a' },
+  { value: 6.0, label: 'Competitive', sub: 'Ranked, tournaments', bars: 4, fill: '#D4A017', ink: '#1E3A6E' },
 ]
 
 const FORMAT_OPTIONS = [
-  { value: 'singles', label: 'Singles' },
-  { value: 'doubles', label: 'Doubles' },
+  { value: 'singles', label: 'Singles', detail: '2 players', players: SINGLES_PLAYERS },
+  { value: 'doubles', label: 'Doubles', detail: '4 players', players: DOUBLES_PLAYERS },
 ]
 
-const STYLE_OPTIONS = [
-  { value: 'recreational', label: 'Recreational', sub: 'Just for fun' },
-  { value: 'competitive', label: 'Competitive', sub: 'I play to win' },
-  { value: 'both', label: 'Both', sub: 'Depends on the match' },
+const STYLE_OPTIONS: { value: string; label: string; sub: string; icon: LucideIcon }[] = [
+  { value: 'recreational', label: 'For fun', sub: 'Recreational', icon: Smile },
+  { value: 'competitive', label: 'To win', sub: 'Competitive', icon: Trophy },
+  { value: 'both', label: 'Both', sub: 'Depends', icon: Shuffle },
 ]
 
 const SURFACE_OPTIONS = [
-  { value: 'hard', label: 'Hard' },
-  { value: 'clay', label: 'Clay' },
-  { value: 'grass', label: 'Grass' },
-  { value: 'carpet', label: 'Carpet' },
-  { value: 'synthetic', label: 'Synthetic' },
+  { value: 'hard', label: 'Hard', color: '#1E3A6E' },
+  { value: 'clay', label: 'Clay', color: '#D4622A' },
+  { value: 'grass', label: 'Grass', color: '#497250' },
+  { value: 'carpet', label: 'Carpet', color: '#85648F' },
+  { value: 'synthetic', label: 'Synthetic', color: '#BCD85E' },
 ]
 
-// ─── Small UI helpers ─────────────────────────────────────────────────────────
-
-function SectionTitle({ children }: { children: string }) {
+function LevelBars({ count, color, muted }: { count: number; color: string; muted: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-brand-accent font-display text-lg">✦</span>
-      <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">{children}</span>
-      <div className="flex-1 h-px bg-brand-divider" />
+    <span className="flex h-5 items-end gap-[3px]" aria-hidden>
+      {[1, 2, 3, 4].map((bar) => (
+        <span key={bar} className="w-[5px] rounded-full" style={{ height: `${bar * 5}px`, background: bar <= count ? color : muted }} />
+      ))}
+    </span>
+  )
+}
+
+function WellField({
+  label,
+  counter,
+  error,
+  children,
+}: {
+  label: string
+  counter?: string
+  error?: string | null
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label
+        className={`${formWell} block px-4 py-2.5 focus-within:ring-2 ${
+          error ? 'ring-2 ring-red-300 focus-within:ring-red-300' : 'focus-within:ring-brand-primary/40'
+        }`}
+      >
+        <span className="flex items-center justify-between gap-2">
+          <FormEyebrow>{label}</FormEyebrow>
+          {counter && <span className="text-[10px] tabular-nums text-[rgba(26,26,26,0.4)]">{counter}</span>}
+        </span>
+        {children}
+      </label>
+      {error && <p className="mt-1.5 px-1 text-[11px] text-red-500">{error}</p>}
     </div>
   )
 }
 
-function FieldLabel({ children, optional }: { children: string; optional?: boolean }) {
-  return (
-    <label className="flex items-center gap-2 text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.4)] mb-2.5">
-      {children}
-      {optional && <span className="text-[rgba(26,26,26,0.25)] normal-case tracking-normal text-[9px]">optional</span>}
-    </label>
-  )
-}
-
-function Pill({
-  active, onClick, children,
-}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
-        active
-          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-          : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
+const wellInput = 'mt-0.5 block w-full bg-transparent text-[15px] font-medium text-[#1a1a1a] placeholder:font-normal placeholder:text-[rgba(26,26,26,0.35)] focus:outline-none'
+const wellText = 'font-copy mt-1 block w-full resize-none bg-transparent text-[14px] leading-snug text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.35)] focus:outline-none'
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -397,266 +407,279 @@ export function PlayerEditPage() {
     )
   }
 
+  const usernameError = usernameTooLong ? PROFILE_LENGTH_ERROR : usernameStatus === 'taken' ? 'Already taken' : null
+
   return (
-    <div className="min-h-screen pb-8 bg-brand-bg">
-      {/* Header */}
+    <div className="min-h-screen bg-brand-bg pb-10">
       <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <button type="button" onClick={handleBack} className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
-            <ArrowLeft size={16} className="text-[rgba(26,26,26,0.5)]" />
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label="Back"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#1a1a1a]/10 bg-white transition-colors hover:bg-brand-surface"
+          >
+            <ArrowLeft size={17} className="text-[rgba(26,26,26,0.6)]" />
           </button>
-          <span className="font-display text-3xl tracking-wide flex-1">EDIT PROFILE</span>
+          <span className="flex-1 font-display text-[28px] leading-none tracking-wide">EDIT PROFILE</span>
           <button
             onClick={() => void handleSave()}
             disabled={saveStatus === 'saving' || !canSave}
-            className="px-4 py-1.5 rounded-full bg-[#3A8A7A] text-white text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#2F7466] transition-colors disabled:opacity-40"
+            className="rounded-full bg-[#3A8A7A] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F0EBE3] transition-colors hover:bg-[#2F7466] disabled:opacity-40"
           >
             Save
           </button>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-7">
-
-        {/* ── ABOUT ── */}
-        <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <span className="text-brand-accent font-display text-lg">✦</span>
-          <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">About</span>
-          <div className="flex-1 h-px bg-brand-divider" />
-        </div>
-
-        {/* Avatar */}
-        <div className="flex items-center gap-5">
-          <div
-            className="relative w-20 h-20 rounded-full bg-brand-field border border-[#1a1a1a]/40 overflow-hidden cursor-pointer flex-shrink-0"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {displayAvatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={displayAvatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center text-3xl">👤</span>
-            )}
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-              <Camera size={18} className="text-white" />
-            </div>
-          </div>
-          <div>
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[10px] tracking-[0.15em] uppercase text-brand-primary font-medium hover:underline">
-              Change photo
-            </button>
-            <p className="text-[9px] text-[rgba(26,26,26,0.35)] mt-0.5">Optional</p>
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-        </div>
-
-        {/* Name */}
-        <div>
-          <FieldLabel>Name</FieldLabel>
-          <input
-            type="text"
-            value={d.fullName}
-            onChange={(e) => update({ fullName: e.target.value.slice(0, PROFILE_NAME_MAX) })}
-            maxLength={PROFILE_NAME_MAX}
-            className={`w-full px-3 py-2.5 border bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary ${
-              nameTooLong ? 'border-red-400 focus:ring-red-400' : 'border-[#1a1a1a]/40'
-            }`}
-            placeholder="Your name"
-            aria-invalid={nameTooLong}
-          />
-          {nameTooLong ? (
-            <p className="text-[10px] text-red-500 mt-1">{PROFILE_LENGTH_ERROR}</p>
-          ) : (
-            <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.fullName.length}/{PROFILE_NAME_MAX}</p>
-          )}
-        </div>
-
-        {/* Username */}
-        <div>
-          <FieldLabel>Username</FieldLabel>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(26,26,26,0.55)] text-sm">@</span>
-            <input
-              type="text"
-              value={d.username}
-              onChange={(e) => update({
-                username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, PROFILE_USERNAME_MAX),
-              })}
-              maxLength={PROFILE_USERNAME_MAX}
-              className={`w-full pl-7 pr-8 py-2.5 border bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary ${
-                usernameTooLong ? 'border-red-400 focus:ring-red-400' : 'border-[#1a1a1a]/40'
-              }`}
-              placeholder="username"
-              aria-invalid={usernameTooLong}
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              {usernameStatus === 'checking' && <Loader2 size={14} className="animate-spin text-[rgba(26,26,26,0.3)]" />}
-              {usernameStatus === 'available' && <Check size={14} className="text-brand-primary" />}
-              {usernameStatus === 'taken' && <X size={14} className="text-red-500" />}
-            </div>
-          </div>
-          {usernameTooLong ? (
-            <p className="text-[10px] text-red-500 mt-1">{PROFILE_LENGTH_ERROR}</p>
-          ) : usernameStatus === 'taken' ? (
-            <p className="text-[10px] text-red-500 mt-1">Already taken</p>
-          ) : (
-            <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.username.length}/{PROFILE_USERNAME_MAX}</p>
-          )}
-        </div>
-
-        {/* Bio */}
-        <div>
-          <FieldLabel optional>Bio</FieldLabel>
-          <textarea
-            value={d.bio}
-            onChange={(e) => update({ bio: e.target.value })}
-            rows={3}
-            maxLength={300}
-            className="font-copy w-full min-h-[96px] px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
-            placeholder="A few words about yourself..."
-          />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.bio.length}/300</p>
-        </div>
-        </section>
-
-        {/* ── LOOKING FOR ── */}
-        <section className="space-y-4">
-        <SectionTitle>Looking for</SectionTitle>
-
-        <div>
-          <FieldLabel optional>Who are you looking to play with?</FieldLabel>
-          <textarea
-            value={d.lookingFor}
-            onChange={(e) => update({ lookingFor: e.target.value })}
-            rows={3}
-            maxLength={300}
-            className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
-            placeholder="e.g. A partner for friendly matches 1–2x per week..."
-          />
-          <p className="text-[9px] text-[rgba(26,26,26,0.45)] text-right mt-1">{d.lookingFor.length}/300</p>
-        </div>
-        </section>
-
-        {/* ── LOCATION ── */}
-        <section className="space-y-4">
-        <SectionTitle>Location</SectionTitle>
-
-        <div>
-          <FieldLabel>City</FieldLabel>
-          <CityLocationField
-            value={d.city}
-            onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
-            helper="Used for courts, players, and games near you."
-            placeholder="Search your city..."
-          />
-          {!d.city.trim() && (
-            <p className="mt-1.5 text-[11px] text-[rgba(26,26,26,0.5)]">Without a city, Discover cannot show people near you.</p>
-          )}
-        </div>
-        </section>
-
-        {/* ── SCHEDULE ── */}
-        <section className="space-y-4">
-        <SectionTitle>Schedule</SectionTitle>
-
-        {/* Days and the parts of those days */}
-        <div>
-          <FieldLabel optional>When you play</FieldLabel>
-          <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} />
-        </div>
-        </section>
-
-        {/* ── YOUR GAME ── */}
+      <div className="mx-auto max-w-xl space-y-6 px-4 py-6">
         <section>
-          <div className="flex items-center gap-3">
-            <span className="text-brand-accent font-display text-lg">✦</span>
-            <span className="text-[9px] tracking-[0.25em] uppercase font-medium text-[rgba(26,26,26,0.45)]">Your game</span>
-            <div className="flex-1 h-px bg-brand-divider" />
-          </div>
-
-          <div className="mt-3 space-y-4">
-            <div>
-              <FieldLabel optional>Level</FieldLabel>
+          <FormSectionLabel>Profile</FormSectionLabel>
+          <div className={`${formPanel} space-y-3`}>
+            <div className="flex items-center gap-4 pb-1">
               <button
                 type="button"
-                onClick={() => update({ isCoach: !d.isCoach })}
-                className={`w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors ${
-                  d.isCoach
-                    ? 'rounded-[20px] border-[#3A8A7A] bg-[#3A8A7A] text-[#F0EBE3]'
-                    : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40'
-                }`}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Change photo"
+                className="relative h-[76px] w-[76px] flex-none rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50"
               >
-                <span>
-                  <span className="block text-[10px] tracking-[0.12em] uppercase font-semibold">I'm a coach</span>
-                  <span className={`block text-[11px] mt-0.5 ${d.isCoach ? 'text-[#F0EBE3]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>A Coach badge shows on your profile</span>
+                <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-brand-surface">
+                  {displayAvatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={displayAvatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <UserRound size={30} strokeWidth={1.5} className="text-[rgba(26,26,26,0.35)]" />
+                  )}
                 </span>
-                <span className="text-[10px] tracking-[0.14em] uppercase font-medium">{d.isCoach ? 'On' : 'Off'}</span>
+                <span className="absolute -bottom-0.5 -right-0.5 grid h-7 w-7 place-items-center rounded-full bg-white text-[#1a1a1a] shadow-[0_1px_4px_rgba(26,26,26,0.25)]">
+                  <Camera size={13} strokeWidth={2} />
+                </span>
               </button>
-              {!d.isCoach && (
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  {SKILL_LEVELS.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => update({ skillLevel: d.skillLevel === s.value ? null : s.value })}
-                      className={`flex flex-col p-3 border text-left transition-colors ${
-                        d.skillLevel === s.value
-                          ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                          : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                      }`}
-                    >
-                      <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-[#1a1a1a]">{s.label}</span>
-                      <span className={`text-[9px] mt-0.5 ${d.skillLevel === s.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{s.sub}</span>
-                    </button>
-                  ))}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-display text-[26px] uppercase leading-none tracking-wide text-[#1a1a1a]">
+                  {d.fullName.trim() || 'Your name'}
+                </p>
+                <p className="mt-1 truncate text-[12.5px] text-[rgba(26,26,26,0.5)]">@{d.username || 'username'}</p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 rounded-full bg-brand-surface px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[rgba(26,26,26,0.65)] transition-colors hover:bg-brand-field"
+                >
+                  {displayAvatar ? 'Change photo' : 'Add photo'}
+                </button>
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </div>
+
+            <WellField label="Name" counter={`${d.fullName.length}/${PROFILE_NAME_MAX}`} error={nameTooLong ? PROFILE_LENGTH_ERROR : null}>
+              <input
+                type="text"
+                value={d.fullName}
+                onChange={(e) => update({ fullName: e.target.value.slice(0, PROFILE_NAME_MAX) })}
+                maxLength={PROFILE_NAME_MAX}
+                placeholder="Your name"
+                aria-invalid={nameTooLong}
+                className={wellInput}
+              />
+            </WellField>
+
+            <WellField label="Username" counter={`${d.username.length}/${PROFILE_USERNAME_MAX}`} error={usernameError}>
+              <span className="mt-0.5 flex items-center gap-1">
+                <span className="text-[15px] font-medium text-[rgba(26,26,26,0.4)]">@</span>
+                <input
+                  type="text"
+                  value={d.username}
+                  onChange={(e) => update({
+                    username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, PROFILE_USERNAME_MAX),
+                  })}
+                  maxLength={PROFILE_USERNAME_MAX}
+                  placeholder="username"
+                  aria-invalid={usernameTooLong || usernameStatus === 'taken'}
+                  className={`${wellInput} mt-0 min-w-0 flex-1`}
+                />
+                {usernameStatus === 'checking' && <Loader2 size={15} className="flex-none animate-spin text-[rgba(26,26,26,0.35)]" />}
+                {usernameStatus === 'available' && <Check size={15} className="flex-none text-brand-primary" />}
+                {usernameStatus === 'taken' && <X size={15} className="flex-none text-red-500" />}
+              </span>
+            </WellField>
+          </div>
+        </section>
+
+        <section>
+          <FormSectionLabel hint="(optional)">About you</FormSectionLabel>
+          <div className={`${formPanel} space-y-3`}>
+            <WellField label="Bio" counter={`${d.bio.length}/300`}>
+              <textarea
+                value={d.bio}
+                onChange={(e) => update({ bio: e.target.value })}
+                rows={3}
+                maxLength={300}
+                placeholder="A few words about yourself"
+                className={wellText}
+              />
+            </WellField>
+            <WellField label="Looking for" counter={`${d.lookingFor.length}/300`}>
+              <textarea
+                value={d.lookingFor}
+                onChange={(e) => update({ lookingFor: e.target.value })}
+                rows={2}
+                maxLength={300}
+                placeholder="A partner for friendly matches 1–2x a week"
+                className={wellText}
+              />
+            </WellField>
+          </div>
+        </section>
+
+        <section>
+          <FormSectionLabel>City</FormSectionLabel>
+          <div className={`${formPanel} space-y-3`}>
+            <CityLocationField
+              value={d.city}
+              onChange={(city, coords) => update({ city, cityLat: coords?.lat ?? null, cityLng: coords?.lng ?? null })}
+              helper=""
+              placeholder="Search your city"
+              inputClassName="h-12 rounded-[20px] border-0 bg-brand-surface focus:ring-2 focus:ring-brand-primary/40"
+            />
+            <FormNote icon={<MapPin size={15} strokeWidth={1.7} />}>
+              {d.city.trim() ? 'Used for courts, players, and games near you' : 'Add a city so Discover can show people near you'}
+            </FormNote>
+          </div>
+        </section>
+
+        <section>
+          <FormSectionLabel hint="(optional)">When you play</FormSectionLabel>
+          <div className={formPanel}>
+            <AvailabilityEditor value={d.availability} onChange={(availability) => update({ availability })} framed={false} />
+          </div>
+        </section>
+
+        <section>
+          <FormSectionLabel hint="(optional)">Your game</FormSectionLabel>
+          <div className="space-y-2.5">
+            <div className={`${formPanel} flex items-center gap-3 py-3.5`}>
+              <span
+                className={`grid h-11 w-11 flex-none place-items-center rounded-[16px] transition-colors ${
+                  d.isCoach ? 'bg-brand-primary text-[#F0EBE3]' : 'bg-brand-surface text-[rgba(26,26,26,0.5)]'
+                }`}
+                aria-hidden
+              >
+                <GraduationCap size={21} strokeWidth={1.6} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-semibold text-[#1a1a1a]">I&apos;m a coach</span>
+                <span className="block text-[12px] text-[rgba(26,26,26,0.5)]">A Coach badge shows on your profile</span>
+              </span>
+              <FormSwitch checked={d.isCoach} onChange={(isCoach) => update({ isCoach })} label="I'm a coach" />
+            </div>
+
+            {!d.isCoach && (
+              <div className={`${formPanel} p-2`}>
+                <FormEyebrow className="px-2 pb-2 pt-1.5">Level</FormEyebrow>
+                <div className="grid grid-cols-2 gap-2">
+                  {SKILL_LEVELS.map((s) => {
+                    const selected = d.skillLevel === s.value
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => update({ skillLevel: selected ? null : s.value })}
+                        aria-pressed={selected}
+                        className={`flex flex-col items-start gap-2 rounded-[20px] border px-3.5 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
+                          selected ? 'border-transparent' : 'border-transparent bg-brand-surface hover:border-[#1a1a1a]/15'
+                        }`}
+                        style={selected ? { background: s.fill, color: s.ink, borderColor: s.value === 1.5 ? 'rgba(26,26,26,0.25)' : 'transparent' } : undefined}
+                      >
+                        <LevelBars
+                          count={s.bars}
+                          color={selected ? s.ink : s.value === 1.5 ? '#A89078' : s.fill}
+                          muted={selected ? `${s.ink}33` : 'rgba(26,26,26,0.12)'}
+                        />
+                        <span>
+                          <span className="block text-[14px] font-semibold leading-tight">{s.label}</span>
+                          <span className={`block text-[11.5px] ${selected ? 'opacity-75' : 'text-[rgba(26,26,26,0.5)]'}`}>{s.sub}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
-              )}
-            </div>
-
-            <div>
-              <FieldLabel optional>Preferred format</FieldLabel>
-              <div className="flex flex-wrap gap-2.5">
-                {FORMAT_OPTIONS.map((o) => (
-                  <Pill key={o.value} active={d.playFormats.includes(o.value)} onClick={() => update({ playFormats: toggleArr(d.playFormats, o.value) })}>
-                    {o.label}
-                  </Pill>
-                ))}
               </div>
-            </div>
+            )}
 
-            <div>
-              <FieldLabel optional>Court surfaces</FieldLabel>
-              <div className="flex flex-wrap gap-2.5">
-                {SURFACE_OPTIONS.map((o) => (
-                  <Pill key={o.value} active={d.preferredSurfaces.includes(o.value)} onClick={() => update({ preferredSurfaces: toggleArr(d.preferredSurfaces, o.value) })}>
-                    {o.label}
-                  </Pill>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel optional>Play style</FieldLabel>
-              <div className="grid grid-cols-3 gap-3">
-                {STYLE_OPTIONS.map((o) => (
+            <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="Preferred format">
+              {FORMAT_OPTIONS.map((o) => {
+                const selected = d.playFormats.includes(o.value)
+                return (
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => update({ playStyle: d.playStyle === o.value ? null : o.value })}
-                    className={`flex flex-col p-3 border text-left transition-colors ${
-                      d.playStyle === o.value
-                        ? 'rounded-[20px] border-[#E8748A] bg-[#E8748A]'
-                        : 'rounded-[20px] bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
+                    aria-pressed={selected}
+                    onClick={() => update({ playFormats: toggleArr(d.playFormats, o.value) })}
+                    className={`relative flex items-center gap-3 rounded-[20px] px-3.5 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
+                      selected ? 'bg-brand-primary text-[#F0EBE3]' : 'bg-white text-[#1a1a1a] hover:bg-white/70'
                     }`}
                   >
-                    <span className="text-[10px] tracking-[0.1em] uppercase font-semibold text-[#1a1a1a]">{o.label}</span>
-                    <span className={`text-[9px] mt-0.5 ${d.playStyle === o.value ? 'text-[#1a1a1a]/80' : 'text-[rgba(26,26,26,0.55)]'}`}>{o.sub}</span>
+                    <CourtDiagram players={o.players} selected={selected} />
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold leading-tight">{o.label}</span>
+                      <span className={`block text-[12px] ${selected ? 'text-[#F0EBE3]/75' : 'text-[rgba(26,26,26,0.5)]'}`}>{o.detail}</span>
+                    </span>
+                    <span
+                      className={`absolute right-2.5 top-2.5 grid h-[18px] w-[18px] place-items-center rounded-full border-[1.5px] ${
+                        selected ? 'border-brand-conifer bg-brand-conifer text-brand-primary-dark' : 'border-[#1a1a1a]/15'
+                      }`}
+                      aria-hidden
+                    >
+                      {selected && <Check size={11} strokeWidth={3} />}
+                    </span>
                   </button>
-                ))}
+                )
+              })}
+            </div>
+
+            <div className={`${formPanel} p-2`}>
+              <FormEyebrow className="px-2 pb-2 pt-1.5">Court surfaces</FormEyebrow>
+              <div className="flex flex-wrap gap-2">
+                {SURFACE_OPTIONS.map((o) => {
+                  const selected = d.preferredSurfaces.includes(o.value)
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => update({ preferredSurfaces: toggleArr(d.preferredSurfaces, o.value) })}
+                      className={`flex h-10 items-center gap-2 rounded-full pl-2 pr-3.5 text-[13px] font-semibold ${formChoiceClass(selected)}`}
+                    >
+                      <span className="h-6 w-[18px] rounded-[4px] border border-white/60" style={{ background: o.color }} aria-hidden />
+                      {o.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
+            <div className={`${formPanel} p-2`}>
+              <FormEyebrow className="px-2 pb-2 pt-1.5">I play</FormEyebrow>
+              <div className="grid grid-cols-3 gap-2">
+                {STYLE_OPTIONS.map((o) => {
+                  const selected = d.playStyle === o.value
+                  const Icon = o.icon
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => update({ playStyle: selected ? null : o.value })}
+                      className={`flex flex-col items-center gap-1.5 rounded-[20px] px-1 py-3 ${formChoiceClass(selected)}`}
+                    >
+                      <Icon size={20} strokeWidth={1.7} className={selected ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
+                      <span className="text-[14px] font-semibold leading-tight">{o.label}</span>
+                      <span className="text-[11px] text-[rgba(26,26,26,0.5)]">{o.sub}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </section>
       </div>

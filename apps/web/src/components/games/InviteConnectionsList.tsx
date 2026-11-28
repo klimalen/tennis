@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Check, Search, X } from 'lucide-react'
-import { FormSectionLabel, gameFormPanel, gameFormWell } from '@/components/games/WhenFields'
+import { FormSectionLabel, formPanel, formWell } from '@/components/ui/FormCard'
 
 export interface InviteConnection {
   id: string
@@ -69,9 +69,9 @@ export function InviteConnectionsList({
     <section>
       <FormSectionLabel hint={picked > 0 ? `${picked} selected` : '(optional)'}>{title}</FormSectionLabel>
 
-      <div className={`${gameFormPanel} p-2`}>
+      <div className={`${formPanel} p-2`}>
         {showSearch && (
-          <label className={`${gameFormWell} relative mb-1.5 flex h-11 items-center gap-2.5 pl-3.5 pr-1.5 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
+          <label className={`${formWell} relative mb-1.5 flex h-11 items-center gap-2.5 pl-3.5 pr-1.5 focus-within:ring-2 focus-within:ring-brand-primary/40`}>
             <Search size={15} strokeWidth={1.7} className="flex-none text-[rgba(26,26,26,0.4)]" aria-hidden />
             <input
               type="search"

@@ -1,21 +1,24 @@
 import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Check, Minus, Plus } from 'lucide-react'
-import { FormSectionLabel, gameFormPanel } from '@/components/games/WhenFields'
+import { FormSectionLabel, formPanel } from '@/components/ui/FormCard'
 import { GROUP_SEAT_DEFAULT, GROUP_SEAT_MAX, GROUP_SEAT_MIN, type GameFormatChoice } from '@/lib/game-seats'
+
+export const SINGLES_PLAYERS: [number, number][] = [[32, 25], [32, 61]]
+export const DOUBLES_PLAYERS: [number, number][] = [[21, 25], [43, 25], [21, 61], [43, 61]]
 
 const FORMAT_OPTIONS: { value: GameFormatChoice; label: string; detail: string; players: [number, number][] }[] = [
   {
     value: 'singles',
     label: 'Singles',
     detail: '2 players',
-    players: [[32, 25], [32, 61]],
+    players: SINGLES_PLAYERS,
   },
   {
     value: 'doubles',
     label: 'Doubles',
     detail: '4 players',
-    players: [[21, 25], [43, 25], [21, 61], [43, 61]],
+    players: DOUBLES_PLAYERS,
   },
   {
     value: 'group',
@@ -25,7 +28,7 @@ const FORMAT_OPTIONS: { value: GameFormatChoice; label: string; detail: string; 
   },
 ]
 
-function CourtDiagram({ players, selected }: { players: [number, number][]; selected: boolean }) {
+export function CourtDiagram({ players, selected }: { players: [number, number][]; selected: boolean }) {
   const surface = selected ? '#2d7066' : '#F0EBE3'
   const line = selected ? 'rgba(240,235,227,0.6)' : '#B9B2A8'
   const dot = selected ? '#BCD85E' : '#3A8A7A'
@@ -112,7 +115,7 @@ export function FormatFields({
       </div>
 
       {format === 'group' && (
-        <div className={`${gameFormPanel} mt-2.5 flex items-center justify-between gap-3 py-3`}>
+        <div className={`${formPanel} mt-2.5 flex items-center justify-between gap-3 py-3`}>
           <label htmlFor="group-max-players" className="min-w-0">
             <span className="block text-[14px] font-semibold text-[#1a1a1a]">Max players</span>
             <span className="block text-[12px] text-[rgba(26,26,26,0.5)]">Any number can join, up to {GROUP_SEAT_MAX}</span>

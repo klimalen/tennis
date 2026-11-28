@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { Moon, Sun, Sunrise, X, type LucideIcon } from 'lucide-react'
+import { FormSwitch, formChoiceClass } from '@/components/ui/FormCard'
 import {
   DAY_LABELS,
   DAY_ORDER,
@@ -21,6 +22,12 @@ import {
   selectedDays,
 } from '@/lib/availability'
 
+const PART_ICONS: Record<DayPart, LucideIcon> = {
+  morning: Sunrise,
+  afternoon: Sun,
+  evening: Moon,
+}
+
 function ToggleRow({
   checked,
   label,
@@ -33,43 +40,50 @@ function ToggleRow({
   onChange: (next: boolean) => void
 }) {
   return (
-    <label className="flex items-start gap-3 cursor-pointer select-none">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded border-[#1a1a1a]/40 accent-[#E8748A]"
-      />
-      <span>
-        <span className="block text-[12px] font-medium text-[#1a1a1a]">{label}</span>
-        {hint ? <span className="block text-[11px] text-[rgba(26,26,26,0.45)] mt-0.5">{hint}</span> : null}
+    <div className="flex items-center gap-3">
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-semibold text-[#1a1a1a]">{label}</span>
+        {hint ? <span className="mt-0.5 block text-[12px] text-[rgba(26,26,26,0.5)]">{hint}</span> : null}
       </span>
-    </label>
+      <FormSwitch checked={checked} onChange={onChange} label={label} />
+    </div>
   )
 }
 
-function PartPill({ part, active, onClick }: { part: DayPart; active: boolean; onClick: () => void }) {
+function PartTiles({ isOn, onToggle, compact = false }: { isOn: (part: DayPart) => boolean; onToggle: (part: DayPart) => void; compact?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
-        active
-          ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-          : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-      }`}
-    >
-      {PART_LABELS[part]}
-    </button>
+    <div className="grid flex-1 grid-cols-3 gap-2">
+      {DAY_PARTS.map((part) => {
+        const Icon = PART_ICONS[part]
+        const active = isOn(part)
+        return (
+          <button
+            key={part}
+            type="button"
+            onClick={() => onToggle(part)}
+            aria-pressed={active}
+            className={`flex items-center justify-center gap-1.5 rounded-[16px] font-semibold ${
+              compact ? 'h-10 text-[12px]' : 'h-[60px] flex-col text-[13px]'
+            } ${formChoiceClass(active)}`}
+          >
+            <Icon size={compact ? 14 : 18} strokeWidth={1.7} className={active ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
+            {compact ? PART_LABELS[part].slice(0, 3) : PART_LABELS[part]}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
 export function AvailabilityEditor({
   value,
   onChange,
+  framed = true,
 }: {
   value: Availability
   onChange: (next: Availability) => void
+  /** Draw its own card. Off when a parent card already frames it. */
+  framed?: boolean
 }) {
   const anytime = isAnytime(value)
   const uniform = isUniformWeek(value) && !anytime
@@ -111,44 +125,29 @@ export function AvailabilityEditor({
   const isCleared = !anytime && !hasSlots(value) && !sameEveryDay && openDays.length === 0
 
   return (
-    <div className="space-y-3 rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3 py-3">
+    <div className={`space-y-4 ${framed ? 'rounded-[20px] border border-[#1a1a1a]/10 bg-white px-3.5 py-3.5' : ''}`}>
       <ToggleRow
         checked={anytime}
         label="Any day, any time"
-        hint="Free whenever — mornings, afternoons, and evenings"
+        hint="Mornings, afternoons, and evenings"
         onChange={setAnytime}
       />
       {!anytime && (
         <ToggleRow
           checked={sameEveryDay}
           label="Same times every day"
-          hint="Pick day-parts once, apply Mon–Sun"
+          hint="Pick once for Mon–Sun"
           onChange={setSameTimes}
         />
       )}
 
-      {anytime && (
-        <p className="font-copy text-[12px] text-[rgba(26,26,26,0.55)]">
-          Saved as available every day, morning–evening.
-        </p>
-      )}
-
       {showSharedParts && (
-        <div className="flex flex-wrap items-center gap-2 pl-7">
-          {DAY_PARTS.map((part) => (
-            <PartPill
-              key={part}
-              part={part}
-              active={sharedParts.includes(part)}
-              onClick={() => onChange(toggleUniformPart(value, part))}
-            />
-          ))}
-        </div>
+        <PartTiles isOn={(part) => sharedParts.includes(part)} onToggle={(part) => onChange(toggleUniformPart(value, part))} />
       )}
 
       {showDayGrid && (
-        <div>
-          <div className="flex gap-3 flex-wrap">
+        <div className="space-y-3 border-t border-[#EAE5DF] pt-4">
+          <div className="grid grid-cols-7 gap-1.5">
             {DAY_ORDER.map((day) => {
               const on = value[day] !== undefined
               return (
@@ -156,33 +155,27 @@ export function AvailabilityEditor({
                   key={day}
                   type="button"
                   onClick={() => onChange(toggleDay(value, day))}
-                  className={`w-10 h-10 text-[10px] tracking-wider uppercase font-medium border transition-colors ${
-                    on
-                      ? 'rounded-full bg-[#E8748A] text-[#1a1a1a] border-[#E8748A]'
-                      : 'rounded-full bg-brand-field text-[#1a1a1a] border-[#1a1a1a]/40 hover:border-[#1a1a1a]/60'
-                  }`}
+                  aria-pressed={on}
+                  className={`aspect-square rounded-full text-[11px] font-semibold uppercase ${formChoiceClass(on)}`}
                 >
-                  {DAY_LABELS[day]}
+                  {DAY_LABELS[day]?.slice(0, 2)}
                 </button>
               )
             })}
           </div>
 
           {openDays.length > 0 && (
-            <div className="mt-4 space-y-2.5">
+            <div className="space-y-2">
               {openDays.map((day) => (
-                <div key={day} className="flex flex-wrap items-center gap-2">
-                  <span className="w-9 text-[10px] tracking-[0.14em] uppercase font-medium text-[rgba(26,26,26,0.55)]">
+                <div key={day} className="flex items-center gap-2.5">
+                  <span className="w-9 flex-none text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgba(26,26,26,0.55)]">
                     {DAY_LABELS[day]}
                   </span>
-                  {DAY_PARTS.map((part) => (
-                    <PartPill
-                      key={part}
-                      part={part}
-                      active={value[day]?.includes(part) ?? false}
-                      onClick={() => onChange(togglePart(value, day, part))}
-                    />
-                  ))}
+                  <PartTiles
+                    compact
+                    isOn={(part) => value[day]?.includes(part) ?? false}
+                    onToggle={(part) => onChange(togglePart(value, day, part))}
+                  />
                 </div>
               ))}
             </div>
@@ -194,7 +187,7 @@ export function AvailabilityEditor({
         type="button"
         onClick={clearAll}
         disabled={isCleared}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#1a1a1a]/25 bg-brand-field px-3 py-1.5 text-[10px] tracking-[0.14em] uppercase font-medium text-[rgba(26,26,26,0.7)] transition-colors hover:border-[#1a1a1a]/45 hover:bg-white disabled:pointer-events-none disabled:opacity-40"
+        className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[rgba(26,26,26,0.55)] transition-colors hover:text-[#1a1a1a] disabled:pointer-events-none disabled:opacity-40"
       >
         <X size={12} aria-hidden />
         Clear schedule
