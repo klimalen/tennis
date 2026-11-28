@@ -4,25 +4,21 @@ export const VISIBILITY_OPTIONS: {
   value: GameVisibility
   title: string
   join: string
-  seen: string
 }[] = [
   {
     value: 'private',
     title: 'Private',
-    join: 'Only you and invited players can see and join.',
-    seen: '',
+    join: 'Only you and invited players can see and join',
   },
   {
     value: 'friends',
     title: 'Friends',
-    join: 'Only mutual followers can see and join.',
-    seen: '',
+    join: 'Only mutual followers can see and join',
   },
   {
     value: 'open',
     title: 'Open',
-    join: 'Anyone can discover and join your game.',
-    seen: '',
+    join: 'Anyone can discover and join your game',
   },
 ]
 

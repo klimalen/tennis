@@ -2,17 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { X, Calendar } from 'lucide-react'
-import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
+import { AboutField } from '@/components/games/AboutField'
+import { FormatFields } from '@/components/games/FormatFields'
+import { FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
-import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
+import { InviteConnectionsList, InvitedPlayerRow } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 
 type Format = 'singles' | 'doubles'
-
-const FORMAT_OPTIONS: { value: Format; label: string }[] = [
-  { value: 'singles', label: 'Singles' },
-  { value: 'doubles', label: 'Doubles' },
-]
 
 interface Connection {
   id: string
@@ -153,53 +150,33 @@ export function ProposeGameSheet({ otherUserId, otherName, onSent }: Props) {
                 onEnd={setEndTime}
               />
 
-              {/* Format */}
-              <div>
-                <FormSectionLabel>Format</FormSectionLabel>
-                <div className="flex gap-2">
-                  {FORMAT_OPTIONS.map((opt) => (
-                    <button key={opt.value} type="button" onClick={() => setFormat(opt.value)}
-                      className={gameFormOptionPillClass(format === opt.value)}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FormatFields
+                format={format}
+                maxPlayers={format === 'doubles' ? 4 : 2}
+                onFormat={(value) => setFormat(value === 'doubles' ? 'doubles' : 'singles')}
+                onMaxPlayers={() => {}}
+                options={['singles', 'doubles']}
+              />
 
               <CourtPlaceFields value={place} onChange={setPlace} />
 
-              {/* About */}
-              <div>
-                <FormSectionLabel>
-                  About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-                </FormSectionLabel>
-                <textarea value={about} onChange={(e) => setAbout(e.target.value)}
-                  placeholder="Any information — for example the training format" rows={3} maxLength={500}
-                  className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
-              </div>
+              <AboutField value={about} onChange={setAbout} />
 
-              {/* Players */}
-              <div>
+              <section>
                 <FormSectionLabel>Players</FormSectionLabel>
-
-                {/* Pre-selected chat partner */}
-                <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA] mb-2">
-                  <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
-                  <span className="text-sm text-[#1a1a1a] flex-1">{otherName}</span>
-                  <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
+                <div className={`${gameFormPanel} p-2`}>
+                  <InvitedPlayerRow name={otherName} />
                 </div>
+              </section>
 
-                {connections.length > 0 && (
-                  <div className="mt-3">
-                    <InviteConnectionsList
-                      connections={connections}
-                      selectedIds={extraIds}
-                      onToggle={toggle}
-                      title="Add more"
-                    />
-                  </div>
-                )}
-              </div>
+              {connections.length > 0 && (
+                <InviteConnectionsList
+                  connections={connections}
+                  selectedIds={extraIds}
+                  onToggle={toggle}
+                  title="Add more"
+                />
+              )}
 
               {error && <p className="text-sm text-red-500">{error}</p>}
             </div>

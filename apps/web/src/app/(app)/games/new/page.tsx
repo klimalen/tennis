@@ -3,14 +3,15 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Globe, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, WhenFields } from '@/components/games/WhenFields'
+import { AboutField } from '@/components/games/AboutField'
+import { FormNote, FormSectionLabel, gameFormPanel, WhenFields } from '@/components/games/WhenFields'
 import { VisibilityFields } from '@/components/games/VisibilityFields'
 import type { GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
-import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
+import { InviteConnectionsList, InvitedPlayerRow } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
 import { GROUP_SEAT_DEFAULT, type GameFormatChoice } from '@/lib/game-seats'
 
@@ -182,99 +183,78 @@ function NewGameForm() {
       : 'Save game'
 
   return (
-    <div className="min-h-screen pb-8">
-      {/* Header with Save button */}
+    <div className="min-h-screen pb-10">
       <div className="page-header">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/me" className="w-9 h-9 rounded-full bg-white border border-[#1a1a1a]/15 flex items-center justify-center hover:bg-brand-field transition-colors">
-              <ArrowLeft size={16} className="text-[rgba(26,26,26,0.6)]" />
-            </Link>
-            <span className="font-display text-2xl tracking-wide text-[#1a1a1a]">NEW GAME</span>
-          </div>
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <Link href="/me" aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full border border-[#1a1a1a]/10 bg-white transition-colors hover:bg-brand-surface">
+            <ArrowLeft size={17} className="text-[rgba(26,26,26,0.6)]" />
+          </Link>
+          <span className="font-display text-[28px] leading-none tracking-wide text-[#1a1a1a]">NEW GAME</span>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-xl space-y-6 px-4 py-6">
+        <WhenFields
+          date={date}
+          start={time}
+          end={endTime}
+          minDate={todayInput()}
+          onDate={setDate}
+          onStart={(value) => {
+            setTime(value)
+            setEndTime(plusMinutes(value, 60))
+          }}
+          onEnd={setEndTime}
+        />
 
-          <WhenFields
-            date={date}
-            start={time}
-            end={endTime}
-            minDate={todayInput()}
-            onDate={setDate}
-            onStart={(value) => {
-              setTime(value)
-              setEndTime(plusMinutes(value, 60))
-            }}
-            onEnd={setEndTime}
-          />
+        <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
 
-          <FormatFields format={format} maxPlayers={maxPlayers} onFormat={setFormat} onMaxPlayers={setMaxPlayers} />
+        {!isCourt && <VisibilityFields value={visibility} onChange={setVisibility} />}
 
-          {!isCourt && (
-            <VisibilityFields value={visibility} onChange={setVisibility} />
-          )}
+        <AboutField value={about} onChange={setAbout} />
 
-          <div>
-            <FormSectionLabel>
-              About <span className="normal-case tracking-normal text-[rgba(26,26,26,0.25)]">(optional)</span>
-            </FormSectionLabel>
-            <textarea value={about} onChange={(e) => setAbout(e.target.value)}
-              placeholder="Any information — for example the training format"
-              rows={3}
-              maxLength={500}
-              className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
-          </div>
+        <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
 
-          <CourtPlaceFields value={place} onChange={setPlace} locked={isCourt} />
+        {isCourt && (
+          <FormNote icon={<Globe size={15} strokeWidth={1.7} />}>
+            Open game. Players join on their own, and the court doesn&apos;t take a spot.
+          </FormNote>
+        )}
 
-          {isCourt && (
-            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
-              This game is open. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four, and Group uses the maximum you set.
-            </p>
-          )}
-
-          {/* Pre-selected player from chat */}
-          {!isCourt && preselectedId && preselectedName && preselectedOk && (
-            <div>
-              <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
-              <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA]">
-                <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />
-                <span className="text-sm text-[#1a1a1a] flex-1">{preselectedName}</span>
-                <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
-              </div>
+        {!isCourt && preselectedId && preselectedName && preselectedOk && (
+          <section>
+            <FormSectionLabel>Players</FormSectionLabel>
+            <div className={`${gameFormPanel} p-2`}>
+              <InvitedPlayerRow name={preselectedName} />
             </div>
-          )}
-          {!isCourt && connectionsLoaded && preselectedId && !preselectedOk && (
-            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
-              {preselectedName || 'That player'} has to follow you back before you can invite them.
-            </p>
-          )}
+          </section>
+        )}
+        {!isCourt && connectionsLoaded && preselectedId && !preselectedOk && (
+          <FormNote>{preselectedName || 'That player'} has to follow you back before you can invite them</FormNote>
+        )}
 
-          {!isCourt && connections.length > 0 && (
-            <InviteConnectionsList
-              connections={connections}
-              selectedIds={selectedIds}
-              onToggle={togglePlayer}
-              title={preselectedId ? 'Add more players' : 'Invite players'}
-            />
-          )}
+        {!isCourt && connections.length > 0 && (
+          <InviteConnectionsList
+            connections={connections}
+            selectedIds={selectedIds}
+            onToggle={togglePlayer}
+            title={preselectedId ? 'Add more players' : 'Invite players'}
+          />
+        )}
 
-          {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
-            <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
-              You can invite people you follow who follow you back. A one-way follow is not enough.
-            </p>
-          )}
+        {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
+          <FormNote icon={<UserPlus size={15} strokeWidth={1.7} />}>
+            You can invite players who follow you back
+          </FormNote>
+        )}
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <button onClick={handleSubmit} disabled={submitting || !accountReady || !date || !time || !endTime}
-            className="w-full py-4 rounded-full bg-[#E8748A] text-[#1a1a1a] text-[10px] tracking-[0.2em] uppercase font-medium hover:bg-[#E8406A] transition-colors disabled:opacity-50">
-            {submitLabel}
-          </button>
-        </div>
-
+        <button onClick={handleSubmit} disabled={submitting || !accountReady || !date || !time || !endTime}
+          className="w-full rounded-full bg-[#E8748A] py-[18px] text-[11px] font-semibold uppercase tracking-[0.22em] text-[#1a1a1a] transition-colors hover:bg-[#E8406A] disabled:opacity-50">
+          {submitLabel}
+        </button>
+      </div>
     </div>
   )
 }

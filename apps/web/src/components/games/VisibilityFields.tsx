@@ -1,7 +1,14 @@
 'use client'
 
-import { FormSectionLabel } from '@/components/games/WhenFields'
+import { Globe, Lock, Users, type LucideIcon } from 'lucide-react'
+import { FormNote, FormSectionLabel, gameFormChoiceClass, gameFormPanel } from '@/components/games/WhenFields'
 import { VISIBILITY_OPTIONS, type GameVisibility } from '@/lib/game-visibility'
+
+const ICONS: Record<GameVisibility, LucideIcon> = {
+  private: Lock,
+  friends: Users,
+  open: Globe,
+}
 
 export function VisibilityFields({
   value,
@@ -12,35 +19,38 @@ export function VisibilityFields({
   onChange: (value: GameVisibility) => void
   notePrivateChange?: boolean
 }) {
+  const current = VISIBILITY_OPTIONS.find((option) => option.value === value)
   return (
-    <div>
+    <section>
       <FormSectionLabel>Who can join</FormSectionLabel>
-      <div className="space-y-2">
-        {VISIBILITY_OPTIONS.map((option) => {
-          const selected = value === option.value
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onChange(option.value)}
-              aria-pressed={selected}
-              className={`w-full rounded-2xl border px-3.5 py-3 text-left transition-colors ${
-                selected ? 'border-[#E8748A] bg-[#F8E6EA]' : 'border-[#1a1a1a]/15 bg-brand-field'
-              }`}
-            >
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#1a1a1a]">{option.title}</p>
-              <p className="mt-1.5 text-[12px] leading-snug text-[rgba(26,26,26,0.62)]">
-                {[option.join, option.seen].filter(Boolean).join(' ')}
-              </p>
-            </button>
-          )
-        })}
+      <div className={`${gameFormPanel} p-2`}>
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Who can join">
+          {VISIBILITY_OPTIONS.map((option) => {
+            const selected = value === option.value
+            const Icon = ICONS[option.value]
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onChange(option.value)}
+                aria-pressed={selected}
+                className={`flex flex-col items-center gap-2 rounded-[20px] px-1 py-3.5 text-[14px] font-semibold ${gameFormChoiceClass(selected)}`}
+              >
+                <Icon size={21} strokeWidth={1.7} className={selected ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
+                {option.title}
+              </button>
+            )
+          })}
+        </div>
+        <div className="space-y-1.5 px-2 pb-2 pt-3" aria-live="polite">
+          {current && <FormNote>{current.join}</FormNote>}
+          {notePrivateChange && value === 'private' && (
+            <p className="pl-[23px] text-[12px] leading-snug text-[rgba(26,26,26,0.45)]">
+              People already in the game stay. It leaves Search and the feed.
+            </p>
+          )}
+        </div>
       </div>
-      {notePrivateChange && value === 'private' && (
-        <p className="mt-2 text-[11px] leading-snug text-[rgba(26,26,26,0.55)]">
-          People already in the game stay in it. It leaves Search and the feed.
-        </p>
-      )}
-    </div>
+    </section>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { FormSectionLabel, gameFormPill } from '@/components/games/WhenFields'
+import { Check, Minus, Plus } from 'lucide-react'
+import { FormSectionLabel, gameFormPanel } from '@/components/games/WhenFields'
 import { GROUP_SEAT_DEFAULT, GROUP_SEAT_MAX, GROUP_SEAT_MIN, type GameFormatChoice } from '@/lib/game-seats'
 
 const FORMAT_OPTIONS: { value: GameFormatChoice; label: string; detail: string; players: [number, number][] }[] = [
@@ -8,42 +9,32 @@ const FORMAT_OPTIONS: { value: GameFormatChoice; label: string; detail: string; 
     value: 'singles',
     label: 'Singles',
     detail: '2 players',
-    players: [[32, 24], [32, 64]],
+    players: [[32, 25], [32, 61]],
   },
   {
     value: 'doubles',
     label: 'Doubles',
     detail: '4 players',
-    players: [[20, 24], [44, 24], [20, 64], [44, 64]],
+    players: [[21, 25], [43, 25], [21, 61], [43, 61]],
   },
   {
     value: 'group',
     label: 'Group',
     detail: 'Flexible',
-    players: [[16, 18], [32, 26], [48, 18], [16, 70], [32, 62], [48, 70]],
+    players: [[19, 16], [45, 16], [32, 30], [32, 56], [19, 70], [45, 70]],
   },
 ]
 
-function CourtDiagram({
-  players,
-  selected,
-}: {
-  players: [number, number][]
-  selected: boolean
-}) {
-  const line = selected ? 'rgba(26,26,26,0.55)' : 'rgba(26,26,26,0.4)'
-  const surface = selected ? '#F8E6EA' : '#EFE8DF'
-  const dot = selected ? '#E8748A' : 'rgba(26,26,26,0.45)'
+function CourtDiagram({ players, selected }: { players: [number, number][]; selected: boolean }) {
+  const surface = selected ? '#2d7066' : '#F0EBE3'
+  const line = selected ? 'rgba(240,235,227,0.6)' : '#B9B2A8'
+  const dot = selected ? '#BCD85E' : '#3A8A7A'
   return (
-    <svg viewBox="0 0 64 88" className="h-16 w-12" aria-hidden="true">
-      <rect x="6" y="4" width="52" height="80" rx="3" fill={surface} stroke={line} strokeWidth="1.6" />
-      <rect x="14" y="4" width="36" height="80" fill="none" stroke={line} strokeWidth="1" />
-      <line x1="14" y1="22" x2="50" y2="22" stroke={line} strokeWidth="1" />
-      <line x1="14" y1="66" x2="50" y2="66" stroke={line} strokeWidth="1" />
-      <line x1="32" y1="22" x2="32" y2="66" stroke={line} strokeWidth="1" />
-      <line x1="6" y1="44" x2="58" y2="44" stroke={line} strokeWidth="2" />
+    <svg viewBox="0 0 64 86" className="h-[66px] w-12" aria-hidden="true">
+      <rect x="8" y="3" width="48" height="80" rx="2" fill={surface} stroke={line} strokeWidth="1.4" />
+      <path d="M15 3V83 M49 3V83 M8 43H56 M15 23H49 M15 63H49 M32 23V63" fill="none" stroke={line} strokeWidth="1.4" />
       {players.map(([x, y]) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r="3.2" fill={dot} />
+        <circle key={`${x}-${y}`} cx={x} cy={y} r="4" fill={dot} />
       ))}
     </svg>
   )
@@ -54,11 +45,13 @@ export function FormatFields({
   maxPlayers,
   onFormat,
   onMaxPlayers,
+  options = ['singles', 'doubles', 'group'],
 }: {
   format: GameFormatChoice
   maxPlayers: number
   onFormat: (format: GameFormatChoice) => void
   onMaxPlayers: (seats: number) => void
+  options?: GameFormatChoice[]
 }) {
   const [draft, setDraft] = useState(String(maxPlayers))
   useEffect(() => { setDraft(String(maxPlayers)) }, [maxPlayers])
@@ -74,11 +67,18 @@ export function FormatFields({
     if (seats !== maxPlayers) flushSync(() => onMaxPlayers(seats))
   }
 
+  function step(delta: number) {
+    const seats = Math.min(GROUP_SEAT_MAX, Math.max(GROUP_SEAT_MIN, maxPlayers + delta))
+    if (seats !== maxPlayers) onMaxPlayers(seats)
+  }
+
+  const shown = FORMAT_OPTIONS.filter((option) => options.includes(option.value))
+
   return (
-    <div>
+    <section>
       <FormSectionLabel>Format</FormSectionLabel>
-      <div className="grid grid-cols-3 gap-2">
-        {FORMAT_OPTIONS.map((option) => {
+      <div className={`grid gap-2.5 ${shown.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`} role="group" aria-label="Game format">
+        {shown.map((option) => {
           const selected = format === option.value
           return (
             <button
@@ -91,23 +91,42 @@ export function FormatFields({
                   onMaxPlayers(GROUP_SEAT_DEFAULT)
                 }
               }}
-              className={`flex flex-col items-center rounded-2xl border px-2 py-3 transition-colors ${
-                selected ? 'border-[#E8748A] bg-[#F8E6EA]' : 'border-[#1a1a1a]/15 bg-brand-field'
+              className={`relative flex min-w-0 flex-col items-center rounded-[20px] px-1.5 pb-3.5 pt-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
+                selected ? 'bg-brand-primary text-[#F0EBE3]' : 'bg-white text-[#1a1a1a] hover:bg-white/70'
               }`}
             >
+              <span
+                className={`absolute right-2.5 top-2.5 grid h-[18px] w-[18px] place-items-center rounded-full border-[1.5px] ${
+                  selected ? 'border-brand-conifer bg-brand-conifer text-brand-primary-dark' : 'border-[#1a1a1a]/15'
+                }`}
+                aria-hidden
+              >
+                {selected && <Check size={11} strokeWidth={3} />}
+              </span>
               <CourtDiagram players={option.players} selected={selected} />
-              <span className="mt-2 text-[13px] font-medium text-[#1a1a1a]">{option.label}</span>
-              <span className="text-[11px] text-[rgba(26,26,26,0.5)]">{option.detail}</span>
+              <span className="mt-1.5 text-[15px] font-semibold leading-tight">{option.label}</span>
+              <span className={`text-[12px] ${selected ? 'text-[#F0EBE3]/75' : 'text-[rgba(26,26,26,0.5)]'}`}>{option.detail}</span>
             </button>
           )
         })}
       </div>
+
       {format === 'group' && (
-        <div className="mt-3">
-          <label htmlFor="group-max-players" className="text-[12px] text-[rgba(26,26,26,0.55)]">
-            Maximum players. The game stays open with any number of people, up to this many.
+        <div className={`${gameFormPanel} mt-2.5 flex items-center justify-between gap-3 py-3`}>
+          <label htmlFor="group-max-players" className="min-w-0">
+            <span className="block text-[14px] font-semibold text-[#1a1a1a]">Max players</span>
+            <span className="block text-[12px] text-[rgba(26,26,26,0.5)]">Any number can join, up to {GROUP_SEAT_MAX}</span>
           </label>
-          <div className="mt-2 flex items-center gap-3">
+          <div className="flex flex-none items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              disabled={maxPlayers <= GROUP_SEAT_MIN}
+              aria-label="Fewer players"
+              className="grid h-9 w-9 place-items-center rounded-full bg-brand-surface text-[#1a1a1a] transition-colors hover:bg-brand-field disabled:opacity-40"
+            >
+              <Minus size={16} />
+            </button>
             <input
               id="group-max-players"
               inputMode="numeric"
@@ -128,15 +147,20 @@ export function FormatFields({
                   commit(draft)
                 }
               }}
-              aria-describedby="group-max-players-hint"
-              className={`${gameFormPill} w-20 px-3 text-center text-[15px] focus:outline-none focus:border-brand-primary`}
+              className="w-10 bg-transparent text-center font-numbers text-[22px] leading-none text-[#1a1a1a] focus:outline-none"
             />
-            <p id="group-max-players-hint" className="text-[12px] text-[rgba(26,26,26,0.45)]">
-              No more than {GROUP_SEAT_MAX} players.
-            </p>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              disabled={maxPlayers >= GROUP_SEAT_MAX}
+              aria-label="More players"
+              className="grid h-9 w-9 place-items-center rounded-full bg-brand-surface text-[#1a1a1a] transition-colors hover:bg-brand-field disabled:opacity-40"
+            >
+              <Plus size={16} />
+            </button>
           </div>
         </div>
       )}
-    </div>
+    </section>
   )
 }
