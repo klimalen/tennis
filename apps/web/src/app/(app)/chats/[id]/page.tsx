@@ -136,6 +136,7 @@ export default async function ChatPage({
   const myProfile = participantsData?.find((p) => p.user_id === user.id)
   const viewerIsCourt = (myProfile as unknown as { profiles: { account_kind?: string } | null } | undefined)?.profiles?.account_kind === 'court'
   const otherIsCourt = (other?.profiles as { account_kind?: string } | null)?.account_kind === 'court'
+  const isPlayerChat = !isGameChat && !viewerIsCourt && !otherIsCourt
 
   // Personal chats need a mutual follow. A chat with a court does not.
   // A game chat is open to whoever holds a seat.
@@ -161,7 +162,7 @@ export default async function ChatPage({
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <div className="page-header">
+      <div className={isPlayerChat ? 'page-header page-header-chat' : 'page-header'}>
         <div className={isGameChat
           ? 'max-w-2xl mx-auto grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3'
           : 'max-w-2xl mx-auto flex items-center gap-3'}>
