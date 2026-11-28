@@ -32,13 +32,25 @@ const TITLES: Record<string, string> = {
   message: 'New message',
 }
 
-function pathFor(record: NotificationRecord): string {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const USERNAME = /^[a-z0-9_]+$/
+const GAME_CARD_KINDS = new Set(['game_invite', 'game_joined', 'game_left', 'game_updated'])
+const PROFILE_KINDS = new Set(['follow', 'request_accepted', 'request_declined'])
+
+// Keep in step with pushPathFor in apps/web/src/lib/push/copy.ts.
+function pathFor(record: NotificationRecord, actorUsername: string | null): string {
   const payload = record.payload ?? {}
-  if (record.kind === 'message' && typeof payload['conversation_id'] === 'string') {
-    return `/chats/${payload['conversation_id']}`
+  const conversationId = payload['conversation_id']
+  if (record.kind === 'message' && typeof conversationId === 'string' && UUID.test(conversationId)) {
+    return `/chats/${conversationId}`
   }
-  if (record.game_id) return `/games/${record.game_id}`
-  return '/feed'
+  if (record.game_id && UUID.test(record.game_id) && GAME_CARD_KINDS.has(record.kind)) {
+    return `/game/${record.game_id}`
+  }
+  if (actorUsername && USERNAME.test(actorUsername) && PROFILE_KINDS.has(record.kind)) {
+    return `/profile/${actorUsername}`
+  }
+  return '/feed?tab=notifications'
 }
 
 function bodyFor(kind: string, actorName: string, payload: Record<string, unknown> | null): string {
@@ -122,7 +134,7 @@ Deno.serve(async (req) => {
   const [{ data: tokens }, { data: actor }] = await Promise.all([
     admin.from('push_tokens').select('token').eq('user_id', record.user_id),
     record.actor_id
-      ? admin.from('profiles').select('full_name').eq('id', record.actor_id).maybeSingle()
+      ? admin.from('profiles').select('full_name, username').eq('id', record.actor_id).maybeSingle()
       : Promise.resolve({ data: null }),
   ])
 
@@ -135,7 +147,7 @@ Deno.serve(async (req) => {
   const actorName = actor?.full_name?.trim() || 'Someone'
   const title = TITLES[record.kind] ?? 'GAME.'
   const pushBody = bodyFor(record.kind, actorName, record.payload)
-  const path = pathFor(record)
+  const path = pathFor(record, actor?.username ?? null)
 
   const messages = tokens.map((row) => ({
     to: row.token,

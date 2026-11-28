@@ -11,12 +11,31 @@ export const PUSH_TITLES: Record<string, string> = {
   message: 'New message',
 }
 
-export function pushPathFor(kind: string, gameId: string | null, payload: Record<string, unknown> | null): string {
-  if (kind === 'message' && typeof payload?.['conversation_id'] === 'string') {
-    return `/chats/${payload['conversation_id']}`
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const USERNAME = /^[a-z0-9_]+$/
+
+export const NOTIFICATIONS_PATH = '/feed?tab=notifications'
+
+const GAME_CARD_KINDS = new Set(['game_invite', 'game_joined', 'game_left', 'game_updated'])
+const PROFILE_KINDS = new Set(['follow', 'request_accepted', 'request_declined'])
+
+export function pushPathFor(
+  kind: string,
+  gameId: string | null,
+  payload: Record<string, unknown> | null,
+  actorUsername?: string | null,
+): string {
+  const conversationId = payload?.['conversation_id']
+  if (kind === 'message' && typeof conversationId === 'string' && UUID.test(conversationId)) {
+    return `/chats/${conversationId}`
   }
-  if (gameId) return `/games/${gameId}`
-  return '/feed'
+  if (gameId && UUID.test(gameId) && GAME_CARD_KINDS.has(kind)) {
+    return `/game/${gameId}`
+  }
+  if (actorUsername && USERNAME.test(actorUsername) && PROFILE_KINDS.has(kind)) {
+    return `/profile/${actorUsername}`
+  }
+  return NOTIFICATIONS_PATH
 }
 
 export function pushBodyFor(
