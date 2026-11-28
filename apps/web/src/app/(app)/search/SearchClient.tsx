@@ -365,14 +365,14 @@ function PlayerCard({
         </div>
       </div>
       {(bio || lookingFor) && (
-        <div className="mt-3 space-y-2.5 rounded-[20px] bg-[#F6F1EA] px-3.5 py-3">
+        <div className="mt-3 space-y-2 border-t border-[#1a1a1a]/[0.07] pt-3">
           {bio && (
-            <ExpandableText text={bio} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.7)]" />
+            <ExpandableText text={bio} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.6)]" />
           )}
           {lookingFor && (
             <div className="space-y-0.5">
               <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(26,26,26,0.45)]">Looking for</p>
-              <ExpandableText text={lookingFor} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.7)]" />
+              <ExpandableText text={lookingFor} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.6)]" />
             </div>
           )}
         </div>
