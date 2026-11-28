@@ -183,7 +183,8 @@ export function buildIcs(event: CalendarEvent, gameId: string): string {
     'VERSION:2.0',
     'PRODID:-//GAME.//Tennis//EN',
     'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
+    // No METHOD. PUBLISH makes iPhone open a preview: the checkmark only
+    // closes the sheet until the person picks a calendar at the bottom.
     'BEGIN:VEVENT',
     `UID:${gameId}@game-tennis.space`,
     `DTSTAMP:${utcBasic(new Date())}`,
