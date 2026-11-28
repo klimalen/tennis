@@ -9,6 +9,7 @@ import { LocalGameDay, LocalGameMonth, LocalGameTimeRange } from '@/components/u
 import { ShareLinkButton } from '@/components/share/ShareLinkButton'
 import { holdsGameSeat } from '@/lib/schedule'
 import { gameAccessKicker, gameAllowsSelfJoin, gameShareTitle } from '@/lib/game-visibility'
+import { viewerCanWriteRecap } from '@/lib/game-recap'
 import { gameEndMs } from '@/lib/game-time'
 import { costLine, type GameCourt } from '@/lib/game-court'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
@@ -183,6 +184,7 @@ export function GameDetailSheet({
   const canCancel = isHost && !isPast && !isCancelled
   // Past: any seat-holder or host can soft-dismiss from their own schedule only.
   const canHidePast = Boolean(currentUserId) && isPast && !isCancelled && (isHost || alreadyIn)
+  const canRecap = viewerCanWriteRecap(game, currentUserId)
   const price = game.court?.fee === false
     ? 'Free'
     : costLine(game.court_cost_cents, game.payment, game.cost_currency)
@@ -502,6 +504,15 @@ export function GameDetailSheet({
             </Link>
           )}
 
+          {canRecap && (
+            <Link
+              href={`/games/${game.id}/recap`}
+              className="block w-full rounded-full bg-brand-fern py-4 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#3d6144]"
+            >
+              Your Game Recap
+            </Link>
+          )}
+
           {canCancel && (
             <div className="flex gap-3">
               <Link
@@ -536,7 +547,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {!isHost && courtViewer === false && !canLeave && (
+          {!isHost && courtViewer === false && !canLeave && !canRecap && (
             <button
               type="button"
               onClick={handleJoin}
@@ -551,7 +562,7 @@ export function GameDetailSheet({
             </button>
           )}
 
-          {isHost && !canCancel && !canHidePast && (
+          {isHost && !canCancel && !canHidePast && !canRecap && (
             <button
               type="button"
               disabled

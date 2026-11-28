@@ -15,37 +15,15 @@ import { formatFollowers } from '@/lib/formatFollowers'
 import { skillLabel } from '@/lib/skill'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
-import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
+import { PostCard } from '@/app/(app)/feed/PostCard'
 import { showGamePost } from '@/lib/game-visibility'
+import { attachRecapPlayers, HIDE_PRIVATE_RECAPS, mapPostRow, markRecapAccess, mutualCreatorIds, POST_FEED_SELECT, shownInFeed } from '@/lib/post-feed'
 import { CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
 import { ProfileTraitChips } from '@/components/ui/ProfileTraitChips'
 import { normalizeAvailability } from '@/lib/availability'
 import { returnToFromSearch } from '@/lib/return-to'
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-interface PostRow {
-  id: string
-  type: string
-  body: string | null
-  image_url: string | null
-  created_at: string
-  updated_at: string
-  author: { id: string; full_name: string; username: string; avatar_url: string | null }
-  match_result: {
-    id: string; winner_id: string | null; winning_team: number | null; played_at: string | null
-    winner: { full_name: string; username: string } | null
-    game: { format: string; scheduled_at: string } | null
-  } | null
-  game: {
-    id: string; creator_id: string; format: string; scheduled_at: string; skill_level_min: number | null
-    skill_level_max: number | null; neighborhood: string | null; status: string
-    max_players: number; is_open: boolean; visibility?: string | null; city: { name: string } | null
-  } | null
-  likes: [{ count: number }] | []
-}
-
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -130,22 +108,9 @@ export default async function PlayerProfilePage({
     supabase.rpc('played_games_count', { p_player_id: profile.id }),
     supabase
       .from('posts')
-      .select(`
-        id, type, body, image_url, created_at, updated_at,
-        author:profiles!author_id (id, full_name, username, avatar_url),
-        match_result:match_results (
-          id, winner_id, winning_team, played_at,
-          winner:profiles!winner_id (full_name, username),
-          game:games (format, scheduled_at)
-        ),
-        game:games (
-          id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
-          neighborhood, status, max_players, is_open, visibility,
-          city:cities (name)
-        ),
-        likes:post_likes (count)
-      `)
+      .select(POST_FEED_SELECT)
       .eq('author_id', profile.id)
+      .or(HIDE_PRIVATE_RECAPS)
       .order('created_at', { ascending: false })
       .limit(30),
     otherId
@@ -221,22 +186,19 @@ export default async function PlayerProfilePage({
   const skill = isCourt ? null : skillLabel(rating)
   const initials = profile.full_name.split(' ').map((w: string) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
-  const rows = (postRows ?? []) as unknown as PostRow[]
   const likedSet = new Set((likesResult.data ?? []).map((like) => like.post_id as string))
-
-  const posts: PostItem[] = rows.map((row) => ({
-    id: row.id,
-    type: row.type as PostItem['type'],
-    body: row.body,
-    image_url: row.image_url,
-    created_at: row.created_at,
-    updated_at: row.updated_at ?? row.created_at,
-    author: row.author as PostItem['author'],
-    match_result: row.match_result as PostItem['match_result'],
-    game: row.game as PostItem['game'],
-    likes_count: row.likes[0]?.count ?? 0,
-    liked_by_me: likedSet.has(row.id),
-  })).filter((post) => post.type !== 'open_game' || showGamePost(post.game))
+  const mutualIds = await mutualCreatorIds(supabase, viewer?.id ?? null)
+  const posts = await attachRecapPlayers(
+    supabase,
+    markRecapAccess(
+      ((postRows ?? []) as unknown as Parameters<typeof mapPostRow>[0][])
+        .map((row) => mapPostRow(row, likedSet.has(row.id)))
+        .filter(shownInFeed)
+        .filter((post) => post.type !== 'open_game' || showGamePost(post.game)),
+      viewer?.id ?? null,
+      mutualIds,
+    ),
+  )
 
   return (
     <div className="min-h-screen">

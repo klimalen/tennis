@@ -16,12 +16,14 @@ export function ScheduleGameCard({
   past,
   editHref,
   allowEdit = false,
+  allowRecap = false,
   viewerId = null,
 }: {
   game: ScheduleGame
   past: boolean
   editHref?: string | null
   allowEdit?: boolean
+  allowRecap?: boolean
   viewerId?: string | null
 }) {
   const [detail, setDetail] = useState<GameDetail | null>(null)
@@ -29,6 +31,7 @@ export function ScheduleGameCard({
   const canTry = game.is_open || Boolean(viewerId)
   const router = useRouter()
   const resolvedEditHref = editHref ?? (allowEdit && !past && viewerId && game.creator_id === viewerId ? `/games/${game.id}/edit` : null)
+  const showRecap = allowRecap && past && game.status !== 'cancelled'
 
   async function open() {
     const loaded = await loadGameDetail(game.id)
@@ -39,7 +42,7 @@ export function ScheduleGameCard({
   return (
     <>
     <div
-      className={`mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4 ${past ? 'opacity-75' : ''} ${canTry ? 'cursor-pointer' : ''}`}
+      className={`mb-3 px-4 py-4 rounded-[28px] bg-white flex items-center gap-4 ${past && !showRecap ? 'opacity-75' : ''} ${canTry ? 'cursor-pointer' : ''}`}
       onClick={canTry ? () => { void open() } : undefined}
       onKeyDown={canTry ? (event) => { if (event.key === 'Enter') void open() } : undefined}
       role={canTry ? 'button' : undefined}
@@ -80,6 +83,15 @@ export function ScheduleGameCard({
           <LocalGameTime iso={endIso} />
           {game.neighborhood ? ` · ${game.neighborhood}` : ''}
         </p>
+        {showRecap && (
+          <Link
+            href={`/games/${game.id}/recap`}
+            onClick={(event) => event.stopPropagation()}
+            className="mt-2 inline-flex rounded-full bg-brand-primary-muted px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-brand-primary"
+          >
+            Your Game Recap
+          </Link>
+        )}
       </div>
       {(game.chatId || resolvedEditHref) && (
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -124,11 +136,13 @@ export function SchedulePreview({
   items,
   empty,
   allowEdit = false,
+  allowRecap = false,
   viewerId = null,
 }: {
   items: SchedulePreviewItem[]
   empty?: ReactNode
   allowEdit?: boolean
+  allowRecap?: boolean
   viewerId?: string | null
 }) {
   if (items.length === 0) {
@@ -143,6 +157,7 @@ export function SchedulePreview({
           game={game}
           past={game.past}
           allowEdit={allowEdit}
+          allowRecap={allowRecap}
           viewerId={viewerId}
         />
       ))}
@@ -154,11 +169,13 @@ export function ScheduleSections({
   upcoming,
   past,
   allowEdit = false,
+  allowRecap = false,
   viewerId = null,
 }: {
   upcoming: ScheduleGame[]
   past: ScheduleGame[]
   allowEdit?: boolean
+  allowRecap?: boolean
   viewerId?: string | null
 }) {
   return (
@@ -169,7 +186,7 @@ export function ScheduleSections({
           <div className="max-w-2xl mx-auto">
             {upcoming.map((game) => (
               <div key={game.id} className="mx-4">
-                <ScheduleGameCard game={game} past={false} allowEdit={allowEdit} viewerId={viewerId} />
+                <ScheduleGameCard game={game} past={false} allowEdit={allowEdit} allowRecap={allowRecap} viewerId={viewerId} />
               </div>
             ))}
           </div>
@@ -181,7 +198,7 @@ export function ScheduleSections({
           <div className="max-w-2xl mx-auto">
             {past.map((game) => (
               <div key={game.id} className="mx-4">
-                <ScheduleGameCard game={game} past allowEdit={allowEdit} viewerId={viewerId} />
+                <ScheduleGameCard game={game} past allowEdit={allowEdit} allowRecap={allowRecap} viewerId={viewerId} />
               </div>
             ))}
           </div>

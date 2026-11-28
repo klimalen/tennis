@@ -1,3 +1,20 @@
+/** Storage object path inside the post-images bucket, or null when the URL is not one of ours. */
+export function postImageStoragePath(url: string | null | undefined): string | null {
+  if (!url) return null
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return null
+  }
+  const marker = '/post-images/'
+  const index = parsed.pathname.indexOf(marker)
+  if (index === -1) return null
+  const path = decodeURIComponent(parsed.pathname.slice(index + marker.length))
+  if (!path || path.includes('..') || path.startsWith('/')) return null
+  return path
+}
+
 /** Public post photo uploaded by this user into their own storage folder. */
 export function ownPostImageUrl(url: string | null | undefined, userId: string): string | null {
   if (!url) return null

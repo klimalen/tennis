@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { TRAVEL_RADIUS_KM, haversineKm } from '@/lib/travel'
 import type { GameCourt } from '@/lib/game-court'
 import { compareOpenGames } from '@/lib/open-games-order'
+import { gameEndMs } from '@/lib/game-time'
 import { NextRequest, NextResponse } from 'next/server'
 
 export interface OpenGameProfile {
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
     `)
     .in('visibility', user ? ['open', 'friends'] : ['open'])
     .gt('scheduled_at', new Date().toISOString())
+    .not('status', 'in', '(cancelled,completed,draft)')
     .order('scheduled_at', { ascending: true })
     .limit(200)
 
@@ -75,6 +77,8 @@ export async function GET(request: NextRequest) {
       city_lat: number | null
       city_lng: number | null
     }
+    // Finished games stay out of upcoming search. Recaps are posts, not games.
+    if (gameEndMs(r.scheduled_at, r.duration_minutes) <= Date.now()) return []
     const sameCity = !!city && !!creator.city_name && creator.city_name.toLowerCase().includes(city.toLowerCase())
     const distance_km = hasAnchor && creator.city_lat != null && creator.city_lng != null
       ? Math.round(haversineKm(lat, lng, creator.city_lat, creator.city_lng) * 10) / 10

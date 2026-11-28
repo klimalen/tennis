@@ -2,49 +2,9 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
 import { FeedTabs } from './FeedTabs'
-import type { PostItem } from './PostCard'
 import { showGamePost } from '@/lib/game-visibility'
+import { attachRecapPlayers, HIDE_PRIVATE_RECAPS, mapPostRow, markRecapAccess, POST_FEED_SELECT, shownInFeed, type PostItem } from '@/lib/post-feed'
 import { NOTIFICATION_PAGE_SIZE, pageFromRows, type NotificationRow } from './notifications'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface PostRow {
-  id: string
-  type: string
-  body: string | null
-  image_url: string | null
-  created_at: string
-  updated_at: string
-  author: {
-    id: string
-    full_name: string
-    username: string
-    avatar_url: string | null
-  }
-  match_result: {
-    id: string
-    winner_id: string | null
-    winning_team: number | null
-    played_at: string | null
-    winner: { full_name: string; username: string } | null
-    game: { format: string; scheduled_at: string } | null
-  } | null
-  game: {
-    id: string
-    creator_id: string
-    format: string
-    scheduled_at: string
-    skill_level_min: number | null
-    skill_level_max: number | null
-    neighborhood: string | null
-    status: string
-    max_players: number
-    is_open: boolean
-    visibility?: string | null
-    city: { name: string } | null
-  } | null
-  likes: [{ count: number }] | []
-}
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
@@ -54,39 +14,27 @@ async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notificat
   if (!user) return null
 
   // Fetch following IDs for posts feed
-  const { data: followingRows } = await supabase
-    .from('follows')
-    .select('following_id')
-    .eq('follower_id', user.id)
+  const [{ data: followingRows }, { data: followerRows }] = await Promise.all([
+    supabase.from('follows').select('following_id').eq('follower_id', user.id),
+    supabase.from('follows').select('follower_id').eq('following_id', user.id),
+  ])
   const followingIds = (followingRows ?? []).map((r) => r.following_id as string)
+  const followersBack = new Set((followerRows ?? []).map((r) => r.follower_id as string))
+  const mutualIds = new Set(followingIds.filter((id) => followersBack.has(id)))
 
   const [postsResult, notesResult] = await Promise.all([
     // Posts feed (own + following)
     (async () => {
       let query = supabase
         .from('posts')
-        .select(`
-          id, type, body, image_url, created_at, updated_at,
-          author:profiles!author_id (id, full_name, username, avatar_url),
-          match_result:match_results (
-            id, winner_id, winning_team, played_at,
-            winner:profiles!winner_id (full_name, username),
-            game:games (format, scheduled_at)
-          ),
-          game:games (
-            id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
-            neighborhood, status, max_players, is_open, visibility,
-            city:cities (name)
-          ),
-          likes:post_likes (count)
-        `)
+        .select(POST_FEED_SELECT)
         .order('created_at', { ascending: false })
         .limit(30)
 
       if (followingIds.length > 0) {
-        query = query.or(`author_id.eq.${user.id},author_id.in.(${followingIds.join(',')})`)
+        query = query.in('author_id', [user.id, ...followingIds]).or(HIDE_PRIVATE_RECAPS)
       } else {
-        query = query.eq('author_id', user.id)
+        query = query.eq('author_id', user.id).or(HIDE_PRIVATE_RECAPS)
       }
 
       return query
@@ -99,7 +47,7 @@ async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notificat
     }),
   ])
 
-  const postRows = (postsResult.data ?? []) as unknown as PostRow[]
+  const postRows = (postsResult.data ?? []) as unknown as Parameters<typeof mapPostRow>[0][]
   if (notesResult.error) console.error('[feed] notifications', notesResult.error.message)
   const { items: notifications, nextCursor } = pageFromRows(
     (notesResult.error ? [] : notesResult.data ?? []) as NotificationRow[],
@@ -112,20 +60,9 @@ async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notificat
     : { data: [] }
   const likedSet = new Set((myLikes ?? []).map((l) => l.post_id as string))
 
-  // Transform posts
-  const rawPosts: PostItem[] = postRows.map((row) => ({
-    id: row.id,
-    type: row.type as PostItem['type'],
-    body: row.body,
-    image_url: row.image_url,
-    created_at: row.created_at,
-    updated_at: row.updated_at ?? row.created_at,
-    author: row.author as PostItem['author'],
-    match_result: row.match_result as PostItem['match_result'],
-    game: row.game as PostItem['game'],
-    likes_count: row.likes[0]?.count ?? 0,
-    liked_by_me: likedSet.has(row.id),
-  }))
+  const rawPosts: PostItem[] = postRows
+    .map((row) => mapPostRow(row, likedSet.has(row.id)))
+    .filter(shownInFeed)
 
   // Deduplicate open_game posts: one per game_id, prefer creator's post
   const openGameMap = new Map<string, PostItem>()
@@ -147,8 +84,14 @@ async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notificat
       if (isCreator && !existingIsCreator) openGameMap.set(gameId, post)
     }
   }
-  const posts: PostItem[] = [...nonGamePosts, ...openGameMap.values()]
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const posts = await attachRecapPlayers(
+    supabase,
+    markRecapAccess(
+      [...nonGamePosts, ...openGameMap.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+      user.id,
+      mutualIds,
+    ),
+  )
 
   const latestNotificationAt = notifications[0]?.createdAt ?? null
 

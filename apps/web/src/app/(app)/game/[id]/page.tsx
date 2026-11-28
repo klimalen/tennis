@@ -3,8 +3,8 @@ import { GameDetailSheet } from '@/components/games/GameDetailSheet'
 import { LinkState } from '@/components/share/LinkState'
 import { createClient } from '@/lib/supabase/server'
 import { formatPlayFormat } from '@/lib/skill'
-import { isUuid, loadGameDetailRow, loadGameLinkState } from '@/lib/public-game'
 import { visibilityOf } from '@/lib/game-visibility'
+import { isUuid, loadGameDetailRow, loadGameLinkState } from '@/lib/public-game'
 import { courtTitle } from '@/lib/venue-label'
 import { returnToFromSearch } from '@/lib/return-to'
 
@@ -72,7 +72,6 @@ export default async function GamePage({
     ? await supabase.from('profiles').select('account_kind').eq('id', user.id).maybeSingle()
     : null
   const viewerIsCourt = viewerKind?.data?.account_kind === 'court'
-
   const allowed = Boolean(game && game.status !== 'draft')
   if (!game || !allowed) {
     const state = game?.status === 'draft' ? 'gone' : await loadGameLinkState(supabase, id)

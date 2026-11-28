@@ -23,14 +23,18 @@ export default function EditPostPage() {
   const supabase = useRef(createClient()).current
 
   useEffect(() => {
-    supabase.from('posts').select('body, image_url').eq('id', id).single().then(({ data }) => {
+    supabase.from('posts').select('type, game_id, body, image_url').eq('id', id).maybeSingle().then(({ data }) => {
+      if (data?.type === 'game_recap' && data.game_id) {
+        router.replace(`/games/${data.game_id}/recap`)
+        return
+      }
       if (data) {
         setText(clampPostBody(data.body ?? ''))
         setImageUrl(data.image_url)
       }
       setLoading(false)
     })
-  }, [id, supabase])
+  }, [id, router, supabase])
 
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
