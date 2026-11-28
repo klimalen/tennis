@@ -286,9 +286,10 @@ function RecapPhotos({ urls }: { urls: string[] }) {
 
   function readIndex() {
     const node = scroller.current
-    const slide = node?.firstElementChild as HTMLElement | null
-    if (!node || !slide) return
-    const step = slide.offsetWidth + 8
+    const first = node?.children[0] as HTMLElement | undefined
+    const second = node?.children[1] as HTMLElement | undefined
+    if (!node || !first) return
+    const step = second ? second.offsetLeft - first.offsetLeft : first.offsetWidth
     if (step <= 0) return
     const next = Math.min(urls.length - 1, Math.max(0, Math.round(node.scrollLeft / step)))
     setIndex((current) => (current === next ? current : next))
@@ -313,22 +314,17 @@ function RecapPhotos({ urls }: { urls: string[] }) {
 
   return (
     <div className="mb-3">
-      <div className="relative">
-        <div
-          ref={scroller}
-          onScroll={readIndex}
-          className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          aria-label="Recap photos"
-        >
-          {urls.map((url) => (
-            <div key={url} className="relative aspect-square w-[84%] flex-none snap-start overflow-hidden rounded-[20px] bg-brand-field">
-              <Image src={url} alt="" fill sizes="(max-width: 672px) 84vw, 540px" className="object-cover" />
-            </div>
-          ))}
-        </div>
-        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-[#1a1a1a]/55 px-2 py-1 text-[10px] font-medium tracking-[0.08em] text-white">
-          {index + 1} / {urls.length}
-        </span>
+      <div
+        ref={scroller}
+        onScroll={readIndex}
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        aria-label="Photos"
+      >
+        {urls.map((url) => (
+          <div key={url} className="relative aspect-square w-full flex-none snap-start overflow-hidden rounded-[20px] bg-brand-field">
+            <Image src={url} alt="" fill sizes="(max-width: 672px) 100vw, 640px" className="object-cover" />
+          </div>
+        ))}
       </div>
       <div className="mt-2.5 flex items-center justify-center gap-1.5">
         {urls.map((url, dot) => (
