@@ -133,6 +133,8 @@ export function GameDetailSheet({
   const [left, setLeft] = useState(false)
   const [chatId, setChatId] = useState<string | null>(null)
   const [courtViewer, setCourtViewer] = useState<boolean | null>(viewerIsCourt ?? null)
+  const [hasRecap, setHasRecap] = useState(false)
+  const [recapKnown, setRecapKnown] = useState(false)
   useHideTabBar(!page)
 
   useEffect(() => {
@@ -171,6 +173,29 @@ export function GameDetailSheet({
       })
     return () => { cancelled = true }
   }, [game.id])
+
+  useEffect(() => {
+    if (!currentUserId || !viewerCanWriteRecap(game, currentUserId)) {
+      setHasRecap(false)
+      setRecapKnown(true)
+      return
+    }
+    let cancelled = false
+    setRecapKnown(false)
+    const supabase = createClient()
+    void supabase
+      .from('posts')
+      .select('id', { head: true, count: 'exact' })
+      .eq('author_id', currentUserId)
+      .eq('game_id', game.id)
+      .eq('type', 'game_recap')
+      .then(({ count, error }) => {
+        if (cancelled) return
+        setHasRecap(!error && (count ?? 0) > 0)
+        setRecapKnown(true)
+      })
+    return () => { cancelled = true }
+  }, [currentUserId, game])
 
   const accepted = game.participants.filter((participant) => holdsGameSeat(participant.status) && participant.profile.account_kind !== 'court')
   const spotsLeft = game.max_players - accepted.length
@@ -504,12 +529,12 @@ export function GameDetailSheet({
             </Link>
           )}
 
-          {canRecap && (
+          {canRecap && recapKnown && (
             <Link
               href={`/games/${game.id}/recap`}
               className="block w-full rounded-full bg-brand-fern py-4 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#3d6144]"
             >
-              Your Game Recap
+              {hasRecap ? 'Your Game Recap' : 'Add recap'}
             </Link>
           )}
 
