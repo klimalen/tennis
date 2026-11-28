@@ -35,10 +35,10 @@ const FORMAT_OPTIONS = [
   { value: 'doubles', label: 'Doubles', detail: '4 players', players: DOUBLES_PLAYERS },
 ]
 
-const STYLE_OPTIONS: { value: string; label: string; sub: string; icon: LucideIcon }[] = [
-  { value: 'recreational', label: 'For fun', sub: 'Recreational', icon: Smile },
-  { value: 'competitive', label: 'To win', sub: 'Competitive', icon: Trophy },
-  { value: 'both', label: 'Both', sub: 'Depends', icon: Shuffle },
+const STYLE_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
+  { value: 'recreational', label: 'For fun', icon: Smile },
+  { value: 'competitive', label: 'To win', icon: Trophy },
+  { value: 'both', label: 'Both', icon: Shuffle },
 ]
 
 const SURFACE_OPTIONS = [
@@ -675,11 +675,10 @@ export function PlayerEditPage() {
                       type="button"
                       aria-pressed={selected}
                       onClick={() => update({ playStyle: selected ? null : o.value })}
-                      className={`flex flex-col items-center gap-1.5 rounded-[20px] px-1 py-3 ${formChoiceClass(selected)}`}
+                      className={`flex flex-col items-center gap-1.5 rounded-[20px] px-1 py-3.5 ${formChoiceClass(selected)}`}
                     >
                       <Icon size={20} strokeWidth={1.7} className={selected ? 'text-[#E8748A]' : 'text-[rgba(26,26,26,0.45)]'} aria-hidden />
                       <span className="text-[14px] font-semibold leading-tight">{o.label}</span>
-                      <span className="text-[11px] text-[rgba(26,26,26,0.5)]">{o.sub}</span>
                     </button>
                   )
                 })}
