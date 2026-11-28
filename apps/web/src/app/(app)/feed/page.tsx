@@ -46,7 +46,7 @@ interface PostRow {
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
-async function FeedContent() {
+async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notifications' }) {
   const supabase = await createClient()
   const user = await getCurrentUser()
   if (!user) return null
@@ -165,16 +165,23 @@ async function FeedContent() {
           initialNotifications={notifications}
           initialNotificationCursor={nextCursor}
           latestNotificationAt={latestNotificationAt}
+          initialTab={initialTab}
         />
       </div>
     </div>
   )
 }
 
-export default async function FeedPage() {
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string | string[] }>
+}) {
+  const { tab } = await searchParams
+  const initialTab = tab === 'notifications' ? 'notifications' : 'activity'
   return (
     <AuthGate section="feed">
-      <FeedContent />
+      <FeedContent initialTab={initialTab} />
     </AuthGate>
   )
 }

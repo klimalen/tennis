@@ -64,5 +64,5 @@ export function pathFromNotificationData(data: Record<string, unknown> | undefin
   if (!data) return null
   if (typeof data['path'] === 'string' && data['path'].startsWith('/')) return data['path']
   if (typeof data['conversation_id'] === 'string') return `/chats/${data['conversation_id']}`
-  return '/feed'
+  return '/feed?tab=notifications'
 }

@@ -65,8 +65,8 @@ export async function POST(request: Request) {
   const [{ data: tokens }, actorResult] = await Promise.all([
     admin.from('push_tokens').select('token').eq('user_id', record.user_id),
     record.actor_id
-      ? admin.from('profiles').select('full_name').eq('id', record.actor_id).maybeSingle()
-      : Promise.resolve({ data: null as { full_name: string } | null }),
+      ? admin.from('profiles').select('full_name, username').eq('id', record.actor_id).maybeSingle()
+      : Promise.resolve({ data: null as { full_name: string; username: string } | null }),
   ])
 
   if (!tokens?.length) {
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   const actorName = actorResult.data?.full_name?.trim() || 'Someone'
   const title = PUSH_TITLES[record.kind] ?? 'GAME.'
   const pushBody = pushBodyFor(record.kind, actorName, record.payload)
-  const path = pushPathFor(record.kind, record.game_id, record.payload)
+  const path = pushPathFor(record.kind, record.game_id, record.payload, actorResult.data?.username)
 
   const messages = tokens.map((row) => ({
     to: row.token,

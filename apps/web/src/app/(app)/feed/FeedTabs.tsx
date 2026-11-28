@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PostsFeed } from './PostsFeed'
 import { FeedClient } from './FeedClient'
 import type { PostItem } from './PostCard'
@@ -14,19 +14,26 @@ interface Props {
   initialNotifications: NotificationItem[]
   initialNotificationCursor: NotificationCursor | null
   latestNotificationAt: string | null
+  initialTab?: Tab
 }
 
 const LAST_SEEN_KEY = 'notifications_last_seen'
 
-export function FeedTabs({ userId, initialPosts, initialNotifications, initialNotificationCursor, latestNotificationAt }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('activity')
+export function FeedTabs({ userId, initialPosts, initialNotifications, initialNotificationCursor, latestNotificationAt, initialTab = 'activity' }: Props) {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
   const [notificationsSeen, setNotificationsSeen] = useState(() => {
+    if (initialTab === 'notifications') return true
     if (typeof window === 'undefined') return true
     if (!latestNotificationAt) return true
     const lastSeen = localStorage.getItem(LAST_SEEN_KEY)
     if (!lastSeen) return false
     return lastSeen >= latestNotificationAt
   })
+
+  useEffect(() => {
+    if (initialTab !== 'notifications') return
+    localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString())
+  }, [initialTab])
 
   function handleTabClick(tab: Tab) {
     setActiveTab(tab)
