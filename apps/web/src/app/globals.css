@@ -106,10 +106,14 @@ html.game-native body {
   top: 0;
   /* Above in-page badges (coach chip on avatar, etc.) so they scroll under the bar. */
   z-index: 20;
-  /* Slightly lighter than brand-bg cream so sticky headers lift off the page. */
-  background-color: rgb(255 253 250 / 0.96);
+  background-color: #FAF7F2;
   padding-bottom: 0.75rem;
   padding-top: calc(1.5rem + var(--app-safe-top));
+}
+
+/* Player thread: messages scroll under the bar, so it stays a touch lighter than the page. */
+.page-header.page-header-chat {
+  background-color: rgb(255 253 250 / 0.96);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
