@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
 import type { GameDetail } from '@/components/games/GameDetailSheet'
 import {
   CALENDAR_STALE_NOTE,
@@ -46,6 +46,16 @@ function calendarInput(game: GameDetail, viewerId: string, origin: string): Cale
 const choice =
   'block w-full px-4 py-3 text-left text-[13px] text-[#1a1a1a] outline-none hover:bg-brand-field focus-visible:bg-brand-field'
 
+async function signedCalendarHref(gameId: string): Promise<string | null> {
+  const res = await fetch(`/api/games/${gameId}/calendar?mint=1`, {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  })
+  if (!res.ok) return null
+  const body = (await res.json()) as { url?: unknown }
+  return typeof body.url === 'string' ? body.url : null
+}
+
 /**
  * One game, one tap, like a salon booking. The calendar app still asks the
  * person to save. We never learn whether they did.
@@ -82,11 +92,43 @@ export function AddToCalendar({ game, viewerId }: { game: GameDetail; viewerId: 
     }
   }, [open])
 
-  const fileHref = `/api/games/${game.id}/calendar`
+  const fallbackHref = `/api/games/${game.id}/calendar`
+  const hrefRef = useRef(fallbackHref)
+  const [fileHref, setFileHref] = useState(fallbackHref)
   const ready = useMemo(
     () => buildCalendarEvent(calendarInput(game, viewerId, origin)) !== null,
     [game, viewerId, origin],
   )
+
+  useEffect(() => {
+    let cancel = false
+    hrefRef.current = fallbackHref
+    setFileHref(fallbackHref)
+    void signedCalendarHref(game.id).then((url) => {
+      if (cancel || !url) return
+      hrefRef.current = url
+      setFileHref(url)
+    })
+    return () => {
+      cancel = true
+    }
+  }, [game.id, fallbackHref])
+
+  function onChoose(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault()
+    setOpen(false)
+    const open = (url: string) => window.open(url, '_blank', 'noopener')
+    if (hrefRef.current.includes('?t=') || hrefRef.current.includes('&t=')) {
+      open(hrefRef.current)
+      return
+    }
+    void signedCalendarHref(game.id).then((url) => {
+      if (!url) return
+      hrefRef.current = url
+      setFileHref(url)
+      open(url)
+    })
+  }
 
   if (!ready) return null
 
@@ -105,13 +147,13 @@ export function AddToCalendar({ game, viewerId }: { game: GameDetail; viewerId: 
       </button>
       {open && (
         <div id={menuId} role="menu" aria-label="Add to calendar" className="mt-2 overflow-hidden rounded-2xl border border-[#1a1a1a]/10 bg-white">
-          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={choice} onClick={() => setOpen(false)}>
+          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={choice} onClick={onChoose}>
             Google Calendar
           </a>
-          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={() => setOpen(false)}>
+          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={onChoose}>
             Apple Calendar
           </a>
-          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={() => setOpen(false)}>
+          <a role="menuitem" href={fileHref} target="_blank" rel="noopener noreferrer" className={`${choice} border-t border-[#1a1a1a]/10`} onClick={onChoose}>
             Outlook
           </a>
         </div>
