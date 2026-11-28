@@ -1,3 +1,6 @@
+import { GraduationCap } from 'lucide-react'
+import { skillLabel } from '@/lib/skill'
+
 /**
  * Large light watermark for profile header cards — flush to the bottom edge
  * (under stats, beside left-aligned meta). Pair with `overflow-hidden` on the card;
@@ -14,70 +17,49 @@ export function CoachWatermark({ className = '' }: { className?: string }) {
   )
 }
 
-/**
- * Compact vintage nameplate Coach chip for lists / search cards.
- * Overlay with absolute + left-1/2 -translate-x-1/2 when pinning to an avatar.
- */
-export function CoachBadge({ className = '' }: { className?: string }) {
-  // Don't force `relative` when the caller already positions with absolute/fixed —
-  // otherwise Tailwind's conflicting utilities can leave the chip in flow and shove the avatar.
-  const positioned = /\b(absolute|fixed|sticky)\b/.test(className)
+const markBase = 'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold leading-none'
 
+/** Coach tag for lists and cards. Sits where a player's level would. */
+export function CoachBadge({ className = '' }: { className?: string }) {
   return (
-    <span
-      className={`inline-flex h-[22px] w-[64px] shrink-0 items-center justify-center drop-shadow-[0_2px_3px_rgba(26,26,26,0.25)] ${
-        positioned ? '' : 'relative'
-      } ${className}`}
-      aria-label="Coach"
-    >
-      <svg
-        viewBox="0 0 64 22"
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        aria-hidden
-      >
-        <path
-          d={PLATE_OUTER}
-          fill="#F7F2EA"
-          stroke="#2F6B5E"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-        <path
-          d={PLATE_INNER}
-          fill="none"
-          stroke="#2F6B5E"
-          strokeWidth="0.9"
-          strokeLinejoin="round"
-        />
-        {/*
-          SVG text is geometrically centered (textAnchor=middle).
-          letterSpacing adds trailing advance — tiny dx balances it optically.
-        */}
-        <text
-          x="32"
-          y="11.7"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#2F6B5E"
-          fontSize="8.25"
-          fontWeight="700"
-          letterSpacing="1.4"
-          dx="0.7"
-          fontFamily="var(--font-display), ui-sans-serif, system-ui, sans-serif"
-        >
-          COACH
-        </text>
-      </svg>
+    <span className={`${markBase} bg-[#D7EBE6] text-[#2F6B5E] ${className}`}>
+      <GraduationCap size={14} strokeWidth={1.9} aria-hidden />
+      Coach
     </span>
   )
 }
 
-/**
- * Clockwise plate, viewBox 64×22, concave corner cuts (SVG sweep=0 = CCW).
- * Cut radius 3.1 so the vintage notch reads clearly at chip size.
- */
-const PLATE_OUTER =
-  'M 6.2 1.05 H 57.8 A 3.1 3.1 0 0 0 60.9 4.15 V 17.85 A 3.1 3.1 0 0 0 57.8 20.95 H 6.2 A 3.1 3.1 0 0 0 3.1 17.85 V 4.15 A 3.1 3.1 0 0 0 6.2 1.05 Z'
+const LEVEL_MARKS: Record<string, { bars: number; color: string }> = {
+  Beginner: { bars: 1, color: '#A89078' },
+  Intermediate: { bars: 2, color: '#3A8A7A' },
+  Advanced: { bars: 3, color: '#E8748A' },
+  Competitive: { bars: 4, color: '#D4A017' },
+}
 
-const PLATE_INNER =
-  'M 8.1 3.1 H 55.9 A 2.1 2.1 0 0 0 58 5.2 V 16.8 A 2.1 2.1 0 0 0 55.9 18.9 H 8.1 A 2.1 2.1 0 0 0 6 16.8 V 5.2 A 2.1 2.1 0 0 0 8.1 3.1 Z'
+/** Signal bars in the level's color, as in the profile level picker. */
+export function LevelBars({ level }: { level: string }) {
+  const mark = LEVEL_MARKS[level]
+  if (!mark) return null
+  return (
+    <span className="flex h-3 items-end gap-[2px]" aria-hidden>
+      {[1, 2, 3, 4].map((bar) => (
+        <span
+          key={bar}
+          className="w-[3px] rounded-full"
+          style={{ height: `${bar * 3}px`, background: bar <= mark.bars ? mark.color : 'rgba(26,26,26,0.14)' }}
+        />
+      ))}
+    </span>
+  )
+}
+
+export function LevelBadge({ level, className = '' }: { level: number | null | undefined; className?: string }) {
+  const label = skillLabel(level)
+  if (!label) return null
+  return (
+    <span className={`${markBase} bg-[#F6F1EA] text-[#1a1a1a] ${className}`}>
+      <LevelBars level={label} />
+      {label}
+    </span>
+  )
+}

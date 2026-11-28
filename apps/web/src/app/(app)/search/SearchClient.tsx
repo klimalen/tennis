@@ -1,6 +1,6 @@
 'use client'
 
-import { MapPin, X, ChevronRight, Plus, Minus, Star } from 'lucide-react'
+import { MapPin, X, ChevronRight, Plus, Minus, Star, GraduationCap } from 'lucide-react'
 import { buildCourtFactChips, CourtFactChips } from '@/components/court/CourtFactChips'
 import { CourtListingDetails } from '@/components/court/CourtListingDetails'
 import { CourtVerifiedBadge } from '@/components/court/CourtVerifiedBadge'
@@ -18,7 +18,7 @@ import { SKILL_OPTIONS, skillLabel } from '@/lib/skill'
 import { MultiFilterChips } from '@/components/ui/ListSearch'
 import { PlayRequestSentButton } from '@/components/ui/PlayRequestSentButton'
 import { AvailabilityButton } from '@/components/ui/AvailabilityButton'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachBadge, LevelBadge, LevelBars } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { courtReportHref } from '@/lib/court-report'
 import { hasSlots, normalizeAvailability } from '@/lib/availability'
@@ -248,10 +248,10 @@ function venueFactChips(venue: Venue) {
 
 // ─── Player card ──────────────────────────────────────────────────────────────
 
-function formatSummary(formats: string[]): string | null {
-  const labels = formats.map((format) => FORMAT_LABELS[format] ?? format).filter(Boolean)
-  if (labels.length === 0) return null
-  return labels.join(', ')
+function playerFilterChip(active: boolean): string {
+  return `inline-flex h-9 flex-shrink-0 items-center rounded-full border px-3.5 text-[13px] font-semibold transition-colors ${
+    active ? 'border-[#E8748A] bg-[#F8E6EA] text-[#1a1a1a]' : 'border-transparent bg-[#F6F1EA] text-[#1a1a1a] hover:border-[#1a1a1a]/15'
+  }`
 }
 
 function styleSummary(style: string | null): string | null {
@@ -312,104 +312,91 @@ function PlayerCard({
     setFollowing(false)
   }
 
-  const actionClass = `w-full rounded-full py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium transition-colors ${matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'}`
   const coach = Boolean(player.is_coach)
-  const level = coach ? null : skillLabel(skill)
-  const meta = [formatSummary(player.preferred_formats), styleSummary(player.play_style)].filter(Boolean).join(' · ')
+  const chips = [
+    ...player.preferred_formats.map((format) => FORMAT_LABELS[format] ?? format).filter(Boolean),
+    styleSummary(player.play_style),
+  ].filter((chip): chip is string => Boolean(chip))
   const bio = player.bio?.trim() || null
   const lookingFor = player.looking_for?.trim() || null
+  const place = placeLine(player.city_name, player.distance_km)
   const showSchedule = hasSlots(normalizeAvailability(player.availability))
-  const namePad = showSchedule && coach ? 'pr-28' : showSchedule ? 'pr-12' : coach ? 'pr-16' : ''
+  const primaryClass = `h-11 flex-1 rounded-full text-[11px] font-medium uppercase tracking-[0.18em] transition-colors ${
+    matched ? 'bg-[#3A8A7A] text-[#F0EBE3]' : 'bg-[#E8748A] text-[#1a1a1a] hover:bg-[#E8406A]'
+  }`
+  const followClass = 'h-11 rounded-full bg-[#F6F1EA] px-5 text-[11px] font-medium uppercase tracking-[0.18em] text-[#1a1a1a] transition-colors hover:bg-[#EDE6DC] disabled:opacity-50'
   void vivid
 
   return (
-    <Link href={`/profile/${player.username}`} className="relative block min-w-0 max-w-full rounded-[28px] bg-white active:bg-[#F4F1EC]">
-      {coach && (
-        <CoachBadge className={`absolute z-20 shadow-sm ${showSchedule ? 'right-16 top-3' : '-top-2.5 right-4'}`} />
-      )}
+    <Link href={`/profile/${player.username}`} className="relative block min-w-0 max-w-full rounded-[28px] bg-white p-4 active:bg-[#F4F1EC]">
       {showSchedule && (
         <AvailabilityButton
           value={player.availability}
           iconSize={16}
-          className="absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-[20px] bg-[#F6F1EA] text-[#1a1a1a]"
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#F6F1EA] text-[#1a1a1a]"
         />
       )}
-      <div className="p-4 pb-3">
-        <div className="flex items-start gap-3">
-          <div className="w-[72px] h-[72px] flex-shrink-0 rounded-full bg-brand-avatar flex items-center justify-center overflow-hidden">
-            {player.avatar_url ? (
-              <Image src={player.avatar_url} alt={player.full_name} width={72} height={72} className="w-full h-full object-cover" />
-            ) : (
-              <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
-            )}
-          </div>
-          <div className={`min-w-0 flex-1 ${namePad}`}>
-            <p className="font-display text-xl leading-none tracking-wide text-[#1a1a1a] uppercase line-clamp-2 break-words">{player.full_name}</p>
-            {level && (
-              <p className="mt-1.5 text-[11px] font-medium leading-none tracking-[0.14em] uppercase text-[#D4A017]">{level}</p>
-            )}
-            {placeLine(player.city_name, player.distance_km) && (
-              <p className="mt-1.5 break-words text-[11px] leading-none text-[rgba(26,26,26,0.45)]">{placeLine(player.city_name, player.distance_km)}</p>
-            )}
-            {meta && (
-              <p className="mt-1.5 text-[10px] leading-snug tracking-[0.12em] uppercase text-[rgba(26,26,26,0.45)]">{meta}</p>
-            )}
-          </div>
-        </div>
-        {(bio || lookingFor) && (
-          <div className="mt-3 space-y-2">
-            {bio && (
-              <ExpandableText text={bio} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.55)]" />
-            )}
-            {lookingFor && (
-              <div className="space-y-0.5">
-                <p className="text-[9px] tracking-[0.18em] uppercase text-[rgba(26,26,26,0.45)]">Looking for</p>
-                <ExpandableText text={lookingFor} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.55)]" />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {(canPropose || !followed || justFollowed) && (
-        <div className="px-4 pb-4">
-          {canPropose ? (
-            <>
-              {pending ? (
-                <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
-              ) : (
-                <button onClick={handleRequest} className={actionClass}>
-                  {btnLabel}
-                </button>
-              )}
-              {!followed && (
-                <button
-                  type="button"
-                  onClick={handleFollow}
-                  disabled={following}
-                  className="mt-2.5 block w-full text-center text-[10px] tracking-[0.18em] uppercase font-medium text-[rgba(26,26,26,0.55)] underline underline-offset-4 disabled:opacity-50"
-                >
-                  Follow
-                </button>
-              )}
-            </>
-          ) : followed ? (
-            <button
-              type="button"
-              disabled
-              className={`${actionClass} cursor-default opacity-70`}
-            >
-              Following
-            </button>
+      <div className="flex items-center gap-3.5">
+        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-avatar">
+          {player.avatar_url ? (
+            <Image src={player.avatar_url} alt={player.full_name} width={64} height={64} className="h-full w-full object-cover" />
           ) : (
-            <button
-              type="button"
-              onClick={handleFollow}
-              disabled={following}
-              className={actionClass}
-            >
+            <span className="font-display text-2xl text-[#1a1a1a]">{initials}</span>
+          )}
+        </div>
+        <div className={`min-w-0 flex-1 ${showSchedule ? 'pr-11' : ''}`}>
+          <p className="font-display text-xl uppercase leading-none tracking-wide text-[#1a1a1a] line-clamp-2 break-words">{player.full_name}</p>
+          {place && (
+            <p className="mt-1 flex items-center gap-1 text-[12px] leading-none text-[rgba(26,26,26,0.5)]">
+              <MapPin size={11} className="flex-shrink-0" aria-hidden />
+              <span className="truncate">{place}</span>
+            </p>
+          )}
+          {(coach || skill != null || chips.length > 0) && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {coach ? <CoachBadge /> : <LevelBadge level={skill} />}
+              {chips.map((chip) => (
+                <span key={chip} className="inline-flex h-6 items-center rounded-full border border-[#1a1a1a]/10 px-2.5 text-[12px] leading-none text-[rgba(26,26,26,0.65)]">
+                  {chip}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {(bio || lookingFor) && (
+        <div className="mt-3 space-y-2.5 rounded-[20px] bg-[#F6F1EA] px-3.5 py-3">
+          {bio && (
+            <ExpandableText text={bio} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.7)]" />
+          )}
+          {lookingFor && (
+            <div className="space-y-0.5">
+              <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(26,26,26,0.45)]">Looking for</p>
+              <ExpandableText text={lookingFor} className="font-copy text-[13px] leading-snug text-[rgba(26,26,26,0.7)]" />
+            </div>
+          )}
+        </div>
+      )}
+      {(canPropose || !followed || justFollowed) && (
+        <div className="mt-3 flex gap-2">
+          {canPropose && (pending ? (
+            <div className="min-w-0 flex-1">
+              <PlayRequestSentButton onCancel={() => onCancel(player.id)} />
+            </div>
+          ) : (
+            <button type="button" onClick={handleRequest} className={primaryClass}>
+              {btnLabel}
+            </button>
+          ))}
+          {!followed ? (
+            <button type="button" onClick={handleFollow} disabled={following} className={canPropose ? followClass : `${followClass} flex-1`}>
               Follow
             </button>
-          )}
+          ) : !canPropose ? (
+            <button type="button" disabled className={`${followClass} flex-1 cursor-default opacity-70`}>
+              Following
+            </button>
+          ) : null}
         </div>
       )}
     </Link>
@@ -643,11 +630,9 @@ function IncomingRequestCard({ req, onAccept, onDecline }: { req: IncomingReques
           <div className="flex items-center gap-2 mt-2">
             {coach ? (
               <CoachBadge />
-            ) : skill != null ? (
-              <span className="rounded-full text-[9px] tracking-[0.12em] uppercase font-semibold bg-[#F0EBE3] text-[#E8748A] px-2.5 py-0.5">
-                {skillLabel(skill)}
-              </span>
-            ) : null}
+            ) : (
+              <LevelBadge level={skill} />
+            )}
             {sender.city_name && <span className="text-[11px] text-[#1a1a1a]/70">{sender.city_name}</span>}
           </div>
         </div>
@@ -1857,13 +1842,11 @@ export function SearchClient({
             <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain">
               <button
                 type="button"
+                aria-pressed={coachesOnly}
                 onClick={() => setCoachesOnly((on) => !on)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
-                  coachesOnly
-                    ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
-                    : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
-                }`}
+                className={`${playerFilterChip(coachesOnly)} gap-1.5`}
               >
+                <GraduationCap size={14} strokeWidth={1.9} className={coachesOnly ? 'text-[#E8748A]' : 'text-[#2F6B5E]'} aria-hidden />
                 Coach
               </button>
               {SKILL_OPTIONS.map((option) => {
@@ -1872,17 +1855,15 @@ export function SearchClient({
                   <button
                     key={option}
                     type="button"
+                    aria-pressed={active}
                     onClick={() =>
                       setPlayerSkills(
                         active ? playerSkills.filter((id) => id !== option) : [...playerSkills, option],
                       )
                     }
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] tracking-[0.12em] uppercase font-medium border transition-colors ${
-                      active
-                        ? 'bg-[#1a1a1a] text-[#FAF7F2] border-[#1a1a1a]'
-                        : 'bg-brand-field border-[#1a1a1a]/15 text-[#1a1a1a]'
-                    }`}
+                    className={`${playerFilterChip(active)} gap-1.5`}
                   >
+                    <LevelBars level={option} />
                     {option}
                   </button>
                 )
@@ -1901,7 +1882,7 @@ export function SearchClient({
           ) : loadingPlayers || !geocodeDone ? (
             [...Array(4)].map((_, i) => <PlayerCardSkeleton key={i} />)
           ) : players.length === 0 ? (
-            <div className="rounded-[20px] bg-white border border-[#1a1a1a]/10 px-4 py-8 text-center">
+            <div className="rounded-[28px] bg-white px-4 py-8 text-center">
               <p className="text-[10px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.4)] mb-1">
                 {debouncedPlayerQuery || playerSkills.length > 0 || coachesOnly ? 'No matches' : 'No players found'}
               </p>
