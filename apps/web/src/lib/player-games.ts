@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ScheduleGame } from '@/lib/schedule'
 
-const GAME_COLUMNS = 'id, scheduled_at, duration_minutes, format, neighborhood, is_open, status, creator_id'
+const GAME_COLUMNS = 'id, scheduled_at, duration_minutes, format, neighborhood, is_open, visibility, status, creator_id'
 
 export async function loadPlayerGames(supabase: SupabaseClient, playerId: string): Promise<ScheduleGame[]> {
   const [{ data: created, error: createdError }, { data: participations, error: participationError }] = await Promise.all([

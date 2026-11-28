@@ -16,6 +16,7 @@ import { skillLabel } from '@/lib/skill'
 import { loadPlayerGames } from '@/lib/player-games'
 import { summarizeSchedule } from '@/lib/schedule'
 import { PostCard, type PostItem } from '@/app/(app)/feed/PostCard'
+import { showGamePost } from '@/lib/game-visibility'
 import { CoachWatermark } from '@/components/ui/CoachBadge'
 import { ExpandableText } from '@/components/ui/ExpandableText'
 import { LookingFor } from '@/components/ui/LookingFor'
@@ -40,7 +41,7 @@ interface PostRow {
   game: {
     id: string; creator_id: string; format: string; scheduled_at: string; skill_level_min: number | null
     skill_level_max: number | null; neighborhood: string | null; status: string
-    max_players: number; is_open: boolean; city: { name: string } | null
+    max_players: number; is_open: boolean; visibility?: string | null; city: { name: string } | null
   } | null
   likes: [{ count: number }] | []
 }
@@ -139,7 +140,7 @@ export default async function PlayerProfilePage({
         ),
         game:games (
           id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
-          neighborhood, status, max_players, is_open,
+          neighborhood, status, max_players, is_open, visibility,
           city:cities (name)
         ),
         likes:post_likes (count)
@@ -235,7 +236,7 @@ export default async function PlayerProfilePage({
     game: row.game as PostItem['game'],
     likes_count: row.likes[0]?.count ?? 0,
     liked_by_me: likedSet.has(row.id),
-  }))
+  })).filter((post) => post.type !== 'open_game' || showGamePost(post.game))
 
   return (
     <div className="min-h-screen">

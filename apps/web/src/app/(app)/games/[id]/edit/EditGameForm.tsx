@@ -6,7 +6,9 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, WhenFields } from '@/components/games/WhenFields'
+import { VisibilityFields } from '@/components/games/VisibilityFields'
+import { visibilityOf, type GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, type CourtPick, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList, type InviteConnection } from '@/components/games/InviteConnectionsList'
 import type { CourtPayment } from '@/lib/game-court'
@@ -29,6 +31,7 @@ interface Game {
   neighborhood: string | null
   notes: string | null
   is_open: boolean
+  visibility?: string | null
   venue_group_id: string | null
   court_cost_cents: number | null
   cost_currency: string | null
@@ -59,10 +62,12 @@ export function EditGameForm({
   game,
   isCreator,
   participants,
+  lockVisibility = false,
 }: {
   game: Game
   isCreator: boolean
   participants: Participant[]
+  lockVisibility?: boolean
 }) {
   const router = useRouter()
 
@@ -85,7 +90,8 @@ export function EditGameForm({
     payment: (game.payment as CourtPayment | null) ?? null,
   })
   const [notes, setNotes] = useState(game.notes ?? '')
-  const [isOpen, setIsOpen] = useState(game.is_open)
+  const [visibility, setVisibility] = useState<GameVisibility>(visibilityOf(game))
+  const savedVisibility = visibilityOf(game)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [leaving, setLeaving] = useState(false)
@@ -106,9 +112,9 @@ export function EditGameForm({
 
   useEffect(() => {
     if (!isCreator) return
-    fetch('/api/connections')
-      .then((response) => response.json() as Promise<{ connections: InviteConnection[] }>)
-      .then((data) => setConnections(data.connections ?? []))
+    fetch('/api/follows/mutual')
+      .then((response) => response.json() as Promise<{ friends: InviteConnection[] }>)
+      .then((data) => setConnections(data.friends ?? []))
       .catch(() => setConnections([]))
   }, [isCreator])
 
@@ -143,7 +149,7 @@ export function EditGameForm({
         cost_currency: place.costCurrency,
         payment: place.payment,
         notes: notes.trim() || null,
-        ...(isCreator ? { is_open: isOpen } : {}),
+        ...(isCreator && !lockVisibility ? { visibility } : {}),
       }),
     })
 
@@ -238,29 +244,12 @@ export function EditGameForm({
               className="font-copy w-full px-3 py-2.5 border border-[#1a1a1a]/40 bg-brand-field rounded-lg text-sm text-[#1a1a1a] placeholder:text-[rgba(26,26,26,0.25)] focus:outline-none focus:border-brand-primary transition-colors resize-none" />
           </div>
 
-          {isCreator && (
-            <div>
-              <FormSectionLabel>Visibility</FormSectionLabel>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setIsOpen(false)}
-                  className={gameFormOptionPillClass(!isOpen)}>
-                  Private
-                </button>
-                <button type="button" onClick={() => setIsOpen(true)}
-                  className={gameFormOptionPillClass(isOpen)}>
-                  Public
-                </button>
-              </div>
-              {isOpen ? (
-                <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
-                  Anyone in your city can find and join this game
-                </p>
-              ) : (
-                <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                  Shows on your profile schedule for anyone who visits. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
-                </p>
-              )}
-            </div>
+          {isCreator && !lockVisibility && (
+            <VisibilityFields
+              value={visibility}
+              onChange={setVisibility}
+              notePrivateChange={savedVisibility !== 'private'}
+            />
           )}
 
           {(participants.length > 0 || (isCreator && inviteable.length > 0)) && (

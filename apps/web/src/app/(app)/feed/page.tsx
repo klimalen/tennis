@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/user'
 import { FeedTabs } from './FeedTabs'
 import type { PostItem } from './PostCard'
+import { showGamePost } from '@/lib/game-visibility'
 import { NOTIFICATION_PAGE_SIZE, pageFromRows, type NotificationRow } from './notifications'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ interface PostRow {
     status: string
     max_players: number
     is_open: boolean
+    visibility?: string | null
     city: { name: string } | null
   } | null
   likes: [{ count: number }] | []
@@ -73,7 +75,7 @@ async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notificat
           ),
           game:games (
             id, creator_id, format, scheduled_at, skill_level_min, skill_level_max,
-            neighborhood, status, max_players, is_open,
+            neighborhood, status, max_players, is_open, visibility,
             city:cities (name)
           ),
           likes:post_likes (count)
@@ -129,6 +131,7 @@ async function FeedContent({ initialTab }: { initialTab: 'activity' | 'notificat
   const openGameMap = new Map<string, PostItem>()
   const nonGamePosts: PostItem[] = []
   for (const post of rawPosts) {
+    if (post.type === 'open_game' && !showGamePost(post.game)) continue
     if (post.type !== 'open_game' || !post.game?.id) {
       nonGamePosts.push(post)
       continue

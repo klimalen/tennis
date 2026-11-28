@@ -172,6 +172,7 @@ export interface Game {
   court_booking_id: string | null
   status: GameStatus
   is_open: boolean
+  visibility: 'private' | 'friends' | 'open'
   max_players: number
   notes: string | null
   created_at: string

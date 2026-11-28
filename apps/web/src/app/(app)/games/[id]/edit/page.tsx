@@ -15,11 +15,17 @@ export default async function EditGamePage({
   // Game is visible if user is creator or participant (RLS handles this)
   const { data: game } = await supabase
     .from('games')
-    .select('id, scheduled_at, duration_minutes, format, max_players, neighborhood, notes, is_open, creator_id, venue_group_id, court_cost_cents, cost_currency, payment, court:venue_groups!games_venue_group_id_fkey ( id, name, address, fee, lit, access )')
+    .select('id, scheduled_at, duration_minutes, format, max_players, neighborhood, notes, is_open, visibility, creator_id, venue_group_id, court_cost_cents, cost_currency, payment, court:venue_groups!games_venue_group_id_fkey ( id, name, address, fee, lit, access )')
     .eq('id', id)
     .single()
 
   if (!game || game.creator_id !== user.id) notFound()
+
+  const { data: creator } = await supabase
+    .from('profiles')
+    .select('account_kind')
+    .eq('id', user.id)
+    .maybeSingle()
 
   const courtRaw = (game as { court?: { id: string; name: string | null; address: string | null; fee: boolean | null; lit: boolean | null; access: string | null } | { id: string; name: string | null; address: string | null; fee: boolean | null; lit: boolean | null; access: string | null }[] | null }).court
   const courtRow = Array.isArray(courtRaw) ? courtRaw[0] ?? null : courtRaw ?? null
@@ -45,6 +51,7 @@ export default async function EditGamePage({
       game={{ ...game, court }}
       isCreator={game.creator_id === user.id}
       participants={players}
+      lockVisibility={creator?.account_kind === 'court'}
     />
   )
 }

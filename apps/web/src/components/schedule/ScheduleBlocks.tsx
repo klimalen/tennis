@@ -9,6 +9,7 @@ import { gameEndMs } from '@/lib/game-time'
 import { formatPlayFormat } from '@/lib/skill'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
 import type { ScheduleGame, SchedulePreviewItem } from '@/lib/schedule'
+import { visibilityOf } from '@/lib/game-visibility'
 
 export function ScheduleGameCard({
   game,
@@ -63,9 +64,13 @@ export function ScheduleGameCard({
             <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-[rgba(26,26,26,0.45)] border border-[#1a1a1a]/20 px-1.5 py-0.5">
               Invited
             </span>
-          ) : game.is_open ? (
+          ) : visibilityOf(game) === 'open' ? (
             <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">
               Open
+            </span>
+          ) : visibilityOf(game) === 'friends' ? (
+            <span className="text-[8px] tracking-[0.15em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5">
+              Friends
             </span>
           ) : null}
         </div>

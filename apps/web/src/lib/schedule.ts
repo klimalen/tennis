@@ -9,6 +9,7 @@ export interface ScheduleGame {
   format: string
   neighborhood: string | null
   is_open: boolean
+  visibility?: 'private' | 'friends' | 'open' | null
   status: string
   creator_id: string
   participation: ScheduleParticipation

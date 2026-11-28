@@ -3,6 +3,7 @@ import { apiError } from '@/lib/api-error'
 import { parseDurationMinutes } from '@/lib/game-time'
 import { parseCourtOffer } from '@/lib/game-court'
 import { seatsForFormat } from '@/lib/game-seats'
+import { parseVisibility, type GameVisibility } from '@/lib/game-visibility'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -21,10 +22,11 @@ export async function POST(request: Request) {
     payment?: string | null
     notes?: string
     is_open?: boolean
+    visibility?: string
     max_players?: number
   }
 
-  const { scheduled_at, format, location_name, notes, is_open } = body
+  const { scheduled_at, format, location_name, notes } = body
   const duration_minutes = parseDurationMinutes(body.duration_minutes)
   const venueGroupId = body.venue_group_id || null
 
@@ -72,6 +74,9 @@ export async function POST(request: Request) {
   const seats = seatsForFormat(format, body.max_players)
   if ('error' in seats) return NextResponse.json({ error: seats.error }, { status: 400 })
 
+  const visibility = visibilityForCreate(isCourt, body.visibility, body.is_open)
+  if (!visibility) return NextResponse.json({ error: 'Choose who can join' }, { status: 400 })
+
   const gameId = crypto.randomUUID()
   const max_players = seats.max_players
   const fallbackPlace = isCourt
@@ -93,7 +98,7 @@ export async function POST(request: Request) {
       cost_currency: offer.cost_currency,
       payment: offer.payment,
       notes: notes ?? null,
-      is_open: isCourt ? true : (is_open ?? false),
+      visibility,
       ...(isCourt ? { skill_level_min: null, skill_level_max: null } : {}),
       max_players,
       status: 'confirmed',
@@ -114,4 +119,13 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ id: gameId }, { status: 201 })
+}
+
+function visibilityForCreate(isCourt: boolean, visibility: unknown, isOpen: unknown): GameVisibility | null {
+  if (isCourt) return 'open'
+  const parsed = parseVisibility(visibility)
+  if (parsed) return parsed
+  if (visibility != null) return null
+  if (typeof isOpen === 'boolean') return isOpen ? 'open' : 'private'
+  return 'open'
 }

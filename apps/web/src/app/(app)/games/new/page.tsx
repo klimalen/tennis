@@ -6,7 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { FormatFields } from '@/components/games/FormatFields'
-import { FormSectionLabel, gameFormOptionPillClass, WhenFields } from '@/components/games/WhenFields'
+import { FormSectionLabel, WhenFields } from '@/components/games/WhenFields'
+import { VisibilityFields } from '@/components/games/VisibilityFields'
+import type { GameVisibility } from '@/lib/game-visibility'
 import { CourtPlaceFields, emptyCourtPlace, type CourtPlaceValue } from '@/components/games/CourtPlaceFields'
 import { InviteConnectionsList } from '@/components/games/InviteConnectionsList'
 import { durationFromClock, nowTimeInput, plusMinutes, todayInput } from '@/lib/game-time'
@@ -48,7 +50,8 @@ function NewGameForm() {
   const [connections, setConnections] = useState<Connection[]>([])
   const [connectionsLoaded, setConnectionsLoaded] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [isOpen, setIsOpen] = useState(false)
+  const [visibility, setVisibility] = useState<GameVisibility>('open')
+  const [preselectedOk, setPreselectedOk] = useState(!preselectedId)
   const [isCourt, setIsCourt] = useState(false)
   const [accountReady, setAccountReady] = useState(false)
 
@@ -63,7 +66,6 @@ function NewGameForm() {
         .maybeSingle()
       if (profile?.account_kind === 'court') {
         setIsCourt(true)
-        setIsOpen(true)
         const { data: venue } = await supabase
           .from('venue_groups')
           .select('id, name, address, fee, lit, access')
@@ -105,11 +107,12 @@ function NewGameForm() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/connections')
-      .then((r) => r.json() as Promise<{ connections: Connection[] }>)
+    fetch('/api/follows/mutual')
+      .then((r) => r.json() as Promise<{ friends: Connection[] }>)
       .then((data) => {
-        // Don't show the pre-selected person in the optional list
-        setConnections((data.connections ?? []).filter((c) => c.id !== preselectedId))
+        const friends = data.friends ?? []
+        setPreselectedOk(!preselectedId || friends.some((friend) => friend.id === preselectedId))
+        setConnections(friends.filter((friend) => friend.id !== preselectedId))
       })
       .catch(() => {})
       .finally(() => setConnectionsLoaded(true))
@@ -143,7 +146,7 @@ function NewGameForm() {
         cost_currency: place.costCurrency,
         payment: place.payment,
         notes: about.trim() || undefined,
-        is_open: isCourt ? true : isOpen,
+        visibility: isCourt ? 'open' : visibility,
       }),
     })
 
@@ -157,7 +160,7 @@ function NewGameForm() {
     const { id: gameId } = await res.json() as { id: string }
 
     const allInvitees = [
-      ...(preselectedId ? [preselectedId] : []),
+      ...(preselectedId && preselectedOk ? [preselectedId] : []),
       ...Array.from(selectedIds),
     ]
     if (!isCourt && allInvitees.length > 0) {
@@ -224,12 +227,12 @@ function NewGameForm() {
 
           {isCourt && (
             <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
-              This game is public. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four, and Group uses the maximum you set.
+              This game is open. Players join it themselves. The court organises it and does not take a spot. Singles has two player spots, doubles has four, and Group uses the maximum you set.
             </p>
           )}
 
           {/* Pre-selected player from chat */}
-          {!isCourt && preselectedId && preselectedName && (
+          {!isCourt && preselectedId && preselectedName && preselectedOk && (
             <div>
               <p className="text-[9px] tracking-[0.2em] uppercase text-[rgba(26,26,26,0.35)] font-medium mb-3">Players</p>
               <div className="flex items-center gap-2 px-3 py-2.5 border rounded-[20px] border-[#E8748A] bg-[#F8E6EA]">
@@ -238,6 +241,11 @@ function NewGameForm() {
                 <span className="text-[9px] tracking-[0.1em] uppercase text-brand-primary">Invited</span>
               </div>
             </div>
+          )}
+          {!isCourt && connectionsLoaded && preselectedId && !preselectedOk && (
+            <p className="text-[12px] text-[rgba(26,26,26,0.55)]">
+              {preselectedName || 'That player'} has to follow you back before you can invite them.
+            </p>
           )}
 
           {!isCourt && connections.length > 0 && (
@@ -251,34 +259,12 @@ function NewGameForm() {
 
           {!isCourt && connectionsLoaded && connections.length === 0 && !preselectedId && (
             <p className="text-[12px] text-[rgba(26,26,26,0.5)]">
-              You can invite people after you have matched with them. Until then, this game stays on your profile.
+              You can invite people you follow who follow you back. A one-way follow is not enough.
             </p>
           )}
 
-          {/* Visibility */}
           {!isCourt && (
-          <div>
-            <FormSectionLabel>Visibility</FormSectionLabel>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setIsOpen(false)}
-                className={gameFormOptionPillClass(!isOpen)}>
-                Private
-              </button>
-              <button type="button" onClick={() => setIsOpen(true)}
-                className={gameFormOptionPillClass(isOpen)}>
-                Public
-              </button>
-            </div>
-            {isOpen ? (
-              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.4)]">
-                Anyone in your city can find and join this game
-              </p>
-            ) : (
-              <p className="mt-2 text-[11px] text-[rgba(26,26,26,0.55)]">
-                Shows on your profile schedule for anyone who visits. It won&apos;t appear in Open Games, and people can&apos;t join unless you invite them.
-              </p>
-            )}
-          </div>
+            <VisibilityFields value={visibility} onChange={setVisibility} />
           )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}
