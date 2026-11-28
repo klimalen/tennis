@@ -1,13 +1,16 @@
 /**
- * Large light watermark for profile header cards — flush to the bottom edge
- * (under stats, beside left-aligned meta). Pair with `overflow-hidden` on the card;
- * clipping into the bottom radius is intentional.
+ * Large light watermark for profile / player cards.
+ * Default: flush bottom-right. Pass position utilities (e.g. `top-0 right-2`)
+ * to pin elsewhere. Pair with `overflow-hidden` on the card.
  */
 export function CoachWatermark({ className = '' }: { className?: string }) {
+  const positioned = /\b(top-|bottom-|left-|right-|inset-)/.test(className)
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute bottom-0 right-2 z-0 select-none font-display text-[52px] italic font-bold leading-none tracking-[-0.02em] text-[rgba(26,26,26,0.07)] sm:text-[58px] ${className}`}
+      className={`pointer-events-none absolute z-0 select-none font-display text-[52px] italic font-bold leading-none tracking-[-0.02em] text-[rgba(26,26,26,0.07)] sm:text-[58px] ${
+        positioned ? '' : 'bottom-0 right-2'
+      } ${className}`}
     >
       COACH
     </span>
