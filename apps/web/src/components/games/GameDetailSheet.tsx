@@ -532,7 +532,11 @@ export function GameDetailSheet({
           {canRecap && recapKnown && (
             <Link
               href={`/games/${game.id}/recap`}
-              className="block w-full rounded-full bg-brand-fern py-4 text-center text-[10px] font-medium uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#3d6144]"
+              className={`block w-full rounded-full py-4 text-center text-[10px] font-medium uppercase tracking-[0.2em] transition-colors ${
+                hasRecap
+                  ? 'bg-brand-fern text-white hover:bg-[#3d6144]'
+                  : 'bg-brand-conifer text-[#1a1a1a] hover:bg-[#A8C44A]'
+              }`}
             >
               {hasRecap ? 'Your Game Recap' : 'Add recap'}
             </Link>

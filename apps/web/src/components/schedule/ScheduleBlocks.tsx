@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { MessageCircle, Pencil } from 'lucide-react'
@@ -8,6 +8,7 @@ import { LocalGameDay, LocalGameMonth, LocalGameTime } from '@/components/ui/Loc
 import { gameEndMs } from '@/lib/game-time'
 import { formatPlayFormat } from '@/lib/skill'
 import { GameDetailSheet, loadGameDetail, viewerCanOpenGame, type GameDetail } from '@/components/games/GameDetailSheet'
+import { createClient } from '@/lib/supabase/client'
 import type { ScheduleGame, SchedulePreviewItem } from '@/lib/schedule'
 import { visibilityOf } from '@/lib/game-visibility'
 
@@ -27,11 +28,31 @@ export function ScheduleGameCard({
   viewerId?: string | null
 }) {
   const [detail, setDetail] = useState<GameDetail | null>(null)
+  const [hasRecap, setHasRecap] = useState<boolean | null>(null)
   const endIso = new Date(gameEndMs(game.scheduled_at, game.duration_minutes)).toISOString()
   const canTry = game.is_open || Boolean(viewerId)
   const router = useRouter()
   const resolvedEditHref = editHref ?? (allowEdit && !past && viewerId && game.creator_id === viewerId ? `/games/${game.id}/edit` : null)
   const showRecap = allowRecap && past && game.status !== 'cancelled'
+
+  useEffect(() => {
+    if (!showRecap || !viewerId) {
+      setHasRecap(null)
+      return
+    }
+    let cancelled = false
+    const supabase = createClient()
+    void supabase
+      .from('posts')
+      .select('id', { head: true, count: 'exact' })
+      .eq('author_id', viewerId)
+      .eq('game_id', game.id)
+      .eq('type', 'game_recap')
+      .then(({ count, error }) => {
+        if (!cancelled) setHasRecap(!error && (count ?? 0) > 0)
+      })
+    return () => { cancelled = true }
+  }, [showRecap, viewerId, game.id])
 
   async function open() {
     const loaded = await loadGameDetail(game.id)
@@ -83,13 +104,15 @@ export function ScheduleGameCard({
           <LocalGameTime iso={endIso} />
           {game.neighborhood ? ` · ${game.neighborhood}` : ''}
         </p>
-        {showRecap && (
+        {showRecap && hasRecap !== null && (
           <Link
             href={`/games/${game.id}/recap`}
             onClick={(event) => event.stopPropagation()}
-            className="mt-2 inline-flex rounded-full bg-brand-primary-muted px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-brand-primary"
+            className={`mt-2 inline-flex rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${
+              hasRecap ? 'bg-brand-fern text-white' : 'bg-brand-conifer text-[#1a1a1a]'
+            }`}
           >
-            Your Game Recap
+            {hasRecap ? 'Your Game Recap' : 'Add recap'}
           </Link>
         )}
       </div>

@@ -17,7 +17,7 @@ export type OpenGameTicketFace = {
   avatarUrl: string | null
 }
 
-export type OpenGameTicketBeard = 'join' | 'in' | 'full' | 'recap' | null
+export type OpenGameTicketBeard = 'join' | 'in' | 'full' | 'recap' | 'add-recap' | null
 
 function ticketInitials(name: string) {
   return name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
@@ -118,9 +118,9 @@ export function OpenGameTicketCard({
     ? 'bg-[#E8748A] text-[#1a1a1a]'
     : 'bg-[#BCD85E] text-[#1a1a1a]'
 
-  const effectiveBeard: OpenGameTicketBeard = muted && beard !== 'recap' ? null : beard
-  const beardBg = effectiveBeard === 'join'
-    ? 'bg-[#BCD85E]'
+  const effectiveBeard: OpenGameTicketBeard = muted && beard !== 'recap' && beard !== 'add-recap' ? null : beard
+  const beardBg = effectiveBeard === 'join' || effectiveBeard === 'add-recap'
+    ? 'bg-brand-conifer'
     : effectiveBeard === 'full'
       ? 'bg-[#163A32]'
       : effectiveBeard === 'in'
@@ -168,16 +168,20 @@ export function OpenGameTicketCard({
           <ArrowRight size={16} strokeWidth={1.75} />
         </button>
       )}
-      {effectiveBeard === 'recap' && (
+      {(effectiveBeard === 'recap' || effectiveBeard === 'add-recap') && (
         <button
           type="button"
           onClick={(event) => {
             event.stopPropagation()
             onRecap?.()
           }}
-          className="flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium uppercase tracking-[0.16em] text-white hover:bg-[#3d6144]"
+          className={`flex w-full items-center justify-center gap-2 py-3 text-[12px] font-medium uppercase tracking-[0.16em] ${
+            effectiveBeard === 'add-recap'
+              ? 'text-[#1a1a1a] hover:bg-[#A8C44A]'
+              : 'text-white hover:bg-[#3d6144]'
+          }`}
         >
-          Your Game Recap
+          {effectiveBeard === 'add-recap' ? 'Add recap' : 'Your Game Recap'}
           <ArrowRight size={16} strokeWidth={1.75} />
         </button>
       )}

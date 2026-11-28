@@ -50,6 +50,7 @@ function OpenGameCard({
   const [showSheet, setShowSheet] = useState(false)
   const router = useRouter()
   const [canJoin, setCanJoin] = useState<boolean | null>(null)
+  const [hasRecap, setHasRecap] = useState<boolean | null>(null)
 
   const isCancelled = basicGame.status === 'cancelled'
   const isPast = new Date(basicGame.scheduled_at) < new Date()
@@ -107,10 +108,29 @@ function OpenGameCard({
       ]
     : []
 
+  useEffect(() => {
+    if (!gameDetail || !viewerCanWriteRecap(gameDetail, currentUserId)) {
+      setHasRecap(null)
+      return
+    }
+    let cancelled = false
+    const supabase = createClient()
+    void supabase
+      .from('posts')
+      .select('id', { head: true, count: 'exact' })
+      .eq('author_id', currentUserId)
+      .eq('game_id', basicGame.id)
+      .eq('type', 'game_recap')
+      .then(({ count, error }) => {
+        if (!cancelled) setHasRecap(!error && (count ?? 0) > 0)
+      })
+    return () => { cancelled = true }
+  }, [gameDetail, currentUserId, basicGame.id])
+
   const muted = isCancelled || isPast
-  const canRecap = Boolean(gameDetail && viewerCanWriteRecap(gameDetail, currentUserId))
+  const canRecap = Boolean(gameDetail && viewerCanWriteRecap(gameDetail, currentUserId) && hasRecap !== null)
   const beard = canRecap
-    ? 'recap' as const
+    ? (hasRecap ? 'recap' as const : 'add-recap' as const)
     : muted || canJoin === false
       ? null
       : !gameDetail
