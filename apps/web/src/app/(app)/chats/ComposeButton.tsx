@@ -5,8 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { SquarePen, X, Loader2 } from 'lucide-react'
 import Image from 'next/image'
-import { skillLabel } from '@/lib/skill'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachBadge, LevelBadge } from '@/components/ui/CoachBadge'
 
 interface Connection {
   id: string
@@ -109,7 +108,6 @@ export function ComposeButton() {
                 connections.map((c) => {
                   const coach = Boolean(c.is_coach)
                   const rating = coach ? null : c.skill_level_computed ?? c.skill_level_self
-                  const label = skillLabel(rating)
                   const initials = c.full_name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase()
 
                   return (
@@ -134,11 +132,9 @@ export function ComposeButton() {
                       </div>
                       {coach ? (
                         <CoachBadge className="flex-shrink-0" />
-                      ) : label ? (
-                        <span className="text-[8px] tracking-[0.12em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
-                          {label}
-                        </span>
-                      ) : null}
+                      ) : (
+                        <LevelBadge level={rating} className="flex-shrink-0" />
+                      )}
                       {starting === c.id && (
                         <Loader2 size={14} className="animate-spin text-brand-primary flex-shrink-0" />
                       )}

@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Search, X } from 'lucide-react'
-import { skillLabel } from '@/lib/skill'
-import { CoachBadge } from '@/components/ui/CoachBadge'
+import { CoachBadge, LevelBadge } from '@/components/ui/CoachBadge'
 
 export interface FollowerProfile {
   id: string
@@ -131,7 +130,6 @@ export function FollowListView({
           shown.map((person) => {
             const coach = Boolean(person.is_coach)
             const rating = coach ? null : person.skill_level_computed ?? person.skill_level_self
-            const label = skillLabel(rating)
             const initials = person.full_name.split(' ').map((word) => word[0] ?? '').join('').slice(0, 2).toUpperCase()
             return (
               <Link
@@ -157,11 +155,9 @@ export function FollowListView({
                 </div>
                 {coach ? (
                   <CoachBadge className="flex-shrink-0" />
-                ) : label ? (
-                  <span className="text-[8px] tracking-[0.12em] uppercase font-medium text-brand-primary border border-brand-primary px-1.5 py-0.5 flex-shrink-0">
-                    {label}
-                  </span>
-                ) : null}
+                ) : (
+                  <LevelBadge level={rating} className="flex-shrink-0" />
+                )}
               </Link>
             )
           })
